@@ -1,0 +1,43 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "a75e3e700fbc10a6f99dbe408b2afe5c"
+name = "shade-space-staging"
+application_url = "https://nodeb.amkwebsolutions.com"
+embedded = true
+handle = "shade-space-staging"
+
+[webhooks]
+api_version = "2025-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+  
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products,write_files,write_publications"
+
+[auth]
+redirect_urls = [
+    "https://nodeb.amkwebsolutions.com/auth/callback", 
+    "https://nodeb.amkwebsolutions.com/auth/shopify/callback", 
+    "https://nodeb.amkwebsolutions.com/api/auth/callback"
+    ]
+
+[pos]
+embedded = false
+
+
+[app_proxy]
+url = "https://nodeb.amkwebsolutions.com"
+subpath = "shade_space"
+prefix = "apps"
+
+[build]
+automatically_update_urls_on_dev = false
+include_config_on_deploy = true
