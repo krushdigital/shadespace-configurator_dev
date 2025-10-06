@@ -219,12 +219,13 @@ export const WEBBING_FEATURES = [
 
 // Currency conversion rates (NZD base)
 export const EXCHANGE_RATES: { [key: string]: number } = {
-  'NZD': 1.0,    // Base currency
-  'USD': 0.62,
-  'AUD': 0.92,
-  'GBP': 0.49,
-  'EUR': 0.57,
-  'CAD': 0.84
+  'NZD': 1.0,
+  'USD': 0.58,
+  'AUD': 0.88,
+  'GBP': 0.43,
+  'EUR': 0.50,
+  'CAD': 0.81,
+  'AED': 2.19
 };
 
 // Currency-specific markups (applied after base markup)
@@ -234,7 +235,8 @@ export const CURRENCY_MARKUPS: { [key: string]: number } = {
   'AUD': 1.10,   // 10% markup for AUD
   'GBP': 1.20,   // 20% markup for GBP
   'EUR': 1.18,   // 18% markup for EUR
-  'CAD': 1.12    // 12% markup for CAD
+  'CAD': 1.12,   // 12% markup for CAD
+  'AED': 1.50    // 50% markup for AED
 };
 
 // Base pricing markup percentage
@@ -247,7 +249,8 @@ export const CURRENCY_SYMBOLS: { [key: string]: string } = {
   'AUD': 'AU$',
   'GBP': '£',
   'EUR': '€',
-  'CAD': 'CA$'
+  'CAD': 'CA$',
+  'AED': 'AED'
 };
 
 // Currency display names
@@ -257,7 +260,8 @@ export const CURRENCY_NAMES: { [key: string]: string } = {
   'AUD': 'Australian Dollar',
   'GBP': 'British Pound',
   'EUR': 'Euro',
-  'CAD': 'Canadian Dollar'
+  'CAD': 'Canadian Dollar',
+  'AED': 'UAE Dirham'
 };
 
 // Helper function to get fabric price from perimeter
