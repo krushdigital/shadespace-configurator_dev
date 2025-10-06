@@ -4,7 +4,17 @@ import { EXCHANGE_RATES } from '../data/pricing';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase: ReturnType<typeof createClient> | null = null;
+
+function getSupabaseClient() {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return null;
+  }
+  if (!supabase) {
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+  return supabase;
+}
 
 const CACHE_KEY = 'shade_space_currency';
 const CACHE_EXPIRY_DAYS = 7;
@@ -123,7 +133,13 @@ async function hashIP(ip: string): Promise<string> {
 
 async function checkSupabaseCache(ipHash: string): Promise<{ currency: string; country_code: string; country_name: string } | null> {
   try {
-    const { data, error } = await supabase
+    const client = getSupabaseClient();
+    if (!client) {
+      console.log('Supabase not configured, skipping cache check');
+      return null;
+    }
+
+    const { data, error } = await client
       .from('user_sessions')
       .select('currency_code, country_code, country_name')
       .eq('ip_address', ipHash)
@@ -136,7 +152,7 @@ async function checkSupabaseCache(ipHash: string): Promise<{ currency: string; c
     }
 
     if (data && EXCHANGE_RATES[data.currency_code]) {
-      await supabase
+      await client
         .from('user_sessions')
         .update({ last_accessed: new Date().toISOString() })
         .eq('ip_address', ipHash);
@@ -157,6 +173,11 @@ async function checkSupabaseCache(ipHash: string): Promise<{ currency: string; c
 
 async function detectFromEdgeFunction(ip: string): Promise<{ currency: string; country_code: string; country_name: string } | null> {
   try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+      console.log('Supabase not configured, skipping edge function detection');
+      return null;
+    }
+
     const response = await fetch(
       `${SUPABASE_URL}/functions/v1/detect-currency?ip=${encodeURIComponent(ip)}`,
       {
