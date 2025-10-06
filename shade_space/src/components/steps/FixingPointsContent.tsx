@@ -151,10 +151,9 @@ export function FixingPointsContent({
     // Check if all orientations are selected (not empty string)
     const allOrientationsValid = config.eyeOrientations?.every(orientation => orientation === 'horizontal' || orientation === 'vertical') || false;
 
-    // Check if there are unacknowledged typo suggestions
-    const hasUnacknowledgedTypos = Object.keys(typoSuggestions || {}).length > 0;
-
-    return allHeightsValid && allTypesValid && allOrientationsValid && !hasUnacknowledgedTypos;
+    // For button styling, only check if all required fields are filled
+    // Typo suggestions are treated as warnings and won't block the visual state
+    return allHeightsValid && allTypesValid && allOrientationsValid;
   };
 
   return (
