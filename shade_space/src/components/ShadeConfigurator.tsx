@@ -19,6 +19,7 @@ import { generatePDF } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
 import { formatMeasurement, formatArea } from '../utils/geometry';
+import { formatCurrency } from '../utils/currencyFormatter';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 
@@ -352,6 +353,7 @@ export function ShadeConfigurator() {
         area: calculations.area,
         perimeter: calculations.perimeter,
         totalPrice: calculations.totalPrice,
+        formattedPrice: formatCurrency(calculations.totalPrice, config.currency),
         selectedFabric,
         selectedColor,
         warranty: selectedFabric?.warrantyYears || "",
