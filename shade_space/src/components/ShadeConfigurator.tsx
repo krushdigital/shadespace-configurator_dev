@@ -50,6 +50,7 @@ export function ShadeConfigurator() {
   const [openStep, setOpenStep] = useState<number>(0);
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
+  const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState<boolean>(false);
   console.log('isMobile: ', isMobile);
   const reviewContentRef = useRef<HTMLDivElement>(null);
@@ -141,6 +142,10 @@ export function ShadeConfigurator() {
     const newSuggestions = { ...typoSuggestions };
     delete newSuggestions[fieldKey];
     setTypoSuggestions(newSuggestions);
+
+    const newDismissed = new Set(dismissedTypoSuggestions);
+    newDismissed.add(fieldKey);
+    setDismissedTypoSuggestions(newDismissed);
   };
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
@@ -778,9 +783,10 @@ export function ShadeConfigurator() {
   };
 
   const nextStep = () => {
-    // Clear previous validation errors
+    // Clear previous validation errors and dismissed typo tracking
     setValidationErrors({});
     setTypoSuggestions({});
+    setDismissedTypoSuggestions(new Set());
 
     // Perform validation for current step
     const errors: { [key: string]: string } = {};
@@ -900,17 +906,21 @@ export function ShadeConfigurator() {
         break;
     }
 
-    // Update typo suggestions state (but don't block progression)
+    // Update typo suggestions state
     setTypoSuggestions(suggestions);
 
-    // If there are any validation errors, block progression
-    if (Object.keys(errors).length > 0) {
+    // Check for unacknowledged typo suggestions (suggestions that haven't been dismissed or corrected)
+    const unacknowledgedTypos = Object.keys(suggestions).filter(key => !dismissedTypoSuggestions.has(key));
+    const hasUnacknowledgedTypos = unacknowledgedTypos.length > 0;
+
+    // If there are any validation errors OR unacknowledged typo suggestions, block progression
+    if (Object.keys(errors).length > 0 || hasUnacknowledgedTypos) {
       setValidationErrors(errors);
 
       // Scroll to the first error field after a short delay to allow UI updates
       setTimeout(() => {
         // Prioritize scrolling to typo suggestions first
-        if (Object.keys(suggestions).length > 0) {
+        if (hasUnacknowledgedTypos) {
           const typoElement = document.querySelector('.bg-amber-50') ||
             document.querySelector('.border-amber-500');
           if (typoElement) {
@@ -920,7 +930,7 @@ export function ShadeConfigurator() {
               inline: 'nearest'
             });
           }
-        } else {
+        } else if (Object.keys(errors).length > 0) {
           const firstErrorKey = Object.keys(errors)[0];
           if (firstErrorKey) {
             // Try to find and scroll to the first error element

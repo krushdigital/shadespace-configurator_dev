@@ -426,14 +426,14 @@ export function DimensionsContent({
               Back
             </Button>
           )}
-          <Button 
-            onClick={onNext} 
+          <Button
+            onClick={onNext}
             size="md"
             className={`flex-1 ${(() => {
               if (config.corners === 0) {
-                return 'opacity-50';
+                return 'opacity-50 cursor-not-allowed';
               }
-              
+
               let edgeCount = 0;
               for (let i = 0; i < config.corners; i++) {
                 const nextIndex = (i + 1) % config.corners;
@@ -443,8 +443,9 @@ export function DimensionsContent({
                   edgeCount++;
                 }
               }
-              const shouldDisable = edgeCount !== config.corners;
-              return shouldDisable ? 'opacity-50' : '';
+              const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
+              const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
+              return shouldDisable ? 'opacity-50 cursor-not-allowed' : '';
             })()}`}
           >
             Continue to {nextStepTitle}

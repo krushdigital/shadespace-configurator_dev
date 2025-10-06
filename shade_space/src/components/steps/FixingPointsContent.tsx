@@ -139,19 +139,22 @@ export function FixingPointsContent({
     const hasCorrectLength = config.fixingHeights.length === config.corners &&
                             config.fixingTypes?.length === config.corners &&
                             config.eyeOrientations?.length === config.corners;
-    
+
     if (!hasCorrectLength) return false;
-    
+
     // Check if all heights are greater than 0
     const allHeightsValid = config.fixingHeights.every(height => height > 0);
-    
+
     // Check if all types are selected (not empty string)
     const allTypesValid = config.fixingTypes?.every(type => type === 'post' || type === 'building') || false;
-    
+
     // Check if all orientations are selected (not empty string)
     const allOrientationsValid = config.eyeOrientations?.every(orientation => orientation === 'horizontal' || orientation === 'vertical') || false;
-    
-    return allHeightsValid && allTypesValid && allOrientationsValid;
+
+    // Check if there are unacknowledged typo suggestions
+    const hasUnacknowledgedTypos = Object.keys(typoSuggestions || {}).length > 0;
+
+    return allHeightsValid && allTypesValid && allOrientationsValid && !hasUnacknowledgedTypos;
   };
 
   return (
@@ -485,10 +488,10 @@ export function FixingPointsContent({
               Back
             </Button>
           )}
-          <Button 
-            onClick={onNext} 
+          <Button
+            onClick={onNext}
             size="md"
-            className={`flex-1 ${!isStepComplete() ? 'opacity-50' : ''}`}
+            className={`flex-1 ${!isStepComplete() ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             Continue to {nextStepTitle}
           </Button>
