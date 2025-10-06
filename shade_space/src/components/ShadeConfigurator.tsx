@@ -368,10 +368,18 @@ export function ShadeConfigurator() {
         createdAt: new Date().toISOString()
       };
 
+      // Call Supabase Edge Function for email sending with proper currency support
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
       const response = await fetch(
-        '/apps/shade_space/api/v1/public/email-summary-send',
+        `${supabaseUrl}/functions/v1/send-email-summary`,
         {
           method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
           body: JSON.stringify({ pdf, ...orderData, email }),
         }
       );
