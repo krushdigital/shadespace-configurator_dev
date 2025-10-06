@@ -92,8 +92,7 @@ function formatCurrency(amount: number, currencyCode: string): string {
     'AUD': 'AU$',
     'GBP': '£',
     'EUR': '€',
-    'CAD': 'CA$',
-    'AED': 'AED'
+    'CAD': 'CA$'
   };
   const symbol = symbols[currencyCode] || currencyCode;
   return `${symbol}${amount.toFixed(2)}`;

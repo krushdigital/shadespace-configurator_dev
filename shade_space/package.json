@@ -11,8 +11,6 @@
     "build:analyze": "vite build --mode analyze"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.9",
-    "@supabase/supabase-js": "^2.58.0",
     "@types/node": "^24.2.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",

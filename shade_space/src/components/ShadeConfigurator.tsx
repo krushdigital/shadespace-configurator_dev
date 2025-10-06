@@ -11,15 +11,14 @@ import { DimensionsContent } from './steps/DimensionsContent';
 import { FixingPointsContent } from './steps/FixingPointsContent';
 import { ReviewContent } from './steps/ReviewContent';
 import { useShadeCalculations } from '../hooks/useShadeCalculations';
-import { useCurrencyDetection } from '../hooks/useCurrencyDetection';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
 import { validateMeasurements, validateHeights, getDiagonalKeysForCorners } from '../utils/geometry';
 import { generatePDF } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
+import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
 import { formatMeasurement, formatArea } from '../utils/geometry';
-import { formatCurrency } from '../utils/currencyFormatter';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 
@@ -47,8 +46,7 @@ const INITIAL_STATE: ConfiguratorState = {
 console.log('🚀 ShadeConfigurator component is loading - this should appear in console');
 
 export function ShadeConfigurator() {
-  const { currency, isLoading: isCurrencyLoading } = useCurrencyDetection();
-  const [config, setConfig] = useState<ConfiguratorState>({ ...INITIAL_STATE, currency });
+  const [config, setConfig] = useState<ConfiguratorState>(INITIAL_STATE);
   const [openStep, setOpenStep] = useState<number>(0);
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
@@ -58,6 +56,7 @@ export function ShadeConfigurator() {
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  // Pricing and order state (lifted from ReviewContent)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [showEmailInput, setShowEmailInput] = useState(false);
   const { showToast } = useToast();
@@ -74,31 +73,66 @@ export function ShadeConfigurator() {
     progress: 0
   });
 
+  // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
 
+  // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
 
   const calculations = useShadeCalculations(config);
 
+  // Mobile detection effect
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 1024);
     };
 
+    // Initial check
     checkIsMobile();
+
+    // Add event listener for window resize
     window.addEventListener('resize', checkIsMobile);
 
+    // Cleanup function to remove event listener
     return () => {
       window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
 
-  useEffect(() => {
-    if (!isCurrencyLoading && currency) {
-      updateConfig({ currency });
-      console.log(`Currency automatically set to: ${currency}`);
-    }
-  }, [currency, isCurrencyLoading]);
+  /*
+  // IP-based currency detection effect
+  // useEffect(() => {
+  //   const detectCurrency = async () => {
+  //     try {
+  //       const response = await fetch('https://ipapi.co/json/');
+  //       const data = await response.json();
+  //       console.log('Full ipapi.co response:', data);
+  //       
+  //       if (data.currency) {
+  //         const detectedCurrency = data.currency;
+  //         console.log('EXCHANGE_RATES object:', EXCHANGE_RATES);
+  //         console.log('EXCHANGE_RATES[detectedCurrency]:', EXCHANGE_RATES[detectedCurrency]);
+  //         console.log('Boolean check EXCHANGE_RATES[detectedCurrency]:', !!EXCHANGE_RATES[detectedCurrency]);
+  //         
+  //         if (EXCHANGE_RATES[detectedCurrency]) {
+  //           updateConfig({ currency: detectedCurrency });
+  //         } else {
+  //           console.warn(`❌ Detected currency ${detectedCurrency} is not supported in EXCHANGE_RATES.`);
+  //           console.warn('Available currencies in EXCHANGE_RATES:', Object.keys(EXCHANGE_RATES));
+  //           updateConfig({ currency: 'USD' }); // Fallback to USD
+  //         }
+  //       } else {
+  //         console.warn('❌ No currency field in ipapi.co response');
+  //         updateConfig({ currency: 'USD' }); // Fallback to USD
+  //       }
+  //     } catch (error) {
+  //       updateConfig({ currency: 'USD' }); // Fallback to USD on network error
+  //     }
+  //   };
+  //
+  //   detectCurrency();
+  // }, []); // Empty dependency array ensures this runs only once on mount
+  */
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -318,7 +352,6 @@ export function ShadeConfigurator() {
         area: calculations.area,
         perimeter: calculations.perimeter,
         totalPrice: calculations.totalPrice,
-        formattedPrice: formatCurrency(calculations.totalPrice, config.currency),
         selectedFabric,
         selectedColor,
         warranty: selectedFabric?.warrantyYears || "",
