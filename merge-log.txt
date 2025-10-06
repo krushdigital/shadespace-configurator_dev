@@ -1,0 +1,40 @@
+------------------------------------------------------------
+🕒 Merge started at: 2025-10-07 10:15:57
+🚀 Starting Safe Bolt → Dev merge...
+--- Fetching latest from origin ---
+--- Checking out dev branch ---
+error: pathspec 'dev' did not match any file(s) known to git
+--- Merging bolt-sandbox into dev ---
+fatal: refusing to merge unrelated histories
+--- Reviewing differences ---
+error: src refspec dev does not match any
+error: failed to push some refs to 'https://github.com/krushdigital/shadespace-configurator_dev.git'
+✅ Changes pushed to dev at 2025-10-07 10:15:57
+✅ Merge script complete.
+
+------------------------------------------------------------
+🕒 Merge started at: 2025-10-07 10:17:28
+🚀 Starting Safe Bolt → Dev merge...
+--- Fetching latest from origin ---
+--- Checking out dev branch ---
+error: pathspec 'dev' did not match any file(s) known to git
+--- Merging bolt-sandbox into dev ---
+fatal: refusing to merge unrelated histories
+--- Reviewing differences ---
+------------------------------------------------------------
+🕒 Merge started at: 2025-10-07 10:21:39
+🚀 Starting Safe Bolt → Dev merge...
+--- Fetching latest from origin ---
+--- Checking out dev branch ---
+error: pathspec 'dev' did not match any file(s) known to git
+--- Merging bolt-sandbox into dev ---
+fatal: refusing to merge unrelated histories
+--- Reviewing differences ---
+❌ Push cancelled by user at 2025-10-07 10:21:39
+✅ Merge script complete.
+
+error: src refspec dev does not match any
+error: failed to push some refs to 'https://github.com/krushdigital/shadespace-configurator_dev.git'
+✅ Changes pushed to dev at 2025-10-07 10:17:28
+✅ Merge script complete.
+
