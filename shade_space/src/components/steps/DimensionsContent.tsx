@@ -19,6 +19,7 @@ interface DimensionsContentProps {
   onPrev: () => void;
   setValidationErrors?: (errors: {[key: string]: string}) => void;
   setTypoSuggestions?: (suggestions: {[key: string]: number}) => void;
+  dismissTypoSuggestion?: (fieldKey: string) => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
   setHighlightedMeasurement?: (measurement: string | null) => void;
@@ -34,18 +35,19 @@ interface DimensionsContentProps {
   highlightedMeasurement?: string | null;
 }
 
-export function DimensionsContent({ 
-  config, 
-  updateConfig, 
+export function DimensionsContent({
+  config,
+  updateConfig,
   calculations,
-  onNext, 
-  onPrev, 
-  validationErrors = {}, 
+  onNext,
+  onPrev,
+  validationErrors = {},
   typoSuggestions = {},
   nextStepTitle = '',
   showBackButton = false,
   setValidationErrors,
   setTypoSuggestions,
+  dismissTypoSuggestion,
   setHighlightedMeasurement,
   // Pricing props
   isGeneratingPDF = false,
@@ -263,18 +265,26 @@ export function DimensionsContent({
                    {/* Typo Warning */}
                    {typoSuggestions[edgeKey] && (
                      <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                       <div className="flex items-center justify-between">
+                       <div className="flex items-center justify-between gap-2">
                          <div className="flex-1">
                            <p className="text-sm text-amber-800">
                             <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[edgeKey], config.unit, true)}?
                            </p>
                          </div>
-                         <button
-                          onClick={() => applyEdgeTypoCorrection(edgeKey)}
-                           className="ml-2 px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
-                         >
-                           Correct
-                         </button>
+                         <div className="flex gap-2">
+                           <button
+                            onClick={() => applyEdgeTypoCorrection(edgeKey)}
+                             className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
+                           >
+                             Correct
+                           </button>
+                           <button
+                            onClick={() => dismissTypoSuggestion?.(edgeKey)}
+                             className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
+                           >
+                             Dismiss
+                           </button>
+                         </div>
                        </div>
                      </div>
                    )}
@@ -369,18 +379,26 @@ export function DimensionsContent({
                           {/* Typo Warning */}
                           {typoSuggestions[key] && (
                             <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between gap-2">
                                 <div className="flex-1">
                                   <p className="text-sm text-amber-800">
                                     <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[key], config.unit)}?
                                   </p>
                                 </div>
-                                <button
-                                  onClick={() => applyTypoCorrection(key)}
-                                  className="ml-2 px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
-                                >
-                                  Correct
-                                </button>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => applyTypoCorrection(key)}
+                                    className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
+                                  >
+                                    Correct
+                                  </button>
+                                  <button
+                                    onClick={() => dismissTypoSuggestion?.(key)}
+                                    className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
+                                  >
+                                    Dismiss
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           )}

@@ -19,6 +19,7 @@ interface FixingPointsContentProps {
   onPrev: () => void;
   setValidationErrors?: (errors: {[key: string]: string}) => void;
   setTypoSuggestions?: (suggestions: {[key: string]: number}) => void;
+  dismissTypoSuggestion?: (fieldKey: string) => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
   // Pricing props for mobile summary
@@ -32,18 +33,19 @@ interface FixingPointsContentProps {
   allDiagonalsEntered?: boolean;
 }
 
-export function FixingPointsContent({ 
-  config, 
-  updateConfig, 
+export function FixingPointsContent({
+  config,
+  updateConfig,
   calculations,
-  onNext, 
-  onPrev, 
-  validationErrors = {}, 
+  onNext,
+  onPrev,
+  validationErrors = {},
   typoSuggestions = {},
   nextStepTitle = '',
   showBackButton = false,
   setValidationErrors,
   setTypoSuggestions,
+  dismissTypoSuggestion,
   // Pricing props
   isGeneratingPDF = false,
   handleGeneratePDF = () => {},
@@ -284,18 +286,26 @@ export function FixingPointsContent({
                   {/* Typo Warning */}
                   {typoSuggestions[`height_${index}`] && (
                     <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="flex-1">
                           <p className="text-sm text-amber-800">
                             <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[`height_${index}`], config.unit, true)}?
                           </p>
                         </div>
-                        <button
-                          onClick={() => applyTypoCorrection(index)}
-                          className="ml-2 px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
-                        >
-                          Correct
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => applyTypoCorrection(index)}
+                            className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
+                          >
+                            Correct
+                          </button>
+                          <button
+                            onClick={() => dismissTypoSuggestion?.(`height_${index}`)}
+                            className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )}

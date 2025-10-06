@@ -137,6 +137,12 @@ export function ShadeConfigurator() {
     setConfig(prev => ({ ...prev, ...updates }));
   };
 
+  const dismissTypoSuggestion = (fieldKey: string) => {
+    const newSuggestions = { ...typoSuggestions };
+    delete newSuggestions[fieldKey];
+    setTypoSuggestions(newSuggestions);
+  };
+
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
   // Pricing and order handlers (lifted from ReviewContent)
@@ -894,15 +900,12 @@ export function ShadeConfigurator() {
         break;
     }
 
-    // If there are typo suggestions, prevent progression
-    if (Object.keys(suggestions).length > 0) {
-      errors.typoSuggestions = 'Please address all suggested corrections before continuing.';
-    }
+    // Update typo suggestions state (but don't block progression)
+    setTypoSuggestions(suggestions);
 
     // If there are any validation errors, block progression
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
-      setTypoSuggestions(suggestions);
 
       // Scroll to the first error field after a short delay to allow UI updates
       setTimeout(() => {
@@ -1190,6 +1193,7 @@ export function ShadeConfigurator() {
                   onPrev={prevStep}
                   setValidationErrors={setValidationErrors}
                   setTypoSuggestions={setTypoSuggestions}
+                  dismissTypoSuggestion={dismissTypoSuggestion}
                   setConfig={setConfig}
                   setOpenStep={setOpenStep}
                   // Pricing and order props for ReviewContent
