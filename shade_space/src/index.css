@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Account for fixed website header when scrolling */
+html {
+  scroll-padding-top: 100px;
+}
+
 /* Hide number input spinner arrows */
 .no-spin-arrows::-webkit-outer-spin-button,
 .no-spin-arrows::-webkit-inner-spin-button {

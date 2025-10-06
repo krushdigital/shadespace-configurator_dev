@@ -970,6 +970,10 @@ export function ShadeConfigurator() {
           block: 'start',
           inline: 'nearest'
         });
+        // Offset to account for fixed website header (approx 80px) plus buffer
+        setTimeout(() => {
+          window.scrollBy(0, -100);
+        }, 300);
       }
     }, 350);
   };
@@ -993,9 +997,9 @@ export function ShadeConfigurator() {
           block: 'start',
           inline: 'nearest'
         });
-        // Additional scroll adjustment to ensure proper alignment
+        // Offset to account for fixed website header (approx 80px) plus buffer
         setTimeout(() => {
-          window.scrollBy(0, -20); // Small offset to account for any header spacing
+          window.scrollBy(0, -100);
         }, 300);
       }
     }, 350);
@@ -1020,9 +1024,9 @@ export function ShadeConfigurator() {
               block: 'start',
               inline: 'nearest'
             });
-            // Small offset to position accordion header nicely at top
+            // Offset to account for fixed website header (approx 80px) plus buffer
             setTimeout(() => {
-              window.scrollBy(0, -20);
+              window.scrollBy(0, -100);
             }, 300);
           }
         }, 350);
