@@ -244,14 +244,25 @@ export function FixingPointsContent({
                        )
                        : ''}
                       onChange={(e) => {
-                        const numValue = parseFloat(e.target.value);
-                        if (!isNaN(numValue)) {
-                          updateFixingHeight(index, numValue);
-                        } else if (e.target.value === '' && setValidationErrors) {
-                          // Clear validation when field is emptied
-                          const newErrors = { ...validationErrors };
-                          delete newErrors[`height_${index}`];
-                          setValidationErrors(newErrors);
+                        if (e.target.value === '') {
+                          // Allow complete clearing
+                          const newHeights = [...config.fixingHeights];
+                          newHeights[index] = 0;
+                          updateConfig({ fixingHeights: newHeights });
+
+                          if (setValidationErrors && setTypoSuggestions) {
+                            const newErrors = { ...validationErrors };
+                            const newSuggestions = { ...typoSuggestions };
+                            delete newErrors[`height_${index}`];
+                            delete newSuggestions[`height_${index}`];
+                            setValidationErrors(newErrors);
+                            setTypoSuggestions(newSuggestions);
+                          }
+                        } else {
+                          const numValue = parseFloat(e.target.value);
+                          if (!isNaN(numValue)) {
+                            updateFixingHeight(index, numValue);
+                          }
                         }
                       }}
                       placeholder={config.unit === 'imperial' ? '100' : '2500'}
