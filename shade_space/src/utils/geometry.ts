@@ -311,6 +311,142 @@ export function calculateTriangleArea(a: number, b: number, c: number): number {
 }
 
 /**
+ * Validate if three sides can form a valid triangle
+ * @param a First side length
+ * @param b Second side length
+ * @param c Third side length
+ * @returns Object with isValid boolean and error message if invalid
+ */
+export function validateTriangle(a: number, b: number, c: number): { isValid: boolean; error?: string } {
+  if (a <= 0 || b <= 0 || c <= 0) {
+    return { isValid: false, error: 'All sides must be positive' };
+  }
+  if (a + b <= c) {
+    return { isValid: false, error: `Triangle inequality violated: ${a.toFixed(0)} + ${b.toFixed(0)} = ${(a+b).toFixed(0)} ≤ ${c.toFixed(0)}` };
+  }
+  if (a + c <= b) {
+    return { isValid: false, error: `Triangle inequality violated: ${a.toFixed(0)} + ${c.toFixed(0)} = ${(a+c).toFixed(0)} ≤ ${b.toFixed(0)}` };
+  }
+  if (b + c <= a) {
+    return { isValid: false, error: `Triangle inequality violated: ${b.toFixed(0)} + ${c.toFixed(0)} = ${(b+c).toFixed(0)} ≤ ${a.toFixed(0)}` };
+  }
+  return { isValid: true };
+}
+
+/**
+ * Validate polygon measurements for geometric feasibility
+ * @param measurements Object containing all edge and diagonal measurements in mm
+ * @param corners Number of corners (3, 4, 5, or 6)
+ * @returns Object with isValid boolean and array of error messages
+ */
+export function validatePolygonGeometry(measurements: { [key: string]: number }, corners: number): {
+  isValid: boolean;
+  errors: string[]
+} {
+  const errors: string[] = [];
+
+  if (corners < 3 || corners > 6) {
+    return { isValid: false, errors: ['Invalid number of corners'] };
+  }
+
+  if (corners === 3) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CA = measurements['CA'] || 0;
+
+    if (AB > 0 && BC > 0 && CA > 0) {
+      const validation = validateTriangle(AB, BC, CA);
+      if (!validation.isValid) {
+        errors.push(`Triangle ABC: ${validation.error}`);
+      }
+    }
+  } else if (corners === 4) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CD = measurements['CD'] || 0;
+    const DA = measurements['DA'] || 0;
+    const AC = measurements['AC'] || 0;
+
+    if (AB > 0 && BC > 0 && AC > 0) {
+      const validation = validateTriangle(AB, BC, AC);
+      if (!validation.isValid) {
+        errors.push(`Triangle ABC: ${validation.error}`);
+      }
+    }
+    if (AC > 0 && CD > 0 && DA > 0) {
+      const validation = validateTriangle(AC, CD, DA);
+      if (!validation.isValid) {
+        errors.push(`Triangle ACD: ${validation.error}`);
+      }
+    }
+  } else if (corners === 5) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CD = measurements['CD'] || 0;
+    const DE = measurements['DE'] || 0;
+    const EA = measurements['EA'] || 0;
+    const AC = measurements['AC'] || 0;
+    const AD = measurements['AD'] || 0;
+
+    if (AB > 0 && BC > 0 && AC > 0) {
+      const validation = validateTriangle(AB, BC, AC);
+      if (!validation.isValid) {
+        errors.push(`Triangle ABC: ${validation.error}`);
+      }
+    }
+    if (AC > 0 && CD > 0 && AD > 0) {
+      const validation = validateTriangle(AC, CD, AD);
+      if (!validation.isValid) {
+        errors.push(`Triangle ACD: ${validation.error}`);
+      }
+    }
+    if (AD > 0 && DE > 0 && EA > 0) {
+      const validation = validateTriangle(AD, DE, EA);
+      if (!validation.isValid) {
+        errors.push(`Triangle ADE: ${validation.error}`);
+      }
+    }
+  } else if (corners === 6) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CD = measurements['CD'] || 0;
+    const DE = measurements['DE'] || 0;
+    const EF = measurements['EF'] || 0;
+    const FA = measurements['FA'] || 0;
+    const AC = measurements['AC'] || 0;
+    const AD = measurements['AD'] || 0;
+    const AE = measurements['AE'] || 0;
+
+    if (AB > 0 && BC > 0 && AC > 0) {
+      const validation = validateTriangle(AB, BC, AC);
+      if (!validation.isValid) {
+        errors.push(`Triangle ABC: ${validation.error}`);
+      }
+    }
+    if (AC > 0 && CD > 0 && AD > 0) {
+      const validation = validateTriangle(AC, CD, AD);
+      if (!validation.isValid) {
+        errors.push(`Triangle ACD: ${validation.error}`);
+      }
+    }
+    if (AD > 0 && DE > 0 && AE > 0) {
+      const validation = validateTriangle(AD, DE, AE);
+      if (!validation.isValid) {
+        errors.push(`Triangle ADE: ${validation.error}`);
+      }
+    }
+    if (AE > 0 && EF > 0 && FA > 0) {
+      const validation = validateTriangle(AE, EF, FA);
+      if (!validation.isValid) {
+        errors.push(`Triangle AEF: ${validation.error}`);
+      }
+    }
+  }
+
+  return { isValid: errors.length === 0, errors };
+}
+
+/**
  * Calculate the area of a polygon using triangulation
  * @param measurements Object containing all edge and diagonal measurements in mm
  * @param corners Number of corners (3, 4, 5, or 6)
@@ -318,15 +454,15 @@ export function calculateTriangleArea(a: number, b: number, c: number): number {
  */
 export function calculatePolygonArea(measurements: { [key: string]: number }, corners: number): number {
   if (corners < 3 || corners > 6) return 0;
-  
+
   let totalAreaMm2 = 0;
-  
+
   if (corners === 3) {
     // Triangle: use sides AB, BC, CA
     const AB = measurements['AB'] || 0;
     const BC = measurements['BC'] || 0;
     const CA = measurements['CA'] || 0;
-    
+
     if (AB > 0 && BC > 0 && CA > 0) {
       totalAreaMm2 = calculateTriangleArea(AB, BC, CA);
     }
@@ -337,7 +473,7 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
     const CD = measurements['CD'] || 0;
     const DA = measurements['DA'] || 0;
     const AC = measurements['AC'] || 0;
-    
+
     if (AB > 0 && BC > 0 && AC > 0) {
       totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
     }

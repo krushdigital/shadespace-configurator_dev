@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef, useRef } from 'react';
+import React, { useState, useEffect, forwardRef, useRef, useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -6,7 +6,7 @@ import { Input } from '../ui/Input';
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { FABRICS } from '../../data/fabrics';
-import { convertMmToUnit, formatMeasurement, formatArea } from '../../utils/geometry';
+import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 
 interface ReviewContentProps {
@@ -81,12 +81,19 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
 
+  // Validate polygon geometry
+  const geometryValidation = useMemo(() => {
+    if (config.corners < 3 || calculations.area > 0) {
+      return { isValid: true, errors: [] };
+    }
 
+    // Only validate if all required measurements are present
+    if (!hasAllEdgeMeasurements || !allDiagonalsEntered) {
+      return { isValid: true, errors: [] };
+    }
 
-  useEffect(()=>{
-    
-  })
-
+    return validatePolygonGeometry(config.measurements, config.corners);
+  }, [config.measurements, config.corners, calculations.area, hasAllEdgeMeasurements, allDiagonalsEntered]);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -500,6 +507,40 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 )}
               </div>
             </Card>
+
+            {/* Geometric Validation Warning */}
+            {!geometryValidation.isValid && calculations.area === 0 && hasAllEdgeMeasurements && allDiagonalsEntered && (
+              <Card className="p-4 mb-4 border-2 border-red-500 bg-red-50">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-semibold text-red-800 mb-2">
+                      Invalid Measurements Detected
+                    </h4>
+                    <p className="text-sm text-red-700 mb-3">
+                      Your measurements create a geometrically impossible shape. This usually happens when measurements are entered incorrectly or contain typos. Please verify and correct the following issues:
+                    </p>
+                    <div className="space-y-2">
+                      {geometryValidation.errors.map((error, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <span className="text-red-600 font-bold">•</span>
+                          <p className="text-sm text-red-700 font-mono">{error}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 p-3 bg-red-100 border border-red-300 rounded">
+                      <p className="text-sm text-red-800">
+                        <strong>Note:</strong> The triangle inequality theorem states that the sum of any two sides of a triangle must be greater than the third side. Please check your edge and diagonal measurements for accuracy.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
 
             {/* Precise Measurements Summary */}
             <div>

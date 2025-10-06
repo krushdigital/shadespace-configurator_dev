@@ -157,5 +157,13 @@ export function useShadeCalculations(config: ConfiguratorState): ShadeCalculatio
       wireThickness,
       totalWeightGrams
     };
-  }, [config]);
+  }, [
+    config.measurements,
+    config.corners,
+    config.edgeType,
+    config.fabricType,
+    config.measurementOption,
+    config.currency,
+    config.unit
+  ]);
 }
