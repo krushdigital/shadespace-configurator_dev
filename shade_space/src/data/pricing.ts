@@ -219,13 +219,13 @@ export const WEBBING_FEATURES = [
 
 // Currency conversion rates (NZD base)
 export const EXCHANGE_RATES: { [key: string]: number } = {
-  'NZD': 1.0,
+  'NZD': 1.0,    // Base currency
   'USD': 0.58,
   'AUD': 0.88,
   'GBP': 0.43,
   'EUR': 0.50,
   'CAD': 0.81,
-  'AED': 2.19
+  'AED': 2.19    // UAE Dirham
 };
 
 // Currency-specific markups (applied after base markup)
