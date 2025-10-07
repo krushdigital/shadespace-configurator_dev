@@ -132,15 +132,15 @@ export function useShadeCalculations(config: ConfiguratorState): ShadeCalculatio
     // Calculate total sail weight
     const totalSailWeightGrams = 
       (fabricWeightPerSqm * areaSqm) + // Fabric weight based on actual area
-      (config.corners * 300); // Fixing points weight
+      (config.corners * 200); // Fixing points weight
     
     // Calculate perimeter weight based on edge type
     const perimeterWeightPerMeter = config.edgeType === 'cabled' ? 140 : 100; // Wire: 140g/m, Webbing: 100g/m
-    const perimeterWeightGrams = (Math.round(perimeterM) * perimeterWeightPerMeter) + 2000; // Buffer weight
+    const perimeterWeightGrams = (Math.round(perimeterM) * perimeterWeightPerMeter) + 0; // Buffer weight
     
     // Calculate hardware weight (only if "adjust" option is selected)
     const hardwareWeightGrams = config.measurementOption === 'adjust' 
-      ? config.corners * 400 
+      ? config.corners * 380 
       : 0;
     
     // Total weight
