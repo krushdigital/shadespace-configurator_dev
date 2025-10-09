@@ -74,8 +74,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
+  const [buttonShake, setButtonShake] = useState(false);
   const diagonalCardRef = useRef<HTMLDivElement>(null);
   const acknowledgementsCardRef = useRef<HTMLDivElement>(null);
+  const addToCartButtonRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
@@ -242,37 +244,50 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
   const handleAttemptAddToCart = async () => {
     if (!canAddToCart) {
+      // Immediately trigger validation feedback
       setShowValidationFeedback(true);
 
-      // Auto-scroll to the first incomplete section after UI updates
+      // Shake the button to provide immediate feedback
+      setButtonShake(true);
+      setTimeout(() => setButtonShake(false), 500);
+
+      // Use setTimeout to ensure state updates are processed
       setTimeout(() => {
-        requestAnimationFrame(() => {
-          let targetElement: HTMLElement | null = null;
+        let targetElement: HTMLElement | null = null;
 
-          if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-            targetElement = diagonalCardRef.current;
-          } else if (!allAcknowledgmentsChecked) {
-            targetElement = acknowledgementsCardRef.current;
-          }
+        // Identify which section needs attention
+        if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
+          targetElement = diagonalCardRef.current;
+        } else if (!allAcknowledgmentsChecked) {
+          targetElement = acknowledgementsCardRef.current;
+        }
 
-          if (targetElement) {
-            const isMobileView = window.innerWidth < 1024;
-            const headerOffset = isMobileView ? 120 : 140;
-            const elementPosition = targetElement.getBoundingClientRect().top;
-            const offsetPosition = elementPosition + window.scrollY - headerOffset;
+        if (targetElement) {
+          // Calculate scroll position
+          const isMobileView = window.innerWidth < 1024;
+          const headerOffset = isMobileView ? 100 : 120;
+          const viewportOffset = window.innerHeight * 0.15;
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
 
-            window.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
+          // Scroll to the incomplete section
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+          });
 
-            // Add pulsate animation after scroll
+          // Apply pulse animation after scroll completes
+          setTimeout(() => {
+            targetElement?.classList.add('pulse-error');
             setTimeout(() => {
-              targetElement?.classList.add('pulse-error');
-              setTimeout(() => {
-                targetElement?.classList.remove('pulse-error');
-              }, 2000);
-            }, 400);
-          }
-        });
-      }, 100);
+              targetElement?.classList.remove('pulse-error');
+            }, 2400);
+          }, 600);
+        }
+      }, 50);
+
+      // Do not proceed with cart addition
+      return;
     } else {
       setShowValidationFeedback(false);
 
@@ -668,8 +683,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 className={`p-6 border-2 transition-all duration-300 ${allDiagonalsEntered
                   ? 'border-emerald-500 bg-emerald-50'
                   : showValidationFeedback && !allDiagonalsEntered
-                    ? 'border-red-600 bg-red-100 ring-4 ring-red-200'
-                    : 'border-red-500 bg-red-50'
+                    ? 'border-red-600 bg-red-100 ring-4 ring-red-300 shadow-xl'
+                    : 'border-red-500 bg-red-50 shadow-md'
                   }`}>
                 <div className="mb-4">
                   <h4 className={`text-lg font-semibold mb-2 ${allDiagonalsEntered ? 'text-emerald-700' : 'text-red-800'
@@ -679,13 +694,20 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       : 'Complete Your Order - Add Diagonal Measurements'
                     }
                   </h4>
-                  <p className={`text-sm ${allDiagonalsEntered ? 'text-emerald-700' : 'text-red-700'
+                  <p className={`text-sm font-medium ${allDiagonalsEntered ? 'text-emerald-700' : 'text-red-700'
                     }`}>
                     {allDiagonalsEntered
                       ? 'All diagonal measurements have been entered. You can modify them below if needed.'
-                      : 'REQUIRED: To complete your order, we need diagonal measurements for manufacturing accuracy. Add them below and they\'ll be automatically saved to your configuration.'
+                      : 'REQUIRED: To complete your order, we need diagonal measurements for manufacturing accuracy. Enter all measurements below to proceed.'
                     }
                   </p>
+                  {!allDiagonalsEntered && showValidationFeedback && (
+                    <div className="mt-3 p-3 bg-red-200 border border-red-400 rounded-lg">
+                      <p className="text-sm text-red-900 font-semibold">
+                        ⚠ Please fill in all diagonal measurements above before adding to cart.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -739,9 +761,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           className={`p-6 mt-6 border-2 transition-all duration-300 ${allAcknowledgmentsChecked
             ? 'bg-emerald-50 border-emerald-200'
             : showValidationFeedback && !allAcknowledgmentsChecked
-              ? 'bg-red-100 border-red-600 ring-4 ring-red-200'
+              ? 'bg-red-100 border-red-600 ring-4 ring-red-300 shadow-xl'
               : !allAcknowledgmentsChecked
-                ? '!border-red-500 bg-red-50 hover:!border-red-600'
+                ? '!border-red-500 bg-red-50 hover:!border-red-600 shadow-md'
                 : 'bg-slate-50 border-slate-200'
             } `}>
           <h4 className="text-lg font-semibold text-slate-900 mb-4">
@@ -890,7 +912,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
         {/* Action Buttons - Full width on desktop */}
         <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4" ref={addToCartButtonRef}>
             {showBackButton && (
               <Button
                 variant="outline"
@@ -904,16 +926,20 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
             <Button
               size={isMobile ? "lg" : "md"}
-              className={`flex-1 transition-all duration-200 ${!canAddToCart || loading
+              className={`flex-1 transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
+                ? 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-700'
+                : loading
                 ? 'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400 text-gray-600'
                 : ''
                 }`}
               onClick={() => {
-                setLoading(true);
-                setShowLoadingOverlay(true)
-                handleAttemptAddToCart()
+                if (canAddToCart) {
+                  setLoading(true);
+                  setShowLoadingOverlay(true);
+                }
+                handleAttemptAddToCart();
               }}
-              disabled={!canAddToCart || loading}
+              disabled={loading}
             >
               {loading ? (
                 'ADDING TO CART...'
