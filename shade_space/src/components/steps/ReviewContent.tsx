@@ -934,9 +934,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             <Button
               size={isMobile ? "lg" : "md"}
               className={`flex-1 transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
-                ? 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-700'
+                ? '!bg-gray-400 hover:!bg-gray-400 !text-gray-700 !border-gray-500 !opacity-60 !cursor-not-allowed'
                 : loading
-                ? 'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400 text-gray-600'
+                ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'
                 : ''
                 }`}
               onClick={() => {
@@ -946,7 +946,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 }
                 handleAttemptAddToCart();
               }}
-              disabled={loading}
+              disabled={!canAddToCart || loading}
             >
               {loading ? (
                 'ADDING TO CART...'
