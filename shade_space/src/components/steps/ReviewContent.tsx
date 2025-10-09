@@ -683,29 +683,36 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 className={`p-6 border-2 transition-all duration-300 ${allDiagonalsEntered
                   ? 'border-emerald-500 bg-emerald-50'
                   : showValidationFeedback && !allDiagonalsEntered
-                    ? 'border-red-600 bg-red-100 ring-4 ring-red-300 shadow-xl'
-                    : 'border-red-500 bg-red-50 shadow-md'
+                    ? 'border-blue-600 bg-blue-50 ring-4 ring-blue-300 shadow-xl'
+                    : 'border-blue-400 bg-blue-50/50 shadow-md'
                   }`}>
                 <div className="mb-4">
-                  <h4 className={`text-lg font-semibold mb-2 ${allDiagonalsEntered ? 'text-emerald-700' : 'text-red-800'
+                  <h4 className={`text-lg font-semibold mb-2 ${allDiagonalsEntered ? 'text-emerald-700' : 'text-blue-900'
                     }`}>
                     {allDiagonalsEntered
                       ? 'Diagonal Measurements Complete ✓'
-                      : 'Complete Your Order - Add Diagonal Measurements'
+                      : 'Almost There! Add Diagonal Measurements to Complete Order'
                     }
                   </h4>
-                  <p className={`text-sm font-medium ${allDiagonalsEntered ? 'text-emerald-700' : 'text-red-700'
+                  <p className={`text-sm font-medium ${allDiagonalsEntered ? 'text-emerald-700' : 'text-blue-800'
                     }`}>
                     {allDiagonalsEntered
                       ? 'All diagonal measurements have been entered. You can modify them below if needed.'
-                      : 'REQUIRED: To complete your order, we need diagonal measurements for manufacturing accuracy. Enter all measurements below to proceed.'
+                      : 'To ensure manufacturing accuracy, we need diagonal measurements. Enter all measurements below to unlock checkout.'
                     }
                   </p>
-                  {!allDiagonalsEntered && showValidationFeedback && (
-                    <div className="mt-3 p-3 bg-red-200 border border-red-400 rounded-lg">
-                      <p className="text-sm text-red-900 font-semibold">
-                        ⚠ Please fill in all diagonal measurements above before adding to cart.
-                      </p>
+                  {!allDiagonalsEntered && (
+                    <div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-blue-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-blue-900">
+                          {showValidationFeedback
+                            ? '⚠ Please fill in all diagonal measurements above before adding to cart.'
+                            : 'Why diagonals? They help our team create your exact shape with precision. This final step ensures your shade sail fits perfectly.'}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -730,7 +737,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           step={config.unit === 'imperial' ? '1' : '10'}
                           className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
                             ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
-                            : 'border-red-300 bg-white'
+                            : 'border-blue-300 bg-blue-50/30 focus:border-blue-500 focus:ring-blue-500'
                             }`}
                           isSuccess={diagonal.hasValue}
                         />

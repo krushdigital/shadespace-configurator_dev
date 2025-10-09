@@ -297,27 +297,55 @@ export function DimensionsContent({
               {config.corners >= 4 && config.corners <= 6 && (
                 <>
                 <div className="pt-3 border-t border-[#307C31]/30">
+                  {/* Informational Banner */}
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm text-blue-900 font-medium mb-1">
+                          Get Your Price Now, Add Diagonals Later
+                        </p>
+                        <p className="text-xs text-blue-800">
+                          Diagonal measurements are <strong>optional at this step</strong>. You can continue to see your pricing immediately. They'll be required at checkout for manufacturing accuracy.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-2 mb-2">
                     <div className="flex flex-col">
                       <h5 className="text-sm md:text-base font-medium text-[#01312D]">
                         Diagonal Measurements
                       </h5>
-                      <span className="text-xs bg-red-100 text-[#c53030] px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
-                        Required for Order
+                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
+                        Optional Now • Required at Checkout
                       </span>
                     </div>
                     <Tooltip
                       content={
                         <div>
                           <p className="text-sm text-[#01312D] font-medium mb-2">
-                            Why are diagonals needed?
+                            Two-Step Process:
                           </p>
-                          <p className="text-sm text-[#01312D]/70 mb-3">
-                            Diagonal measurements ensure our manufacturing team can create the exact shape you need. While not required for pricing, they're essential for production accuracy.
-                          </p>
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-start gap-2">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">1</span>
+                              <p className="text-sm text-[#01312D]/70">
+                                Enter edge measurements → Get instant pricing
+                              </p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">2</span>
+                              <p className="text-sm text-[#01312D]/70">
+                                Add diagonals at checkout → Complete your order
+                              </p>
+                            </div>
+                          </div>
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-2">
                             <p className="text-sm text-[#01312D]">
-                              <strong>Tip:</strong> You can proceed to see pricing, but diagonals will be required before placing your order.
+                              <strong>Why are diagonals needed?</strong> They ensure our manufacturing team can create your exact shape with precision accuracy.
                             </p>
                           </div>
                         </div>
@@ -412,6 +440,35 @@ export function DimensionsContent({
                       );
                     })}
                   </div>
+
+                  {/* Success Message when all diagonals are entered */}
+                  {config.corners >= 4 && (() => {
+                    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+                    const allDiagonalsEntered = diagonalKeys.every(key =>
+                      config.measurements[key] && config.measurements[key] > 0
+                    );
+
+                    if (allDiagonalsEntered) {
+                      return (
+                        <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="flex-1">
+                              <p className="text-sm text-emerald-900 font-medium">
+                                Perfect! All measurements complete
+                              </p>
+                              <p className="text-xs text-emerald-800 mt-0.5">
+                                You've entered all diagonals and can proceed directly to checkout after reviewing your order.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 </>
               )}
