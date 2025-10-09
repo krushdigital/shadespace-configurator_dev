@@ -247,20 +247,32 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       // Auto-scroll to the first incomplete section after UI updates
       setTimeout(() => {
         requestAnimationFrame(() => {
-          if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-            if (diagonalCardRef.current) {
-              const targetY = diagonalCardRef.current.getBoundingClientRect().top + window.scrollY - 20;
-              window.scrollTo({ top: targetY, behavior: 'smooth' });
-            }
-          } else if (!allAcknowledgmentsChecked) {
-            if (acknowledgementsCardRef.current) {
+          let targetElement: HTMLElement | null = null;
 
-              const targetY = acknowledgementsCardRef.current.getBoundingClientRect().top + window.scrollY - 20;
-              window.scrollTo({ top: targetY, behavior: 'smooth' });
-            }
+          if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
+            targetElement = diagonalCardRef.current;
+          } else if (!allAcknowledgmentsChecked) {
+            targetElement = acknowledgementsCardRef.current;
+          }
+
+          if (targetElement) {
+            const isMobileView = window.innerWidth < 1024;
+            const headerOffset = isMobileView ? 120 : 140;
+            const elementPosition = targetElement.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+            window.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
+
+            // Add pulsate animation after scroll
+            setTimeout(() => {
+              targetElement?.classList.add('pulse-error');
+              setTimeout(() => {
+                targetElement?.classList.remove('pulse-error');
+              }, 2000);
+            }, 400);
           }
         });
-      }, 350);
+      }, 100);
     } else {
       setShowValidationFeedback(false);
 
@@ -694,13 +706,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           placeholder={config.unit === 'imperial' ? '240' : '6000'}
                           min="100"
                           step={config.unit === 'imperial' ? '1' : '10'}
-                          className={`pr-12 ${diagonal.hasValue
+                          className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
                             ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
                             : 'border-red-300 bg-white'
                             }`}
                           isSuccess={diagonal.hasValue}
                         />
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-500">
+                        <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-slate-500 transition-all duration-200`}>
                           {config.unit === 'metric' ? 'mm' : 'in'}
                         </div>
                       </div>

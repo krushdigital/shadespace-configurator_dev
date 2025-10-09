@@ -342,40 +342,45 @@ export function DimensionsContent({
                           <label className="block text-xs md:text-sm font-medium text-[#01312D] mb-1">
                             {label}
                           </label>
-                          <Input
-                            type="number"
-                           value={config.measurements[key] 
-                             ? (config.unit === 'imperial' 
-                               ? String(Math.round(convertMmToUnit(config.measurements[key], config.unit) * 100) / 100)
-                               : Math.round(convertMmToUnit(config.measurements[key], config.unit)).toString()
-                             )
-                             : ''}
-                            onChange={(e) => {
-                              if (e.target.value === '') {
-                                const newMeasurements = { ...config.measurements };
-                                delete newMeasurements[key];
-                                updateConfig({ measurements: newMeasurements });
-                                if (setValidationErrors) {
-                                  const newErrors = { ...validationErrors };
-                                  delete newErrors[key];
-                                  setValidationErrors(newErrors);
+                          <div className="relative">
+                            <Input
+                              type="number"
+                             value={config.measurements[key]
+                               ? (config.unit === 'imperial'
+                                 ? String(Math.round(convertMmToUnit(config.measurements[key], config.unit) * 100) / 100)
+                                 : Math.round(convertMmToUnit(config.measurements[key], config.unit)).toString()
+                               )
+                               : ''}
+                              onChange={(e) => {
+                                if (e.target.value === '') {
+                                  const newMeasurements = { ...config.measurements };
+                                  delete newMeasurements[key];
+                                  updateConfig({ measurements: newMeasurements });
+                                  if (setValidationErrors) {
+                                    const newErrors = { ...validationErrors };
+                                    delete newErrors[key];
+                                    setValidationErrors(newErrors);
+                                  }
+                                } else {
+                                  updateMeasurement(key, e.target.value);
                                 }
-                              } else {
-                                updateMeasurement(key, e.target.value);
-                              }
-                            }}
-                            onFocus={() => setHighlightedMeasurement?.(key)}
-                            onBlur={() => setHighlightedMeasurement?.(null)}
-                            placeholder={config.unit === 'imperial' ? '240' : '6000'}
-                            min="100"
-                           step={config.unit === 'imperial' ? '0.1' : '10'}
-                           autoComplete="off"
-                            className="text-base pr-12"
-                            error={validationErrors[key]}
-                            errorKey={key}
-                            isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
-                            isSuggestedTypo={!!typoSuggestions[key]}
-                          />
+                              }}
+                              onFocus={() => setHighlightedMeasurement?.(key)}
+                              onBlur={() => setHighlightedMeasurement?.(null)}
+                              placeholder={config.unit === 'imperial' ? '240' : '6000'}
+                              min="100"
+                             step={config.unit === 'imperial' ? '0.1' : '10'}
+                             autoComplete="off"
+                              className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                              error={validationErrors[key]}
+                              errorKey={key}
+                              isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
+                              isSuggestedTypo={!!typoSuggestions[key]}
+                            />
+                            <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
+                              {config.unit === 'metric' ? 'mm' : 'in'}
+                            </div>
+                          </div>
                           
                           {/* Typo Warning */}
                           {typoSuggestions[key] && (
