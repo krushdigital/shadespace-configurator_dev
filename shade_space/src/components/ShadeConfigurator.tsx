@@ -798,6 +798,42 @@ export function ShadeConfigurator() {
     });
   };
 
+  const scrollToErrorField = (errorKey: string, isTypoSuggestion: boolean = false) => {
+    setTimeout(() => {
+      let targetElement: Element | null = null;
+
+      if (isTypoSuggestion) {
+        targetElement = document.querySelector('.bg-amber-50') ||
+          document.querySelector('.border-amber-500');
+      } else {
+        targetElement = document.querySelector(`[data-error="${errorKey}"]`) ||
+          document.querySelector('input.border-red-500') ||
+          document.querySelector('.border-red-500');
+      }
+
+      if (targetElement) {
+        const isMobileView = window.innerWidth < 1024;
+        const headerOffset = isMobileView ? 100 : 120;
+        const viewportOffset = window.innerHeight * 0.2;
+
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset - viewportOffset;
+
+        window.scrollTo({
+          top: Math.max(0, offsetPosition),
+          behavior: 'smooth'
+        });
+
+        setTimeout(() => {
+          targetElement?.classList.add('pulse-error');
+          setTimeout(() => {
+            targetElement?.classList.remove('pulse-error');
+          }, 2000);
+        }, 400);
+      }
+    }, 100);
+  };
+
   const nextStep = () => {
     // Clear previous validation errors and dismissed typo tracking
     setValidationErrors({});
@@ -933,36 +969,14 @@ export function ShadeConfigurator() {
     if (Object.keys(errors).length > 0 || hasUnacknowledgedTypos) {
       setValidationErrors(errors);
 
-      // Scroll to the first error field after a short delay to allow UI updates
-      setTimeout(() => {
-        // Prioritize scrolling to typo suggestions first
-        if (hasUnacknowledgedTypos) {
-          const typoElement = document.querySelector('.bg-amber-50') ||
-            document.querySelector('.border-amber-500');
-          if (typoElement) {
-            typoElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'nearest'
-            });
-          }
-        } else if (Object.keys(errors).length > 0) {
-          const firstErrorKey = Object.keys(errors)[0];
-          if (firstErrorKey) {
-            // Try to find and scroll to the first error element
-            const errorElement = document.querySelector(`[data-error="${firstErrorKey}"]`) ||
-              document.querySelector('.border-red-500') ||
-              document.querySelector('.ring-red-500');
-            if (errorElement) {
-              errorElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest'
-              });
-            }
-          }
-        }
-      }, 100);
+      // Prioritize scrolling to typo suggestions first, then other errors
+      if (hasUnacknowledgedTypos) {
+        const firstTypoKey = unacknowledgedTypos[0];
+        scrollToErrorField(firstTypoKey, true);
+      } else if (Object.keys(errors).length > 0) {
+        const firstErrorKey = Object.keys(errors)[0];
+        scrollToErrorField(firstErrorKey, false);
+      }
 
       return; // Don't proceed to next step
     }

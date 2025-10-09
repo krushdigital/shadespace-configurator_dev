@@ -8,6 +8,7 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
+import { AlertCircle } from 'lucide-react';
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -229,8 +230,8 @@ export function DimensionsContent({
                    <div className="relative">
                      <Input
                        type="number"
-                      value={config.measurements[edgeKey] 
-                        ? (config.unit === 'imperial' 
+                      value={config.measurements[edgeKey]
+                        ? (config.unit === 'imperial'
                           ? String(Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit) * 100) / 100)
                           : Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit)).toString()
                         )
@@ -251,13 +252,13 @@ export function DimensionsContent({
                        min="100"
                       step={config.unit === 'imperial' ? '0.1' : '10'}
                       autoComplete="off"
-                       className="text-base pr-12"
+                       className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
                        isSuccess={isSuccess}
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
                       errorKey={edgeKey}
                      />
-                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70">
+                     <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
                      </div>
                    </div>
@@ -417,8 +418,8 @@ export function DimensionsContent({
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={onPrev}
               className="sm:w-auto"
@@ -426,12 +427,10 @@ export function DimensionsContent({
               Back
             </Button>
           )}
-          <Button
-            onClick={onNext}
-            size="md"
-            className={`flex-1 ${(() => {
+          <div className="flex-1 flex flex-col gap-2">
+            {(() => {
               if (config.corners === 0) {
-                return 'opacity-50 cursor-not-allowed';
+                return null;
               }
 
               let edgeCount = 0;
@@ -443,13 +442,39 @@ export function DimensionsContent({
                   edgeCount++;
                 }
               }
+
               const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
+              const missingCount = config.corners - edgeCount;
               const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
-              return shouldDisable ? 'opacity-50 cursor-not-allowed' : '';
-            })()}`}
-          >
-            Continue to {nextStepTitle}
-          </Button>
+
+              return (
+                <>
+                  {shouldDisable && (
+                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                      {hasUnacknowledgedTypos ? (
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-500" />
+                          <span>Please review and address the measurement warnings above</span>
+                        </span>
+                      ) : missingCount > 0 ? (
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-slate-500" />
+                          <span>{missingCount} edge measurement{missingCount !== 1 ? 's' : ''} required to continue</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+                  <Button
+                    onClick={onNext}
+                    size="md"
+                    className={shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}
+                  >
+                    Continue to {nextStepTitle}
+                  </Button>
+                </>
+              );
+            })()}
+          </div>
         </div>
       </div>
     </div>
