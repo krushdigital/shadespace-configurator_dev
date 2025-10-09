@@ -143,8 +143,10 @@ export function FixingPointsContent({
 
     if (!hasCorrectLength) return false;
 
-    // Check if all heights are greater than 0
-    const allHeightsValid = config.fixingHeights.every(height => height > 0);
+    // Check if all heights are valid (not undefined, not null, and greater than 0)
+    const allHeightsValid = config.fixingHeights.every(height =>
+      height !== undefined && height !== null && height > 0
+    );
 
     // Check if all types are selected (not empty string)
     const allTypesValid = config.fixingTypes?.every(type => type === 'post' || type === 'building') || false;
@@ -235,24 +237,24 @@ export function FixingPointsContent({
                   </div>
                   <div className="flex items-center gap-2">
                     {(() => {
-                      const hasValidValue = config.fixingHeights[index] && config.fixingHeights[index] > 0;
+                      const currentHeight = config.fixingHeights[index];
+                      const hasValidValue = currentHeight !== undefined && currentHeight !== null && currentHeight > 0;
                       const hasError = validationErrors[`height_${index}`];
                       const isSuccess = hasValidValue && !hasError;
-                      
+
                       return (
                     <Input
                       type="number"
-                     value={config.fixingHeights[index] !== undefined && config.fixingHeights[index] > 0
-                       ? (config.unit === 'imperial' 
-                         ? String(Math.round(convertMmToUnit(config.fixingHeights[index], config.unit) * 100) / 100)
-                         : Math.round(convertMmToUnit(config.fixingHeights[index], config.unit)).toString()
+                     value={hasValidValue
+                       ? (config.unit === 'imperial'
+                         ? String(Math.round(convertMmToUnit(currentHeight, config.unit) * 100) / 100)
+                         : Math.round(convertMmToUnit(currentHeight, config.unit)).toString()
                        )
                        : ''}
                       onChange={(e) => {
                         if (e.target.value === '') {
-                          // Allow complete clearing
                           const newHeights = [...config.fixingHeights];
-                          newHeights[index] = 0;
+                          newHeights[index] = undefined;
                           updateConfig({ fixingHeights: newHeights });
 
                           if (setValidationErrors && setTypoSuggestions) {
@@ -493,7 +495,7 @@ export function FixingPointsContent({
               const complete = isStepComplete();
               const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
 
-              const missingHeights = config.fixingHeights.filter(h => h <= 0).length;
+              const missingHeights = config.fixingHeights.filter(h => h === undefined || h === null || h <= 0).length;
               const missingTypes = (config.fixingTypes?.filter(t => t !== 'post' && t !== 'building') || []).length;
               const missingOrientations = (config.eyeOrientations?.filter(o => o !== 'horizontal' && o !== 'vertical') || []).length;
 

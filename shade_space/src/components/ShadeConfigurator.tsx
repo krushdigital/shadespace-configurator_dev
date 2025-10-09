@@ -765,8 +765,10 @@ export function ShadeConfigurator() {
         if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return false;
         if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) return false;
 
-        // Check if all heights are greater than 0
-        const allHeightsValid = config.fixingHeights.every(height => height > 0);
+        // Check if all heights are valid (not undefined, not null, and greater than 0)
+        const allHeightsValid = config.fixingHeights.every(height =>
+          height !== undefined && height !== null && height > 0
+        );
 
         // Check if all types are selected
         const allTypesValid = config.fixingTypes.every(type => type === 'post' || type === 'building');
@@ -932,7 +934,7 @@ export function ShadeConfigurator() {
           errors.fixingHeights = 'All anchor point heights are required';
         } else {
           config.fixingHeights.forEach((height, index) => {
-            if (height <= 0) {
+            if (height === undefined || height === null || height <= 0) {
               errors[`height_${index}`] = 'Height measurement required';
             }
           });
@@ -1066,7 +1068,7 @@ export function ShadeConfigurator() {
         if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return 'Not configured';
         if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) return 'Not configured';
 
-        const validHeights = config.fixingHeights.filter(h => h > 0).length;
+        const validHeights = config.fixingHeights.filter(h => h !== undefined && h !== null && h > 0).length;
         const validTypes = config.fixingTypes.filter(t => t === 'post' || t === 'building').length;
         const validOrientations = config.eyeOrientations.filter(o => o === 'horizontal' || o === 'vertical').length;
 
