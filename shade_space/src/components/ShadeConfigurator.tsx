@@ -933,35 +933,10 @@ export function ShadeConfigurator() {
     if (Object.keys(errors).length > 0 || hasUnacknowledgedTypos) {
       setValidationErrors(errors);
 
-      // Scroll to the first error field after a short delay to allow UI updates
+      // Scroll to the step first, then to the error field
       setTimeout(() => {
-        // Prioritize scrolling to typo suggestions first
-        if (hasUnacknowledgedTypos) {
-          const typoElement = document.querySelector('.bg-amber-50') ||
-            document.querySelector('.border-amber-500');
-          if (typoElement) {
-            typoElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'nearest'
-            });
-          }
-        } else if (Object.keys(errors).length > 0) {
-          const firstErrorKey = Object.keys(errors)[0];
-          if (firstErrorKey) {
-            // Try to find and scroll to the first error element
-            const errorElement = document.querySelector(`[data-error="${firstErrorKey}"]`) ||
-              document.querySelector('.border-red-500') ||
-              document.querySelector('.ring-red-500');
-            if (errorElement) {
-              errorElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest'
-              });
-            }
-          }
-        }
+        // First, scroll to the top of the current step (consistent with step navigation)
+        smoothScrollToStep(openStep);
       }, 100);
 
       return; // Don't proceed to next step
