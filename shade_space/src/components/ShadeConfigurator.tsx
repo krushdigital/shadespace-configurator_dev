@@ -782,6 +782,22 @@ export function ShadeConfigurator() {
     }
   };
 
+  const smoothScrollToStep = (stepNumber: number) => {
+    const stepElement = document.getElementById(`step-${stepNumber + 1}`);
+    if (!stepElement) return;
+
+    const isMobileView = window.innerWidth < 1024;
+    const headerOffset = isMobileView ? 120 : 140;
+
+    const elementPosition = stepElement.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+  };
+
   const nextStep = () => {
     // Clear previous validation errors and dismissed typo tracking
     setValidationErrors({});
@@ -961,20 +977,8 @@ export function ShadeConfigurator() {
     updateConfig({ points: centeredPoints });
     setOpenStep(nextStepIndex);
 
-    // Scroll to the top of the next step after accordion animation completes
     setTimeout(() => {
-      const nextStepElement = document.getElementById(`step-${nextStepIndex + 1}`);
-      if (nextStepElement) {
-        nextStepElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-          inline: 'nearest'
-        });
-        // Offset to account for fixed website header (approx 80px) plus buffer
-        setTimeout(() => {
-          window.scrollBy(0, -100);
-        }, 300);
-      }
+      smoothScrollToStep(nextStepIndex);
     }, 350);
   };
 
@@ -988,20 +992,8 @@ export function ShadeConfigurator() {
     updateConfig({ points: centeredPoints });
     setOpenStep(prevStepIndex);
 
-    // Scroll to the top of the previous step after accordion animation completes
     setTimeout(() => {
-      const prevStepElement = document.getElementById(`step-${prevStepIndex + 1}`);
-      if (prevStepElement) {
-        prevStepElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-          inline: 'nearest'
-        });
-        // Offset to account for fixed website header (approx 80px) plus buffer
-        setTimeout(() => {
-          window.scrollBy(0, -100);
-        }, 300);
-      }
+      smoothScrollToStep(prevStepIndex);
     }, 350);
   };
 
@@ -1014,21 +1006,9 @@ export function ShadeConfigurator() {
       const newOpenStep = openStep === stepIndex ? -1 : stepIndex;
       setOpenStep(newOpenStep);
 
-      // Scroll to the step being opened after accordion animation
       if (newOpenStep !== -1) {
         setTimeout(() => {
-          const stepElement = document.getElementById(`step-${newOpenStep + 1}`);
-          if (stepElement) {
-            stepElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start',
-              inline: 'nearest'
-            });
-            // Offset to account for fixed website header (approx 80px) plus buffer
-            setTimeout(() => {
-              window.scrollBy(0, -100);
-            }, 300);
-          }
+          smoothScrollToStep(newOpenStep);
         }, 350);
       }
     }
