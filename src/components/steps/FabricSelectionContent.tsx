@@ -5,7 +5,7 @@ import { FABRICS } from '../../data/fabrics';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
-import { Info } from 'lucide-react';
+import { Info, AlertCircle } from 'lucide-react';
 
 interface FabricSelectionContentProps {
   config: ConfiguratorState;
@@ -317,8 +317,8 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
       <div className="flex flex-col gap-4 pt-4 border-t border-[#307C31]/30">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && onPrev && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={onPrev}
               className="sm:w-auto"
@@ -326,13 +326,35 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
               Back
             </Button>
           )}
-          <Button 
-            onClick={onNext} 
-            size="md"
-            className={`flex-1 ${!config.fabricType || !config.fabricColor ? 'opacity-50' : ''}`}
-          >
-            Continue to {nextStepTitle}
-          </Button>
+          <div className="flex-1 flex flex-col gap-2">
+            {(() => {
+              const incomplete = !config.fabricType || !config.fabricColor;
+              const missingItems = [];
+
+              if (!config.fabricType) missingItems.push('fabric type');
+              if (!config.fabricColor) missingItems.push('color');
+
+              return (
+                <>
+                  {incomplete && (
+                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                      <span className="flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-slate-500" />
+                        <span>Please select {missingItems.join(' and ')} to continue</span>
+                      </span>
+                    </div>
+                  )}
+                  <Button
+                    onClick={onNext}
+                    size="md"
+                    className={incomplete ? 'opacity-50 cursor-not-allowed' : ''}
+                  >
+                    Continue to {nextStepTitle}
+                  </Button>
+                </>
+              );
+            })()}
+          </div>
         </div>
       </div>
     </div>

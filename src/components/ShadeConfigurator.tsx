@@ -262,7 +262,7 @@ export function ShadeConfigurator() {
     }
   };
 
-  const handleEmailSummary = async () => {
+const handleEmailSummary = async () => {
     try {
       if (!showEmailInput) {
         setShowEmailInput(true);
@@ -549,7 +549,7 @@ export function ShadeConfigurator() {
   }
 
 
-  const handleAddToCart = async (orderData: OrderData): Promise<void> => {
+const handleAddToCart = async (orderData: OrderData): Promise<void> => {
     console.log('Product being created. Add to cart');
     setShowLoadingOverlay(true);
     setLoadingStep({ text: 'Starting order process...', progress: 10 });
@@ -711,6 +711,7 @@ export function ShadeConfigurator() {
     }
   };
 
+
   // Auto-center shape when moving between steps
   const centerShape = (points: Point[]): Point[] => {
     if (points.length === 0) return points;
@@ -771,8 +772,10 @@ export function ShadeConfigurator() {
         if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return false;
         if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) return false;
 
-        // Check if all heights are greater than 0
-        const allHeightsValid = config.fixingHeights.every(height => height > 0);
+        // Check if all heights are valid (not undefined, not null, and greater than 0)
+        const allHeightsValid = config.fixingHeights.every(height =>
+          height !== undefined && height !== null && height > 0
+        );
 
         // Check if all types are selected
         const allTypesValid = config.fixingTypes.every(type => type === 'post' || type === 'building');
@@ -786,6 +789,58 @@ export function ShadeConfigurator() {
       default:
         return true;
     }
+  };
+
+  const smoothScrollToStep = (stepNumber: number) => {
+    const stepElement = document.getElementById(`step-${stepNumber + 1}`);
+    if (!stepElement) return;
+
+    const isMobileView = window.innerWidth < 1024;
+    const headerOffset = isMobileView ? 120 : 140;
+
+    const elementPosition = stepElement.getBoundingClientRect().top;
+    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+    window.scrollTo({
+      top: offsetPosition,
+      behavior: 'smooth'
+    });
+  };
+
+  const scrollToErrorField = (errorKey: string, isTypoSuggestion: boolean = false) => {
+    setTimeout(() => {
+      let targetElement: Element | null = null;
+
+      if (isTypoSuggestion) {
+        targetElement = document.querySelector('.bg-amber-50') ||
+          document.querySelector('.border-amber-500');
+      } else {
+        targetElement = document.querySelector(`[data-error="${errorKey}"]`) ||
+          document.querySelector('input.border-red-500') ||
+          document.querySelector('.border-red-500');
+      }
+
+      if (targetElement) {
+        const isMobileView = window.innerWidth < 1024;
+        const headerOffset = isMobileView ? 100 : 120;
+        const viewportOffset = window.innerHeight * 0.2;
+
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset - viewportOffset;
+
+        window.scrollTo({
+          top: Math.max(0, offsetPosition),
+          behavior: 'smooth'
+        });
+
+        setTimeout(() => {
+          targetElement?.classList.add('pulse-error');
+          setTimeout(() => {
+            targetElement?.classList.remove('pulse-error');
+          }, 2000);
+        }, 400);
+      }
+    }, 100);
   };
 
   const nextStep = () => {
@@ -886,7 +941,7 @@ export function ShadeConfigurator() {
           errors.fixingHeights = 'All anchor point heights are required';
         } else {
           config.fixingHeights.forEach((height, index) => {
-            if (height <= 0) {
+            if (height === undefined || height === null || height <= 0) {
               errors[`height_${index}`] = 'Height measurement required';
             }
           });
@@ -923,36 +978,14 @@ export function ShadeConfigurator() {
     if (Object.keys(errors).length > 0 || hasUnacknowledgedTypos) {
       setValidationErrors(errors);
 
-      // Scroll to the first error field after a short delay to allow UI updates
-      setTimeout(() => {
-        // Prioritize scrolling to typo suggestions first
-        if (hasUnacknowledgedTypos) {
-          const typoElement = document.querySelector('.bg-amber-50') ||
-            document.querySelector('.border-amber-500');
-          if (typoElement) {
-            typoElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'nearest'
-            });
-          }
-        } else if (Object.keys(errors).length > 0) {
-          const firstErrorKey = Object.keys(errors)[0];
-          if (firstErrorKey) {
-            // Try to find and scroll to the first error element
-            const errorElement = document.querySelector(`[data-error="${firstErrorKey}"]`) ||
-              document.querySelector('.border-red-500') ||
-              document.querySelector('.ring-red-500');
-            if (errorElement) {
-              errorElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-                inline: 'nearest'
-              });
-            }
-          }
-        }
-      }, 100);
+      // Prioritize scrolling to typo suggestions first, then other errors
+      if (hasUnacknowledgedTypos) {
+        const firstTypoKey = unacknowledgedTypos[0];
+        scrollToErrorField(firstTypoKey, true);
+      } else if (Object.keys(errors).length > 0) {
+        const firstErrorKey = Object.keys(errors)[0];
+        scrollToErrorField(firstErrorKey, false);
+      }
 
       return; // Don't proceed to next step
     }
@@ -967,20 +1000,8 @@ export function ShadeConfigurator() {
     updateConfig({ points: centeredPoints });
     setOpenStep(nextStepIndex);
 
-    // Scroll to the top of the next step after accordion animation completes
     setTimeout(() => {
-      const nextStepElement = document.getElementById(`step-${nextStepIndex + 1}`);
-      if (nextStepElement) {
-        nextStepElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-          inline: 'nearest'
-        });
-        // Offset to account for fixed website header (approx 80px) plus buffer
-        setTimeout(() => {
-          window.scrollBy(0, -100);
-        }, 300);
-      }
+      smoothScrollToStep(nextStepIndex);
     }, 350);
   };
 
@@ -994,20 +1015,8 @@ export function ShadeConfigurator() {
     updateConfig({ points: centeredPoints });
     setOpenStep(prevStepIndex);
 
-    // Scroll to the top of the previous step after accordion animation completes
     setTimeout(() => {
-      const prevStepElement = document.getElementById(`step-${prevStepIndex + 1}`);
-      if (prevStepElement) {
-        prevStepElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'start',
-          inline: 'nearest'
-        });
-        // Offset to account for fixed website header (approx 80px) plus buffer
-        setTimeout(() => {
-          window.scrollBy(0, -100);
-        }, 300);
-      }
+      smoothScrollToStep(prevStepIndex);
     }, 350);
   };
 
@@ -1020,21 +1029,9 @@ export function ShadeConfigurator() {
       const newOpenStep = openStep === stepIndex ? -1 : stepIndex;
       setOpenStep(newOpenStep);
 
-      // Scroll to the step being opened after accordion animation
       if (newOpenStep !== -1) {
         setTimeout(() => {
-          const stepElement = document.getElementById(`step-${newOpenStep + 1}`);
-          if (stepElement) {
-            stepElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start',
-              inline: 'nearest'
-            });
-            // Offset to account for fixed website header (approx 80px) plus buffer
-            setTimeout(() => {
-              window.scrollBy(0, -100);
-            }, 300);
-          }
+          smoothScrollToStep(newOpenStep);
         }, 350);
       }
     }
@@ -1078,7 +1075,7 @@ export function ShadeConfigurator() {
         if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return 'Not configured';
         if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) return 'Not configured';
 
-        const validHeights = config.fixingHeights.filter(h => h > 0).length;
+        const validHeights = config.fixingHeights.filter(h => h !== undefined && h !== null && h > 0).length;
         const validTypes = config.fixingTypes.filter(t => t === 'post' || t === 'building').length;
         const validOrientations = config.eyeOrientations.filter(o => o === 'horizontal' || o === 'vertical').length;
 
@@ -1147,7 +1144,7 @@ export function ShadeConfigurator() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-8 pb-16">
+    <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="mb-4">

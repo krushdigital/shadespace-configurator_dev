@@ -74,16 +74,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
+  const [buttonShake, setButtonShake] = useState(false);
   const diagonalCardRef = useRef<HTMLDivElement>(null);
   const acknowledgementsCardRef = useRef<HTMLDivElement>(null);
+  const addToCartButtonRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
-
-
-
-
 
   console.log({
     config,
@@ -278,25 +276,50 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
   const handleAttemptAddToCart = async () => {
     if (!canAddToCart) {
+      // Immediately trigger validation feedback
       setShowValidationFeedback(true);
 
-      // Auto-scroll to the first incomplete section after UI updates
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-            if (diagonalCardRef.current) {
-              const targetY = diagonalCardRef.current.getBoundingClientRect().top + window.scrollY - 20;
-              window.scrollTo({ top: targetY, behavior: 'smooth' });
-            }
-          } else if (!allAcknowledgmentsChecked) {
-            if (acknowledgementsCardRef.current) {
+      // Shake the button to provide immediate feedback
+      setButtonShake(true);
+      setTimeout(() => setButtonShake(false), 500);
 
-              const targetY = acknowledgementsCardRef.current.getBoundingClientRect().top + window.scrollY - 20;
-              window.scrollTo({ top: targetY, behavior: 'smooth' });
-            }
-          }
-        });
-      }, 350);
+      // Use setTimeout to ensure state updates are processed
+      setTimeout(() => {
+        let targetElement: HTMLElement | null = null;
+
+        // Identify which section needs attention
+        if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
+          targetElement = diagonalCardRef.current;
+        } else if (!allAcknowledgmentsChecked) {
+          targetElement = acknowledgementsCardRef.current;
+        }
+
+        if (targetElement) {
+          // Calculate scroll position
+          const isMobileView = window.innerWidth < 1024;
+          const headerOffset = isMobileView ? 100 : 120;
+          const viewportOffset = window.innerHeight * 0.15;
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
+
+          // Scroll to the incomplete section
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+          });
+
+          // Apply pulse animation after scroll completes
+          setTimeout(() => {
+            targetElement?.classList.add('pulse-error');
+            setTimeout(() => {
+              targetElement?.classList.remove('pulse-error');
+            }, 2400);
+          }, 600);
+        }
+      }, 50);
+
+      // Do not proceed with cart addition
+      return;
     } else {
       setShowValidationFeedback(false);
 
@@ -697,24 +720,38 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 className={`p-6 border-2 transition-all duration-300 ${allDiagonalsEntered
                   ? 'border-emerald-500 bg-emerald-50'
                   : showValidationFeedback && !allDiagonalsEntered
-                    ? 'border-red-600 bg-red-100 ring-4 ring-red-200'
-                    : 'border-red-500 bg-red-50'
+                    ? 'border-blue-600 bg-blue-50 ring-4 ring-blue-300 shadow-xl'
+                    : 'border-blue-400 bg-blue-50/50 shadow-md'
                   }`}>
                 <div className="mb-4">
-                  <h4 className={`text-lg font-semibold mb-2 ${allDiagonalsEntered ? 'text-emerald-700' : 'text-red-800'
+                  <h4 className={`text-lg font-semibold mb-2 ${allDiagonalsEntered ? 'text-emerald-700' : 'text-blue-900'
                     }`}>
                     {allDiagonalsEntered
                       ? 'Diagonal Measurements Complete ✓'
-                      : 'Complete Your Order - Add Diagonal Measurements'
+                      : 'Almost There! Add Diagonal Measurements to Complete Order'
                     }
                   </h4>
-                  <p className={`text-sm ${allDiagonalsEntered ? 'text-emerald-700' : 'text-red-700'
+                  <p className={`text-sm font-medium ${allDiagonalsEntered ? 'text-emerald-700' : 'text-blue-800'
                     }`}>
                     {allDiagonalsEntered
                       ? 'All diagonal measurements have been entered. You can modify them below if needed.'
-                      : 'REQUIRED: To complete your order, we need diagonal measurements for manufacturing accuracy. Add them below and they\'ll be automatically saved to your configuration.'
+                      : 'To ensure manufacturing accuracy, we need diagonal measurements. Enter all measurements below to unlock checkout.'
                     }
                   </p>
+                  {!allDiagonalsEntered && (
+                    <div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-blue-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm text-blue-900">
+                          {showValidationFeedback
+                            ? '⚠ Please fill in all diagonal measurements above before adding to cart.'
+                            : 'Why diagonals? They help our team create your exact shape with precision. This final step ensures your shade sail fits perfectly.'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -735,13 +772,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           placeholder={config.unit === 'imperial' ? '240' : '6000'}
                           min="100"
                           step={config.unit === 'imperial' ? '1' : '10'}
-                          className={`pr-12 ${diagonal.hasValue
+                          className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
                             ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
-                            : 'border-red-300 bg-white'
+                            : 'border-blue-300 bg-blue-50/30 focus:border-blue-500 focus:ring-blue-500'
                             }`}
                           isSuccess={diagonal.hasValue}
                         />
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-500">
+                        <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-slate-500 transition-all duration-200`}>
                           {config.unit === 'metric' ? 'mm' : 'in'}
                         </div>
                       </div>
@@ -768,9 +805,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           className={`p-6 mt-6 border-2 transition-all duration-300 ${allAcknowledgmentsChecked
             ? 'bg-emerald-50 border-emerald-200'
             : showValidationFeedback && !allAcknowledgmentsChecked
-              ? 'bg-red-100 border-red-600 ring-4 ring-red-200'
+              ? 'bg-red-100 border-red-600 ring-4 ring-red-300 shadow-xl'
               : !allAcknowledgmentsChecked
-                ? '!border-red-500 bg-red-50 hover:!border-red-600'
+                ? '!border-red-500 bg-red-50 hover:!border-red-600 shadow-md'
                 : 'bg-slate-50 border-slate-200'
             } `}>
           <h4 className="text-lg font-semibold text-slate-900 mb-4">
@@ -919,7 +956,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
         {/* Action Buttons - Full width on desktop */}
         <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4" ref={addToCartButtonRef}>
             {showBackButton && (
               <Button
                 variant="outline"
@@ -933,16 +970,20 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
             <Button
               size={isMobile ? "lg" : "md"}
-              className={`flex-1 transition-all duration-200 ${!canAddToCart || loading
-                ? 'opacity-50 cursor-not-allowed bg-gray-400 hover:bg-gray-400 text-gray-600'
-                : ''
+              className={`flex-1 transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
+                ? '!bg-[#01312D]/40 hover:!bg-[#01312D]/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
+                : loading
+                  ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'
+                  : ''
                 }`}
               onClick={() => {
-                setLoading(true);
-                setShowLoadingOverlay(true)
-                handleAttemptAddToCart()
+                if (canAddToCart) {
+                  setLoading(true);
+                  setShowLoadingOverlay(true);
+                }
+                handleAttemptAddToCart();
               }}
-              disabled={!canAddToCart || loading}
+              disabled={loading}
             >
               {loading ? (
                 'ADDING TO CART...'

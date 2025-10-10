@@ -46,10 +46,10 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
 
   const handleShapeChange = (corners: number) => {
     const points = generateRegularPoints(corners);
-    const newHeights = Array(corners).fill(0);
+    const newHeights = Array(corners).fill(undefined);
     const newTypes = Array(corners).fill('');
     const newOrientations = Array(corners).fill('');
-    
+
     updateConfig({
       corners,
       points,
