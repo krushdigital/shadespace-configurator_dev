@@ -2,14 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Remove default margins and padding for mobile */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  overflow-x: hidden;
-}
-
 /* Account for fixed website header when scrolling */
 html {
   scroll-padding-top: 100px;

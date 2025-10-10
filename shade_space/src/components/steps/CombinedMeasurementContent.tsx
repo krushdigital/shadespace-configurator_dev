@@ -34,7 +34,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-6">
 
       {/* Unit Selection */}
       <div className="mb-8">

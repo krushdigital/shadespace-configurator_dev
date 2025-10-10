@@ -27,9 +27,9 @@ export function AccordionStep({
   children
 }: AccordionStepProps) {
   return (
-    <div
+    <div 
       id={`step-${stepNumber}`}
-      className={`bg-white border rounded-lg lg:rounded-xl shadow-sm transition-all duration-300 ${
+      className={`bg-white border rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${
       isOpen ? 'border-[#BFF102] shadow-xl ring-2 ring-[#BFF102]/20' : 'border-slate-200 hover:border-[#307C31] hover:shadow-md'
     }`}
     >
@@ -37,32 +37,32 @@ export function AccordionStep({
       <button
         onClick={onToggle}
         disabled={!canOpen}
-        className={`w-full ${isOpen ? 'p-4 lg:p-6' : 'p-3 lg:p-5'} text-left transition-all duration-300 ${
+        className={`w-full ${isOpen ? 'p-6' : 'p-5'} text-left transition-all duration-300 ${
           canOpen ? 'hover:bg-slate-50 cursor-pointer' : 'cursor-not-allowed opacity-60'
         } ${isOpen ? 'bg-gradient-to-r from-[#BFF102]/10 to-white' : ''}`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 lg:gap-4 flex-grow">
+          <div className="flex items-center gap-4 flex-grow">
             {/* Step Number/Check */}
             <div className={`
-              flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 transition-all duration-300 shadow-md flex-shrink-0
-              ${isCompleted
-                ? 'bg-[#307C31] border-[#307C31] text-white'
+              flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-md flex-shrink-0
+              ${isCompleted 
+                ? 'bg-[#307C31] border-[#307C31] text-white' 
                 : isCurrent
                 ? 'bg-[#01312D] border-[#01312D] text-white'
                 : 'bg-white border-[#307C31] text-[#307C31]'
               }
             `}>
               {isCompleted ? (
-                <Check className="w-5 h-5 lg:w-6 lg:h-6" />
+                <Check className="w-6 h-6" />
               ) : (
-                <span className="text-sm lg:text-base font-bold">{stepNumber}</span>
+                <span className="text-base font-bold">{stepNumber}</span>
               )}
             </div>
-
+            
             {/* Title and Subtitle */}
-            <div className="flex flex-col min-w-0">
-              <h3 className={`text-base sm:text-lg lg:text-xl font-bold transition-all duration-200 ${
+            <div className="flex flex-col">
+              <h3 className={`text-lg sm:text-xl font-bold transition-all duration-200 ${
                 isCurrent || isCompleted ? 'text-[#01312D]' : 'text-[#307C31]'
               }`}>
                 {title}
@@ -114,8 +114,8 @@ export function AccordionStep({
       
       {/* Content */}
       <div className={`transition-all duration-300 ease-in-out ${
-        isOpen ? 'opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-      }`}
+        isOpen ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'
+      } ${isOpen ? 'overflow-visible' : 'overflow-hidden'}`}
       style={{ zIndex: isOpen ? 1000 : 'auto' }}
       >
         <div className="border-t border-slate-200">

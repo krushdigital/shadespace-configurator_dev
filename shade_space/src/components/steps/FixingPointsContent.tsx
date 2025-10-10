@@ -160,7 +160,7 @@ export function FixingPointsContent({
   };
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-6">
       {/* General Typo Warning */}
       {validationErrors.typoSuggestions && (
         <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-500 rounded-lg">

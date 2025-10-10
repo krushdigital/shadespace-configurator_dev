@@ -411,7 +411,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-6">
       <div className="space-y-6">
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -654,7 +654,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
 
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
-          <div className="lg:col-span-2 lg:sticky lg:top-24 lg:self-start space-y-6" style={{ maxHeight: 'calc(100vh - 8rem)', overflowY: 'auto' }}>
+          <div className="lg:col-span-2 lg:sticky lg:top-8 lg:self-start space-y-6">
             {/* Shade Sail Preview */}
             <div ref={ref} className="shade-canvas-container">
               <h4 className="text-lg font-semibold text-slate-900 mb-4">

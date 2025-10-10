@@ -26,7 +26,7 @@ export function PriceSummaryDisplay({
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg lg:rounded-xl shadow-lg p-4 lg:p-6">
+    <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-6">
       {calculations.totalPrice > 0 ? (
         <>
           <div className="mb-6">

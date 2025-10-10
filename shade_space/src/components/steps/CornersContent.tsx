@@ -61,7 +61,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
   };
 
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-6">
       <div className="mb-6">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How many fixing points will your shade sail have?

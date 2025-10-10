@@ -1137,9 +1137,9 @@ export function ShadeConfigurator() {
   ];
 
   return (
-    <div className="w-full lg:max-w-6xl lg:mx-auto px-4 lg:px-8 py-4 lg:py-8 pb-8 lg:pb-16">
+    <div className="max-w-6xl mx-auto px-8 py-8 pb-16">
       {/* Header */}
-      <div className="text-center mb-6 lg:mb-8">
+      <div className="text-center mb-8">
         <div className="mb-4">
           <a
             href="https://shadespace.com"
@@ -1159,9 +1159,9 @@ export function ShadeConfigurator() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8 lg:items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Accordion Steps */}
-        <div className={`space-y-2 ${openStep === 4 // Dimensions step
+        <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step
           ? 'lg:col-span-2'
           : openStep >= 5 // Review step
             ? 'lg:col-span-3'
@@ -1239,40 +1239,37 @@ export function ShadeConfigurator() {
 
         {/* Sticky Diagram for Dimensions Step - Desktop Only */}
         {openStep === 4 && !isMobile && (
-          <div className="hidden lg:block lg:col-span-2" style={{ position: 'sticky', top: '6rem', alignSelf: 'flex-start', zIndex: 10 }}>
-            <div style={{ maxHeight: 'calc(100vh - 8rem)', overflowY: 'auto' }}>
-              <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                Interactive Measurement Guide
-              </h4>
+          <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-28 lg:self-start z-10">
+            <h4 className="text-lg font-semibold text-slate-900 mb-4">
+              Interactive Measurement Guide
+            </h4>
 
-              {/* Canvas Tip */}
-              <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
-                <p className="text-sm text-[#01312D]">
-                  <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
-                  Enter measurements in the fields to the right to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
-                </p>
-              </div>
-
-              <ShapeCanvas
-                config={config}
-                updateConfig={updateConfig}
-                readonly={false}
-                snapToGrid={true}
-                highlightedMeasurement={highlightedMeasurement}
-                isMobile={isMobile}
-              />
+            {/* Canvas Tip */}
+            <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
+              <p className="text-sm text-[#01312D]">
+                <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
+                Enter measurements in the fields to the right to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
+              </p>
             </div>
+
+            <ShapeCanvas
+              config={config}
+              updateConfig={updateConfig}
+              readonly={false}
+              snapToGrid={true}
+              highlightedMeasurement={highlightedMeasurement}
+              isMobile={isMobile}
+            />
           </div>
         )}
 
-        {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
+        {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
         {(openStep >= 5) && (
-          <div className="hidden lg:block lg:col-span-1 space-y-4" style={{ position: 'sticky', top: '6rem', alignSelf: 'flex-start', zIndex: 10 }}>
-            <div style={{ maxHeight: 'calc(100vh - 8rem)', overflowY: 'auto' }}>
-              <PriceSummaryDisplay
-                config={config}
-                calculations={calculations}
-              />
+          <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-28 lg:self-start z-10 space-y-4">
+            <PriceSummaryDisplay
+              config={config}
+              calculations={calculations}
+            />
 
             {/* Desktop PDF and Email Buttons */}
             {calculations.totalPrice > 0 && (
@@ -1343,7 +1340,6 @@ export function ShadeConfigurator() {
                 )}
               </div>
             )}
-            </div>
           </div>
         )}
 

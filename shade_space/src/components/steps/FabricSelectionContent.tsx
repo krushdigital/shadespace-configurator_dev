@@ -21,7 +21,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   
   return (
-    <div className="p-4 lg:p-6">
+    <div className="p-6">
       {/* Fabric Type Selection */}
       <div className="mb-8">
         <h4 className="text-lg font-semibold text-[#01312D] mb-4">
