@@ -37,7 +37,7 @@ export function AccordionStep({
       <button
         onClick={onToggle}
         disabled={!canOpen}
-        className={`w-full ${isOpen ? 'p-6' : 'p-5'} text-left transition-all duration-300 ${
+        className={`w-full ${isOpen ? 'p-4 sm:p-5 lg:p-6' : 'p-3 sm:p-4 lg:p-5'} text-left transition-all duration-300 ${
           canOpen ? 'hover:bg-slate-50 cursor-pointer' : 'cursor-not-allowed opacity-60'
         } ${isOpen ? 'bg-gradient-to-r from-[#BFF102]/10 to-white' : ''}`}
       >
