@@ -5,9 +5,10 @@ interface TooltipProps {
   content: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  onOpen?: () => void;
 }
 
-export function Tooltip({ content, children, className = '' }: TooltipProps) {
+export function Tooltip({ content, children, className = '', onOpen }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -56,6 +57,9 @@ export function Tooltip({ content, children, className = '' }: TooltipProps) {
     }
     updatePosition();
     setIsVisible(true);
+    if (onOpen) {
+      onOpen();
+    }
   };
 
   const hideTooltip = () => {
