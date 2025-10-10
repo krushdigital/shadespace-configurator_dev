@@ -33,7 +33,7 @@ const EDGE_OPTIONS = [
 
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: EdgeTypeContentProps) {
   return (
-    <div className="p-6">
+    <div className="p-4 lg:p-6">
       <div className="mb-6">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           Select Edge Reinforcement Type

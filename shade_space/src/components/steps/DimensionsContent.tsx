@@ -147,7 +147,7 @@ export function DimensionsContent({
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
   return (
-    <div className="px-6 pt-6 pb-6">
+    <div className="px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
       {/* Mobile Diagram - Only show on mobile */}
       {isMobile && (
         <div className="mb-6">
