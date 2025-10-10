@@ -147,16 +147,16 @@ export function DimensionsContent({
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
   return (
-    <div className="px-2 pt-3 pb-3 lg:px-6 lg:pt-6 lg:pb-6">
+    <div className="px-4 pt-4 pb-4 lg:px-6 lg:pt-6 lg:pb-6">
       {/* Mobile Diagram - Only show on mobile */}
       {isMobile && (
-        <div className="mb-4">
-          <h4 className="text-base font-semibold text-slate-900 mb-3">
+        <div className="mb-6">
+          <h4 className="text-lg font-semibold text-slate-900 mb-4">
             Interactive Measurement Guide
           </h4>
-
+          
           {/* Canvas Tip */}
-          <div className="p-2 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-3">
+          <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
             <p className="text-sm text-[#01312D]">
               <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape. 
               Enter measurements in the fields below to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
@@ -176,7 +176,7 @@ export function DimensionsContent({
 
       {/* Perimeter Too Large Warning */}
       {validationErrors.perimeterTooLarge && (
-        <div className="mb-4 lg:mb-6 p-2 lg:p-4 bg-red-100 border-2 border-red-500 rounded-lg">
+        <div className="mb-6 p-4 bg-red-100 border-2 border-red-500 rounded-lg">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
               <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,13 +195,13 @@ export function DimensionsContent({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-y-3 lg:gap-y-4">
+      <div className="grid grid-cols-1 gap-y-4">
         {/* Measurement Inputs */}
         <div>
-          <h4 className="text-sm md:text-lg font-semibold text-[#01312D] mt-2 lg:mt-4 mb-2 lg:mb-3">
+          <h4 className="text-base md:text-lg font-semibold text-[#01312D] mt-4 mb-3">
             Precise Measurements ({config.unit === 'metric' ? 'mm' : 'inches'})
           </h4>
-          <Card className={`p-2 md:p-4 ${
+          <Card className={`p-3 md:p-4 ${
             Object.keys(validationErrors).some(key => 
               key !== 'typoSuggestions' && key !== 'perimeterTooLarge' && 
               (key.includes('AB') || key.includes('BC') || key.includes('CD') || key.includes('DA') || 

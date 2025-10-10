@@ -1137,10 +1137,10 @@ export function ShadeConfigurator() {
   ];
 
   return (
-    <div className="w-full lg:max-w-6xl lg:mx-auto px-1 lg:px-8 py-2 lg:py-8 pb-4 lg:pb-16">
+    <div className="w-full lg:max-w-6xl lg:mx-auto px-4 lg:px-8 py-4 lg:py-8 pb-8 lg:pb-16">
       {/* Header */}
-      <div className="text-center mb-3 lg:mb-8">
-        <div className="mb-2">
+      <div className="text-center mb-6 lg:mb-8">
+        <div className="mb-4">
           <a
             href="https://shadespace.com"
             target="_blank"
@@ -1159,9 +1159,9 @@ export function ShadeConfigurator() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-8">
         {/* Accordion Steps */}
-        <div className={`space-y-1.5 min-h-0 ${openStep === 4 // Dimensions step
+        <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step
           ? 'lg:col-span-2'
           : openStep >= 5 // Review step
             ? 'lg:col-span-3'
