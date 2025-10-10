@@ -8,6 +8,7 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
+import { AlertCircle } from 'lucide-react';
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -229,8 +230,8 @@ export function DimensionsContent({
                    <div className="relative">
                      <Input
                        type="number"
-                      value={config.measurements[edgeKey] 
-                        ? (config.unit === 'imperial' 
+                      value={config.measurements[edgeKey]
+                        ? (config.unit === 'imperial'
                           ? String(Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit) * 100) / 100)
                           : Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit)).toString()
                         )
@@ -251,13 +252,13 @@ export function DimensionsContent({
                        min="100"
                       step={config.unit === 'imperial' ? '0.1' : '10'}
                       autoComplete="off"
-                       className="text-base pr-12"
+                       className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
                        isSuccess={isSuccess}
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
                       errorKey={edgeKey}
                      />
-                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70">
+                     <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
                      </div>
                    </div>
@@ -296,27 +297,55 @@ export function DimensionsContent({
               {config.corners >= 4 && config.corners <= 6 && (
                 <>
                 <div className="pt-3 border-t border-[#307C31]/30">
+                  {/* Informational Banner */}
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div className="flex-1">
+                        <p className="text-sm text-blue-900 font-medium mb-1">
+                          Get Your Price Now, Add Diagonals Later
+                        </p>
+                        <p className="text-xs text-blue-800">
+                          Diagonal measurements are <strong>optional at this step</strong>. You can continue to see your pricing immediately. They'll be required at checkout for manufacturing accuracy.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-2 mb-2">
                     <div className="flex flex-col">
                       <h5 className="text-sm md:text-base font-medium text-[#01312D]">
                         Diagonal Measurements
                       </h5>
-                      <span className="text-xs bg-red-100 text-[#c53030] px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
-                        Required for Order
+                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
+                        Optional Now • Required at Checkout
                       </span>
                     </div>
                     <Tooltip
                       content={
                         <div>
                           <p className="text-sm text-[#01312D] font-medium mb-2">
-                            Why are diagonals needed?
+                            Two-Step Process:
                           </p>
-                          <p className="text-sm text-[#01312D]/70 mb-3">
-                            Diagonal measurements ensure our manufacturing team can create the exact shape you need. While not required for pricing, they're essential for production accuracy.
-                          </p>
+                          <div className="space-y-2 mb-3">
+                            <div className="flex items-start gap-2">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">1</span>
+                              <p className="text-sm text-[#01312D]/70">
+                                Enter edge measurements → Get instant pricing
+                              </p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">2</span>
+                              <p className="text-sm text-[#01312D]/70">
+                                Add diagonals at checkout → Complete your order
+                              </p>
+                            </div>
+                          </div>
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-2">
                             <p className="text-sm text-[#01312D]">
-                              <strong>Tip:</strong> You can proceed to see pricing, but diagonals will be required before placing your order.
+                              <strong>Why are diagonals needed?</strong> They ensure our manufacturing team can create your exact shape with precision accuracy.
                             </p>
                           </div>
                         </div>
@@ -341,40 +370,45 @@ export function DimensionsContent({
                           <label className="block text-xs md:text-sm font-medium text-[#01312D] mb-1">
                             {label}
                           </label>
-                          <Input
-                            type="number"
-                           value={config.measurements[key] 
-                             ? (config.unit === 'imperial' 
-                               ? String(Math.round(convertMmToUnit(config.measurements[key], config.unit) * 100) / 100)
-                               : Math.round(convertMmToUnit(config.measurements[key], config.unit)).toString()
-                             )
-                             : ''}
-                            onChange={(e) => {
-                              if (e.target.value === '') {
-                                const newMeasurements = { ...config.measurements };
-                                delete newMeasurements[key];
-                                updateConfig({ measurements: newMeasurements });
-                                if (setValidationErrors) {
-                                  const newErrors = { ...validationErrors };
-                                  delete newErrors[key];
-                                  setValidationErrors(newErrors);
+                          <div className="relative">
+                            <Input
+                              type="number"
+                             value={config.measurements[key]
+                               ? (config.unit === 'imperial'
+                                 ? String(Math.round(convertMmToUnit(config.measurements[key], config.unit) * 100) / 100)
+                                 : Math.round(convertMmToUnit(config.measurements[key], config.unit)).toString()
+                               )
+                               : ''}
+                              onChange={(e) => {
+                                if (e.target.value === '') {
+                                  const newMeasurements = { ...config.measurements };
+                                  delete newMeasurements[key];
+                                  updateConfig({ measurements: newMeasurements });
+                                  if (setValidationErrors) {
+                                    const newErrors = { ...validationErrors };
+                                    delete newErrors[key];
+                                    setValidationErrors(newErrors);
+                                  }
+                                } else {
+                                  updateMeasurement(key, e.target.value);
                                 }
-                              } else {
-                                updateMeasurement(key, e.target.value);
-                              }
-                            }}
-                            onFocus={() => setHighlightedMeasurement?.(key)}
-                            onBlur={() => setHighlightedMeasurement?.(null)}
-                            placeholder={config.unit === 'imperial' ? '240' : '6000'}
-                            min="100"
-                           step={config.unit === 'imperial' ? '0.1' : '10'}
-                           autoComplete="off"
-                            className="text-base pr-12"
-                            error={validationErrors[key]}
-                            errorKey={key}
-                            isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
-                            isSuggestedTypo={!!typoSuggestions[key]}
-                          />
+                              }}
+                              onFocus={() => setHighlightedMeasurement?.(key)}
+                              onBlur={() => setHighlightedMeasurement?.(null)}
+                              placeholder={config.unit === 'imperial' ? '240' : '6000'}
+                              min="100"
+                             step={config.unit === 'imperial' ? '0.1' : '10'}
+                             autoComplete="off"
+                              className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                              error={validationErrors[key]}
+                              errorKey={key}
+                              isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
+                              isSuggestedTypo={!!typoSuggestions[key]}
+                            />
+                            <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
+                              {config.unit === 'metric' ? 'mm' : 'in'}
+                            </div>
+                          </div>
                           
                           {/* Typo Warning */}
                           {typoSuggestions[key] && (
@@ -406,6 +440,35 @@ export function DimensionsContent({
                       );
                     })}
                   </div>
+
+                  {/* Success Message when all diagonals are entered */}
+                  {config.corners >= 4 && (() => {
+                    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+                    const allDiagonalsEntered = diagonalKeys.every(key =>
+                      config.measurements[key] && config.measurements[key] > 0
+                    );
+
+                    if (allDiagonalsEntered) {
+                      return (
+                        <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <svg className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="flex-1">
+                              <p className="text-sm text-emerald-900 font-medium">
+                                Perfect! All measurements complete
+                              </p>
+                              <p className="text-xs text-emerald-800 mt-0.5">
+                                You've entered all diagonals and can proceed directly to checkout after reviewing your order.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
                 </>
               )}
@@ -417,8 +480,8 @@ export function DimensionsContent({
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={onPrev}
               className="sm:w-auto"
@@ -426,12 +489,10 @@ export function DimensionsContent({
               Back
             </Button>
           )}
-          <Button
-            onClick={onNext}
-            size="md"
-            className={`flex-1 ${(() => {
+          <div className="flex-1 flex flex-col gap-2">
+            {(() => {
               if (config.corners === 0) {
-                return 'opacity-50 cursor-not-allowed';
+                return null;
               }
 
               let edgeCount = 0;
@@ -443,13 +504,39 @@ export function DimensionsContent({
                   edgeCount++;
                 }
               }
+
               const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
+              const missingCount = config.corners - edgeCount;
               const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
-              return shouldDisable ? 'opacity-50 cursor-not-allowed' : '';
-            })()}`}
-          >
-            Continue to {nextStepTitle}
-          </Button>
+
+              return (
+                <>
+                  {shouldDisable && (
+                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                      {hasUnacknowledgedTypos ? (
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-500" />
+                          <span>Please review and address the measurement warnings above</span>
+                        </span>
+                      ) : missingCount > 0 ? (
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-slate-500" />
+                          <span>{missingCount} edge measurement{missingCount !== 1 ? 's' : ''} required to continue</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+                  <Button
+                    onClick={onNext}
+                    size="md"
+                    className={shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}
+                  >
+                    Continue to {nextStepTitle}
+                  </Button>
+                </>
+              );
+            })()}
+          </div>
         </div>
       </div>
     </div>

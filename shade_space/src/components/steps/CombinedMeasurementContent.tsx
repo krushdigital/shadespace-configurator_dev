@@ -123,8 +123,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                         <div>
                           <div className="space-y-4">
                             <div>
-                              <h4 className="font-bold text-slate-900 mb-2">Option A — Sail adjusted to fit your space</h4>
-                             <p className="text-sm text-slate-600 mb-3 font-medium italic">This is the best practice industry standard.</p>
+                              <h4 className="font-bold text-slate-900 mb-2">Option A – You measure your space (between fixing points)</h4>
+                             <p className="text-sm text-slate-600 mb-3 font-medium italic">This is the industry best-practice and fail-safe approach for a perfect fit.</p>
                             </div>
                             
                             <div>
@@ -249,7 +249,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                       <div>
                         <div className="space-y-4">
                           <div>
-                            <h4 className="font-bold text-slate-900 mb-2">Option B — Sail made to your exact dimensions</h4>
+                            <h4 className="font-bold text-slate-900 mb-2">Option B – You provide your sail size (exact dimensions)</h4>
                           </div>
                           
                           <div>
