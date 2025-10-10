@@ -341,17 +341,27 @@ export function ShadeConfigurator() {
         };
       });
 
+      const userCurrency = window.Shopify?.currency?.active || 'USD';
+      console.log('userCurrency: ', userCurrency);
+
+      const exchangeRate = parseFloat(window.Shopify?.currency?.rate || '1');
+      console.log('exchangeRate: ', exchangeRate);
+
+      // Convert amount using Shopify's rate
+      const convertedAmount = calculations?.totalPrice * exchangeRate;
+      console.log('convertedAmount: ', convertedAmount);
+
       const orderData = {
         fabricType: config.fabricType,
         fabricColor: config.fabricColor,
         edgeType: config.edgeType,
         corners: config.corners,
         unit: config.unit,
-        currency: config.currency,
+        currency: userCurrency,
         measurements: config.measurements,
         area: calculations.area,
         perimeter: calculations.perimeter,
-        totalPrice: calculations.totalPrice,
+        totalPrice: convertedAmount.toFixed(2),
         selectedFabric,
         selectedColor,
         warranty: selectedFabric?.warrantyYears || "",
@@ -379,18 +389,10 @@ export function ShadeConfigurator() {
         createdAt: new Date().toISOString()
       };
 
-      // Call Supabase Edge Function for email sending with proper currency support
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/send-email-summary`,
+        '/apps/shade_space/api/v1/public/email-summary-send',
         {
           method: "POST",
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`,
-          },
           body: JSON.stringify({ pdf, ...orderData, email }),
         }
       );
@@ -411,6 +413,7 @@ export function ShadeConfigurator() {
       setIsSendingEmail(false); // ✅ stop loading only after everything finishes
     }
   };
+
 
 
   const handleCancelEmailInput = () => {
@@ -503,6 +506,7 @@ export function ShadeConfigurator() {
     corners: number;
     unit: 'metric' | 'imperial' | '';
     measurementOption: 'adjust' | 'exact' | '';
+    hardware_included: 'Included' | 'Not Included';
     currency: string;
     measurements: Record<string, number>;
     points: Point[];
@@ -632,6 +636,8 @@ export function ShadeConfigurator() {
             metafieldProperties[key] = edge.node.value;
           }
         });
+
+        metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
 
         // Add formatted cart properties (these will show in cart)
         Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {

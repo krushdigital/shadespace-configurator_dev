@@ -81,6 +81,42 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
 
+
+
+
+
+  console.log({
+    config,
+    updateConfig,
+    calculations,
+    nextStepTitle,
+    showBackButton,
+    onPrev,
+    isGeneratingPDF,
+    handleGeneratePDF,
+    showEmailInput,
+    email,
+    setEmail,
+    handleEmailSummary,
+    acknowledgments,
+    handleAcknowledgmentChange,
+    handleAddToCart,
+    allDiagonalsEntered,
+    allAcknowledgmentsChecked,
+    canAddToCart,
+    hasAllEdgeMeasurements,
+    isMobile,
+    handleCancelEmailInput,
+    canvasRef,
+    loading,
+    setLoading,
+    setShowLoadingOverlay
+  });
+
+
+
+
+
   // Validate polygon geometry
   const geometryValidation = useMemo(() => {
     if (config.corners < 3 || calculations.area > 0) {
@@ -332,6 +368,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         };
       });
 
+      const hardwareIncluded = config.measurementOption === 'adjust';
+      const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
+
       if (canvasImageUrl) {
         const orderData = {
           fabricType: config.fabricType,
@@ -340,6 +379,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           corners: config.corners,
           unit: config.unit,
           currency: config.currency,
+          measurementOption: config.measurementOption,
+          hardware_included: hardwareText,
           measurements: config.measurements,
           area: calculations.area,
           perimeter: calculations.perimeter,
@@ -381,7 +422,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   };
 
 
-  
+
 
   return (
     <div className="p-6">
@@ -475,7 +516,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total Weight:</span>
                   <span className="font-medium text-slate-900">
-                    {config.unit === 'imperial' 
+                    {config.unit === 'imperial'
                       ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb`
                       : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`
                     }
