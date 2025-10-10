@@ -34,10 +34,10 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
 
   return (
-    <div className="p-2 lg:p-6">
+    <div className="p-4 lg:p-6">
 
       {/* Unit Selection */}
-      <div className="mb-4 lg:mb-8">
+      <div className="mb-8">
         <Card className={`p-6 ${validationErrors.unit && !config.unit ? '!border-2 !border-red-500 !bg-red-50' : ''}`}>
           <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
             <div>

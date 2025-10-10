@@ -21,10 +21,10 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   
   return (
-    <div className="p-2 lg:p-6">
+    <div className="p-4 lg:p-6">
       {/* Fabric Type Selection */}
-      <div className="mb-3 lg:mb-8">
-        <h4 className="text-base lg:text-lg font-semibold text-[#01312D] mb-3 lg:mb-4">
+      <div className="mb-8">
+        <h4 className="text-lg font-semibold text-[#01312D] mb-4">
           <a 
             href="https://shadespace.com/pages/our-fabrics" 
             target="_blank" 
@@ -34,7 +34,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
             Fabric Material
           </a>
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {FABRICS.map((fabric) => {
             const isSelected = config.fabricType === fabric.id;
             const hasError = validationErrors.fabricType && !config.fabricType;
