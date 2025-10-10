@@ -411,10 +411,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="space-y-6">
+    <div className="p-2 lg:p-6">
+      <div className="space-y-4 lg:space-y-6">
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
           <div className="lg:col-span-2 space-y-6">
             {/* Configuration Summary */}
