@@ -29,7 +29,7 @@ export function AccordionStep({
   return (
     <div
       id={`step-${stepNumber}`}
-      className={`bg-white border rounded-lg lg:rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${
+      className={`bg-white border rounded-lg lg:rounded-xl shadow-sm transition-all duration-300 ${
       isOpen ? 'border-[#BFF102] shadow-xl ring-2 ring-[#BFF102]/20' : 'border-slate-200 hover:border-[#307C31] hover:shadow-md'
     }`}
     >
@@ -114,8 +114,8 @@ export function AccordionStep({
       
       {/* Content */}
       <div className={`transition-all duration-300 ease-in-out ${
-        isOpen ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'
-      } ${isOpen ? 'overflow-visible' : 'overflow-hidden'}`}
+        isOpen ? 'opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+      }`}
       style={{ zIndex: isOpen ? 1000 : 'auto' }}
       >
         <div className="border-t border-slate-200">

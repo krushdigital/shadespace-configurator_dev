@@ -654,7 +654,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
 
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
-          <div className="lg:col-span-2 lg:sticky lg:top-8 lg:self-start space-y-6">
+          <div className="lg:col-span-2 lg:sticky lg:top-24 lg:self-start space-y-6" style={{ maxHeight: 'calc(100vh - 8rem)', overflowY: 'auto' }}>
             {/* Shade Sail Preview */}
             <div ref={ref} className="shade-canvas-container">
               <h4 className="text-lg font-semibold text-slate-900 mb-4">

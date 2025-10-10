@@ -1239,7 +1239,7 @@ export function ShadeConfigurator() {
 
         {/* Sticky Diagram for Dimensions Step - Desktop Only */}
         {openStep === 4 && !isMobile && (
-          <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-28 lg:self-start z-10">
+          <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-24 lg:self-start" style={{ zIndex: 10, maxHeight: 'calc(100vh - 8rem)' }}>
             <h4 className="text-lg font-semibold text-slate-900 mb-4">
               Interactive Measurement Guide
             </h4>
@@ -1263,9 +1263,9 @@ export function ShadeConfigurator() {
           </div>
         )}
 
-        {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
+        {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
         {(openStep >= 5) && (
-          <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-28 lg:self-start z-10 space-y-4">
+          <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-24 lg:self-start space-y-4" style={{ zIndex: 10, maxHeight: 'calc(100vh - 8rem)' }}>
             <PriceSummaryDisplay
               config={config}
               calculations={calculations}
