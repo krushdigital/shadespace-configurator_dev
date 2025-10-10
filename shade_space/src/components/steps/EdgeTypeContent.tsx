@@ -33,12 +33,12 @@ const EDGE_OPTIONS = [
 
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: EdgeTypeContentProps) {
   return (
-    <div className="p-4 lg:p-6">
-      <div className="mb-6">
-        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+    <div className="p-2 lg:p-6">
+      <div className="mb-3 lg:mb-6">
+        <h4 className="text-base lg:text-lg font-semibold text-slate-900 mb-3 lg:mb-4">
           Select Edge Reinforcement Type
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
           {EDGE_OPTIONS.map((edge) => {
             const hasError = validationErrors.edgeType && !config.edgeType;
             

@@ -61,12 +61,12 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
   };
 
   return (
-    <div className="p-4 lg:p-6">
-      <div className="mb-6">
-        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+    <div className="p-2 lg:p-6">
+      <div className="mb-3 lg:mb-6">
+        <h4 className="text-base lg:text-lg font-semibold text-slate-900 mb-3 lg:mb-4">
           How many fixing points will your shade sail have?
         </h4>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4">
           {SHAPE_OPTIONS.map((shape) => {
             const Icon = shape.icon;
             const hasError = validationErrors.corners && !config.corners;

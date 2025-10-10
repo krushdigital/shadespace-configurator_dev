@@ -29,7 +29,7 @@ export function AccordionStep({
   return (
     <div
       id={`step-${stepNumber}`}
-      className={`bg-white border rounded-lg lg:rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${
+      className={`bg-white border rounded-md lg:rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${
       isOpen ? 'border-[#BFF102] shadow-xl ring-2 ring-[#BFF102]/20' : 'border-slate-200 hover:border-[#307C31] hover:shadow-md'
     }`}
     >
@@ -37,15 +37,15 @@ export function AccordionStep({
       <button
         onClick={onToggle}
         disabled={!canOpen}
-        className={`w-full ${isOpen ? 'p-4 lg:p-6' : 'p-3 lg:p-5'} text-left transition-all duration-300 ${
+        className={`w-full ${isOpen ? 'p-2.5 lg:p-6' : 'p-2 lg:p-5'} text-left transition-all duration-300 ${
           canOpen ? 'hover:bg-slate-50 cursor-pointer' : 'cursor-not-allowed opacity-60'
         } ${isOpen ? 'bg-gradient-to-r from-[#BFF102]/10 to-white' : ''}`}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 lg:gap-4 flex-grow">
+          <div className="flex items-center gap-2 lg:gap-4 flex-grow">
             {/* Step Number/Check */}
             <div className={`
-              flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 transition-all duration-300 shadow-md flex-shrink-0
+              flex items-center justify-center w-9 h-9 lg:w-12 lg:h-12 rounded-full border-2 transition-all duration-300 shadow-md flex-shrink-0
               ${isCompleted
                 ? 'bg-[#307C31] border-[#307C31] text-white'
                 : isCurrent
@@ -54,31 +54,32 @@ export function AccordionStep({
               }
             `}>
               {isCompleted ? (
-                <Check className="w-5 h-5 lg:w-6 lg:h-6" />
+                <Check className="w-4 h-4 lg:w-6 lg:h-6" />
               ) : (
-                <span className="text-sm lg:text-base font-bold">{stepNumber}</span>
+                <span className="text-xs lg:text-base font-bold">{stepNumber}</span>
               )}
             </div>
 
             {/* Title and Subtitle */}
             <div className="flex flex-col min-w-0">
-              <h3 className={`text-base sm:text-lg lg:text-xl font-bold transition-all duration-200 ${
+              <h3 className={`text-sm sm:text-lg lg:text-xl font-bold transition-all duration-200 ${
                 isCurrent || isCompleted ? 'text-[#01312D]' : 'text-[#307C31]'
               }`}>
                 {title}
               </h3>
-              
+
               {/* Mobile Selection Display - Below Title */}
               {selection && !isOpen && (
-                <div className="sm:hidden mt-1">
-                  <div className="text-xs sm:text-sm font-semibold text-[#01312D] bg-[#BFF102]/20 px-2 sm:px-3 py-1 rounded-full inline-block">
+                <div className="sm:hidden mt-0.5">
+                  <div className="text-xs sm:text-sm font-semibold text-[#01312D] bg-[#BFF102]/20 px-1.5 sm:px-3 py-0.5 rounded-full inline-block">
                     {selection}
                   </div>
                 </div>
               )}
-              
+
+
               {isOpen && (
-                <p className={`text-sm sm:text-base transition-all duration-200 mt-1 ${
+                <p className={`text-xs sm:text-base transition-all duration-200 mt-0.5 ${
                   isCurrent || isCompleted ? 'text-[#01312D]/70' : 'text-[#307C31]/70'
                 }`}>
                   {subtitle}
@@ -86,25 +87,26 @@ export function AccordionStep({
               )}
             </div>
           </div>
-          
+
           {/* Selection Display */}
-          <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* Desktop Selection Display - Side by Side */}
             {selection && !isOpen && (
               <div className="text-right hidden sm:block">
-                <div className="text-xs sm:text-sm font-semibold text-[#01312D] max-w-32 sm:max-w-48 truncate bg-[#BFF102]/20 px-2 sm:px-3 py-1 rounded-full">
+                <div className="text-xs sm:text-sm font-semibold text-[#01312D] max-w-32 sm:max-w-48 truncate bg-[#BFF102]/20 px-1.5 sm:px-3 py-0.5 rounded-full">
                   {selection}
                 </div>
               </div>
             )}
-            
+
+
             {/* Chevron */}
             {canOpen && (
               <div className="transition-transform duration-200">
                 {isOpen ? (
-                  <ChevronDown className="w-5 h-5 sm:w-6 sm:h-6 text-[#307C31]" />
+                  <ChevronDown className="w-4 h-4 sm:w-6 sm:h-6 text-[#307C31]" />
                 ) : (
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-[#307C31]" />
+                  <ChevronRight className="w-3 h-3 sm:w-5 sm:h-5 text-[#307C31]" />
                 )}
               </div>
             )}
