@@ -1,11 +1,12 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ConfiguratorState } from '../../types';
 import { FABRICS } from '../../data/fabrics';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { Info, AlertCircle } from 'lucide-react';
+import { analytics } from '../../utils/analytics';
 
 interface FabricSelectionContentProps {
   config: ConfiguratorState;
@@ -19,6 +20,11 @@ interface FabricSelectionContentProps {
 
 export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: FabricSelectionContentProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
+  const stepStartTime = useRef(Date.now());
+
+  useEffect(() => {
+    analytics.stepViewed(1, 'fabric_and_color');
+  }, []);
   
   return (
     <div className="p-6">
@@ -49,10 +55,13 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600 hover:shadow-lg'
                     : 'hover:border-[#307C31] hover:shadow-lg'
                 }`}
-                onClick={() => updateConfig({ 
-                  fabricType: fabric.id,
-                  fabricColor: ''
-                })}
+                onClick={() => {
+                  analytics.fabricTypeSelected(fabric.id, fabric.label);
+                  updateConfig({
+                    fabricType: fabric.id,
+                    fabricColor: ''
+                  });
+                }}
               >
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
@@ -65,14 +74,16 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       </span>
                     )}
                     <Tooltip
+                      onOpen={() => analytics.fabricDetailsViewed(fabric.id)}
                       content={
                         <div className="max-w-lg">
                           <div className="mb-3">
                             <a 
-                              href="https://shadespace.com/pages/our-fabrics" 
-                              target="_blank" 
+                              href="https://shadespace.com/pages/our-fabrics"
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
+                              onClick={() => analytics.fabricLinkClicked(fabric.id, 'https://shadespace.com/pages/our-fabrics')}
                             >
                               View All Fabrics
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
@@ -255,7 +266,10 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                   className="relative group"
                 >
                   <button
-                    onClick={() => updateConfig({ fabricColor: color.name })}
+                    onClick={() => {
+                      analytics.fabricColorSelected(config.fabricType, color.name, color.shadeFactor);
+                      updateConfig({ fabricColor: color.name });
+                    }}
                     className={`group p-2 rounded-lg transition-all duration-300 w-full ${
                       isSelected
                        ? 'border-2 border-[#01312D] ring-2 ring-[#01312D] shadow-md'
@@ -345,7 +359,14 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     </div>
                   )}
                   <Button
-                    onClick={onNext}
+                    onClick={() => {
+                      const timeSpent = (Date.now() - stepStartTime.current) / 1000;
+                      analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
+                        fabric_type: config.fabricType,
+                        fabric_color: config.fabricColor,
+                      });
+                      onNext();
+                    }}
                     size="md"
                     className={incomplete ? 'opacity-50 cursor-not-allowed' : ''}
                   >
