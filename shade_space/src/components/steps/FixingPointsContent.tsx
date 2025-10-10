@@ -8,6 +8,7 @@ import { PricingSummaryBox } from '../PricingSummaryBox';
 import { convertMmToUnit, convertUnitToMm } from '../../utils/geometry';
 import { formatMeasurement } from '../../utils/geometry';
 import { HeightVisualizationCanvas } from '../HeightVisualizationCanvas';
+import { AlertCircle } from 'lucide-react';
 
 interface FixingPointsContentProps {
   config: ConfiguratorState;
@@ -142,8 +143,10 @@ export function FixingPointsContent({
 
     if (!hasCorrectLength) return false;
 
-    // Check if all heights are greater than 0
-    const allHeightsValid = config.fixingHeights.every(height => height > 0);
+    // Check if all heights are valid (not undefined, not null, and greater than 0)
+    const allHeightsValid = config.fixingHeights.every(height =>
+      height !== undefined && height !== null && height > 0
+    );
 
     // Check if all types are selected (not empty string)
     const allTypesValid = config.fixingTypes?.every(type => type === 'post' || type === 'building') || false;
@@ -234,24 +237,24 @@ export function FixingPointsContent({
                   </div>
                   <div className="flex items-center gap-2">
                     {(() => {
-                      const hasValidValue = config.fixingHeights[index] && config.fixingHeights[index] > 0;
+                      const currentHeight = config.fixingHeights[index];
+                      const hasValidValue = currentHeight !== undefined && currentHeight !== null && currentHeight > 0;
                       const hasError = validationErrors[`height_${index}`];
                       const isSuccess = hasValidValue && !hasError;
-                      
+
                       return (
                     <Input
                       type="number"
-                     value={config.fixingHeights[index] !== undefined && config.fixingHeights[index] > 0
-                       ? (config.unit === 'imperial' 
-                         ? String(Math.round(convertMmToUnit(config.fixingHeights[index], config.unit) * 100) / 100)
-                         : Math.round(convertMmToUnit(config.fixingHeights[index], config.unit)).toString()
+                     value={hasValidValue
+                       ? (config.unit === 'imperial'
+                         ? String(Math.round(convertMmToUnit(currentHeight, config.unit) * 100) / 100)
+                         : Math.round(convertMmToUnit(currentHeight, config.unit)).toString()
                        )
                        : ''}
                       onChange={(e) => {
                         if (e.target.value === '') {
-                          // Allow complete clearing
                           const newHeights = [...config.fixingHeights];
-                          newHeights[index] = 0;
+                          newHeights[index] = undefined;
                           updateConfig({ fixingHeights: newHeights });
 
                           if (setValidationErrors && setTypoSuggestions) {
@@ -478,8 +481,8 @@ export function FixingPointsContent({
       <div className="flex flex-col gap-4 pt-4 border-t border-[#307C31]/30 w-full">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
               onClick={onPrev}
               className="sm:w-auto"
@@ -487,13 +490,52 @@ export function FixingPointsContent({
               Back
             </Button>
           )}
-          <Button
-            onClick={onNext}
-            size="md"
-            className={`flex-1 ${!isStepComplete() ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            Continue to {nextStepTitle}
-          </Button>
+          <div className="flex-1 flex flex-col gap-2">
+            {(() => {
+              const complete = isStepComplete();
+              const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
+
+              const missingHeights = config.fixingHeights.filter(h => h === undefined || h === null || h <= 0).length;
+              const missingTypes = (config.fixingTypes?.filter(t => t !== 'post' && t !== 'building') || []).length;
+              const missingOrientations = (config.eyeOrientations?.filter(o => o !== 'horizontal' && o !== 'vertical') || []).length;
+
+              const totalMissing = missingHeights + missingTypes + missingOrientations;
+
+              return (
+                <>
+                  {!complete && (
+                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                      {hasUnacknowledgedTypos ? (
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-amber-500" />
+                          <span>Please review and address the height warnings above</span>
+                        </span>
+                      ) : totalMissing > 0 ? (
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-slate-500" />
+                          <span>
+                            {missingHeights > 0 && `${missingHeights} height${missingHeights !== 1 ? 's' : ''}`}
+                            {missingHeights > 0 && (missingTypes > 0 || missingOrientations > 0) && ', '}
+                            {missingTypes > 0 && `${missingTypes} attachment type${missingTypes !== 1 ? 's' : ''}`}
+                            {missingTypes > 0 && missingOrientations > 0 && ', '}
+                            {missingOrientations > 0 && `${missingOrientations} eye orientation${missingOrientations !== 1 ? 's' : ''}`}
+                            {' '}required to continue
+                          </span>
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
+                  <Button
+                    onClick={onNext}
+                    size="md"
+                    className={!complete ? 'opacity-50 cursor-not-allowed' : ''}
+                  >
+                    Continue to {nextStepTitle}
+                  </Button>
+                </>
+              );
+            })()}
+          </div>
         </div>
       </div>
     </div>
