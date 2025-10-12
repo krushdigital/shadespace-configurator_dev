@@ -69,7 +69,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                   Metric
                 </h5>
                 <p className="text-sm text-slate-600">
-                  Millimeters and meters (mm/m)
+                  mm
                 </p>
               </div>
             </div>
@@ -102,7 +102,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                   Imperial
                 </h5>
                 <p className="text-sm text-slate-600">
-                  Inches and feet (in/ft)
+                  Inches
                 </p>
               </div>
             </div>
