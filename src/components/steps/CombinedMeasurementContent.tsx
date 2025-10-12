@@ -38,47 +38,54 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
 
       {/* Unit Selection */}
       <div className="mb-6 sm:mb-8">
-        <h4 className="text-lg font-semibold text-slate-900 mb-2">
-          Units for measurements
-        </h4>
-        <p className="text-sm text-slate-600 mb-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex-shrink-0">
+            <h4 className="text-lg font-semibold text-slate-900 mb-2 lg:mb-0">
+              Units for measurements
+            </h4>
+            <p className="text-sm text-slate-600 lg:hidden">
+              Choose between metric (mm/m) or imperial (inches/feet) units
+            </p>
+          </div>
+          <div className="flex gap-3 sm:gap-4 w-full lg:w-auto">
+            <button
+              type="button"
+              className={`flex-1 lg:flex-none px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
+                config.unit === 'metric'
+                  ? 'border-[#01312D] bg-[#01312D] text-white'
+                  : validationErrors.unit && !config.unit
+                  ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
+                  : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
+              }`}
+              onClick={() => updateConfig({ unit: 'metric' })}
+            >
+              <div className="text-center">
+                <div className="font-semibold text-base mb-0.5">Metric</div>
+                <div className="text-sm opacity-80">(mm/m)</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className={`flex-1 lg:flex-none px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
+                config.unit === 'imperial'
+                  ? 'border-[#01312D] bg-[#01312D] text-white'
+                  : validationErrors.unit && !config.unit
+                  ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
+                  : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
+              }`}
+              onClick={() => updateConfig({ unit: 'imperial' })}
+            >
+              <div className="text-center">
+                <div className="font-semibold text-base mb-0.5">Imperial</div>
+                <div className="text-sm opacity-80">(in/ft)</div>
+              </div>
+            </button>
+          </div>
+        </div>
+        <p className="text-sm text-slate-600 mt-2 hidden lg:block">
           Choose between metric (mm/m) or imperial (inches/feet) units
         </p>
-        <div className="flex gap-3 sm:gap-4 justify-end">
-          <button
-            type="button"
-            className={`px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
-              config.unit === 'metric'
-                ? 'border-[#01312D] bg-[#01312D] text-white'
-                : validationErrors.unit && !config.unit
-                ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
-                : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
-            }`}
-            onClick={() => updateConfig({ unit: 'metric' })}
-          >
-            <div className="text-center">
-              <div className="font-semibold text-base mb-0.5">Metric</div>
-              <div className="text-sm opacity-80">(mm/m)</div>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            className={`px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
-              config.unit === 'imperial'
-                ? 'border-[#01312D] bg-[#01312D] text-white'
-                : validationErrors.unit && !config.unit
-                ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
-                : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
-            }`}
-            onClick={() => updateConfig({ unit: 'imperial' })}
-          >
-            <div className="text-center">
-              <div className="font-semibold text-base mb-0.5">Imperial</div>
-              <div className="text-sm opacity-80">(in/ft)</div>
-            </div>
-          </button>
-        </div>
       </div>
 
       {/* Measurement Option Selection */}
