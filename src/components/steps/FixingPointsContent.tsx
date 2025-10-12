@@ -290,13 +290,11 @@ export function FixingPointsContent({
                   
                   {/* Typo Warning */}
                   {typoSuggestions[`height_${index}`] && (
-                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex-1">
-                          <p className="text-sm text-amber-800">
-                            <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[`height_${index}`], config.unit, true)}?
-                          </p>
-                        </div>
+                    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex flex-col gap-2">
+                        <p className="text-sm text-amber-800 w-full">
+                          <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[`height_${index}`], config.unit, true)}?
+                        </p>
                         <div className="flex gap-2">
                           <button
                             onClick={() => applyTypoCorrection(index)}
