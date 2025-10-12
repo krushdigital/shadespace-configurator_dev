@@ -38,75 +38,46 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
 
       {/* Unit Selection */}
       <div className="mb-6 sm:mb-8">
-        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+        <h4 className="text-lg font-semibold text-slate-900 mb-2">
           Units for measurements
         </h4>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <Card
-            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+        <p className="text-sm text-slate-600 mb-4">
+          Choose between metric (mm/m) or imperial (inches/feet) units
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            type="button"
+            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
               config.unit === 'metric'
-                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                ? 'border-[#01312D] bg-[#01312D] text-white'
                 : validationErrors.unit && !config.unit
-                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                : 'hover:border-slate-300'
+                ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
+                : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
             }`}
             onClick={() => updateConfig({ unit: 'metric' })}
           >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="flex-shrink-0 mt-1 hidden sm:block">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  config.unit === 'metric'
-                    ? 'border-[#caee41] bg-[#caee41]'
-                    : 'border-slate-300'
-                }`}>
-                  {config.unit === 'metric' && (
-                    <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
-                  )}
-                </div>
-              </div>
-              <div className="flex-1">
-                <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight mb-1">
-                  Metric
-                </h5>
-                <p className="text-sm text-slate-600">
-                  Millimeters / mm
-                </p>
-              </div>
+            <div className="text-center">
+              <div className="font-semibold text-base mb-0.5">Metric</div>
+              <div className="text-sm opacity-80">(mm/m)</div>
             </div>
-          </Card>
+          </button>
 
-          <Card
-            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          <button
+            type="button"
+            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
               config.unit === 'imperial'
-                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                ? 'border-[#01312D] bg-[#01312D] text-white'
                 : validationErrors.unit && !config.unit
-                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                : 'hover:border-slate-300'
+                ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
+                : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
             }`}
             onClick={() => updateConfig({ unit: 'imperial' })}
           >
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="flex-shrink-0 mt-1 hidden sm:block">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  config.unit === 'imperial'
-                    ? 'border-[#caee41] bg-[#caee41]'
-                    : 'border-slate-300'
-                }`}>
-                  {config.unit === 'imperial' && (
-                    <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
-                  )}
-                </div>
-              </div>
-              <div className="flex-1">
-                <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight mb-1">
-                  Imperial
-                </h5>
-                <p className="text-sm text-slate-600">
-                  Inches / in
-                </p>
-              </div>
+            <div className="text-center">
+              <div className="font-semibold text-base mb-0.5">Imperial</div>
+              <div className="text-sm opacity-80">(in/ft)</div>
             </div>
-          </Card>
+          </button>
         </div>
       </div>
 
