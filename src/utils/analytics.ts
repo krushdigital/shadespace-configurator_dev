@@ -24,7 +24,7 @@ export const trackPageView = (pagePath: string, pageTitle?: string): void => {
   if (typeof window === 'undefined') return;
 
   if (window.gtag) {
-    window.gtag('config', 'GA_MEASUREMENT_ID', {
+    window.gtag('config', 'G-V8131RB72K', {
       page_path: pagePath,
       page_title: pageTitle,
     });
