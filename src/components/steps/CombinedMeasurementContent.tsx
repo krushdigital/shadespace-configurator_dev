@@ -34,64 +34,90 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
 
       {/* Unit Selection */}
-      <div className="mb-8">
-        <Card className={`p-6 ${validationErrors.unit && !config.unit ? '!border-2 !border-red-500 !bg-red-50' : ''}`}>
-          <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
-            <div>
-              <h5 className="text-lg font-semibold text-slate-900 mb-2">
-                Units for measurements
-              </h5>
-              <p className="text-sm text-slate-600">
-                Choose between metric (mm/m) or imperial (inches/feet) units
-              </p>
-            </div>
-            <div className={`flex items-center bg-white rounded-xl p-1 shadow-sm ${isMobile ? 'mt-4 w-full' : ''} ${
-              validationErrors.unit && !config.unit 
-                ? 'border-2 border-red-500' 
-                : 'border border-slate-200'
-            }`}>
-              <button
-                onClick={() => updateConfig({ unit: 'metric' })}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isMobile ? 'flex-1' : ''} ${
+      <div className="mb-6 sm:mb-8">
+        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+          Units for measurements
+        </h4>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+              config.unit === 'metric'
+                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                : validationErrors.unit && !config.unit
+                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+                : 'hover:border-slate-300'
+            }`}
+            onClick={() => updateConfig({ unit: 'metric' })}
+          >
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.unit === 'metric'
-                   ? 'bg-[#BFF102] text-[#01312D] shadow-md border-2 border-[#01312D] ring-2 ring-[#01312D]'
-                    : validationErrors.unit && !config.unit
-                    ? 'text-red-700 hover:text-red-800 hover:bg-red-100'
-                    : 'text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-50'
-                }`}
-              >
-                Metric
-                <span className="block text-xs opacity-75">(mm/m)</span>
-              </button>
-              <button
-                onClick={() => updateConfig({ unit: 'imperial' })}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isMobile ? 'flex-1' : ''} ${
-                  config.unit === 'imperial'
-                   ? 'bg-[#BFF102] text-[#01312D] shadow-md border-2 border-[#01312D] ring-2 ring-[#01312D]'
-                    : validationErrors.unit && !config.unit
-                    ? 'text-red-700 hover:text-red-800 hover:bg-red-100'
-                    : 'text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-50'
-                }`}
-              >
-                Imperial
-                <span className="block text-xs opacity-75">(in/ft)</span>
-              </button>
+                    ? 'border-[#caee41] bg-[#caee41]'
+                    : 'border-slate-300'
+                }`}>
+                  {config.unit === 'metric' && (
+                    <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight mb-1">
+                  Metric
+                </h5>
+                <p className="text-sm text-slate-600">
+                  Millimeters / mm
+                </p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+              config.unit === 'imperial'
+                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                : validationErrors.unit && !config.unit
+                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+                : 'hover:border-slate-300'
+            }`}
+            onClick={() => updateConfig({ unit: 'imperial' })}
+          >
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  config.unit === 'imperial'
+                    ? 'border-[#caee41] bg-[#caee41]'
+                    : 'border-slate-300'
+                }`}>
+                  {config.unit === 'imperial' && (
+                    <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight mb-1">
+                  Imperial
+                </h5>
+                <p className="text-sm text-slate-600">
+                  Inches / in
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* Measurement Option Selection */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How would you like your shade sail to be manufactured?
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card 
-            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.measurementOption === 'adjust'
                 ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
                 : validationErrors.measurementOption && !config.measurementOption
@@ -100,8 +126,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             }`}
             onClick={() => handleMeasurementOptionChange('adjust')}
           >
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 mt-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.measurementOption === 'adjust'
                     ? 'border-[#caee41] bg-[#caee41]'
@@ -217,8 +243,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             </div>
           </Card>
 
-          <Card 
-            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.measurementOption === 'exact'
                 ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
                 : validationErrors.measurementOption && !config.measurementOption
@@ -227,8 +253,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             }`}
             onClick={() => handleMeasurementOptionChange('exact')}
           >
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 mt-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.measurementOption === 'exact'
                     ? 'border-[#caee41] bg-[#caee41]'

@@ -261,7 +261,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       ['Total Weight:', config.unit === 'imperial' 
         ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb`
         : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`],
-      ['Measurement Units:', config.unit === 'metric' ? 'Metric (mm/m)' : 'Imperial (in/ft)'],
+      ['Measurement Units:', config.unit === 'metric' ? 'Metric: mm' : 'Imperial: Inches'],
       ['Manufacturing Option:', config.measurementOption === 'adjust' ? 'Adjust to fit space (hardware included)' : 'Exact dimensions (hardware not included)'],
       ...(config.measurementOption === 'adjust' ? [['Hardware Included:', 'Yes - Turnbuckles & Shackles']] : []),
     ];
