@@ -34,16 +34,16 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
 
       {/* Unit Selection */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           Units for measurements
         </h4>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <Card
-            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.unit === 'metric'
                 ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
                 : validationErrors.unit && !config.unit
@@ -52,8 +52,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             }`}
             onClick={() => updateConfig({ unit: 'metric' })}
           >
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 mt-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.unit === 'metric'
                     ? 'border-[#caee41] bg-[#caee41]'
@@ -76,7 +76,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
           </Card>
 
           <Card
-            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.unit === 'imperial'
                 ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
                 : validationErrors.unit && !config.unit
@@ -85,8 +85,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             }`}
             onClick={() => updateConfig({ unit: 'imperial' })}
           >
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 mt-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.unit === 'imperial'
                     ? 'border-[#caee41] bg-[#caee41]'
@@ -111,13 +111,13 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
       </div>
 
       {/* Measurement Option Selection */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How would you like your shade sail to be manufactured?
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card 
-            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.measurementOption === 'adjust'
                 ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
                 : validationErrors.measurementOption && !config.measurementOption
@@ -126,8 +126,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             }`}
             onClick={() => handleMeasurementOptionChange('adjust')}
           >
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 mt-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.measurementOption === 'adjust'
                     ? 'border-[#caee41] bg-[#caee41]'
@@ -243,8 +243,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             </div>
           </Card>
 
-          <Card 
-            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.measurementOption === 'exact'
                 ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
                 : validationErrors.measurementOption && !config.measurementOption
@@ -253,8 +253,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             }`}
             onClick={() => handleMeasurementOptionChange('exact')}
           >
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 mt-1">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.measurementOption === 'exact'
                     ? 'border-[#caee41] bg-[#caee41]'
