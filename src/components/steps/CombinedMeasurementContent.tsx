@@ -38,50 +38,76 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
 
       {/* Unit Selection */}
       <div className="mb-8">
-        <Card className={`p-6 ${validationErrors.unit && !config.unit ? '!border-2 !border-red-500 !bg-red-50' : ''}`}>
-          <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'}`}>
-            <div>
-              <h5 className="text-lg font-semibold text-slate-900 mb-2">
-                Units for measurements
-              </h5>
-              <p className="text-sm text-slate-600">
-                Choose between metric (mm/m) or imperial (inches/feet) units
-              </p>
-            </div>
-            <div className={`flex items-center bg-white rounded-xl p-1 shadow-sm ${isMobile ? 'mt-4 w-full' : ''} ${
-              validationErrors.unit && !config.unit 
-                ? 'border-2 border-red-500' 
-                : 'border border-slate-200'
-            }`}>
-              <button
-                onClick={() => updateConfig({ unit: 'metric' })}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isMobile ? 'flex-1' : ''} ${
+        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+          Units for measurements
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card
+            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+              config.unit === 'metric'
+                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                : validationErrors.unit && !config.unit
+                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+                : 'hover:border-slate-300'
+            }`}
+            onClick={() => updateConfig({ unit: 'metric' })}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 mt-1">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.unit === 'metric'
-                   ? 'bg-[#BFF102] text-[#01312D] shadow-md border-2 border-[#01312D] ring-2 ring-[#01312D]'
-                    : validationErrors.unit && !config.unit
-                    ? 'text-red-700 hover:text-red-800 hover:bg-red-100'
-                    : 'text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-50'
-                }`}
-              >
-                Metric
-                <span className="block text-xs opacity-75">(mm/m)</span>
-              </button>
-              <button
-                onClick={() => updateConfig({ unit: 'imperial' })}
-                className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${isMobile ? 'flex-1' : ''} ${
-                  config.unit === 'imperial'
-                   ? 'bg-[#BFF102] text-[#01312D] shadow-md border-2 border-[#01312D] ring-2 ring-[#01312D]'
-                    : validationErrors.unit && !config.unit
-                    ? 'text-red-700 hover:text-red-800 hover:bg-red-100'
-                    : 'text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-50'
-                }`}
-              >
-                Imperial
-                <span className="block text-xs opacity-75">(in/ft)</span>
-              </button>
+                    ? 'border-[#caee41] bg-[#caee41]'
+                    : 'border-slate-300'
+                }`}>
+                  {config.unit === 'metric' && (
+                    <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight mb-1">
+                  Metric
+                </h5>
+                <p className="text-sm text-slate-600">
+                  Millimeters and meters (mm/m)
+                </p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+
+          <Card
+            className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+              config.unit === 'imperial'
+                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                : validationErrors.unit && !config.unit
+                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+                : 'hover:border-slate-300'
+            }`}
+            onClick={() => updateConfig({ unit: 'imperial' })}
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 mt-1">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                  config.unit === 'imperial'
+                    ? 'border-[#caee41] bg-[#caee41]'
+                    : 'border-slate-300'
+                }`}>
+                  {config.unit === 'imperial' && (
+                    <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
+                  )}
+                </div>
+              </div>
+              <div className="flex-1">
+                <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight mb-1">
+                  Imperial
+                </h5>
+                <p className="text-sm text-slate-600">
+                  Inches and feet (in/ft)
+                </p>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {/* Measurement Option Selection */}
