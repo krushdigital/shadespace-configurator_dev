@@ -41,7 +41,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           Units for measurements
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <Card
             className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.unit === 'metric'
@@ -69,7 +69,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                   Metric
                 </h5>
                 <p className="text-sm text-slate-600">
-                  mm
+                  Millimeters / mm
                 </p>
               </div>
             </div>
@@ -102,7 +102,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                   Imperial
                 </h5>
                 <p className="text-sm text-slate-600">
-                  Inches
+                  Inches / in
                 </p>
               </div>
             </div>
