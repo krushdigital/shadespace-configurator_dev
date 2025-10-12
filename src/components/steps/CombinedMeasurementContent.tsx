@@ -44,7 +44,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
         <p className="text-sm text-slate-600 mb-4">
           Choose between metric (mm/m) or imperial (inches/feet) units
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <button
             type="button"
             className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
