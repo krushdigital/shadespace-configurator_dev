@@ -1542,6 +1542,7 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
         isVisible={hasQuote && openStep === 4}
         quoteReference={quoteReference || undefined}
         onContinue={handleMobileContinue}
+        onSaveQuote={handleSaveQuote}
       />
 
       {/* Save Quote Modal */}
