@@ -146,11 +146,9 @@ export function FixingPointsContent({
       updateConfig({ fixingPointsInstalled: installed, eyeOrientations: undefined });
     }
 
-    // Clear validation error for fixing points installed
+    // Clear ALL validation errors for this step when user makes a selection
     if (setValidationErrors) {
-      const newErrors = { ...validationErrors };
-      delete newErrors['fixingPointsInstalled'];
-      setValidationErrors(newErrors);
+      setValidationErrors({});
     }
   };
 
@@ -237,8 +235,8 @@ export function FixingPointsContent({
         )}
       </Card>
 
-      {/* Info Banner when installation status not selected */}
-      {!isInstallationStatusSelected && (
+      {/* Info Banner - Only shown when user tries to proceed without selecting */}
+      {!isInstallationStatusSelected && hasInstallationError && (
         <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
