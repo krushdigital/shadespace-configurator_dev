@@ -5,6 +5,7 @@ import { FABRICS } from '../../data/fabrics';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
+import { AccordionItem } from '../ui/AccordionItem';
 import { Info, AlertCircle } from 'lucide-react';
 import { analytics } from '../../utils/analytics';
 
@@ -78,7 +79,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       content={
                         <div className="max-w-lg">
                           <div className="mb-3">
-                            <a 
+                            <a
                               href="https://shadespace.com/pages/our-fabrics"
                               target="_blank"
                               rel="noopener noreferrer"
@@ -98,10 +99,10 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                             <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
                               {fabric.detailedDescription}
                             </p>
-                          
+
                             {fabric.id === 'extrablock330' && (
                               <div className="flex items-center justify-center mb-3">
-                                <img 
+                                <img
                                   src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Fire_Retardant.png?v=1755470964"
                                   alt="Fire Retardant Certified"
                                   className="w-12 h-12 mr-2"
@@ -111,33 +112,37 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                 </p>
                               </div>
                             )}
-                          
-                            <div className="mb-3">
-                              <h5 className="font-semibold text-[#01312D] mb-1">Made In:</h5>
-                              <p className="text-sm text-[#01312D]/80">{fabric.madeIn}</p>
-                            </div>
-                          
-                            <div className="mb-3">
-                              <h5 className="font-semibold text-[#01312D] mb-1">Key Benefits:</h5>
-                              <ul className="text-xs text-[#01312D]/70 space-y-1">
-                                {fabric.benefits
-                                  .filter(benefit => !benefit.toLowerCase().includes('uv protection'))
-                                  .map((benefit, index) => (
-                                    <li key={index}>• {benefit}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          
-                            <div>
-                              <h5 className="font-semibold text-[#01312D] mb-1">Best For:</h5>
-                              <ul className="text-xs text-[#01312D]/70 space-y-1">
-                                {fabric.bestFor.map((use, index) => (
-                                  <li key={index}>• {use}</li>
-                                ))}
-                              </ul>
-                            </div>
+
+                            <AccordionItem trigger="Learn More" defaultOpen={false}>
+                              <div className="space-y-3 mt-2">
+                                <div>
+                                  <h5 className="font-semibold text-[#01312D] mb-1">Made In:</h5>
+                                  <p className="text-sm text-[#01312D]/80">{fabric.madeIn}</p>
+                                </div>
+
+                                <div>
+                                  <h5 className="font-semibold text-[#01312D] mb-1">Key Benefits:</h5>
+                                  <ul className="text-xs text-[#01312D]/70 space-y-1">
+                                    {fabric.benefits
+                                      .filter(benefit => !benefit.toLowerCase().includes('uv protection'))
+                                      .map((benefit, index) => (
+                                        <li key={index}>• {benefit}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                <div>
+                                  <h5 className="font-semibold text-[#01312D] mb-1">Best For:</h5>
+                                  <ul className="text-xs text-[#01312D]/70 space-y-1">
+                                    {fabric.bestFor.map((use, index) => (
+                                      <li key={index}>• {use}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            </AccordionItem>
                           </div>
-                          
+
                         </div>
                       }
                     >
