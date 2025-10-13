@@ -203,8 +203,8 @@ export function FixingPointsContent({
         <p className="text-sm text-[#01312D]/70 mb-4">
           This helps us understand if your anchor points are already in place or if you're planning the installation.
         </p>
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
             <button
               onClick={() => updateFixingPointsInstalled(true)}
               className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 ${
@@ -215,7 +215,7 @@ export function FixingPointsContent({
             >
               Yes - Already Installed
             </button>
-            <div className="absolute top-2 right-2">
+            <div className="flex justify-center mt-2">
               <Tooltip
                 content={
                   <div>
@@ -239,7 +239,7 @@ export function FixingPointsContent({
               </Tooltip>
             </div>
           </div>
-          <div className="flex-1 relative">
+          <div className="flex-1">
             <button
               onClick={() => updateFixingPointsInstalled(false)}
               className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 ${
@@ -250,7 +250,7 @@ export function FixingPointsContent({
             >
               No - Planning Installation
             </button>
-            <div className="absolute top-2 right-2">
+            <div className="flex justify-center mt-2">
               <Tooltip
                 content={
                   <div>
