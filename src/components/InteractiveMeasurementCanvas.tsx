@@ -40,7 +40,7 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
     if (!readonly && !forPdfCapture) {
       const timer = setTimeout(() => {
         setShowCornerPulse(false);
-      }, 3000);
+      }, 8000);
       return () => clearTimeout(timer);
     } else {
       setShowCornerPulse(false);
@@ -165,10 +165,11 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
                     fill={cornerColor}
                     stroke="white"
                     strokeWidth="3"
-                    className="drop-shadow-sm corner-pulse"
-                    opacity="0.6"
+                    className="corner-pulse"
+                    opacity="0.8"
                     style={{
-                      pointerEvents: 'none'
+                      pointerEvents: 'none',
+                      filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.8))'
                     }}
                   />
                 )}
