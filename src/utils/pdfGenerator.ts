@@ -244,26 +244,27 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       ['Fire Retardant:', isFireRetardant ? 'Yes' : isExtrablockNonFRColor ? 'No (Selected color is not FR certified)' : 'No'],
       ['Edge Reinforcement:', config.edgeType === 'webbing' ? 'Webbing Reinforced' : config.edgeType === 'cabled' ? 'Cabled Edge' : 'Not selected'],
       ...(config.edgeType === 'webbing' ? [[
-        'Webbing Width:', 
-        config.unit === 'imperial' 
+        'Webbing Width:',
+        config.unit === 'imperial'
           ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}"`
           : `${calculations.webbingWidth}mm`
       ]] : []),
       ...(config.edgeType === 'cabled' && calculations.wireThickness ? [[
-        'Wire Thickness:', 
-        config.unit === 'imperial' 
+        'Wire Thickness:',
+        config.unit === 'imperial'
           ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"`
           : `${calculations.wireThickness}mm`
       ]] : []),
       ['Number of Corners:', config.corners.toString()],
       ['Total Area:', formatArea(calculations.area * 1000000, config.unit)],
       ['Total Perimeter:', formatMeasurement(calculations.perimeter * 1000, config.unit)],
-      ['Total Weight:', config.unit === 'imperial' 
+      ['Total Weight:', config.unit === 'imperial'
         ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb`
         : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`],
       ['Measurement Units:', config.unit === 'metric' ? 'Metric: mm' : 'Imperial: Inches'],
       ['Manufacturing Option:', config.measurementOption === 'adjust' ? 'Adjust to fit space (hardware included)' : 'Exact dimensions (hardware not included)'],
       ...(config.measurementOption === 'adjust' ? [['Hardware Included:', 'Yes - Turnbuckles & Shackles']] : []),
+      ['Fixing Points Installed:', config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'],
     ];
     
     // Configuration summary card

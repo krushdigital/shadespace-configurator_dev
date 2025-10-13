@@ -15,6 +15,7 @@ interface ConfiguratorState {
   fixingHeights: number[];
   fixingTypes?: ('post' | 'building')[];
   eyeOrientations?: ('horizontal' | 'vertical')[];
+  fixingPointsInstalled?: boolean;
   currency: string;
 }
 
@@ -550,13 +551,17 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                     <span class="config-value">
                         Yes - Turnbuckles & Shackles
                         ${HARDWARE_PACK_IMAGES[config.corners] ? `
-                        <img src="${HARDWARE_PACK_IMAGES[config.corners]}" 
-                             alt="${config.corners} Corner Hardware Pack" 
+                        <img src="${HARDWARE_PACK_IMAGES[config.corners]}"
+                             alt="${config.corners} Corner Hardware Pack"
                              style="width: 20px; height: 20px; margin-left: 8px; border-radius: 3px; border: 1px solid #E2E8F0; vertical-align: middle; object-fit: cover;" />
                         ` : ''}
                     </span>
                 </div>
                 ` : ''}
+                <div class="config-item">
+                    <span class="config-label">Fixing Points Installed:</span>
+                    <span class="config-value">${config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'}</span>
+                </div>
             </div>
         </div>
         
