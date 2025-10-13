@@ -191,9 +191,9 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                     content={
                       <div>
                         <h4 className="font-bold text-slate-900 mb-2">Hardware Pack Included</h4>
-                        {!isMobile && config.corners > 0 && hardwarePackImageUrl && (
-                          <img
-                            src={hardwarePackImageUrl}
+                        {config.corners > 0 && hardwarePackImageUrl && (
+                          <img 
+                            src={hardwarePackImageUrl} 
                             alt={`${config.corners} Corner Hardware Pack`}
                             className="w-full h-auto object-cover rounded-lg mb-3"
                           />
