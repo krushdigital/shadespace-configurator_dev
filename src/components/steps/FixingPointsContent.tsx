@@ -124,7 +124,7 @@ export function FixingPointsContent({
     }
     newOrientations[index] = orientation;
     updateConfig({ eyeOrientations: newOrientations });
-    
+
     // Clear validation error for this field
     if (setValidationErrors) {
       const newErrors = { ...validationErrors };
@@ -133,34 +133,93 @@ export function FixingPointsContent({
     }
   };
 
+  const updateFixingPointsInstalled = (installed: boolean) => {
+    if (installed) {
+      // Initialize eye orientations array if not present
+      const newOrientations = [...(config.eyeOrientations || [])];
+      while (newOrientations.length < config.corners) {
+        newOrientations.push('horizontal');
+      }
+      updateConfig({ fixingPointsInstalled: installed, eyeOrientations: newOrientations });
+    } else {
+      // Clear eye orientations when not installed
+      updateConfig({ fixingPointsInstalled: installed, eyeOrientations: undefined });
+    }
+
+    // Clear validation error for fixing points installed
+    if (setValidationErrors) {
+      const newErrors = { ...validationErrors };
+      delete newErrors['fixingPointsInstalled'];
+      setValidationErrors(newErrors);
+    }
+  };
+
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
   const isStepComplete = () => {
-    // Check if we have the right number of entries
-    const hasCorrectLength = config.fixingHeights.length === config.corners &&
-                            config.fixingTypes?.length === config.corners &&
-                            config.eyeOrientations?.length === config.corners;
-
-    if (!hasCorrectLength) return false;
+    // First check if fixing points installation status is selected
+    if (config.fixingPointsInstalled === undefined) return false;
 
     // Check if all heights are valid (not undefined, not null, and greater than 0)
-    const allHeightsValid = config.fixingHeights.every(height =>
-      height !== undefined && height !== null && height > 0
-    );
+    const allHeightsValid = config.fixingHeights.length === config.corners &&
+      config.fixingHeights.every(height =>
+        height !== undefined && height !== null && height > 0
+      );
 
     // Check if all types are selected (not empty string)
-    const allTypesValid = config.fixingTypes?.every(type => type === 'post' || type === 'building') || false;
+    const allTypesValid = config.fixingTypes?.length === config.corners &&
+      config.fixingTypes?.every(type => type === 'post' || type === 'building');
 
-    // Check if all orientations are selected (not empty string)
-    const allOrientationsValid = config.eyeOrientations?.every(orientation => orientation === 'horizontal' || orientation === 'vertical') || false;
+    if (!allHeightsValid || !allTypesValid) return false;
 
-    // For button styling, only check if all required fields are filled
-    // Typo suggestions are treated as warnings and won't block the visual state
-    return allHeightsValid && allTypesValid && allOrientationsValid;
+    // If fixing points are installed, also check eye orientations
+    if (config.fixingPointsInstalled === true) {
+      const allOrientationsValid = config.eyeOrientations?.length === config.corners &&
+        config.eyeOrientations?.every(orientation => orientation === 'horizontal' || orientation === 'vertical');
+      return allOrientationsValid || false;
+    }
+
+    // If fixing points are not installed, eye orientations are not required
+    return true;
   };
 
   return (
     <div className="p-6">
+      {/* Fixing Points Installation Question */}
+      <Card className={`p-4 mb-6 border-2 transition-all duration-300 ${
+        config.fixingPointsInstalled === undefined
+          ? 'border-[#307C31] bg-[#BFF102]/10'
+          : 'border-slate-200 bg-white'
+      }`}>
+        <h4 className="text-base font-semibold text-[#01312D] mb-3">
+          Are your Fixing Points Installed?
+        </h4>
+        <p className="text-sm text-[#01312D]/70 mb-4">
+          This helps us understand if your anchor points are already in place or if you're planning the installation.
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => updateFixingPointsInstalled(true)}
+            className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 ${
+              config.fixingPointsInstalled === true
+                ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
+                : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+            }`}
+          >
+            Yes - Already Installed
+          </button>
+          <button
+            onClick={() => updateFixingPointsInstalled(false)}
+            className={`flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 ${
+              config.fixingPointsInstalled === false
+                ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
+                : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+            }`}
+          >
+            No - Planning Installation
+          </button>
+        </div>
+      </Card>
       {/* General Typo Warning */}
       {validationErrors.typoSuggestions && (
         <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-500 rounded-lg">
@@ -194,8 +253,10 @@ export function FixingPointsContent({
                 </h5>
               </div>
               
-              {/* Responsive Grid Layout */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+              {/* Responsive Grid Layout - Conditional columns based on fixing points installation */}
+              <div className={`grid grid-cols-1 gap-3 md:gap-4 ${
+                config.fixingPointsInstalled === true ? 'md:grid-cols-3' : 'md:grid-cols-2'
+              }`}>
                 {/* Height Input */}
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
@@ -375,7 +436,8 @@ export function FixingPointsContent({
                   </div>
                 </div>
 
-                {/* Eye Orientation */}
+                {/* Eye Orientation - Only show if fixing points are installed */}
+                {config.fixingPointsInstalled === true && (
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-[#01312D]">
@@ -433,6 +495,7 @@ export function FixingPointsContent({
                     </button>
                   </div>
                 </div>
+                )}
               </div>
             </div>
           </Card>
@@ -495,15 +558,23 @@ export function FixingPointsContent({
 
               const missingHeights = config.fixingHeights.filter(h => h === undefined || h === null || h <= 0).length;
               const missingTypes = (config.fixingTypes?.filter(t => t !== 'post' && t !== 'building') || []).length;
-              const missingOrientations = (config.eyeOrientations?.filter(o => o !== 'horizontal' && o !== 'vertical') || []).length;
+              const missingOrientations = config.fixingPointsInstalled === true
+                ? (config.eyeOrientations?.filter(o => o !== 'horizontal' && o !== 'vertical') || []).length
+                : 0;
 
               const totalMissing = missingHeights + missingTypes + missingOrientations;
+              const fixingPointsNotSelected = config.fixingPointsInstalled === undefined;
 
               return (
                 <>
                   {!complete && (
                     <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                      {hasUnacknowledgedTypos ? (
+                      {fixingPointsNotSelected ? (
+                        <span className="flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4 text-slate-500" />
+                          <span>Please select whether your fixing points are installed</span>
+                        </span>
+                      ) : hasUnacknowledgedTypos ? (
                         <span className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-amber-500" />
                           <span>Please review and address the height warnings above</span>
