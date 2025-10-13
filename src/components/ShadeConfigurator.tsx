@@ -14,7 +14,7 @@ import { useShadeCalculations } from '../hooks/useShadeCalculations';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues } from '../utils/geometry';
 import { generatePDF } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
@@ -342,6 +342,33 @@ const handleEmailSummary = async () => {
         };
       });
 
+      // Create backend-only dual measurement objects for email to fulfillment team
+      const backendEdgeMeasurementsEmail: Record<string, string> = {};
+      for (let i = 0; i < config.corners; i++) {
+        const nextIndex = (i + 1) % config.corners;
+        const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+        const measurement = config.measurements[edgeKey];
+        if (measurement && measurement > 0) {
+          backendEdgeMeasurementsEmail[edgeKey] = formatDualMeasurement(measurement, config.unit);
+        }
+      }
+
+      const backendDiagonalMeasurementsEmail: Record<string, string> = {};
+      diagonalKeys.forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendDiagonalMeasurementsEmail[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
+
+      const backendAnchorMeasurementsEmail: Record<string, string> = {};
+      config.fixingHeights.forEach((height, index) => {
+        const corner = String.fromCharCode(65 + index);
+        if (height && height > 0) {
+          backendAnchorMeasurementsEmail[corner] = formatDualMeasurement(height, config.unit);
+        }
+      });
+
       const userCurrency = window.Shopify?.currency?.active || 'USD';
       console.log('userCurrency: ', userCurrency);
 
@@ -388,7 +415,12 @@ const handleEmailSummary = async () => {
         Area: formatArea(calculations.area * 1000000, config.unit),
         Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
         canvasImage: canvasImageUrl,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        // Add dual measurements for backend/fulfillment team emails
+        backendEdgeMeasurements: backendEdgeMeasurementsEmail,
+        backendDiagonalMeasurements: backendDiagonalMeasurementsEmail,
+        backendAnchorMeasurements: backendAnchorMeasurementsEmail,
+        originalUnit: config.unit
       };
 
       const response = await fetch(
@@ -577,6 +609,32 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
       const cartDiagonalMeasurements = formatCartProperties(orderData.diagonalMeasurementsObj);
       const cartAnchorMeasurements = formatCartProperties(orderData.anchorPointMeasurements);
 
+      // Create backend-only dual measurement objects for Shopify admin
+      const backendEdgeMeasurements: Record<string, string> = {};
+      Object.keys(orderData.edgeMeasurements || {}).forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendEdgeMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
+
+      const backendDiagonalMeasurements: Record<string, string> = {};
+      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+      diagonalKeys.forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
+
+      const backendAnchorMeasurements: Record<string, string> = {};
+      config.fixingHeights.forEach((height, index) => {
+        const corner = String.fromCharCode(65 + index);
+        if (height && height > 0) {
+          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+        }
+      });
+
       // Format arrays for cart display
       const formatArrayForCart = (array: any[], label: string) => {
         if (!array || !Array.isArray(array)) return {};
@@ -602,13 +660,18 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
         },
         body: JSON.stringify({
           ...orderData,
-          // Pass formatted properties for cart display
+          // Pass formatted properties for cart display (customer-facing, single unit)
           cartEdgeMeasurements,
           cartDiagonalMeasurements,
           cartAnchorMeasurements,
           cartFixingHeights,
           cartFixingTypes,
-          ...(orderData.fixingPointsInstalled === true && { cartEyeOrientations })
+          ...(orderData.fixingPointsInstalled === true && { cartEyeOrientations }),
+          // Pass dual measurements for backend/fulfillment (Shopify admin only)
+          backendEdgeMeasurements,
+          backendDiagonalMeasurements,
+          backendAnchorMeasurements,
+          originalUnit: config.unit
         }),
       });
 
