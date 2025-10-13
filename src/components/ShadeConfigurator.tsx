@@ -85,7 +85,9 @@ export function ShadeConfigurator() {
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
 
-  // Mobile pricing bar state (removed lock and new quote functionality)
+  // Mobile pricing bar state
+  const [shouldAutoSlideUp, setShouldAutoSlideUp] = useState(false);
+  const prevHasAllEdgeMeasurements = useRef(false);
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
@@ -138,6 +140,14 @@ export function ShadeConfigurator() {
 
     loadQuoteFromUrl();
   }, []);
+
+  // Track edge measurement completion for auto-slide-up on mobile
+  useEffect(() => {
+    if (isMobile && openStep === 4 && hasAllEdgeMeasurements && !prevHasAllEdgeMeasurements.current) {
+      setShouldAutoSlideUp(true);
+    }
+    prevHasAllEdgeMeasurements.current = hasAllEdgeMeasurements;
+  }, [isMobile, openStep, hasAllEdgeMeasurements]);
 
 
   /*
@@ -1546,6 +1556,7 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
         quoteReference={quoteReference || undefined}
         onContinue={handleMobileContinue}
         onSaveQuote={handleSaveQuote}
+        autoSlideUp={shouldAutoSlideUp}
       />
 
       {/* Save Quote Modal */}

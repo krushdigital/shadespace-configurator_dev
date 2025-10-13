@@ -8,6 +8,7 @@ interface MobilePricingBarProps {
   quoteReference?: string;
   onContinue?: () => void;
   onSaveQuote?: () => void;
+  autoSlideUp?: boolean;
 }
 
 export function MobilePricingBar({
@@ -17,9 +18,18 @@ export function MobilePricingBar({
   quoteReference,
   onContinue,
   onSaveQuote,
+  autoSlideUp = false,
 }: MobilePricingBarProps) {
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [hasAutoSlideUp, setHasAutoSlideUp] = useState(false);
+
+  useEffect(() => {
+    if (autoSlideUp && !hasAutoSlideUp) {
+      setIsHidden(false);
+      setHasAutoSlideUp(true);
+    }
+  }, [autoSlideUp, hasAutoSlideUp]);
 
   useEffect(() => {
     const handleScroll = () => {
