@@ -101,9 +101,10 @@ html {
 }
 
 .corner-pulse {
-  animation: corner-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) 2;
-  transform-box: fill-box;
-  transform-origin: center center;
+  animation: corner-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) 2 !important;
+  transform-box: fill-box !important;
+  transform-origin: center center !important;
+  animation-fill-mode: forwards !important;
 }
 
 /* Respect reduced motion preference */
