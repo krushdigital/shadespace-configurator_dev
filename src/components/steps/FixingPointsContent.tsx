@@ -183,14 +183,20 @@ export function FixingPointsContent({
     return true;
   };
 
+  const isInstallationStatusSelected = config.fixingPointsInstalled !== undefined;
+  const hasInstallationError = validationErrors['fixingPointsInstalled'];
+
   return (
     <div className="p-6">
       {/* Fixing Points Installation Question */}
       <Card className={`p-4 mb-6 border-2 transition-all duration-300 ${
-        config.fixingPointsInstalled === undefined
+        hasInstallationError
+          ? 'border-red-500 bg-red-50 animate-pulse-error'
+          : config.fixingPointsInstalled === undefined
           ? 'border-[#307C31] bg-[#BFF102]/10'
           : 'border-slate-200 bg-white'
-      }`}>
+      }`}
+      data-error="fixingPointsInstalled">
         <h4 className="text-base font-semibold text-[#01312D] mb-3">
           Are your Fixing Points Installed?
         </h4>
@@ -219,7 +225,35 @@ export function FixingPointsContent({
             No - Planning Installation
           </button>
         </div>
+        {hasInstallationError && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-500 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+              <p className="text-sm text-red-700 font-medium">
+                {validationErrors['fixingPointsInstalled']}
+              </p>
+            </div>
+          </div>
+        )}
       </Card>
+
+      {/* Info Banner when installation status not selected */}
+      {!isInstallationStatusSelected && (
+        <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-sm font-semibold text-blue-800 mb-1">
+                Answer Required
+              </h4>
+              <p className="text-sm text-blue-700">
+                Please select whether your fixing points are already installed or if you're planning the installation. This will enable the configuration fields below.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* General Typo Warning */}
       {validationErrors.typoSuggestions && (
         <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-500 rounded-lg">
@@ -242,9 +276,13 @@ export function FixingPointsContent({
       )}
 
 
-      <div className="space-y-2">
+      <div className={`space-y-2 transition-opacity duration-300 ${
+        !isInstallationStatusSelected ? 'opacity-50 pointer-events-none' : ''
+      }`}>
         {Array.from({ length: config.corners }, (_, index) => (
-          <Card key={index} className="p-3 border-l-4 border-l-[#01312D]">
+          <Card key={index} className={`p-3 border-l-4 border-l-[#01312D] relative ${
+            !isInstallationStatusSelected ? 'bg-slate-50' : ''
+          }`}>
             <div className="space-y-1">
               {/* Header with Corner Label */}
               <div className="flex items-center justify-between">
@@ -306,6 +344,7 @@ export function FixingPointsContent({
                       return (
                     <Input
                       type="number"
+                      disabled={!isInstallationStatusSelected}
                      value={hasValidValue
                        ? (config.unit === 'imperial'
                          ? String(Math.round(convertMmToUnit(currentHeight, config.unit) * 100) / 100)
@@ -410,6 +449,7 @@ export function FixingPointsContent({
                   >
                     <button
                       onClick={() => updateFixingType(index, 'post')}
+                      disabled={!isInstallationStatusSelected}
                       className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                         config.fixingTypes?.[index] === 'post'
                           ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
@@ -422,6 +462,7 @@ export function FixingPointsContent({
                     </button>
                     <button
                       onClick={() => updateFixingType(index, 'building')}
+                      disabled={!isInstallationStatusSelected}
                       className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                         config.fixingTypes?.[index] === 'building'
                           ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
@@ -471,6 +512,7 @@ export function FixingPointsContent({
                   >
                     <button
                       onClick={() => updateEyeOrientation(index, 'horizontal')}
+                      disabled={!isInstallationStatusSelected}
                       className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                         config.eyeOrientations?.[index] === 'horizontal'
                           ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
@@ -483,6 +525,7 @@ export function FixingPointsContent({
                     </button>
                     <button
                       onClick={() => updateEyeOrientation(index, 'vertical')}
+                      disabled={!isInstallationStatusSelected}
                       className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                         config.eyeOrientations?.[index] === 'vertical'
                           ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'

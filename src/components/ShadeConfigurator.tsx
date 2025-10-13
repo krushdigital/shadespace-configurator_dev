@@ -938,11 +938,14 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
         }
         break;
       case 5: // Heights & Anchor Points
-        // Check if fixing points installation status is selected
+        // PRIORITY CHECK: Installation status must be selected first
         if (config.fixingPointsInstalled === undefined) {
-          errors.fixingPointsInstalled = 'Please select whether your fixing points are installed';
+          errors.fixingPointsInstalled = 'Please answer whether your fixing points are already installed first';
+          // Don't validate dependent fields until installation status is selected
+          break;
         }
 
+        // Only validate dependent fields after installation status is selected
         // Validate heights
         const heightValidation = validateHeights(config.fixingHeights, config.unit);
 
