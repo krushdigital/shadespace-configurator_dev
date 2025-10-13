@@ -48,12 +48,12 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
         <div className="grid grid-cols-2 gap-4">
           <button
             type="button"
-            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
+            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 bg-white ${
               config.unit === 'metric'
-                ? 'border-[#01312D] bg-[#01312D] text-white'
+                ? 'ring-2 ring-[#01312D] !border-[#01312D] text-slate-900'
                 : validationErrors.unit && !config.unit
                 ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
-                : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
+                : 'border-slate-300 text-slate-900 hover:border-slate-400 hover:shadow-md'
             }`}
             onClick={() => updateConfig({ unit: 'metric' })}
           >
@@ -65,12 +65,12 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
 
           <button
             type="button"
-            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 ${
+            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 bg-white ${
               config.unit === 'imperial'
-                ? 'border-[#01312D] bg-[#01312D] text-white'
+                ? 'ring-2 ring-[#01312D] !border-[#01312D] text-slate-900'
                 : validationErrors.unit && !config.unit
                 ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
-                : 'border-slate-300 bg-white text-slate-900 hover:border-slate-400'
+                : 'border-slate-300 text-slate-900 hover:border-slate-400 hover:shadow-md'
             }`}
             onClick={() => updateConfig({ unit: 'imperial' })}
           >
