@@ -82,3 +82,8 @@ html {
 .shake {
   animation: shake 0.5s ease-in-out;
 }
+
+/* Animate pulse error for installation status card */
+.animate-pulse-error {
+  animation: pulse-error 1s ease-in-out 3;
+}
