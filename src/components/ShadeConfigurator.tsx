@@ -1199,7 +1199,7 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
           </a>
         </div>
         <p className="text-xl text-[#01312D]/70 max-w-2xl mx-auto font-extrabold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-          Design your perfect shade solution with our interactive configurator
+          Design your perfect shade solution and get instant custom pricing with our interactive configurator
         </p>
       </div>
 
