@@ -156,6 +156,23 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
           {cornerPoints.map(({ point, index, labelPosition, cornerColor, label }) => {
             return (
               <g key={index}>
+                {/* Pulse effect circle - only shown during animation */}
+                {showCornerPulse && !readonly && (
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={isMobile ? "18" : "10"}
+                    fill={cornerColor}
+                    stroke="white"
+                    strokeWidth="3"
+                    className="drop-shadow-sm corner-pulse"
+                    opacity="0.6"
+                    style={{
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
+                {/* Main corner point */}
                 <circle
                   cx={point.x}
                   cy={point.y}
@@ -163,7 +180,7 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
                   fill={cornerColor}
                   stroke="white"
                   strokeWidth="3"
-                  className={`drop-shadow-sm ${showCornerPulse && !readonly ? 'corner-pulse' : ''}`}
+                  className="drop-shadow-sm"
                   style={{
                     cursor: readonly ? 'default' : 'grab'
                   }}
@@ -174,7 +191,7 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
                   y={labelPosition.y}
                   fontSize={isMobile ? "24" : "16"}
                   className="fill-slate-900 font-bold pointer-events-none select-none"
-                  style={{ 
+                  style={{
                     filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.8))'
                   }}
                 >
