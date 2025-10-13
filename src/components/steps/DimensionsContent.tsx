@@ -475,6 +475,65 @@ export function DimensionsContent({
         </div>
       </div>
 
+      {/* Mobile-Only Quote Ready Banner */}
+      {isMobile && hasAllEdgeMeasurements && calculations.totalPrice > 0 && (
+        <div className="mt-6 bg-gradient-to-br from-[#307C31] to-[#01312D] rounded-2xl p-6 shadow-2xl border-2 border-[#BFF102]">
+          <div className="flex items-start gap-4 mb-4">
+            <div className="flex-shrink-0 w-12 h-12 bg-[#BFF102] rounded-full flex items-center justify-center">
+              <svg className="w-7 h-7 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white mb-1">
+                Your Quote is Ready!
+              </h3>
+              <p className="text-sm text-white/90 mb-2">
+                All edge measurements complete. Continue to finish your order or save your quote.
+              </p>
+              <div className="text-2xl font-bold text-[#BFF102]">
+                {calculations.totalPrice > 0 && `${config.currency} ${calculations.totalPrice.toFixed(2)}`}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            <button
+              onClick={onNext}
+              className="w-full py-3 px-4 bg-[#BFF102] text-[#01312D] font-bold rounded-lg hover:bg-[#caee41] transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            >
+              <span>Continue to {nextStepTitle}</span>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={onSaveQuote}
+                className="py-2.5 px-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all duration-200 border border-white/30 flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                <span className="text-sm">Save Quote</span>
+              </button>
+
+              <button
+                onClick={handleGeneratePDF}
+                disabled={isGeneratingPDF}
+                className="py-2.5 px-3 bg-white/10 text-white font-semibold rounded-lg hover:bg-white/20 transition-all duration-200 border border-white/30 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-sm">{isGeneratingPDF ? 'Generating...' : 'Download PDF'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && (

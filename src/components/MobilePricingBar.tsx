@@ -8,6 +8,8 @@ interface MobilePricingBarProps {
   quoteReference?: string;
   onContinue?: () => void;
   onSaveQuote?: () => void;
+  isLocked?: boolean;
+  isNewQuote?: boolean;
 }
 
 export function MobilePricingBar({
@@ -17,11 +19,18 @@ export function MobilePricingBar({
   quoteReference,
   onContinue,
   onSaveQuote,
+  isLocked = false,
+  isNewQuote = false,
 }: MobilePricingBarProps) {
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
+    if (isLocked) {
+      setIsHidden(false);
+      return;
+    }
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
@@ -37,7 +46,7 @@ export function MobilePricingBar({
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, [lastScrollY, isLocked]);
 
   if (!isVisible || totalPrice <= 0) return null;
 
@@ -45,14 +54,25 @@ export function MobilePricingBar({
     <div
       className={`lg:hidden fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${
         isHidden ? 'translate-y-full' : 'translate-y-0'
+      } ${
+        isNewQuote ? 'animate-slideUpBounce' : ''
       }`}
     >
-      <div className="bg-white border-t-2 border-[#307C31] shadow-2xl">
+      <div className={`bg-white border-t-2 shadow-2xl ${
+        isNewQuote ? 'border-[#BFF102] shadow-[#BFF102]/30' : 'border-[#307C31]'
+      }`}>
         <div className="px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-medium text-slate-600 mb-0.5">
-                {quoteReference ? `Quote ${quoteReference}` : 'Your Quote'}
+              <div className="flex items-center gap-2 mb-0.5">
+                <div className="text-xs font-medium text-slate-600">
+                  {quoteReference ? `Quote ${quoteReference}` : 'Your Quote'}
+                </div>
+                {isNewQuote && (
+                  <span className="px-1.5 py-0.5 bg-[#BFF102] text-[#01312D] text-[10px] font-bold rounded-full animate-pulse">
+                    NEW
+                  </span>
+                )}
               </div>
               <div className="text-lg font-bold text-[#01312D]">
                 {formatCurrency(totalPrice, currency)}
