@@ -87,3 +87,26 @@ html {
 .animate-pulse-error {
   animation: pulse-error 1s ease-in-out 3;
 }
+
+/* Pulse animation for draggable corner points */
+@keyframes corner-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.corner-pulse {
+  animation: corner-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) 2;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .corner-pulse {
+    animation: none;
+  }
+}

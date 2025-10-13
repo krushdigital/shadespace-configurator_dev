@@ -1,4 +1,4 @@
-import React, { useState, useCallback, forwardRef, useRef, useImperativeHandle, useMemo } from 'react';
+import React, { useState, useCallback, forwardRef, useRef, useImperativeHandle, useMemo, useEffect } from 'react';
 import { ConfiguratorState } from '../types';
 import { convertMmToUnit, convertUnitToMm } from '../utils/geometry';
 import { ShadeSVGCore } from './ShadeSVGCore';
@@ -34,6 +34,18 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
   const [editingMeasurementKey, setEditingMeasurementKey] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [editingPosition, setEditingPosition] = useState<{ x: number; y: number } | null>(null);
+  const [showCornerPulse, setShowCornerPulse] = useState(true);
+
+  useEffect(() => {
+    if (!readonly && !forPdfCapture) {
+      const timer = setTimeout(() => {
+        setShowCornerPulse(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowCornerPulse(false);
+    }
+  }, [readonly, forPdfCapture]);
 
   // Expose the SVG element to parent components
   useImperativeHandle(ref, () => ({
@@ -151,7 +163,12 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
                   fill={cornerColor}
                   stroke="white"
                   strokeWidth="3"
-                  className="drop-shadow-sm"
+                  className={`drop-shadow-sm ${showCornerPulse && !readonly ? 'corner-pulse' : ''}`}
+                  style={{
+                    transformOrigin: `${point.x}px ${point.y}px`,
+                    cursor: readonly ? 'default' : 'grab'
+                  }}
+                  aria-label={`Draggable corner point ${label}`}
                 />
                 <text
                   x={labelPosition.x}
