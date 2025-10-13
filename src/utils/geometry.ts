@@ -60,6 +60,62 @@ export function formatArea(mm2: number, unit: 'metric' | 'imperial'): string {
   return `${m2.toFixed(2)} m²`;
 }
 
+/**
+ * Format measurement with both metric and imperial units for backend/fulfillment display
+ * @param mm Measurement in millimeters
+ * @param originalUnit The unit the customer originally entered
+ * @returns Formatted string with both units (metric first)
+ */
+export function formatDualMeasurement(mm: number, originalUnit: 'metric' | 'imperial'): string {
+  const metricValue = `${Math.round(mm)}mm`;
+  const inches = mm * MM_TO_INCHES;
+
+  let imperialValue: string;
+  if (inches >= 12) {
+    const feet = Math.floor(inches / 12);
+    const remainingInches = inches % 12;
+    imperialValue = parseFloat(remainingInches.toFixed(1)) > 0
+      ? `${feet}'${remainingInches.toFixed(1)}"`
+      : `${feet}'`;
+  } else {
+    imperialValue = `${inches.toFixed(1)}"`;
+  }
+
+  const marker = originalUnit === 'imperial' ? ' *' : '';
+  return `${metricValue} (${imperialValue}${marker})`;
+}
+
+/**
+ * Get both metric and imperial measurements as separate values for backend storage
+ * @param mm Measurement in millimeters
+ * @returns Object with metric and imperial values
+ */
+export function getDualMeasurementValues(mm: number): { metric: string; imperial: string; metricRaw: number; imperialRaw: number } {
+  const metricRaw = Math.round(mm);
+  const imperialRaw = parseFloat((mm * MM_TO_INCHES).toFixed(2));
+
+  const metricValue = `${metricRaw}mm`;
+  const inches = mm * MM_TO_INCHES;
+
+  let imperialValue: string;
+  if (inches >= 12) {
+    const feet = Math.floor(inches / 12);
+    const remainingInches = inches % 12;
+    imperialValue = parseFloat(remainingInches.toFixed(1)) > 0
+      ? `${feet}'${remainingInches.toFixed(1)}"`
+      : `${feet}'`;
+  } else {
+    imperialValue = `${inches.toFixed(1)}"`;
+  }
+
+  return {
+    metric: metricValue,
+    imperial: imperialValue,
+    metricRaw,
+    imperialRaw
+  };
+}
+
 export function validateMeasurements(measurements: {[key: string]: number}, corners: number, unit: 'metric' | 'imperial'): {
   errors: {[key: string]: string};
   typoSuggestions: {[key: string]: number};

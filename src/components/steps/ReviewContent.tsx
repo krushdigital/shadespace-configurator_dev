@@ -6,7 +6,7 @@ import { Input } from '../ui/Input';
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { FABRICS } from '../../data/fabrics';
-import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry } from '../../utils/geometry';
+import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 
 interface ReviewContentProps {
@@ -391,6 +391,34 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         };
       });
 
+      // Create backend-only dual measurement objects for Shopify admin
+      const backendEdgeMeasurements: Record<string, string> = {};
+      for (let i = 0; i < config.corners; i++) {
+        const nextIndex = (i + 1) % config.corners;
+        const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+        const measurement = config.measurements[edgeKey];
+        if (measurement && measurement > 0) {
+          backendEdgeMeasurements[edgeKey] = formatDualMeasurement(measurement, config.unit);
+        }
+      }
+
+      const backendDiagonalMeasurements: Record<string, string> = {};
+      // Reuse diagonalKeys already declared above
+      diagonalKeys.forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
+
+      const backendAnchorMeasurements: Record<string, string> = {};
+      config.fixingHeights.forEach((height, index) => {
+        const corner = String.fromCharCode(65 + index);
+        if (height && height > 0) {
+          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+        }
+      });
+
       const hardwareIncluded = config.measurementOption === 'adjust';
       const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
 
@@ -431,7 +459,12 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
           Area: formatArea(calculations.area * 1000000, config.unit),
           Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          // Add dual measurements for backend/fulfillment
+          backendEdgeMeasurements,
+          backendDiagonalMeasurements,
+          backendAnchorMeasurements,
+          originalUnit: config.unit
         };
 
         handleAddToCart(orderData);
