@@ -17,11 +17,11 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
   const updatePosition = () => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      
+
       // Check if mobile
       const isMobile = window.innerWidth < 768;
-      const tooltipWidth = isMobile ? 280 : 320;
-      const tooltipMaxHeight = isMobile ? Math.min(300, window.innerHeight * 0.6) : 400;
+      const tooltipWidth = isMobile ? 300 : 380;
+      const tooltipMaxHeight = isMobile ? Math.min(400, window.innerHeight * 0.7) : 600;
       
       // Position tooltip to the right of the trigger, centered vertically
       let x = rect.right + 10;
@@ -102,8 +102,8 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: 99999,
-        width: window.innerWidth < 768 ? '280px' : '320px',
-        maxHeight: window.innerWidth < 768 ? `${Math.min(300, window.innerHeight * 0.6)}px` : '400px',
+        width: window.innerWidth < 768 ? '300px' : '380px',
+        maxHeight: window.innerWidth < 768 ? `${Math.min(400, window.innerHeight * 0.7)}px` : '600px',
         overflowY: 'auto',
       }}
       onMouseEnter={() => {
@@ -114,7 +114,7 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
       onMouseLeave={hideTooltip}
     >
       <div className={`leading-relaxed p-3 sm:p-4 ${
-        window.innerWidth < 768 ? 'text-xs' : 'text-xs'
+        window.innerWidth < 768 ? 'text-xs' : 'text-sm'
       }`}>
         {content}
       </div>

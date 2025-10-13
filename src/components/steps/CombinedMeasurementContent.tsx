@@ -4,6 +4,7 @@ import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
+import { AccordionItem } from '../ui/AccordionItem';
 import { CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../../data/pricing';
 
 // Define the mapping for hardware pack images
@@ -118,49 +119,60 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                     <Tooltip
                       content={
                         <div>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-bold text-slate-900 mb-2">Option A – You measure your space (between fixing points)</h4>
-                             <p className="text-sm text-slate-600 mb-3 font-medium italic">This is the industry best-practice and fail-safe approach for a perfect fit.</p>
-                            </div>
-                            
-                            <div>
-                              <h5 className="font-semibold text-slate-800 mb-1">What you do:</h5>
-                              <ul className="text-slate-600 space-y-1 ml-3">
-                                <li>• Provide the precise actual measurements between your existing or newly installed fixing points or poles.</li>
-                                <li>• You can order now for price indications, then finalize measurements after your fixing points (poles, brackets) are installed for a perfect fit.</li>
-                                <li>• We calculate the optimal sail size to fit your space with proper tension.</li>
-                                <li>• This is the most popular option for new installations.</li>
-                              </ul>
-                            </div>
-                            
-                            <div>
-                              <h5 className="font-semibold text-slate-800 mb-1">What we do:</h5>
-                              <ul className="text-slate-600 space-y-1 ml-3">
-                                <li>• We take your precise measurements and expertly calculate the optimal sail size, allowing for fabric stretch and tensioning hardware.</li>
-                                <li>• We manufacture the sail slightly smaller than your provided dimensions to ensure a taut, perfect fit when properly tensioned.</li>
-                                <li>• We include all necessary hardware for installation.</li>
-                              </ul>
-                            </div>
-                            
-                            <div>
-                              <h5 className="font-semibold text-slate-800 mb-1">Best for:</h5>
-                              <ul className="text-slate-600 space-y-1 ml-3">
-                                <li>• Professiona look shade sail installations.</li>
-                                <li>• High wind zones or longterm use where high tension & zero flapping is desirable.</li>
-                                <li>• Larger sails & commercial or industrial type projects.</li>
-                              </ul>
-                            </div>
-                            
-                            <div>
-                              <h5 className="font-semibold text-slate-800 mb-1">Heads-up:</h5>
-                              <ul className="text-slate-600 space-y-1 ml-3">
-                                <li>• The finished sail will match your exact dimensions, placing full responsibility on you for proper fit and tensioning, similar to purchasing a ready-made shade sail.</li>
-                                <li>• The finished sail will be smaller than your measurements to allow for tensioning.</li>
-                                <li>• Hardware pack is included for complete installation.</li>
-                              </ul>
-                            </div>
+                          <div className="mb-3">
+                            <img
+                              src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/fit-area.webp?v=1760324780"
+                              alt="Fixing points measurement diagram"
+                              className="w-full h-auto rounded-lg mb-3"
+                            />
+                            <h4 className="font-bold text-[#01312D] text-base mb-2">Perfect Fit, Every Time</h4>
+                            <p className="text-sm text-slate-700 leading-relaxed">
+                              Provide the fixing-point measurements of your space, and we'll engineer your sail for a flawless, professional tensioned fit.
+                            </p>
                           </div>
+
+                          <AccordionItem trigger="Learn more →">
+                            <div className="space-y-4 mt-2">
+                              <p className="text-xs text-slate-600 italic font-medium">
+                                This is the industry best-practice and fail-safe approach for a perfect fit.
+                              </p>
+
+                              <div>
+                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
+                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                  <li>You provide the exact measurements between your fixing points or poles.</li>
+                                  <li>If your poles or fixings aren't yet installed, you can estimate measurements for pricing, then re-measure and finalise before ordering once your poles or fixings are in place.</li>
+                                </ul>
+                              </div>
+
+                              <div>
+                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">What we do:</h5>
+                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                  <li>We take your precise measurements and calculate the optimal sail size - factoring in fabric stretch and hardware deductions - to ensure a taut, wrinkle-free fit.</li>
+                                  <li>All required tensioning hardware is included and selected by our team to match your sail size.</li>
+                                </ul>
+                              </div>
+
+                              <div>
+                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">Best for:</h5>
+                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                  <li>Professional-looking, long-term installations</li>
+                                  <li>High-wind or exposed locations</li>
+                                  <li>All projects requiring tight tension and zero flapping</li>
+                                </ul>
+                              </div>
+
+                              <div>
+                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">Heads-up:</h5>
+                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                  <li>The finished sail will be slightly smaller than your measurements (to allow for stretch).</li>
+                                  <li>Tensioning Hardware is included. (Wall brackets or eyebolts can be added to cart separately if required).</li>
+                                  <li>If measurement discrepancies arise, we'll contact you before manufacturing.</li>
+                                  <li>Unresolvable discrepancies = full credit or refund.</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </AccordionItem>
                         </div>
                       }
                     >
@@ -244,49 +256,56 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                   <Tooltip
                     content={
                       <div>
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-bold text-slate-900 mb-2">Option B – You provide your sail size (exact dimensions)</h4>
-                          </div>
-                          
-                          <div>
-                            <h5 className="font-semibold text-slate-800 mb-1">What you do:</h5>
-                            <ul className="text-slate-600 space-y-1 ml-3">
-                              <li>• Provide the exact finished dimensions you want for your sail.</li>
-                              <li>• Calculate your own tensioning requirements.</li>
-                              <li>• Choose your own tensioning turnbuckles seperately.</li>
-                              <li>• Install your poles and fixing hardware to suit, after you receive the shade sail..</li>
-                            </ul>
-                          </div>
-                          
-                          <div>
-                            <h5 className="font-semibold text-slate-800 mb-1">What we do:</h5>
-                            <ul className="text-slate-600 space-y-1 ml-3">
-                              <li>• We manufacture the sail to the exact dimensions you provided.</li>
-                              <li>• We provide details of how much the sail will increase in size once fully tensioned out.</li>
-                              <li>• We supply hardware if required as optional extras and is it is added to the sail price.</li>
-                            </ul>
-                          </div>
-                          
-                          <div>
-                            <h5 className="font-semibold text-slate-800 mb-1">Best for:</h5>
-                            <ul className="text-slate-600 space-y-1 ml-3">
-                              <li>• Urgent orders where you don't have time to install the poles or fixing points before ordering.</li>
-                              <li>• Experienced installers who prefer exact control.</li>
-                              <li>• Smaller periodic use sails that you are happy with a potentially looser fit</li>
-                              <li>• Sails that are part of a proposed fixed frame structure that is being manufactured with very limited variables.</li>
-                            </ul>
-                          </div>
-                          
-                          <div>
-                            <h5 className="font-semibold text-slate-800 mb-1">Heads-up:</h5>
-                            <ul className="text-slate-600 space-y-1 ml-3">
-                              <li>• You must account for tensioning in your measurements as we make the sail to your pre determined measurements.</li>
-                              <li>• Hardware is not included and must be added to cart separately.</li>
-                              <li>• Requires more installation experience.</li>
-                            </ul>
-                          </div>
+                        <div className="mb-3">
+                          <img
+                            src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/fit-dimensions.webp?v=1760324780"
+                            alt="Sail dimensions diagram"
+                            className="w-full h-auto rounded-lg mb-3"
+                          />
+                          <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
+                          <p className="text-sm text-slate-700 leading-relaxed">
+                            You provide the exact sail size measurements and add any required hardware additionally.
+                          </p>
                         </div>
+
+                        <AccordionItem trigger="Learn more →">
+                          <div className="space-y-4 mt-2">
+                            <div>
+                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
+                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <li>Provide the exact finished sail dimensions you want.</li>
+                                <li>Select your own hardware separately.</li>
+                                <li>Once you receive the sail, install your poles and fixings to suit.</li>
+                              </ul>
+                            </div>
+
+                            <div>
+                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">What we do:</h5>
+                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <li>We manufacture the sail to your provided dimensions.</li>
+                                <li>Hardware can be added to your order at checkout.</li>
+                              </ul>
+                            </div>
+
+                            <div>
+                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">Best for:</h5>
+                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <li>Urgent orders where poles or fixings aren't yet installed</li>
+                                <li>Smaller or temporary sails with a looser fit, that can be taken down easily</li>
+                              </ul>
+                            </div>
+
+                            <div>
+                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">Heads-up:</h5>
+                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <li>The sail is made exactly to your measurements - you must allow for extra tensioning space during install.</li>
+                                <li>Hardware not included (add to cart separately).</li>
+                                <li>If measurement discrepancies arise, we'll contact you before manufacturing.</li>
+                                <li>Unresolvable discrepancies = full credit or refund.</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </AccordionItem>
                       </div>
                     }
                   >
