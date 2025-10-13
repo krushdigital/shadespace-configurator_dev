@@ -165,7 +165,6 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
                   strokeWidth="3"
                   className={`drop-shadow-sm ${showCornerPulse && !readonly ? 'corner-pulse' : ''}`}
                   style={{
-                    transformOrigin: `${point.x}px ${point.y}px`,
                     cursor: readonly ? 'default' : 'grab'
                   }}
                   aria-label={`Draggable corner point ${label}`}
