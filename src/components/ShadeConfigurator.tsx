@@ -21,7 +21,6 @@ import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to ch
 import { formatMeasurement, formatArea } from '../utils/geometry';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
-import { PhaseIndicator } from './PhaseIndicator';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { MobilePricingBar } from './MobilePricingBar';
 import { getQuoteIdFromUrl, getQuoteById } from '../utils/quoteManager';
@@ -1307,9 +1306,6 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
 
   return (
     <>
-      {/* Phase Indicator */}
-      <PhaseIndicator currentStep={openStep} hasQuote={hasQuote} />
-
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
         {/* Header */}
         <div className="text-center mb-8">
