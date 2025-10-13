@@ -441,43 +441,65 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     yPos = 30;
     
     // Anchor Point Configuration (full width at top of page 2)
-    const anchorPointsHeight = config.corners * 6 + 20;
-    
+    const anchorPointsHeight = config.corners * 6 + 26;
+
     pdf.setTextColor(...primaryDark);
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Anchor Point Configuration', 15, yPos);
     yPos += 12;
-    
+
     pdf.setFillColor(255, 255, 255);
     pdf.rect(10, yPos - 5, pageWidth - 20, anchorPointsHeight, 'F');
     pdf.setDrawColor(...textLight);
     pdf.setLineWidth(0.2);
     pdf.rect(10, yPos - 5, pageWidth - 20, anchorPointsHeight, 'S');
-    
+
+    // Add Fixing Points Installation Status
+    pdf.setTextColor(...textMedium);
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Fixing Points Installed:', 15, yPos);
+    pdf.setTextColor(...textDark);
+    pdf.setFont('helvetica', 'bold');
+    const installationStatus = config.fixingPointsInstalled === true
+      ? 'Yes - Already Installed'
+      : config.fixingPointsInstalled === false
+      ? 'No - Planning Installation'
+      : 'Not specified';
+    pdf.text(installationStatus, 70, yPos);
+    yPos += 8;
+
     pdf.setTextColor(...primaryGreen);
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Fixing Point Details', 15, yPos);
     yPos += 10;
-    
+
     pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
-    
+
     config.fixingHeights.forEach((height, index) => {
       const corner = String.fromCharCode(65 + index);
       const type = config.fixingTypes?.[index] || 'post';
-      const orientation = config.eyeOrientations?.[index] || 'horizontal';
-      
-      const heightDisplay = height && height > 0 
-        ? formatMeasurement(height, config.unit) 
+      const orientation = config.eyeOrientations?.[index];
+
+      const heightDisplay = height && height > 0
+        ? formatMeasurement(height, config.unit)
         : 'Not set';
-      
+
       pdf.setTextColor(...textMedium);
       pdf.text(`Corner ${corner}:`, 15, yPos);
       pdf.setTextColor(...textDark);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(`${heightDisplay} (${type}, ${orientation} eye)`, 50, yPos);
+
+      // Conditionally include eye orientation based on fixingPointsInstalled
+      if (config.fixingPointsInstalled === true && orientation) {
+        pdf.text(`${heightDisplay} (${type}, ${orientation} eye)`, 50, yPos);
+      } else {
+        pdf.text(`${heightDisplay} (${type})`, 50, yPos);
+      }
+
       pdf.setFont('helvetica', 'normal');
       yPos += 6;
     });
