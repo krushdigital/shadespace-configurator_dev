@@ -86,8 +86,9 @@ export function ShadeConfigurator() {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
 
   // Mobile pricing bar state
-  const [shouldAutoSlideUp, setShouldAutoSlideUp] = useState(false);
-  const prevHasAllEdgeMeasurements = useRef(false);
+  const [isBarLocked, setIsBarLocked] = useState(false);
+  const [isNewQuote, setIsNewQuote] = useState(false);
+  const [previousTotalPrice, setPreviousTotalPrice] = useState(0);
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
@@ -141,14 +142,31 @@ export function ShadeConfigurator() {
     loadQuoteFromUrl();
   }, []);
 
-  // Track edge measurement completion for auto-slide-up on mobile
+  // Manage mobile pricing bar lock and new quote detection
   useEffect(() => {
-    if (isMobile && openStep === 4 && hasAllEdgeMeasurements && !prevHasAllEdgeMeasurements.current) {
-      setShouldAutoSlideUp(true);
-    }
-    prevHasAllEdgeMeasurements.current = hasAllEdgeMeasurements;
-  }, [isMobile, openStep, hasAllEdgeMeasurements]);
+    if (isMobile && openStep === 4 && calculations.totalPrice > 0 && previousTotalPrice === 0) {
+      // Quote just became available for the first time
+      setIsNewQuote(true);
+      setIsBarLocked(true);
 
+      // Set a timer to unlock after 15 seconds
+      const unlockTimer = setTimeout(() => {
+        setIsBarLocked(false);
+        setIsNewQuote(false);
+      }, 15000);
+
+      return () => clearTimeout(unlockTimer);
+    } else if (calculations.totalPrice === 0) {
+      // Reset when price goes back to 0
+      setIsNewQuote(false);
+      setIsBarLocked(false);
+    }
+
+    // Update previous price for next comparison
+    if (calculations.totalPrice !== previousTotalPrice) {
+      setPreviousTotalPrice(calculations.totalPrice);
+    }
+  }, [calculations.totalPrice, openStep, isMobile, previousTotalPrice]);
 
   /*
   // IP-based currency detection effect
@@ -1298,12 +1316,18 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
 
   // Handle save quote
   const handleSaveQuote = () => {
+    // Exit lock mode when user interacts
+    setIsBarLocked(false);
+    setIsNewQuote(false);
     setShowSaveQuoteModal(true);
   };
 
   // Handle mobile continue button
   const handleMobileContinue = () => {
     if (openStep === 4 && hasQuote) {
+      // Exit lock mode when user interacts
+      setIsBarLocked(false);
+      setIsNewQuote(false);
       nextStep(); // Move to next step
     }
   };
@@ -1556,7 +1580,8 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
         quoteReference={quoteReference || undefined}
         onContinue={handleMobileContinue}
         onSaveQuote={handleSaveQuote}
-        autoSlideUp={shouldAutoSlideUp}
+        isLocked={isBarLocked}
+        isNewQuote={isNewQuote}
       />
 
       {/* Save Quote Modal */}
