@@ -21,6 +21,10 @@ import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to ch
 import { formatMeasurement, formatArea } from '../utils/geometry';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
+import { PhaseIndicator } from './PhaseIndicator';
+import { SaveQuoteModal } from './SaveQuoteModal';
+import { MobilePricingBar } from './MobilePricingBar';
+import { getQuoteIdFromUrl, getQuoteById } from '../utils/quoteManager';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -74,6 +78,11 @@ export function ShadeConfigurator() {
     progress: 0
   });
 
+  // Quote management state
+  const [showSaveQuoteModal, setShowSaveQuoteModal] = useState(false);
+  const [quoteReference, setQuoteReference] = useState<string | null>(null);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
 
@@ -98,6 +107,35 @@ export function ShadeConfigurator() {
     return () => {
       window.removeEventListener('resize', checkIsMobile);
     };
+  }, []);
+
+  // Load saved quote from URL if present
+  useEffect(() => {
+    const loadQuoteFromUrl = async () => {
+      const quoteId = getQuoteIdFromUrl();
+      if (!quoteId) return;
+
+      setIsLoadingQuote(true);
+      try {
+        const quote = await getQuoteById(quoteId);
+
+        // Restore configuration
+        setConfig(quote.config_data);
+        setQuoteReference(quote.quote_reference);
+
+        // Jump to step 4 (where pricing is visible)
+        setOpenStep(4);
+
+        showToast(`Quote ${quote.quote_reference} loaded successfully!`, 'success');
+      } catch (error) {
+        console.error('Failed to load quote:', error);
+        showToast('Failed to load quote. Please check the link and try again.', 'error');
+      } finally {
+        setIsLoadingQuote(false);
+      }
+    };
+
+    loadQuoteFromUrl();
   }, []);
 
   /*
@@ -1243,28 +1281,68 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
     }
   ];
 
-  return (
-    <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="mb-4">
-          <a
-            href="https://shadespace.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block hover:opacity-80 transition-opacity duration-200"
-          >
-            <img
-              src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Logo-horizontal-color_3x_8d83ab71-75cc-4486-8cf3-b510cdb69aa7.png?v=1728339550"
-              alt="ShadeSpace Logo"
-              className="mx-auto h-12 sm:h-16 md:h-20 lg:h-24 w-auto max-w-full"
-            />
-          </a>
-        </div>
-        <p className="text-xl text-[#01312D]/70 max-w-2xl mx-auto font-extrabold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-          Design your perfect shade solution and get instant custom pricing with our interactive configurator
-        </p>
+  // Check if quote is ready (has price)
+  const hasQuote = calculations.totalPrice > 0;
+
+  // Handle save quote
+  const handleSaveQuote = () => {
+    setShowSaveQuoteModal(true);
+  };
+
+  // Handle mobile continue button
+  const handleMobileContinue = () => {
+    if (openStep === 4 && hasQuote) {
+      nextStep(); // Move to next step
+    }
+  };
+
+  if (isLoadingQuote) {
+    return (
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-16 text-center">
+        <div className="animate-spin w-12 h-12 border-4 border-[#BFF102] border-t-[#307C31] rounded-full mx-auto mb-4"></div>
+        <p className="text-lg text-slate-700">Loading your saved quote...</p>
       </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Phase Indicator */}
+      <PhaseIndicator currentStep={openStep} hasQuote={hasQuote} />
+
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="mb-4">
+            <a
+              href="https://shadespace.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block hover:opacity-80 transition-opacity duration-200"
+            >
+              <img
+                src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Logo-horizontal-color_3x_8d83ab71-75cc-4486-8cf3-b510cdb69aa7.png?v=1728339550"
+                alt="ShadeSpace Logo"
+                className="mx-auto h-12 sm:h-16 md:h-20 lg:h-24 w-auto max-w-full"
+              />
+            </a>
+          </div>
+          <p className="text-xl text-[#01312D]/70 max-w-2xl mx-auto font-extrabold" style={{ fontFamily: 'Poppins, sans-serif' }}>
+            Design your perfect shade solution and get instant custom pricing with our interactive configurator
+          </p>
+
+          {/* Quote Reference Display */}
+          {quoteReference && (
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#BFF102]/20 border border-[#307C31]/30 rounded-full">
+              <svg className="w-5 h-5 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-sm font-semibold text-[#01312D]">
+                Quote: {quoteReference}
+              </span>
+            </div>
+          )}
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Accordion Steps */}
@@ -1338,6 +1416,8 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
                   loading={loading}
                   setLoading={setLoading}
                   setShowLoadingOverlay={setShowLoadingOverlay}
+                  onSaveQuote={handleSaveQuote}
+                  quoteReference={quoteReference}
                 />
               </AccordionStep>
             );
@@ -1452,11 +1532,29 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
 
       </div>
 
-      <LoadingOverlay
-        isVisible={showLoadingOverlay}
-        currentStep={loadingStep.text}
-        progress={loadingStep.progress}
+        <LoadingOverlay
+          isVisible={showLoadingOverlay}
+          currentStep={loadingStep.text}
+          progress={loadingStep.progress}
+        />
+      </div>
+
+      {/* Mobile Pricing Bar */}
+      <MobilePricingBar
+        totalPrice={calculations.totalPrice}
+        currency={config.currency}
+        isVisible={hasQuote && openStep === 4}
+        quoteReference={quoteReference || undefined}
+        onContinue={handleMobileContinue}
       />
-    </div>
+
+      {/* Save Quote Modal */}
+      <SaveQuoteModal
+        isOpen={showSaveQuoteModal}
+        onClose={() => setShowSaveQuoteModal(false)}
+        config={config}
+        calculations={calculations}
+      />
+    </>
   );
 }

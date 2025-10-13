@@ -34,6 +34,7 @@ interface DimensionsContentProps {
   hasAllEdgeMeasurements?: boolean;
   isMobile?: boolean;
   highlightedMeasurement?: string | null;
+  onSaveQuote?: () => void;
 }
 
 export function DimensionsContent({
@@ -59,7 +60,8 @@ export function DimensionsContent({
   handleEmailSummary = () => {},
   hasAllEdgeMeasurements = false,
   isMobile = false,
-  highlightedMeasurement = null
+  highlightedMeasurement = null,
+  onSaveQuote = () => {}
 }: DimensionsContentProps) {
 
   const updateMeasurement = (edgeKey: string, value: string) => {
@@ -505,6 +507,8 @@ export function DimensionsContent({
               const missingCount = config.corners - edgeCount;
               const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
 
+              const hasQuote = calculations.totalPrice > 0 && edgeCount === config.corners;
+
               return (
                 <>
                   {shouldDisable && (
@@ -522,6 +526,47 @@ export function DimensionsContent({
                       ) : null}
                     </div>
                   )}
+
+                  {/* Quote Ready Message with Action Buttons */}
+                  {hasQuote && !isMobile && (
+                    <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4 mb-3">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-[#307C31] rounded-full flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-[#01312D] text-lg mb-1">
+                            Your Quote is Ready!
+                          </h4>
+                          <p className="text-sm text-[#01312D]/80">
+                            Continue to complete your order requirements, or save your quote to return later.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={onSaveQuote}
+                          className="w-full"
+                        >
+                          Save Quote
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleGeneratePDF}
+                          disabled={isGeneratingPDF}
+                          className="w-full"
+                        >
+                          {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     onClick={onNext}
                     size="md"

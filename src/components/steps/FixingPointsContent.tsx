@@ -32,6 +32,8 @@ interface FixingPointsContentProps {
   handleEmailSummary?: () => void;
   hasAllEdgeMeasurements?: boolean;
   allDiagonalsEntered?: boolean;
+  quoteReference?: string | null;
+  onSaveQuote?: () => void;
 }
 
 export function FixingPointsContent({

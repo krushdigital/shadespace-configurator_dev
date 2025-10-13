@@ -43,6 +43,8 @@ interface ReviewContentProps {
   loading: boolean
   setLoading: (loading: boolean) => void;
   setShowLoadingOverlay: (loading: boolean) => void;
+  quoteReference?: string | null;
+  onSaveQuote?: () => void;
 }
 
 export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
