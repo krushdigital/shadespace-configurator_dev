@@ -90,25 +90,47 @@ html {
 
 /* Pulse animation for draggable corner points */
 @keyframes corner-pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.8;
+  0% {
+    r: 10;
+    opacity: 0.9;
   }
   50% {
-    transform: scale(1.5);
-    opacity: 0.3;
+    r: 20;
+    opacity: 0.2;
+  }
+  100% {
+    r: 10;
+    opacity: 0.9;
+  }
+}
+
+@keyframes corner-pulse-mobile {
+  0% {
+    r: 18;
+    opacity: 0.9;
+  }
+  50% {
+    r: 32;
+    opacity: 0.2;
+  }
+  100% {
+    r: 18;
+    opacity: 0.9;
   }
 }
 
 .corner-pulse {
-  animation: corner-pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
-  transform-box: fill-box !important;
-  transform-origin: center center !important;
+  animation: corner-pulse 1.5s ease-in-out infinite;
+}
+
+.corner-pulse-mobile {
+  animation: corner-pulse-mobile 1.5s ease-in-out infinite;
 }
 
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
-  .corner-pulse {
+  .corner-pulse,
+  .corner-pulse-mobile {
     animation: none;
   }
 }

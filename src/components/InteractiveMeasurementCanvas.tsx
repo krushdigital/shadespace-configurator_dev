@@ -157,19 +157,16 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
             return (
               <g key={index}>
                 {/* Pulse effect circle - only shown during animation */}
-                {showCornerPulse && !readonly && (
+                {showCornerPulse && !readonly && !forPdfCapture && (
                   <circle
                     cx={point.x}
                     cy={point.y}
                     r={isMobile ? "18" : "10"}
                     fill={cornerColor}
-                    stroke="white"
-                    strokeWidth="3"
-                    className="corner-pulse"
-                    opacity="0.8"
+                    stroke="none"
+                    className={isMobile ? "corner-pulse-mobile" : "corner-pulse"}
                     style={{
-                      pointerEvents: 'none',
-                      filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.8))'
+                      pointerEvents: 'none'
                     }}
                   />
                 )}

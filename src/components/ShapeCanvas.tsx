@@ -23,11 +23,23 @@ export function ShapeCanvas({
 }: ShapeCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  
+  const [showCornerPulse, setShowCornerPulse] = useState(true);
+
   // Editing state for direct measurement editing
   const [editingMeasurementKey, setEditingMeasurementKey] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>('');
   const [editingPosition, setEditingPosition] = useState<{ x: number; y: number } | null>(null);
+
+  React.useEffect(() => {
+    if (!readonly) {
+      const timer = setTimeout(() => {
+        setShowCornerPulse(false);
+      }, 8000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowCornerPulse(false);
+    }
+  }, [readonly]);
 
   // Convert screen coordinates to SVG coordinates
   const screenToSVG = useCallback((clientX: number, clientY: number): Point => {
@@ -288,6 +300,21 @@ export function ShapeCanvas({
             {cornerPoints.map(({ point, index, labelPosition, cornerColor, label }) => {
               return (
                 <g key={index}>
+                  {/* Pulse effect circle - only shown during animation */}
+                  {showCornerPulse && !readonly && (
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={isMobile ? "14" : "10"}
+                      fill={cornerColor}
+                      stroke="none"
+                      className={isMobile ? "corner-pulse-mobile" : "corner-pulse"}
+                      style={{
+                        pointerEvents: 'none'
+                      }}
+                    />
+                  )}
+                  {/* Main corner point */}
                   <circle
                     cx={point.x}
                     cy={point.y}
@@ -298,7 +325,7 @@ export function ShapeCanvas({
                     className={readonly ? '' : 'cursor-grab'}
                     onMouseDown={(e) => handleMouseDown(e, index)}
                     onTouchStart={(e) => handleTouchStart(e, index)}
-                    style={{ 
+                    style={{
                       cursor: readonly ? 'default' : dragIndex === index ? 'grabbing' : 'grab'
                     }}
                   />
@@ -307,7 +334,7 @@ export function ShapeCanvas({
                     y={labelPosition.y}
                     fontSize={isMobile ? "20" : "16"}
                     className="fill-slate-900 font-bold pointer-events-none select-none"
-                    style={{ 
+                    style={{
                       filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.8))'
                     }}
                   >
