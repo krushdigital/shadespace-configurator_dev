@@ -577,47 +577,47 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       {/* Turnbuckles - only show for "adjust to fit" option - drawn last to appear on top */}
       {config.measurementOption === 'adjust' && config.points.map((point, index) => {
         const sailAttachmentPoint = sailAttachmentPoints[index];
-        
+
         // Calculate direction from corner to sail attachment point
         const dx = centroid.x - point.x;
         const dy = centroid.y - point.y;
         const length = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (length === 0) return null;
-        
+
         const normalizedX = dx / length;
         const normalizedY = dy / length;
-        
+
         // Start turnbuckle at edge of corner circle
         const lineStartX = point.x + normalizedX * cornerRadius;
         const lineStartY = point.y + normalizedY * cornerRadius;
-        
+
         // End turnbuckle at sail attachment point
         const lineEndX = sailAttachmentPoint.x;
         const lineEndY = sailAttachmentPoint.y;
-        
+
         return (
           <g key={`turnbuckle-${index}`}>
-            {/* Turnbuckle line */}
+            {/* Turnbuckle line - red to indicate hardware connection */}
             <line
               x1={lineStartX}
               y1={lineStartY}
               x2={lineEndX}
               y2={lineEndY}
-              stroke="#64748B"
-              strokeWidth={compact ? "2" : (isMobile ? "4" : "3")}
+              stroke="#DC2626"
+              strokeWidth={compact ? "2.5" : (isMobile ? "4.5" : "3.5")}
               strokeLinecap="round"
               className="drop-shadow-sm"
             />
-            
+
             {/* Turnbuckle body (wider rectangle) */}
             <rect
               x={lineEndX - (compact ? 2.25 : (isMobile ? 4.5 : 3.75))}
               y={lineEndY - (compact ? 0.8 : (isMobile ? 1.5 : 1.2))}
               width={compact ? "4.5" : (isMobile ? "9" : "7.5")}
               height={compact ? "1.6" : (isMobile ? "3" : "2.4")}
-              fill="#475569"
-              stroke="#374151"
+              fill="#DC2626"
+              stroke="#B91C1C"
               strokeWidth="0.5"
               rx="0.5"
               className="drop-shadow-sm"
