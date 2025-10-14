@@ -59,6 +59,51 @@ Deno.serve(async (req: Request) => {
         throw new Error(`Failed to save quote: ${insertError.message}`);
       }
 
+      // If email provided, add to Shopify customers
+      let shopifyCustomerId: string | null = null;
+      let shopifyCustomerCreated = false;
+
+      if (email) {
+        try {
+          const shopifyResponse = await fetch(
+            `${supabaseUrl}/functions/v1/add-shopify-customer`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                email: email,
+                tags: ['quote_saved', 'configurator_user'],
+                quoteReference: quoteReference,
+                totalPrice: calculations.totalPrice,
+                currency: config.currency,
+              }),
+            }
+          );
+
+          const shopifyData = await shopifyResponse.json();
+
+          if (shopifyData.success) {
+            shopifyCustomerId = shopifyData.customer.id;
+            shopifyCustomerCreated = shopifyData.customer.isNew;
+
+            // Update the quote with Shopify customer ID
+            await supabase
+              .from('saved_quotes')
+              .update({
+                shopify_customer_id: shopifyCustomerId,
+                source: 'manual_save'
+              })
+              .eq('id', quote.id);
+          }
+        } catch (shopifyError) {
+          console.error('Failed to add customer to Shopify:', shopifyError);
+          // Continue even if Shopify integration fails
+        }
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -66,11 +111,13 @@ Deno.serve(async (req: Request) => {
             id: quote.id,
             reference: quote.quote_reference,
             expiresAt: quote.expires_at,
+            shopifyCustomerCreated: shopifyCustomerCreated,
+            shopifyCustomerId: shopifyCustomerId,
           },
         }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
     }

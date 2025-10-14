@@ -7,6 +7,8 @@ export interface SavedQuote {
   id: string;
   reference: string;
   expiresAt: string;
+  shopifyCustomerCreated?: boolean;
+  shopifyCustomerId?: string | null;
 }
 
 export interface QuoteData {
@@ -51,6 +53,8 @@ export async function saveQuote(
     id: data.quote.id,
     reference: data.quote.reference,
     expiresAt: data.quote.expiresAt,
+    shopifyCustomerCreated: data.quote.shopifyCustomerCreated,
+    shopifyCustomerId: data.quote.shopifyCustomerId,
   };
 }
 
@@ -182,4 +186,31 @@ export function formatExpirationDate(expiresAt: string): string {
  */
 export function isQuoteExpired(expiresAt: string): boolean {
   return new Date(expiresAt) < new Date();
+}
+
+/**
+ * Mark quote as converted to cart
+ */
+export async function markQuoteConverted(quoteId: string): Promise<void> {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      id: quoteId,
+      status: 'completed',
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to mark quote as converted');
+  }
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to mark quote as converted');
+  }
 }

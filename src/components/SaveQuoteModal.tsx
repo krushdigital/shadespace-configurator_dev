@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { ConfiguratorState, ShadeCalculations } from '../types';
 import { saveQuote, generateQuoteUrl } from '../utils/quoteManager';
 import { useToast } from './ui/ToastProvider';
+import { analytics } from '../utils/analytics';
 
 interface SaveQuoteModalProps {
   isOpen: boolean;
@@ -29,6 +30,30 @@ export function SaveQuoteModal({
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
 
+  // Time tracking states
+  const [modalOpenTime, setModalOpenTime] = useState<number>(Date.now());
+  const [methodSelectionTime, setMethodSelectionTime] = useState<number | null>(null);
+  const [emailFocusTime, setEmailFocusTime] = useState<number | null>(null);
+
+  // Track modal open
+  useEffect(() => {
+    if (isOpen) {
+      const openTime = Date.now();
+      setModalOpenTime(openTime);
+
+      const isMobile = window.innerWidth < 1024;
+
+      analytics.quoteSaveModalOpened({
+        source: 'review_content',
+        device_type: isMobile ? 'mobile' : 'desktop',
+        total_price: calculations.totalPrice,
+        currency: config.currency,
+        corners: config.corners,
+        fabric_type: config.fabricType,
+      });
+    }
+  }, [isOpen, calculations.totalPrice, config.currency, config.corners, config.fabricType]);
+
   if (!isOpen) return null;
 
   const handleSave = async () => {
@@ -41,6 +66,8 @@ export function SaveQuoteModal({
       );
 
       const quoteUrl = generateQuoteUrl(result.id);
+      const modalDuration = (Date.now() - modalOpenTime) / 1000;
+      const emailDomain = email ? email.split('@')[1] : null;
 
       setSavedQuote({
         reference: result.reference,
@@ -48,14 +75,65 @@ export function SaveQuoteModal({
         expiresAt: result.expiresAt,
       });
 
+      // Track success with comprehensive data
+      analytics.quoteSaveSuccess({
+        quote_reference: result.reference,
+        save_method: saveMethod || 'link',
+        email_domain: emailDomain,
+        total_price: calculations.totalPrice,
+        currency: config.currency,
+        corners: config.corners,
+        fabric_type: config.fabricType,
+        edge_type: config.edgeType,
+        hardware_included: config.measurementOption === 'adjust',
+        area_sqm: calculations.area,
+        perimeter_m: calculations.perimeter,
+        modal_duration_seconds: modalDuration,
+        has_shopify_customer: !!result.shopifyCustomerId,
+        shopify_customer_id: result.shopifyCustomerId,
+      });
+
+      // Track link generation
+      const expiresDate = new Date(result.expiresAt);
+      const daysUntilExpiration = Math.ceil(
+        (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      );
+
+      analytics.quoteLinkGenerated({
+        quote_reference: result.reference,
+        expires_at: result.expiresAt,
+        days_until_expiration: daysUntilExpiration,
+      });
+
+      // Track Shopify customer creation if it happened
+      if (result.shopifyCustomerCreated && result.shopifyCustomerId && emailDomain) {
+        analytics.shopifyCustomerCreated({
+          customer_id: result.shopifyCustomerId,
+          email_domain: emailDomain,
+          source: 'quote_save',
+          tags: ['quote_saved', 'configurator_user'],
+          total_quote_value: calculations.totalPrice,
+          currency: config.currency,
+        });
+      }
+
       showToast(
         saveMethod === 'email'
           ? 'Quote saved! Check your email for the link.'
           : 'Quote saved successfully!',
         'success'
       );
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save quote:', error);
+
+      analytics.quoteSaveFailed({
+        error_message: error?.message || 'Unknown error',
+        error_type: error?.name || 'SaveError',
+        save_method: saveMethod || 'unknown',
+        total_price: calculations.totalPrice,
+        currency: config.currency,
+      });
+
       showToast('Failed to save quote. Please try again.', 'error');
     } finally {
       setIsSaving(false);
@@ -64,14 +142,78 @@ export function SaveQuoteModal({
 
   const handleCopyLink = () => {
     if (savedQuote) {
-      navigator.clipboard.writeText(savedQuote.url);
-      setCopied(true);
-      showToast('Link copied to clipboard!', 'success');
-      setTimeout(() => setCopied(false), 3000);
+      try {
+        navigator.clipboard.writeText(savedQuote.url);
+        setCopied(true);
+
+        analytics.quoteLinkCopied({
+          quote_reference: savedQuote.reference,
+          copy_successful: true,
+        });
+
+        showToast('Link copied to clipboard!', 'success');
+        setTimeout(() => setCopied(false), 3000);
+      } catch (error) {
+        analytics.quoteLinkCopied({
+          quote_reference: savedQuote.reference,
+          copy_successful: false,
+        });
+      }
+    }
+  };
+
+  const handleMethodSelection = (method: 'email' | 'link') => {
+    const selectionTime = Date.now();
+    const timeToSelect = (selectionTime - modalOpenTime) / 1000;
+
+    setMethodSelectionTime(selectionTime);
+    setSaveMethod(method);
+
+    analytics.quoteSaveMethodSelected({
+      method,
+      total_price: calculations.totalPrice,
+      currency: config.currency,
+      time_to_select_seconds: timeToSelect,
+    });
+  };
+
+  const handleEmailFocus = () => {
+    setEmailFocusTime(Date.now());
+  };
+
+  const handleEmailBlur = () => {
+    if (emailFocusTime && email) {
+      const timeSpent = (Date.now() - emailFocusTime) / 1000;
+      const emailDomain = email.split('@')[1] || 'unknown';
+
+      analytics.quoteSaveEmailEntered({
+        email_domain: emailDomain,
+        time_spent_on_email_field_seconds: timeSpent,
+      });
     }
   };
 
   const handleClose = () => {
+    if (!savedQuote) {
+      // User cancelled without saving
+      const modalDuration = (Date.now() - modalOpenTime) / 1000;
+
+      analytics.quoteSaveModalCancelled({
+        modal_duration_seconds: modalDuration,
+        had_selected_method: !!saveMethod,
+        had_entered_email: !!email,
+      });
+    } else {
+      // User completed save and clicked Done
+      const totalDuration = (Date.now() - modalOpenTime) / 1000;
+
+      analytics.quoteSaveCompleted({
+        quote_reference: savedQuote.reference,
+        action: 'done_button_clicked',
+        total_duration_seconds: totalDuration,
+      });
+    }
+
     setEmail('');
     setSaveMethod(null);
     setSavedQuote(null);
@@ -104,7 +246,7 @@ export function SaveQuoteModal({
               {!saveMethod ? (
                 <div className="space-y-3">
                   <button
-                    onClick={() => setSaveMethod('email')}
+                    onClick={() => handleMethodSelection('email')}
                     className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
                   >
                     <div className="flex items-start gap-3">
@@ -125,7 +267,7 @@ export function SaveQuoteModal({
                   </button>
 
                   <button
-                    onClick={() => setSaveMethod('link')}
+                    onClick={() => handleMethodSelection('link')}
                     className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
                   >
                     <div className="flex items-start gap-3">
@@ -156,6 +298,8 @@ export function SaveQuoteModal({
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        onFocus={handleEmailFocus}
+                        onBlur={handleEmailBlur}
                         placeholder="your@email.com"
                         className="w-full"
                       />

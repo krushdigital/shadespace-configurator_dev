@@ -23,7 +23,8 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { MobilePricingBar } from './MobilePricingBar';
-import { getQuoteIdFromUrl, getQuoteById } from '../utils/quoteManager';
+import { getQuoteIdFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
+import { analytics } from '../utils/analytics';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -120,8 +121,19 @@ export function ShadeConfigurator() {
       if (!quoteId) return;
 
       setIsLoadingQuote(true);
+
+      // Track load attempt
+      analytics.quoteLoadAttempted({
+        quote_id: quoteId,
+        source: 'url_parameter',
+      });
+
       try {
         const quote = await getQuoteById(quoteId);
+
+        // Calculate quote age
+        const createdAt = new Date(quote.created_at);
+        const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
 
         // Restore configuration
         setConfig(quote.config_data);
@@ -130,9 +142,26 @@ export function ShadeConfigurator() {
         // Jump to step 4 (where pricing is visible)
         setOpenStep(4);
 
+        // Track successful load
+        analytics.quoteLoadSuccess({
+          quote_reference: quote.quote_reference,
+          quote_age_hours: quoteAgeHours,
+          landing_step: 4,
+          had_email: !!quote.customer_email,
+          total_price: quote.calculations_data.totalPrice,
+          currency: quote.config_data.currency,
+        });
+
         showToast(`Quote ${quote.quote_reference} loaded successfully!`, 'success');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to load quote:', error);
+
+        analytics.quoteLoadFailed({
+          quote_id: quoteId,
+          error_message: error?.message || 'Unknown error',
+          error_type: error?.name || 'LoadError',
+        });
+
         showToast('Failed to load quote. Please check the link and try again.', 'error');
       } finally {
         setIsLoadingQuote(false);
@@ -502,17 +531,55 @@ const handleEmailSummary = async () => {
       const data = await response.json();
 
       if (data.success) {
+        const emailDomain = email.split('@')[1] || 'unknown';
+
+        // Track email summary sent
+        analytics.emailSummaryWithShopify({
+          email_domain: emailDomain,
+          includes_pdf: !!pdf,
+          includes_canvas: !!canvasImageUrl,
+          total_price: calculations.totalPrice,
+          currency: config.currency,
+          shopify_customer_created: data.shopifyCustomerCreated || false,
+          shopify_customer_id: data.shopifyCustomerId,
+        });
+
+        // Track Shopify customer creation if it happened
+        if (data.shopifyCustomerCreated && data.shopifyCustomerId) {
+          analytics.shopifyCustomerCreated({
+            customer_id: data.shopifyCustomerId,
+            email_domain: emailDomain,
+            source: 'email_summary',
+            tags: ['quote_saved', 'email_summary_requested'],
+            total_quote_value: calculations.totalPrice,
+            currency: config.currency,
+          });
+        }
+
         showToast(data.message, "success");
         setShowEmailInput(false);
         setEmail('');
       } else {
+        const emailDomain = email.split('@')[1] || 'unknown';
+
+        analytics.emailSendFailed({
+          error_message: data.error || 'Unknown error',
+          error_type: 'EmailSendError',
+        });
+
         showToast(data.error || "Failed to send email", "error");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Email send failed:", error);
+
+      analytics.emailSendFailed({
+        error_message: error?.message || 'Unknown error',
+        error_type: error?.name || 'EmailSendError',
+      });
+
       showToast("An unexpected error occurred while sending email.", "error");
     } finally {
-      setIsSendingEmail(false); // ✅ stop loading only after everything finishes
+      setIsSendingEmail(false);
     }
   };
 
@@ -656,6 +723,18 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
     setShowLoadingOverlay(true);
     setLoadingStep({ text: 'Starting order process...', progress: 10 });
     setLoading(true);
+
+    // Check if this is a converted quote
+    const quoteId = getQuoteIdFromUrl();
+    let quoteData: any = null;
+
+    if (quoteReference && quoteId) {
+      try {
+        quoteData = await getQuoteById(quoteId);
+      } catch (error) {
+        console.error('Failed to load quote data for conversion tracking:', error);
+      }
+    }
 
     try {
       setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
@@ -825,6 +904,29 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
 
           if (cartResponse.ok) {
             console.log('Added to cart');
+
+            // Track quote conversion if applicable
+            if (quoteData && quoteId) {
+              try {
+                const createdAt = new Date(quoteData.created_at);
+                const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+
+                analytics.quoteConvertedToCart({
+                  quote_reference: quoteReference!,
+                  quote_age_hours: quoteAgeHours,
+                  time_from_save_to_cart_hours: quoteAgeHours,
+                  total_price: calculations.totalPrice,
+                  currency: config.currency,
+                  conversion_source: 'loaded_quote',
+                });
+
+                // Mark quote as converted
+                await markQuoteConverted(quoteId);
+              } catch (error) {
+                console.error('Failed to track quote conversion:', error);
+              }
+            }
+
             setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
             window.location.href = '/cart';
           } else {

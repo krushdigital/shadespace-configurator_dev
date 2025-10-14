@@ -616,4 +616,172 @@ export const analytics = {
       viewport_size: viewportSize,
     });
   },
+
+  // Quote Save Modal Events
+  quoteSaveModalOpened: (data: {
+    source: string;
+    device_type: string;
+    total_price: number;
+    currency: string;
+    corners: number;
+    fabric_type: string;
+  }) => {
+    trackEvent('quote_save_modal_opened', data);
+  },
+
+  quoteSaveMethodSelected: (data: {
+    method: string;
+    total_price: number;
+    currency: string;
+    time_to_select_seconds: number;
+  }) => {
+    trackEvent('quote_save_method_selected', data);
+  },
+
+  quoteSaveEmailEntered: (data: {
+    email_domain: string;
+    time_spent_on_email_field_seconds: number;
+  }) => {
+    trackEvent('quote_save_email_entered', data);
+  },
+
+  quoteSaveSuccess: (data: {
+    quote_reference: string;
+    save_method: string;
+    email_domain: string | null;
+    total_price: number;
+    currency: string;
+    corners: number;
+    fabric_type: string;
+    edge_type: string;
+    hardware_included: boolean;
+    area_sqm: number;
+    perimeter_m: number;
+    modal_duration_seconds: number;
+    has_shopify_customer: boolean;
+    shopify_customer_id?: string;
+  }) => {
+    trackEvent('quote_save_success', data);
+  },
+
+  quoteSaveFailed: (data: {
+    error_message: string;
+    error_type: string;
+    save_method: string;
+    total_price: number;
+    currency: string;
+  }) => {
+    trackEvent('quote_save_failed', data);
+  },
+
+  quoteSaveModalCancelled: (data: {
+    modal_duration_seconds: number;
+    had_selected_method: boolean;
+    had_entered_email: boolean;
+  }) => {
+    trackEvent('quote_save_modal_cancelled', data);
+  },
+
+  quoteLinkGenerated: (data: {
+    quote_reference: string;
+    expires_at: string;
+    days_until_expiration: number;
+  }) => {
+    trackEvent('quote_link_generated', data);
+  },
+
+  quoteLinkCopied: (data: {
+    quote_reference: string;
+    copy_successful: boolean;
+  }) => {
+    trackEvent('quote_link_copied', data);
+  },
+
+  quoteSaveCompleted: (data: {
+    quote_reference: string;
+    action: string;
+    total_duration_seconds: number;
+  }) => {
+    trackEvent('quote_save_completed', data);
+  },
+
+  // Quote Loading Events
+  quoteLoadAttempted: (data: {
+    quote_id: string;
+    source: string;
+  }) => {
+    trackEvent('quote_load_attempted', data);
+  },
+
+  quoteLoadSuccess: (data: {
+    quote_reference: string;
+    quote_age_hours: number;
+    landing_step: number;
+    had_email: boolean;
+    total_price: number;
+    currency: string;
+  }) => {
+    trackEvent('quote_load_success', data);
+  },
+
+  quoteLoadFailed: (data: {
+    quote_id: string;
+    error_message: string;
+    error_type: string;
+  }) => {
+    trackEvent('quote_load_failed', data);
+  },
+
+  // Shopify Customer Integration Events
+  shopifyCustomerCreated: (data: {
+    customer_id: string;
+    email_domain: string;
+    source: string;
+    tags: string[];
+    total_quote_value: number;
+    currency: string;
+  }) => {
+    trackEvent('shopify_customer_created', data);
+  },
+
+  shopifyCustomerCreationFailed: (data: {
+    email_domain: string;
+    error_message: string;
+    source: string;
+  }) => {
+    trackEvent('shopify_customer_creation_failed', data);
+  },
+
+  shopifyCustomerUpdated: (data: {
+    customer_id: string;
+    email_domain: string;
+    update_type: string;
+  }) => {
+    trackEvent('shopify_customer_updated', data);
+  },
+
+  // Quote to Cart Conversion Tracking
+  quoteConvertedToCart: (data: {
+    quote_reference: string;
+    quote_age_hours: number;
+    time_from_save_to_cart_hours: number;
+    total_price: number;
+    currency: string;
+    conversion_source: string;
+  }) => {
+    trackEvent('quote_converted_to_cart', data);
+  },
+
+  // Enhanced Email Summary Events
+  emailSummaryWithShopify: (data: {
+    email_domain: string;
+    includes_pdf: boolean;
+    includes_canvas: boolean;
+    total_price: number;
+    currency: string;
+    shopify_customer_created: boolean;
+    shopify_customer_id?: string;
+  }) => {
+    trackEvent('email_summary_sent_with_shopify', data);
+  },
 };
