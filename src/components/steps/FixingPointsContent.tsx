@@ -207,72 +207,80 @@ export function FixingPointsContent({
           <div className="flex-1">
             <button
               onClick={() => updateFixingPointsInstalled(true)}
-              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 ${
+              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center justify-between ${
                 config.fixingPointsInstalled === true
                   ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
                   : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
               }`}
             >
-              Yes - Already Installed
+              <span>Yes - Already Installed</span>
+              <span onClick={(e) => e.stopPropagation()}>
+                <Tooltip
+                  content={
+                    <div>
+                      <img
+                        src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/eyes-installed.webp?v=1760396404"
+                        alt="Eye plates already installed"
+                        className="w-full h-auto object-cover rounded-lg mb-3"
+                      />
+                      <p className="text-sm text-[#01312D] font-medium mb-2">
+                        Why do we need to know this?
+                      </p>
+                      <p className="text-sm text-[#01312D]/80 leading-relaxed">
+                        We need to know if your fixing points are already installed so we can deduct the necessary amounts to cater for the eye plates/bolts when manufacturing the shade sail. This ensures your shade sail fits perfectly.
+                      </p>
+                    </div>
+                  }
+                >
+                  <span className={`w-5 h-5 inline-flex items-center justify-center text-xs rounded-full cursor-help transition-colors ${
+                    config.fixingPointsInstalled === true
+                      ? 'bg-white/20 text-white hover:bg-white/30'
+                      : 'bg-[#01312D] text-white hover:bg-[#307C31]'
+                  }`}>
+                    ?
+                  </span>
+                </Tooltip>
+              </span>
             </button>
-            <div className="flex justify-center mt-2">
-              <Tooltip
-                content={
-                  <div>
-                    <img
-                      src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/eyes-installed.webp?v=1760396404"
-                      alt="Eye plates already installed"
-                      className="w-full h-auto object-cover rounded-lg mb-3"
-                    />
-                    <p className="text-sm text-[#01312D] font-medium mb-2">
-                      Why do we need to know this?
-                    </p>
-                    <p className="text-sm text-[#01312D]/80 leading-relaxed">
-                      We need to know if your fixing points are already installed so we can deduct the necessary amounts to cater for the eye plates/bolts when manufacturing the shade sail. This ensures your shade sail fits perfectly.
-                    </p>
-                  </div>
-                }
-              >
-                <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                  ?
-                </span>
-              </Tooltip>
-            </div>
           </div>
           <div className="flex-1">
             <button
               onClick={() => updateFixingPointsInstalled(false)}
-              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 ${
+              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center justify-between ${
                 config.fixingPointsInstalled === false
                   ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
                   : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
               }`}
             >
-              No - Planning Installation
+              <span>No - Planning Installation</span>
+              <span onClick={(e) => e.stopPropagation()}>
+                <Tooltip
+                  content={
+                    <div>
+                      <img
+                        src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/eyes-notinstalled.webp?v=1760396404"
+                        alt="Eye plates not yet installed"
+                        className="w-full h-auto object-cover rounded-lg mb-3"
+                      />
+                      <p className="text-sm text-[#01312D] font-medium mb-2">
+                        Why do we need to know this?
+                      </p>
+                      <p className="text-sm text-[#01312D]/80 leading-relaxed">
+                        We need to know if your fixing points are already installed so we can deduct the necessary amounts to cater for the eye plates/bolts when manufacturing the shade sail. This ensures your shade sail fits perfectly.
+                      </p>
+                    </div>
+                  }
+                >
+                  <span className={`w-5 h-5 inline-flex items-center justify-center text-xs rounded-full cursor-help transition-colors ${
+                    config.fixingPointsInstalled === false
+                      ? 'bg-white/20 text-white hover:bg-white/30'
+                      : 'bg-[#01312D] text-white hover:bg-[#307C31]'
+                  }`}>
+                    ?
+                  </span>
+                </Tooltip>
+              </span>
             </button>
-            <div className="flex justify-center mt-2">
-              <Tooltip
-                content={
-                  <div>
-                    <img
-                      src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/eyes-notinstalled.webp?v=1760396404"
-                      alt="Eye plates not yet installed"
-                      className="w-full h-auto object-cover rounded-lg mb-3"
-                    />
-                    <p className="text-sm text-[#01312D] font-medium mb-2">
-                      Why do we need to know this?
-                    </p>
-                    <p className="text-sm text-[#01312D]/80 leading-relaxed">
-                      We need to know if your fixing points are already installed so we can deduct the necessary amounts to cater for the eye plates/bolts when manufacturing the shade sail. This ensures your shade sail fits perfectly.
-                    </p>
-                  </div>
-                }
-              >
-                <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                  ?
-                </span>
-              </Tooltip>
-            </div>
           </div>
         </div>
         {hasInstallationError && (
