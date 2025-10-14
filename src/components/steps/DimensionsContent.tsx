@@ -459,109 +459,108 @@ export function DimensionsContent({
       </div>
 
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {showBackButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrev}
-              className="sm:w-auto"
-            >
-              Back
-            </Button>
-          )}
-          <div className="flex-1 flex flex-col gap-2">
-            {(() => {
-              if (config.corners === 0) {
-                return null;
-              }
+        {(() => {
+          if (config.corners === 0) {
+            return null;
+          }
 
-              let edgeCount = 0;
-              for (let i = 0; i < config.corners; i++) {
-                const nextIndex = (i + 1) % config.corners;
-                const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-                const measurement = config.measurements[edgeKey];
-                if (measurement && measurement > 0) {
-                  edgeCount++;
-                }
-              }
+          let edgeCount = 0;
+          for (let i = 0; i < config.corners; i++) {
+            const nextIndex = (i + 1) % config.corners;
+            const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+            const measurement = config.measurements[edgeKey];
+            if (measurement && measurement > 0) {
+              edgeCount++;
+            }
+          }
 
-              const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
-              const missingCount = config.corners - edgeCount;
-              const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
+          const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
+          const missingCount = config.corners - edgeCount;
+          const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
 
-              const hasQuote = calculations.totalPrice > 0 && edgeCount === config.corners;
+          const hasQuote = calculations.totalPrice > 0 && edgeCount === config.corners;
 
-              return (
-                <>
-                  {shouldDisable && (
-                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                      {hasUnacknowledgedTypos ? (
-                        <span className="flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-amber-500" />
-                          <span>Please review and address the measurement warnings above</span>
-                        </span>
-                      ) : missingCount > 0 ? (
-                        <span className="flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-slate-500" />
-                          <span>{missingCount} edge measurement{missingCount !== 1 ? 's' : ''} required to continue</span>
-                        </span>
-                      ) : null}
+          return (
+            <>
+              {shouldDisable && (
+                <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                  {hasUnacknowledgedTypos ? (
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                      <span>Please review and address the measurement warnings above</span>
+                    </span>
+                  ) : missingCount > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-slate-500" />
+                      <span>{missingCount} edge measurement{missingCount !== 1 ? 's' : ''} required to continue</span>
+                    </span>
+                  ) : null}
+                </div>
+              )}
+
+              {/* Quote Ready Message with Action Buttons - Desktop Only */}
+              {hasQuote && !isMobile && (
+                <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-[#307C31] rounded-full flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     </div>
-                  )}
-
-                  {/* Quote Ready Message with Action Buttons */}
-                  {hasQuote && !isMobile && (
-                    <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4 mb-3">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="flex-shrink-0 w-10 h-10 bg-[#307C31] rounded-full flex items-center justify-center">
-                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-[#01312D] text-lg mb-1">
-                            Your Quote is Ready!
-                          </h4>
-                          <p className="text-sm text-[#01312D]/80">
-                            Continue to complete your order requirements, or save your quote to return later.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={onSaveQuote}
-                          className="w-full"
-                        >
-                          Save Quote
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={handleGeneratePDF}
-                          disabled={isGeneratingPDF}
-                          className="w-full"
-                        >
-                          {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
-                        </Button>
-                      </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-[#01312D] text-lg mb-1">
+                        Your Quote is Ready!
+                      </h4>
+                      <p className="text-sm text-[#01312D]/80">
+                        Continue to complete your order requirements, or save your quote to return later.
+                      </p>
                     </div>
-                  )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onSaveQuote}
+                      className="w-full"
+                    >
+                      Save Quote
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleGeneratePDF}
+                      disabled={isGeneratingPDF}
+                      className="w-full"
+                    >
+                      {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
+              {/* Navigation Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                {showBackButton && (
                   <Button
-                    onClick={onNext}
+                    variant="outline"
                     size="md"
-                    className={shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}
+                    onClick={onPrev}
+                    className="sm:w-auto"
                   >
-                    Continue to {nextStepTitle}
+                    Back
                   </Button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+                )}
+                <Button
+                  onClick={onNext}
+                  size="md"
+                  className={`flex-1 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Continue to {nextStepTitle}
+                </Button>
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
