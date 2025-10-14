@@ -20,9 +20,23 @@ The application provides real-time pricing calculations, interactive diagrams, a
 
 *   **Frontend**: React (with TypeScript), Vite
 *   **Styling**: Tailwind CSS
-*   **PDF Generation**: `jspdf` and `html2canvas` (client-side), with a Supabase Edge Function using Puppeteer for server-side PDF generation.
-*   **Utility Libraries**: `lucide-react` for icons.
-*   **Data Management**: Hardcoded data for fabrics and pricing (`src/data/fabrics.ts`, `src/data/pricing.ts`).
+*   **Analytics**: Google Analytics 4 (GA4) with comprehensive event tracking
+*   **Backend**: Supabase (Database, Edge Functions, Authentication)
+*   **E-commerce Integration**: Shopify Admin API for customer management
+*   **PDF Generation**: `jspdf` and `html2canvas` (client-side), with a Supabase Edge Function using Puppeteer for server-side PDF generation
+*   **Utility Libraries**: `lucide-react` for icons
+*   **Data Management**: Hardcoded data for fabrics and pricing (`src/data/fabrics.ts`, `src/data/pricing.ts`)
+
+## Important Documentation
+
+**📊 [GA4 Tracking & Shopify Customer Integration Guide](./GA4_SHOPIFY_INTEGRATION.md)**
+
+A comprehensive developer implementation guide covering:
+- Complete GA4 event tracking (70+ events)
+- Shopify customer integration via Supabase Edge Functions
+- Environment configuration for both technical and non-technical users
+- Testing, monitoring, and troubleshooting procedures
+- Migration guides for updating GA4 IDs and Shopify API versions
 
 ## Developer Handover Notes
 
@@ -43,6 +57,13 @@ The application provides real-time pricing calculations, interactive diagrams, a
     *   `index.css`: Tailwind CSS imports and custom styles.
 *   `supabase/functions/`: Supabase Edge Functions.
     *   `generate-pdf/`: Deno-based function for server-side PDF generation using Puppeteer.
+    *   `save-quote/`: Saves quote data and triggers Shopify customer creation.
+    *   `add-shopify-customer/`: Creates or updates customers in Shopify with quote metadata.
+    *   `send-email-summary/`: Sends email summaries with PDF attachments.
+*   `supabase/migrations/`: Database migration files.
+    *   `create_saved_quotes_table.sql`: Creates the saved_quotes table with RLS policies.
+    *   `add_shopify_customer_tracking.sql`: Adds Shopify customer ID tracking.
+*   `GA4_SHOPIFY_INTEGRATION.md`: Comprehensive integration guide for developers.
 *   `tailwind.config.js`: Tailwind CSS configuration.
 *   `vite.config.ts`: Vite build configuration.
 
@@ -55,6 +76,21 @@ The application provides real-time pricing calculations, interactive diagrams, a
 *   **PDF Generation**:
     *   **Client-side**: `src/utils/pdfGenerator.ts` uses `html2canvas` and `jspdf` to generate a PDF directly in the browser. This is primarily for immediate user download.
     *   **Server-side (Supabase Edge Function)**: `supabase/functions/generate-pdf/index.ts` provides a more robust PDF generation using Puppeteer. This is crucial for reliable PDF generation, especially for emailing quotes, as client-side generation can be inconsistent across browsers or for complex layouts.
+*   **Analytics & Tracking**: `src/utils/analytics.ts` provides comprehensive GA4 event tracking with 70+ events covering:
+    *   User session and configurator lifecycle
+    *   Step-by-step navigation and completion
+    *   Fabric, color, and configuration selections
+    *   Measurement inputs and validation errors
+    *   Quote saving and Shopify customer creation
+    *   Canvas interactions and visualization usage
+    *   PDF generation and email summary events
+    *   For complete details, see [GA4_SHOPIFY_INTEGRATION.md](./GA4_SHOPIFY_INTEGRATION.md)
+*   **Shopify Integration**: Automatic customer creation in Shopify when users save quotes with email:
+    *   Quote data saved to Supabase `saved_quotes` table
+    *   Customer created/updated via `add-shopify-customer` Edge Function
+    *   Customer tags applied for segmentation (e.g., `configurator-quote`, `high-value-quote`)
+    *   Quote metadata stored in customer metafields
+    *   Customer ID linked back to saved quote for tracking
 
 ### 3. Code Cleanup & Best Practices
 
