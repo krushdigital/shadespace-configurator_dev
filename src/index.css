@@ -147,6 +147,36 @@ html {
   animation: slideUpBounce 0.6s ease-out;
 }
 
+/* Custom checkbox styling for acknowledgments */
+.acknowledgment-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  cursor: pointer;
+  accent-color: #10b981;
+  border-radius: 4px;
+}
+
+@media (min-width: 640px) {
+  .acknowledgment-checkbox {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    min-height: 24px;
+  }
+}
+
+.acknowledgment-checkbox:hover {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+.acknowledgment-checkbox:focus {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .corner-pulse,
@@ -156,5 +186,9 @@ html {
 
   .animate-slideUpBounce {
     animation: none;
+  }
+
+  .acknowledgment-checkbox:hover {
+    transform: none;
   }
 }

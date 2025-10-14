@@ -861,11 +861,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               <span className="ml-2 text-emerald-600">✓</span>
             )}
           </h4>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-start">
+          <div className="space-y-4 text-sm">
+            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
               <input
                 type="checkbox"
-                className="mt-1 mr-3"
+                className="acknowledgment-checkbox mt-0.5"
                 checked={acknowledgments.customManufactured}
                 onChange={() => handleAcknowledgmentChange('customManufactured')}
                 required
@@ -880,10 +880,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 I understand that this shade sail will be custom manufactured to my specifications and cannot be returned or exchanged.
               </span>
             </div>
-            <div className="flex items-start">
+            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
               <input
                 type="checkbox"
-                className="mt-1 mr-3"
+                className="acknowledgment-checkbox mt-0.5"
                 checked={acknowledgments.measurementsAccurate}
                 onChange={() => handleAcknowledgmentChange('measurementsAccurate')}
                 required
@@ -898,10 +898,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 I confirm that all measurements provided are accurate and have been verified on-site.
               </span>
             </div>
-            <div className="flex items-start">
+            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
               <input
                 type="checkbox"
-                className="mt-1 mr-3"
+                className="acknowledgment-checkbox mt-0.5"
                 checked={acknowledgments.installationNotIncluded}
                 onChange={() => handleAcknowledgmentChange('installationNotIncluded')}
                 required
@@ -916,10 +916,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 I acknowledge that installation is not included and I am responsible for proper installation according to provided guidelines.
               </span>
             </div>
-            <div className="flex items-start">
+            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
               <input
                 type="checkbox"
-                className="mt-1 mr-3"
+                className="acknowledgment-checkbox mt-0.5"
                 checked={acknowledgments.structuralResponsibility}
                 onChange={() => handleAcknowledgmentChange('structuralResponsibility')}
                 required
