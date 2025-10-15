@@ -9,6 +9,113 @@ export interface GAEventProperties {
   [key: string]: string | number | boolean | undefined;
 }
 
+/**
+ * GOOGLE ANALYTICS EVENT TRACKING
+ *
+ * This file contains 100+ event tracking functions for the Shade Configurator.
+ * All events are sent to Google Analytics 4 (GA4) via the gtag.js library.
+ *
+ * EVENT CATEGORIES:
+ *
+ * 1. SESSION & INITIALIZATION (5 events)
+ *    - configurator_loaded, configurator_session_start, configurator_timeout
+ *    - form_abandoned, mobile_view_detected
+ *
+ * 2. STEP NAVIGATION (11 events)
+ *    - step_[N]_viewed, step_[N]_completed, step_[N]_validation_error
+ *    - step_opened, step_closed, next_button_clicked, back_button_clicked
+ *    - step_navigation_error, step_auto_scrolled, mobile_step_navigation
+ *
+ * 3. FABRIC SELECTION (4 events)
+ *    - fabric_type_selected, fabric_color_selected
+ *    - fabric_details_viewed, fabric_link_clicked
+ *
+ * 4. EDGE TYPE (2 events)
+ *    - edge_type_selected, edge_type_details_viewed
+ *
+ * 5. FIXING POINTS & SHAPE (1 event)
+ *    - fixing_points_selected
+ *
+ * 6. MEASUREMENT (8 events)
+ *    - unit_selected, measurement_option_selected, measurement_option_tooltip_viewed
+ *    - edge_measurement_entered, diagonal_measurement_entered
+ *    - measurement_field_focused, measurement_field_highlighted
+ *
+ * 7. TYPO DETECTION & SUGGESTIONS (3 events)
+ *    - typo_suggestion_shown, typo_suggestion_accepted, typo_suggestion_dismissed
+ *
+ * 8. VALIDATION (3 events)
+ *    - perimeter_limit_exceeded, diagonal_validation_error
+ *    - validation_error_displayed, error_field_scrolled
+ *
+ * 9. HARDWARE & FIXING (8 events)
+ *    - hardware_info_viewed, hardware_link_clicked
+ *    - anchor_height_entered, fixing_type_selected, eye_orientation_selected
+ *    - anchor_height_typo_suggestion_shown, anchor_height_typo_accepted
+ *    - anchor_height_typo_dismissed
+ *
+ * 10. CANVAS INTERACTION (8 events)
+ *     - canvas_rendered, canvas_point_hover, canvas_edge_hover
+ *     - canvas_point_dragged, canvas_snap_to_grid, canvas_svg_exported
+ *
+ * 11. CALCULATION (4 events)
+ *     - price_calculated, area_calculated
+ *     - perimeter_calculated, wire_thickness_calculated
+ *
+ * 12. PRICE SUMMARY & CURRENCY (2 events)
+ *     - price_summary_viewed, currency_changed
+ *
+ * 13. ACKNOWLEDGMENT (3 events)
+ *     - acknowledgment_checked, acknowledgment_unchecked
+ *     - all_acknowledgments_completed
+ *
+ * 14. PDF GENERATION (3 events)
+ *     - pdf_quote_clicked, pdf_generated_success, pdf_generation_failed
+ *
+ * 15. EMAIL (6 events)
+ *     - email_summary_button_clicked, email_address_entered
+ *     - email_summary_sent, email_send_failed, email_input_cancelled
+ *     - email_summary_sent_with_shopify
+ *
+ * 16. CART & PRODUCT (10 events)
+ *     - add_to_cart_clicked, add_to_cart_blocked
+ *     - product_creation_started, product_created_success, product_creation_failed
+ *     - cart_add_started, cart_add_success, cart_add_failed, redirect_to_cart
+ *
+ * 17. QUOTE SAVE MODAL (8 events)
+ *     - quote_save_modal_opened, quote_save_method_selected
+ *     - quote_save_email_entered, quote_save_success, quote_save_failed
+ *     - quote_save_modal_cancelled, quote_link_generated, quote_link_copied
+ *     - quote_save_completed
+ *
+ * 18. QUOTE LOADING (3 events)
+ *     - quote_load_attempted, quote_load_success, quote_load_failed
+ *
+ * 19. QUOTE SEARCH & MANAGEMENT (3 events)
+ *     - quote_search_modal_opened, quote_search_performed
+ *     - quote_search_modal_closed
+ *
+ * 20. SHOPIFY INTEGRATION (3 events)
+ *     - shopify_customer_created, shopify_customer_creation_failed
+ *     - shopify_customer_updated
+ *
+ * 21. CONVERSION TRACKING (1 event)
+ *     - quote_converted_to_cart
+ *
+ * 22. ERROR TRACKING (1 event)
+ *     - error_occurred (via trackError function)
+ *
+ * TOTAL: 100+ distinct event types
+ *
+ * USAGE:
+ * Import the analytics object and call methods directly:
+ *   import { analytics } from '@/utils/analytics';
+ *   analytics.fabricTypeSelected('sunbrella', 'Sunbrella Premium');
+ */
+
+/**
+ * Core function to send events to Google Analytics
+ */
 export const trackEvent = (eventName: string, properties?: GAEventProperties): void => {
   if (typeof window === 'undefined') return;
 
@@ -20,6 +127,9 @@ export const trackEvent = (eventName: string, properties?: GAEventProperties): v
   }
 };
 
+/**
+ * Track page view changes
+ */
 export const trackPageView = (pagePath: string, pageTitle?: string): void => {
   if (typeof window === 'undefined') return;
 
@@ -31,6 +141,9 @@ export const trackPageView = (pagePath: string, pageTitle?: string): void => {
   }
 };
 
+/**
+ * Track timing/performance metrics
+ */
 export const trackTiming = (
   name: string,
   value: number,
@@ -45,6 +158,9 @@ export const trackTiming = (
   });
 };
 
+/**
+ * Track errors that occur in the application
+ */
 export const trackError = (
   errorMessage: string,
   errorType: string,
@@ -58,6 +174,10 @@ export const trackError = (
 };
 
 export const analytics = {
+  // ============================================================================
+  // SESSION & INITIALIZATION EVENTS
+  // ============================================================================
+
   configuratorLoaded: (properties?: GAEventProperties) => {
     trackEvent('configurator_loaded', {
       timestamp: new Date().toISOString(),
@@ -71,6 +191,10 @@ export const analytics = {
       entry_point: window.location.href,
     });
   },
+
+  // ============================================================================
+  // STEP NAVIGATION EVENTS
+  // ============================================================================
 
   stepViewed: (stepNumber: number, stepName: string) => {
     trackEvent(`step_${stepNumber}_viewed`, {
@@ -95,6 +219,10 @@ export const analytics = {
       error_message: errorMessage,
     });
   },
+
+  // ============================================================================
+  // FABRIC SELECTION EVENTS
+  // ============================================================================
 
   fabricTypeSelected: (fabricType: string, fabricLabel: string) => {
     trackEvent('fabric_type_selected', {
@@ -125,6 +253,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // EDGE TYPE EVENTS
+  // ============================================================================
+
   edgeTypeSelected: (edgeType: string) => {
     trackEvent('edge_type_selected', {
       edge_type: edgeType,
@@ -138,12 +270,20 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // FIXING POINTS & SHAPE EVENTS
+  // ============================================================================
+
   fixingPointsSelected: (corners: number, shapeDescription: string) => {
     trackEvent('fixing_points_selected', {
       corners: corners,
       shape_description: shapeDescription,
     });
   },
+
+  // ============================================================================
+  // MEASUREMENT EVENTS
+  // ============================================================================
 
   unitSelected: (unit: string) => {
     trackEvent('unit_selected', {
@@ -218,6 +358,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // TYPO DETECTION & SUGGESTION EVENTS
+  // ============================================================================
+
   typoSuggestionShown: (measurementKey: string, currentValue: number, suggestedValue: number, reason: string) => {
     trackEvent('typo_suggestion_shown', {
       measurement_key: measurementKey,
@@ -242,6 +386,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // VALIDATION EVENTS
+  // ============================================================================
+
   perimeterLimitExceeded: (calculatedPerimeter: number, unit: string, maxPerimeter: number) => {
     trackEvent('perimeter_limit_exceeded', {
       calculated_perimeter: calculatedPerimeter,
@@ -256,6 +404,10 @@ export const analytics = {
       error_details: errorDetails,
     });
   },
+
+  // ============================================================================
+  // HARDWARE & FIXING EVENTS
+  // ============================================================================
 
   anchorHeightEntered: (anchorPoint: string, heightValue: number, unit: string) => {
     trackEvent('anchor_height_entered', {
@@ -302,6 +454,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // PRICE SUMMARY & CURRENCY EVENTS
+  // ============================================================================
+
   priceSummaryViewed: (data: GAEventProperties) => {
     trackEvent('price_summary_viewed', data);
   },
@@ -313,6 +469,10 @@ export const analytics = {
       price_change: priceChange,
     });
   },
+
+  // ============================================================================
+  // ACKNOWLEDGMENT EVENTS
+  // ============================================================================
 
   acknowledgmentChecked: (acknowledgmentType: string) => {
     trackEvent('acknowledgment_checked', {
@@ -331,6 +491,10 @@ export const analytics = {
       time_to_complete_seconds: timeToComplete,
     });
   },
+
+  // ============================================================================
+  // PDF GENERATION EVENTS
+  // ============================================================================
 
   pdfQuoteClicked: (totalPrice: number, currency: string, hasEmail: boolean) => {
     trackEvent('pdf_quote_clicked', {
@@ -354,6 +518,10 @@ export const analytics = {
       error_type: errorType,
     });
   },
+
+  // ============================================================================
+  // EMAIL EVENTS
+  // ============================================================================
 
   emailSummaryButtonClicked: () => {
     trackEvent('email_summary_button_clicked', {
@@ -390,6 +558,10 @@ export const analytics = {
       had_email_entered: hadEmailEntered,
     });
   },
+
+  // ============================================================================
+  // CART & PRODUCT EVENTS
+  // ============================================================================
 
   addToCartClicked: (data: GAEventProperties) => {
     trackEvent('add_to_cart_clicked', data);
@@ -455,6 +627,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // ADDITIONAL STEP NAVIGATION EVENTS
+  // ============================================================================
+
   stepOpened: (stepNumber: number, stepName: string, fromStep: number) => {
     trackEvent('step_opened', {
       step_number: stepNumber,
@@ -500,6 +676,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // CANVAS INTERACTION EVENTS
+  // ============================================================================
+
   canvasRendered: (corners: number, canvasType: string, width: number, height: number) => {
     trackEvent('canvas_rendered', {
       corners: corners,
@@ -540,6 +720,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // ADDITIONAL VALIDATION EVENTS
+  // ============================================================================
+
   validationErrorDisplayed: (stepNumber: number, errorType: string, errorCount: number) => {
     trackEvent('validation_error_displayed', {
       step_number: stepNumber,
@@ -556,6 +740,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // ADDITIONAL SESSION & INITIALIZATION EVENTS
+  // ============================================================================
+
   formAbandoned: (lastCompletedStep: number, totalTimeSeconds: number, furthestStepReached: number) => {
     trackEvent('form_abandoned', {
       last_completed_step: lastCompletedStep,
@@ -570,6 +758,10 @@ export const analytics = {
       session_duration_seconds: sessionDurationSeconds,
     });
   },
+
+  // ============================================================================
+  // CALCULATION EVENTS
+  // ============================================================================
 
   priceCalculated: (data: GAEventProperties) => {
     trackEvent('price_calculated', data);
@@ -601,6 +793,10 @@ export const analytics = {
     });
   },
 
+  // ============================================================================
+  // MOBILE EVENTS
+  // ============================================================================
+
   mobileViewDetected: (screenWidth: number, screenHeight: number, deviceType: string) => {
     trackEvent('mobile_view_detected', {
       screen_width: screenWidth,
@@ -617,7 +813,9 @@ export const analytics = {
     });
   },
 
-  // Quote Save Modal Events
+  // ============================================================================
+  // QUOTE SAVE MODAL EVENTS
+  // ============================================================================
   quoteSaveModalOpened: (data: {
     source: string;
     device_type: string;
@@ -705,7 +903,9 @@ export const analytics = {
     trackEvent('quote_save_completed', data);
   },
 
-  // Quote Loading Events
+  // ============================================================================
+  // QUOTE LOADING EVENTS
+  // ============================================================================
   quoteLoadAttempted: (data: {
     quote_id: string;
     source: string;
@@ -732,7 +932,9 @@ export const analytics = {
     trackEvent('quote_load_failed', data);
   },
 
-  // Shopify Customer Integration Events
+  // ============================================================================
+  // SHOPIFY INTEGRATION EVENTS
+  // ============================================================================
   shopifyCustomerCreated: (data: {
     customer_id: string;
     email_domain: string;
@@ -760,7 +962,9 @@ export const analytics = {
     trackEvent('shopify_customer_updated', data);
   },
 
-  // Quote to Cart Conversion Tracking
+  // ============================================================================
+  // CONVERSION TRACKING EVENTS
+  // ============================================================================
   quoteConvertedToCart: (data: {
     quote_reference: string;
     quote_age_hours: number;
@@ -772,7 +976,9 @@ export const analytics = {
     trackEvent('quote_converted_to_cart', data);
   },
 
-  // Enhanced Email Summary Events
+  // ============================================================================
+  // ENHANCED EMAIL SUMMARY EVENTS
+  // ============================================================================
   emailSummaryWithShopify: (data: {
     email_domain: string;
     includes_pdf: boolean;
@@ -785,7 +991,9 @@ export const analytics = {
     trackEvent('email_summary_sent_with_shopify', data);
   },
 
-  // Quote Search and Filter Events
+  // ============================================================================
+  // QUOTE SEARCH & MANAGEMENT EVENTS
+  // ============================================================================
   quoteSearchModalOpened: (data: {
     email_domain: string;
   }) => {
