@@ -17,6 +17,8 @@ interface ConfiguratorState {
   eyeOrientations?: ('horizontal' | 'vertical')[];
   fixingPointsInstalled?: boolean;
   currency: string;
+  quoteName?: string;
+  customerReference?: string;
 }
 
 interface ShadeCalculations {
@@ -467,7 +469,19 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
         
         <!-- Main Title -->
         <h1 class="main-title">Custom Shade Sail Quote</h1>
-        
+        ${config.quoteName ? `
+        <div style="background: linear-gradient(135deg, #F3FFE3 0%, #BFF102 100%); border: 2px solid #307C31; border-radius: 10px; padding: 15px; margin-bottom: 20px; text-align: center;">
+          <div style="color: #307C31; font-size: 12px; font-weight: bold; margin-bottom: 5px;">QUOTE NAME</div>
+          <div style="color: #01312D; font-size: 20px; font-weight: bold;">${config.quoteName}</div>
+          ${config.customerReference ? `
+          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #307C31;">
+            <div style="color: #307C31; font-size: 10px; font-weight: bold; margin-bottom: 3px;">CUSTOMER REFERENCE</div>
+            <div style="color: #01312D; font-size: 14px; font-weight: 600;">${config.customerReference}</div>
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
+
         <!-- Configuration Summary -->
         <div class="section">
             <h2 class="section-title">Shade Sail Summary</h2>
@@ -718,12 +732,32 @@ serve(async (req) => {
 
     console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes')
 
+    const sanitizeFilename = (name: string): string => {
+      if (!name) return '';
+      return name
+        .trim()
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/\.+$/g, '')
+        .replace(/^\.+/g, '')
+        .substring(0, 100);
+    };
+
+    let pdfFilename = 'ShadeSpace-Quote';
+    if (config.quoteName) {
+      const sanitizedName = sanitizeFilename(config.quoteName);
+      if (sanitizedName) {
+        pdfFilename = `ShadeSpace-${sanitizedName}`;
+      }
+    }
+    pdfFilename += `-${new Date().toISOString().slice(0, 10)}.pdf`;
+
     // Return PDF as response
     return new Response(pdfBuffer, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="ShadeSpace-Quote-${new Date().toISOString().slice(0, 10)}-${Date.now()}.pdf"`
+        'Content-Disposition': `attachment; filename="${pdfFilename}"`
       }
     })
 
