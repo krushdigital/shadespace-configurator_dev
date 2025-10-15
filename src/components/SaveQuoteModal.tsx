@@ -405,7 +405,7 @@ if (saveMethod === 'email' && email) {
 
                   <button
                     onClick={() => handleMethodSelection('link')}
-                    className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
+                    className="hidden w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 w-10 h-10 bg-[#BFF102] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
