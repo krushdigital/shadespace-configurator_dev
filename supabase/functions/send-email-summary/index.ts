@@ -63,7 +63,9 @@ function generateEmailHTML(data: any): string {
     Edge_Type,
     Wire_Thickness,
     Area,
-    Perimeter
+    Perimeter,
+    quoteName,
+    customerReference
   } = data;
 
   const formattedPrice = formatCurrency(totalPrice, currency);
@@ -96,6 +98,24 @@ function generateEmailHTML(data: any): string {
         </p>
       </td>
     </tr>
+
+    ${quoteName ? `
+    <!-- Quote Name -->
+    <tr>
+      <td style="padding: 0 20px 20px 20px;">
+        <div style="background: linear-gradient(135deg, #F3FFE3 0%, #BFF102 100%); border: 2px solid #307C31; border-radius: 10px; padding: 20px; text-align: center;">
+          <div style="color: #307C31; font-size: 12px; font-weight: bold; margin-bottom: 8px;">QUOTE NAME</div>
+          <div style="color: #01312D; font-size: 24px; font-weight: bold;">${quoteName}</div>
+          ${customerReference ? `
+          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #307C31;">
+            <div style="color: #307C31; font-size: 10px; font-weight: bold; margin-bottom: 5px;">CUSTOMER REFERENCE</div>
+            <div style="color: #01312D; font-size: 16px; font-weight: 600;">${customerReference}</div>
+          </div>
+          ` : ''}
+        </div>
+      </td>
+    </tr>
+    ` : ''}
 
     <!-- Canvas Preview -->
     ${canvasImage ? `
