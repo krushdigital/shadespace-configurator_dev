@@ -17,11 +17,27 @@ const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
 interface PriceSummaryDisplayProps {
   config: ConfiguratorState;
   calculations: ShadeCalculations;
+  onSaveQuote?: () => void;
+  onGeneratePDF?: () => void;
+  isGeneratingPDF?: boolean;
+  showEmailInput?: boolean;
+  email?: string;
+  setEmail?: (email: string) => void;
+  onEmailSummary?: () => void;
+  onCancelEmailInput?: () => void;
 }
 
 export function PriceSummaryDisplay({
   config,
   calculations,
+  onSaveQuote,
+  onGeneratePDF,
+  isGeneratingPDF = false,
+  showEmailInput = false,
+  email = '',
+  setEmail,
+  onEmailSummary,
+  onCancelEmailInput,
 }: PriceSummaryDisplayProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
@@ -127,6 +143,76 @@ export function PriceSummaryDisplay({
               </ul>
             </div>
           </div>
+
+          {/* Quote Actions - Desktop Only */}
+          {onSaveQuote && (
+            <div className="space-y-3 mt-6 pt-6 border-t border-slate-200">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSaveQuote}
+                className="w-full flex items-center justify-center gap-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                Save Quote
+              </Button>
+
+              {onGeneratePDF && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onGeneratePDF}
+                  disabled={isGeneratingPDF}
+                  className="w-full"
+                >
+                  {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
+                </Button>
+              )}
+
+              {onEmailSummary && !showEmailInput && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={onEmailSummary}
+                  className="w-full"
+                >
+                  Email Summary
+                </Button>
+              )}
+
+              {showEmailInput && setEmail && onEmailSummary && onCancelEmailInput && (
+                <div className="space-y-2">
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    className="w-full"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={onEmailSummary}
+                      className="w-full"
+                    >
+                      Send
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onCancelEmailInput}
+                      className="w-full"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </>
       ) : (
         <div className="text-center py-8">
@@ -134,7 +220,7 @@ export function PriceSummaryDisplay({
             Your Shade Sail Price
           </h3>
           <p className="text-sm text-[#01312D]/60">
-            Enter edge measurements to see pricing
+            Complete configuration to see pricing
           </p>
         </div>
       )}

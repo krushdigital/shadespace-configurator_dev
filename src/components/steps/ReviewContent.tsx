@@ -948,7 +948,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
         {/* Mobile Action Buttons - Save Quote, PDF and Email (positioned after acknowledgments) */}
         {isMobile && allDiagonalsEntered && (
-          <div className="space-y-3">
+          <div className="space-y-3 lg:hidden">
             <Button
               variant="outline"
               size="sm"
@@ -1012,70 +1012,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
         )}
 
-        {/* Desktop Action Buttons - Save Quote, PDF and Email */}
-        {!isMobile && allDiagonalsEntered && (
-          <div className="space-y-3 mt-6">
-            <h4 className="text-lg font-semibold text-slate-900 mb-3">
-              Quote Actions
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onSaveQuote}
-                className="flex items-center justify-center gap-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-                Save Quote
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleGeneratePDFWithSVG}
-                disabled={isGeneratingPDF}
-              >
-                {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
-              </Button>
-
-              {!showEmailInput ? (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleEmailSummary}
-                >
-                  Email Summary
-                </Button>
-              ) : (
-                <div className="md:col-span-2 flex gap-2">
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={handleEmailSummary}
-                  >
-                    Send
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelEmailInput}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Action Buttons - Full width on desktop */}
         <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
