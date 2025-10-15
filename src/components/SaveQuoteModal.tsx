@@ -75,6 +75,51 @@ export function SaveQuoteModal({
         expiresAt: result.expiresAt,
       });
 
+
+   // Send confirmation email if user chose email method
+if (saveMethod === 'email' && email) {
+  try {
+    // Validate that we have all required data
+    if (!result.reference || !quoteUrl || !result.expiresAt) {
+      console.warn('Missing required quote data for email:', {
+        reference: result.reference,
+        quoteUrl: quoteUrl,
+        expiresAt: result.expiresAt
+      });
+      return; // Don't attempt to send email without required data
+    }
+
+    const emailResponse = await fetch(
+      '/apps/shade_space/api/v1/public/quote-save-email',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          quoteReference: result.reference,
+          quoteUrl: quoteUrl,
+          expiresAt: result.expiresAt
+        }),
+      }
+    );
+
+    const emailData = await emailResponse.json();
+    
+    if (!emailData.success) {
+      console.warn('Quote confirmation email failed:', emailData.error);
+      // Don't throw error here - quote is saved successfully regardless of email
+    } else {
+      console.log('Quote confirmation email sent successfully');
+    }
+  } catch (emailError) {
+    console.error('Error sending quote confirmation email:', emailError);
+    // Don't throw error here - quote is saved successfully regardless of email
+  }
+}
+
+
       // Track success with comprehensive data
       analytics.quoteSaveSuccess({
         quote_reference: result.reference,
