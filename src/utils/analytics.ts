@@ -784,4 +784,33 @@ export const analytics = {
   }) => {
     trackEvent('email_summary_sent_with_shopify', data);
   },
+
+  // Quote Search and Filter Events
+  quoteSearchModalOpened: (data: {
+    email_domain: string;
+  }) => {
+    trackEvent('quote_search_modal_opened', data);
+  },
+
+  quoteSearchPerformed: (data: {
+    email_domain: string;
+    search_text: string | null;
+    status_filter: string;
+    fabric_filter: string | null;
+    corner_filter: number | null;
+    sort_by: string;
+    sort_order: string;
+    results_count: number;
+    total_results: number;
+  }) => {
+    trackEvent('quote_search_performed', data);
+  },
+
+  quoteSearchModalClosed: (data: {
+    email_domain: string;
+    quotes_viewed: number;
+    had_selected_quote: boolean;
+  }) => {
+    trackEvent('quote_search_modal_closed', data);
+  },
 };

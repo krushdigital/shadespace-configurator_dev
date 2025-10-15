@@ -28,6 +28,40 @@ export interface QuoteData {
   status: string;
 }
 
+export interface QuoteSearchFilters {
+  search?: string;
+  status?: 'active' | 'expiring' | 'expired' | 'completed' | 'all' | 'saved';
+  fabricType?: string;
+  corners?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  startDate?: string;
+  endDate?: string;
+  sortBy?: 'created_at' | 'expires_at' | 'price' | 'quote_name';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface QuoteSearchResult {
+  quotes: QuoteData[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    totalResults: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  stats: {
+    total: number;
+    active: number;
+    expiring: number;
+    expired: number;
+    completed: number;
+  };
+}
+
 /**
  * Save a quote to the database
  */
@@ -226,4 +260,51 @@ export async function markQuoteConverted(quoteId: string): Promise<void> {
   if (!data.success) {
     throw new Error(data.error || 'Failed to mark quote as converted');
   }
+}
+
+/**
+ * Search and filter quotes for a specific email
+ */
+export async function searchQuotes(
+  email: string,
+  filters: QuoteSearchFilters = {}
+): Promise<QuoteSearchResult> {
+  const params = new URLSearchParams();
+  params.append('email', email);
+
+  if (filters.search) params.append('search', filters.search);
+  if (filters.status) params.append('status', filters.status);
+  if (filters.fabricType) params.append('fabricType', filters.fabricType);
+  if (filters.corners) params.append('corners', filters.corners.toString());
+  if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
+  if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
+  if (filters.startDate) params.append('startDate', filters.startDate);
+  if (filters.endDate) params.append('endDate', filters.endDate);
+  if (filters.sortBy) params.append('sortBy', filters.sortBy);
+  if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+  if (filters.page) params.append('page', filters.page.toString());
+  if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
+
+  const response = await fetch(
+    `${SUPABASE_URL}/functions/v1/search-quotes?${params.toString()}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error || 'Failed to search quotes');
+  }
+
+  return {
+    quotes: data.quotes,
+    pagination: data.pagination,
+    stats: data.stats,
+  };
 }
