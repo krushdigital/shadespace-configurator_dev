@@ -360,7 +360,7 @@ export function ShadeConfigurator() {
     }
   };
 
-const handleEmailSummary = async () => {
+  const handleEmailSummary = async () => {
     try {
       if (!showEmailInput) {
         setShowEmailInput(true);
@@ -715,10 +715,14 @@ const handleEmailSummary = async () => {
     createdAt: string;
     // Edge measurements (A→B, B→C, etc.)
     [edgeKey: string]: string | number | boolean | object | undefined;
+    backendEdgeMeasurements: Record<string, string>;
+    backendDiagonalMeasurements: Record<string, string>;
+    backendAnchorMeasurements: Record<string, string>;
+    originalUnit: 'metric' | 'imperial';
   }
 
 
-const handleAddToCart = async (orderData: OrderData): Promise<void> => {
+  const handleAddToCart = async (orderData: OrderData): Promise<void> => {
     console.log('Product being created. Add to cart');
     setShowLoadingOverlay(true);
     setLoadingStep({ text: 'Starting order process...', progress: 10 });
@@ -1479,193 +1483,193 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
           )}
         </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Accordion Steps */}
-        <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step
-          ? 'lg:col-span-2'
-          : openStep >= 5 // Review step
-            ? 'lg:col-span-3'
-            : 'lg:col-span-4'
-          }`}>
-          {steps.map((step, index) => {
-            const StepComponent = step.component;
-            const isCompleted = index < config.step;
-            const isCurrent = index === config.step;
-            const isOpen = openStep === index;
-            const canOpen = index <= config.step;
-            const selection = getStepSelection(index);
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Accordion Steps */}
+          <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step
+            ? 'lg:col-span-2'
+            : openStep >= 5 // Review step
+              ? 'lg:col-span-3'
+              : 'lg:col-span-4'
+            }`}>
+            {steps.map((step, index) => {
+              const StepComponent = step.component;
+              const isCompleted = index < config.step;
+              const isCurrent = index === config.step;
+              const isOpen = openStep === index;
+              const canOpen = index <= config.step;
+              const selection = getStepSelection(index);
 
-            // On mobile, show current step, completed steps, and the next available step
-            if (isMobile && index > config.step) {
-              return null;
-            }
+              // On mobile, show current step, completed steps, and the next available step
+              if (isMobile && index > config.step) {
+                return null;
+              }
 
-            return (
-              <AccordionStep
-                key={index}
-                title={step.title}
-                subtitle={step.subtitle}
-                stepNumber={index + 1}
-                isCompleted={isCompleted}
-                isCurrent={isCurrent}
-                isOpen={isOpen}
-                canOpen={canOpen}
-                selection={selection}
-                onToggle={() => toggleStep(index)}
-              >
-                <StepComponent
-                  config={config}
-                  updateConfig={updateConfig}
-                  calculations={calculations}
-                  validationErrors={validationErrors}
-                  typoSuggestions={typoSuggestions}
-                  onNext={nextStep}
-                  onPrev={prevStep}
-                  setValidationErrors={setValidationErrors}
-                  setTypoSuggestions={setTypoSuggestions}
-                  dismissTypoSuggestion={dismissTypoSuggestion}
-                  setConfig={setConfig}
-                  setOpenStep={setOpenStep}
-                  // Pricing and order props for ReviewContent
-                  isGeneratingPDF={isGeneratingPDF}
-                  handleGeneratePDF={handleGeneratePDF}
-                  showEmailInput={showEmailInput}
-                  email={email}
-                  setEmail={setEmail}
-                  handleEmailSummary={handleEmailSummary}
-                  acknowledgments={acknowledgments}
-                  handleAcknowledgmentChange={handleAcknowledgmentChange}
-                  handleAddToCart={handleAddToCart}
-                  allDiagonalsEntered={allDiagonalsEntered}
-                  allAcknowledgmentsChecked={allAcknowledgmentsChecked}
-                  canAddToCart={canAddToCart}
-                  hasAllEdgeMeasurements={hasAllEdgeMeasurements}
-                  handleCancelEmailInput={handleCancelEmailInput}
-                  nextStepTitle={getNextStepTitle(index)}
-                  showBackButton={shouldShowBackButton(index)}
-                  isMobile={isMobile}
-                  setHighlightedMeasurement={setHighlightedMeasurement}
-                  highlightedMeasurement={highlightedMeasurement}
-                  canvasRef={canvasRef}
-                  ref={index === 6 ? reviewContentRef : undefined}
-                  loading={loading}
-                  setLoading={setLoading}
-                  setShowLoadingOverlay={setShowLoadingOverlay}
-                  onSaveQuote={handleSaveQuote}
-                  quoteReference={quoteReference}
-                />
-              </AccordionStep>
-            );
-          })}
-        </div>
-
-        {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-        {openStep === 4 && !isMobile && (
-          <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-28 lg:self-start z-10">
-            <h4 className="text-lg font-semibold text-slate-900 mb-4">
-              Interactive Measurement Guide
-            </h4>
-
-            {/* Canvas Tip */}
-            <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
-              <p className="text-sm text-[#01312D]">
-                <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
-                Enter measurements in the fields to the right to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
-              </p>
-            </div>
-
-            <ShapeCanvas
-              config={config}
-              updateConfig={updateConfig}
-              readonly={false}
-              snapToGrid={true}
-              highlightedMeasurement={highlightedMeasurement}
-              isMobile={isMobile}
-            />
-          </div>
-        )}
-
-        {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
-        {(openStep >= 5) && (
-          <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-28 lg:self-start z-10 space-y-4">
-            <PriceSummaryDisplay
-              config={config}
-              calculations={calculations}
-            />
-
-            {/* Desktop PDF and Email Buttons */}
-            {calculations.totalPrice > 0 && (
-              <div className="space-y-3">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => handleGeneratePDFWithSVG(false)}
-                  disabled={isGeneratingPDF}
-                  className="w-full"
+              return (
+                <AccordionStep
+                  key={index}
+                  title={step.title}
+                  subtitle={step.subtitle}
+                  stepNumber={index + 1}
+                  isCompleted={isCompleted}
+                  isCurrent={isCurrent}
+                  isOpen={isOpen}
+                  canOpen={canOpen}
+                  selection={selection}
+                  onToggle={() => toggleStep(index)}
                 >
-                  {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
-                </Button>
+                  <StepComponent
+                    config={config}
+                    updateConfig={updateConfig}
+                    calculations={calculations}
+                    validationErrors={validationErrors}
+                    typoSuggestions={typoSuggestions}
+                    onNext={nextStep}
+                    onPrev={prevStep}
+                    setValidationErrors={setValidationErrors}
+                    setTypoSuggestions={setTypoSuggestions}
+                    dismissTypoSuggestion={dismissTypoSuggestion}
+                    setConfig={setConfig}
+                    setOpenStep={setOpenStep}
+                    // Pricing and order props for ReviewContent
+                    isGeneratingPDF={isGeneratingPDF}
+                    handleGeneratePDF={handleGeneratePDF}
+                    showEmailInput={showEmailInput}
+                    email={email}
+                    setEmail={setEmail}
+                    handleEmailSummary={handleEmailSummary}
+                    acknowledgments={acknowledgments}
+                    handleAcknowledgmentChange={handleAcknowledgmentChange}
+                    handleAddToCart={handleAddToCart}
+                    allDiagonalsEntered={allDiagonalsEntered}
+                    allAcknowledgmentsChecked={allAcknowledgmentsChecked}
+                    canAddToCart={canAddToCart}
+                    hasAllEdgeMeasurements={hasAllEdgeMeasurements}
+                    handleCancelEmailInput={handleCancelEmailInput}
+                    nextStepTitle={getNextStepTitle(index)}
+                    showBackButton={shouldShowBackButton(index)}
+                    isMobile={isMobile}
+                    setHighlightedMeasurement={setHighlightedMeasurement}
+                    highlightedMeasurement={highlightedMeasurement}
+                    canvasRef={canvasRef}
+                    ref={index === 6 ? reviewContentRef : undefined}
+                    loading={loading}
+                    setLoading={setLoading}
+                    setShowLoadingOverlay={setShowLoadingOverlay}
+                    onSaveQuote={handleSaveQuote}
+                    quoteReference={quoteReference}
+                  />
+                </AccordionStep>
+              );
+            })}
+          </div>
 
-                {!showEmailInput ? (
+          {/* Sticky Diagram for Dimensions Step - Desktop Only */}
+          {openStep === 4 && !isMobile && (
+            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-28 lg:self-start z-10">
+              <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                Interactive Measurement Guide
+              </h4>
+
+              {/* Canvas Tip */}
+              <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
+                <p className="text-sm text-[#01312D]">
+                  <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
+                  Enter measurements in the fields to the right to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
+                </p>
+              </div>
+
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={false}
+                snapToGrid={true}
+                highlightedMeasurement={highlightedMeasurement}
+                isMobile={isMobile}
+              />
+            </div>
+          )}
+
+          {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
+          {(openStep >= 5) && (
+            <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-28 lg:self-start z-10 space-y-4">
+              <PriceSummaryDisplay
+                config={config}
+                calculations={calculations}
+              />
+
+              {/* Desktop PDF and Email Buttons */}
+              {calculations.totalPrice > 0 && (
+                <div className="space-y-3">
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={handleEmailSummary}
+                    onClick={() => handleGeneratePDFWithSVG(false)}
+                    disabled={isGeneratingPDF}
                     className="w-full"
                   >
-                    Email Summary
+                    {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
                   </Button>
-                ) : (
-                  <div className="space-y-2">
-                    <Input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email address"
-                      className="w-full"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleEmailSummary}
-                        className="w-full flex items-center justify-center gap-2"
-                        disabled={isSendingEmail}
-                      >
-                        {isSendingEmail && (
-                          <svg
-                            className="animate-spin h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            ></path>
-                          </svg>
-                        )}
-                        {isSendingEmail ? "Sending..." : "Send Email"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelEmailInput}
-                        className="w-full"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
 
-      </div>
+                  {!showEmailInput ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleEmailSummary}
+                      className="w-full"
+                    >
+                      Email Summary
+                    </Button>
+                  ) : (
+                    <div className="space-y-2">
+                      <Input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Enter your email address"
+                        className="w-full"
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleEmailSummary}
+                          className="w-full flex items-center justify-center gap-2"
+                          disabled={isSendingEmail}
+                        >
+                          {isSendingEmail && (
+                            <svg
+                              className="animate-spin h-4 w-4 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                              ></path>
+                            </svg>
+                          )}
+                          {isSendingEmail ? "Sending..." : "Send Email"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCancelEmailInput}
+                          className="w-full"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
 
         <LoadingOverlay
           isVisible={showLoadingOverlay}
