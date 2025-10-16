@@ -1591,81 +1591,19 @@ export function ShadeConfigurator() {
 
           {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
           {(openStep >= 5) && (
-            <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-28 lg:self-start z-10 space-y-4">
+            <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-28 lg:self-start z-10">
               <PriceSummaryDisplay
                 config={config}
                 calculations={calculations}
+                onSaveQuote={handleSaveQuote}
+                onGeneratePDF={() => handleGeneratePDFWithSVG(false)}
+                isGeneratingPDF={isGeneratingPDF}
+                showEmailInput={showEmailInput}
+                email={email}
+                setEmail={setEmail}
+                onEmailSummary={handleEmailSummary}
+                onCancelEmailInput={handleCancelEmailInput}
               />
-
-              {/* Desktop PDF and Email Buttons */}
-              {calculations.totalPrice > 0 && (
-                <div className="space-y-3">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleGeneratePDFWithSVG(false)}
-                    disabled={isGeneratingPDF}
-                    className="w-full"
-                  >
-                    {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
-                  </Button>
-
-                  {!showEmailInput ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleEmailSummary}
-                      className="w-full"
-                    >
-                      Email Summary
-                    </Button>
-                  ) : (
-                    <div className="space-y-2">
-                      <Input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter your email address"
-                        className="w-full"
-                      />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={handleEmailSummary}
-                          className="w-full flex items-center justify-center gap-2"
-                          disabled={isSendingEmail}
-                        >
-                          {isSendingEmail && (
-                            <svg
-                              className="animate-spin h-4 w-4 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              ></path>
-                            </svg>
-                          )}
-                          {isSendingEmail ? "Sending..." : "Send Email"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCancelEmailInput}
-                          className="w-full"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
 
