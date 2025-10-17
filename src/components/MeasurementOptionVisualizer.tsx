@@ -322,33 +322,35 @@ export function MeasurementOptionVisualizer({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <span className="font-semibold text-slate-900 text-xs">Tensioning Hardware Not Included</span>
-                <Tooltip
-                  content={
-                    <div>
-                      <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
-                      <p className="text-sm text-slate-600 mb-3">
-                        With this option, you'll receive the shade sail with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles, eyebolts/eye plates etc.) must be sourced separately.
-                      </p>
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                        <a
-                          href="https://shadespace.com/pages/hardware"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
-                        >
-                          Shop Hardware
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                          </svg>
-                        </a>
+                <span className="inline-flex items-center">
+                  <Tooltip
+                    content={
+                      <div>
+                        <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
+                        <p className="text-sm text-slate-600 mb-3">
+                          With this option, you'll receive the shade sail with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles, eyebolts/eye plates etc.) must be sourced separately.
+                        </p>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                          <a
+                            href="https://shadespace.com/pages/hardware"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
+                          >
+                            Shop Hardware
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                            </svg>
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  }
-                >
-                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                    ?
-                  </span>
-                </Tooltip>
+                    }
+                  >
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                      ?
+                    </span>
+                  </Tooltip>
+                </span>
               </div>
             </div>
           </div>
