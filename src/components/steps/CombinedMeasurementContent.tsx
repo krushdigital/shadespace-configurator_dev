@@ -332,15 +332,9 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                       <div>
                         <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
                         <p className="text-sm text-slate-600 mb-3">
-                          With this option, you'll receive the shade sail fabric with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles, eye bolts, etc.) must be sourced separately.
+                          With this option, you'll receive the shade sail with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles, eyebolts/eye plates etc.) must be sourced separately.
                         </p>
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                          <p className="text-sm text-slate-700 font-medium mb-2">
-                            Need hardware?
-                          </p>
-                          <p className="text-sm text-slate-600 mb-2">
-                            Visit our hardware section to purchase the components you need for installation.
-                          </p>
                           <a 
                             href="https://shadespace.com/pages/hardware" 
                             target="_blank" 
