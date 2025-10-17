@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Info } from 'lucide-react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
@@ -6,10 +6,8 @@ import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { AccordionItem } from '../ui/AccordionItem';
 import { CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../../data/pricing';
-import { MeasurementVisualization3D } from '../MeasurementVisualization3D';
-import { CornerCloseupVisualization } from '../CornerCloseupVisualization';
-import { getFabricColorHex } from '../../utils/svgHelpers';
 
+// Define the mapping for hardware pack images
 const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
   3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
   4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
@@ -29,16 +27,12 @@ interface CombinedMeasurementContentProps {
 }
 
 export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false }: CombinedMeasurementContentProps) {
-  const [hoveredOption, setHoveredOption] = useState<'adjust' | 'exact' | null>(null);
-
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
     updateConfig({ measurementOption: option });
   };
 
-  const fabricColor = getFabricColorHex(config.fabricType, config.fabricColor);
+  // Get the correct hardware pack image URL based on the number of corners
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
-
-  const displayMeasurementType = hoveredOption || config.measurementOption;
 
   return (
     <div className="p-4 sm:p-6">
@@ -88,26 +82,22 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
         </div>
       </div>
 
-      {/* Measurement Option Selection with 3D Visualizations */}
+      {/* Measurement Option Selection */}
       <div className="mb-6 sm:mb-8">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How would you like your shade sail to be manufactured?
         </h4>
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left Column - Option Cards */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card
-              className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                config.measurementOption === 'adjust'
-                  ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
-                  : validationErrors.measurementOption && !config.measurementOption
-                  ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                  : 'hover:border-slate-300'
-              }`}
-              onClick={() => handleMeasurementOptionChange('adjust')}
-              onMouseEnter={() => setHoveredOption('adjust')}
-              onMouseLeave={() => setHoveredOption(null)}
-            >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+              config.measurementOption === 'adjust'
+                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                : validationErrors.measurementOption && !config.measurementOption
+                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+                : 'hover:border-slate-300'
+            }`}
+            onClick={() => handleMeasurementOptionChange('adjust')}
+          >
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
@@ -202,8 +192,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                       <div>
                         <h4 className="font-bold text-slate-900 mb-2">Hardware Pack Included</h4>
                         {config.corners > 0 && hardwarePackImageUrl && (
-                          <img
-                            src={hardwarePackImageUrl}
+                          <img 
+                            src={hardwarePackImageUrl} 
                             alt={`${config.corners} Corner Hardware Pack`}
                             className="w-full h-auto object-cover rounded-lg mb-3"
                           />
@@ -212,9 +202,9 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                           Complete stainless steel hardware kit included with your sail.
                         </p>
                         <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
-                          <a
-                            href="https://shadespace.com/pages/hardware"
-                            target="_blank"
+                          <a 
+                            href="https://shadespace.com/pages/hardware" 
+                            target="_blank" 
                             rel="noopener noreferrer"
                             className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
                           >
@@ -234,20 +224,18 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                 </p>
               </div>
             </div>
-            </Card>
+          </Card>
 
-            <Card
-              className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                config.measurementOption === 'exact'
-                  ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
-                  : validationErrors.measurementOption && !config.measurementOption
-                  ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                  : 'hover:border-slate-300'
-              }`}
-              onClick={() => handleMeasurementOptionChange('exact')}
-              onMouseEnter={() => setHoveredOption('exact')}
-              onMouseLeave={() => setHoveredOption(null)}
-            >
+          <Card
+            className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+              config.measurementOption === 'exact'
+                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                : validationErrors.measurementOption && !config.measurementOption
+                ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+                : 'hover:border-slate-300'
+            }`}
+            onClick={() => handleMeasurementOptionChange('exact')}
+          >
             <div className="flex items-center gap-3 sm:gap-4">
               <div className="flex-shrink-0 mt-1 hidden sm:block">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
@@ -342,9 +330,9 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                           <p className="text-sm text-slate-600 mb-2">
                             Visit our hardware section to purchase the components you need for installation.
                           </p>
-                          <a
-                            href="https://shadespace.com/pages/hardware"
-                            target="_blank"
+                          <a 
+                            href="https://shadespace.com/pages/hardware" 
+                            target="_blank" 
                             rel="noopener noreferrer"
                             className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
                           >
@@ -364,35 +352,16 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                 </p>
               </div>
             </div>
-            </Card>
-          </div>
+          </Card>
 
-          {/* Right Column - 3D Visualizations */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="h-64 sm:h-80">
-              <MeasurementVisualization3D
-                corners={config.corners}
-                measurementType={displayMeasurementType}
-                fabricColor={fabricColor}
-                isHovered={hoveredOption !== null}
-              />
-            </div>
-            <div className="h-48 sm:h-64">
-              <CornerCloseupVisualization
-                measurementType={displayMeasurementType}
-                fabricColor={fabricColor}
-                isHovered={hoveredOption !== null}
-              />
-            </div>
-          </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && (
-            <Button
-              variant="outline"
+            <Button 
+              variant="outline" 
               size="sm"
               onClick={onPrev}
               className="sm:w-auto"
@@ -400,8 +369,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               Back
             </Button>
           )}
-          <Button
-            onClick={onNext}
+          <Button 
+            onClick={onNext} 
             size="md"
             className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
           >
