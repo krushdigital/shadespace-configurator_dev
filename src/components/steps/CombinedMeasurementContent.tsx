@@ -6,6 +6,7 @@ import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { AccordionItem } from '../ui/AccordionItem';
 import { CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../../data/pricing';
+import { MeasurementOptionVisualizer } from '../MeasurementOptionVisualizer';
 
 // Define the mapping for hardware pack images
 const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
@@ -82,12 +83,22 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
         </div>
       </div>
 
-      {/* Measurement Option Selection */}
+      {/* Measurement Option Selection with Interactive Visualizer */}
       <div className="mb-6 sm:mb-8">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How would you like your shade sail to be manufactured?
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <MeasurementOptionVisualizer
+          selectedOption={config.measurementOption}
+          corners={config.corners}
+          fabricColor={config.fabricColor}
+          onOptionChange={handleMeasurementOptionChange}
+          validationErrors={validationErrors}
+        />
+
+        {/* Original grid layout - keeping as fallback, hidden by default */}
+        <div className="hidden grid-cols-1 md:grid-cols-2 gap-4">
           <Card
             className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.measurementOption === 'adjust'
