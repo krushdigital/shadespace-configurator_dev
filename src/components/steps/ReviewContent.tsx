@@ -5,6 +5,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
+import { AccordionItem } from '../ui/AccordionItem';
 import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
@@ -651,88 +652,190 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
             {/* Precise Measurements Summary */}
             <div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-3">
-                Precise Measurements
-              </h4>
-              <Card className="p-4 mb-4">
-                <div className="space-y-3">
-                  {/* Edge Measurements */}
-                  <div>
-                    <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths:</h6>
-                    <div className="space-y-1 text-sm">
-                      {Array.from({ length: config.corners }, (_, index) => {
-                        const nextIndex = (index + 1) % config.corners;
-                        const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
-                        const measurement = config.measurements[edgeKey];
+              {isMobile ? (
+                <AccordionItem
+                  trigger={
+                    <span className="flex items-center gap-2">
+                      <span>Edge & Diagonal Measurements</span>
+                      <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
+                        {config.corners + (config.corners >= 4 ? diagonalMeasurements.length : 0)}
+                      </span>
+                    </span>
+                  }
+                  defaultOpen={false}
+                >
+                  <Card className="p-3 mt-2">
+                    <div className="space-y-3">
+                      <div>
+                        <h6 className="text-xs font-semibold text-slate-700 mb-2">Edge Lengths:</h6>
+                        <div className="space-y-1 text-xs">
+                          {Array.from({ length: config.corners }, (_, index) => {
+                            const nextIndex = (index + 1) % config.corners;
+                            const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
+                            const measurement = config.measurements[edgeKey];
 
-                        return (
-                          <div key={edgeKey} className="flex justify-between">
-                            <span className="text-slate-600">
-                              Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:
-                            </span>
-                            <span className="font-medium text-slate-900">
-                              {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Diagonal Measurements */}
-                  {config.corners >= 4 && diagonalMeasurements.length > 0 && (
-                    <div>
-                      <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths:</h6>
-                      <div className="space-y-1 text-sm">
-                        {diagonalMeasurements.map((diagonal) => {
-                          const measurement = config.measurements[diagonal.key];
-
-                          return (
-                            <div key={diagonal.key} className="flex justify-between">
-                              <span className="text-slate-600">
-                                Diagonal {diagonal.key}:
-                              </span>
-                              <span className="font-medium text-slate-900">
-                                {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
-                              </span>
-                            </div>
-                          );
-                        })}
+                            return (
+                              <div key={edgeKey} className="flex justify-between">
+                                <span className="text-slate-600">
+                                  Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:
+                                </span>
+                                <span className="font-medium text-slate-900">
+                                  {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
+
+                      {config.corners >= 4 && diagonalMeasurements.length > 0 && (
+                        <div className="pt-2 border-t border-slate-200">
+                          <h6 className="text-xs font-semibold text-slate-700 mb-2">Diagonal Lengths:</h6>
+                          <div className="space-y-1 text-xs">
+                            {diagonalMeasurements.map((diagonal) => {
+                              const measurement = config.measurements[diagonal.key];
+
+                              return (
+                                <div key={diagonal.key} className="flex justify-between">
+                                  <span className="text-slate-600">
+                                    Diagonal {diagonal.key}:
+                                  </span>
+                                  <span className="font-medium text-slate-900">
+                                    {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </Card>
+                  </Card>
+                </AccordionItem>
+              ) : (
+                <>
+                  <h4 className="text-lg font-semibold text-slate-900 mb-3">
+                    Precise Measurements
+                  </h4>
+                  <Card className="p-4 mb-4">
+                    <div className="space-y-3">
+                      <div>
+                        <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths:</h6>
+                        <div className="space-y-1 text-sm">
+                          {Array.from({ length: config.corners }, (_, index) => {
+                            const nextIndex = (index + 1) % config.corners;
+                            const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
+                            const measurement = config.measurements[edgeKey];
+
+                            return (
+                              <div key={edgeKey} className="flex justify-between">
+                                <span className="text-slate-600">
+                                  Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:
+                                </span>
+                                <span className="font-medium text-slate-900">
+                                  {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {config.corners >= 4 && diagonalMeasurements.length > 0 && (
+                        <div>
+                          <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths:</h6>
+                          <div className="space-y-1 text-sm">
+                            {diagonalMeasurements.map((diagonal) => {
+                              const measurement = config.measurements[diagonal.key];
+
+                              return (
+                                <div key={diagonal.key} className="flex justify-between">
+                                  <span className="text-slate-600">
+                                    Diagonal {diagonal.key}:
+                                  </span>
+                                  <span className="font-medium text-slate-900">
+                                    {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </>
+              )}
             </div>
 
             {/* Anchor Point Heights */}
             <div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-3">
-                Anchor Point Heights
-              </h4>
-              <Card className="p-4 mb-4">
-                <div className="space-y-2 text-sm">
-                  {config.fixingHeights.map((height, index) => {
-                    const corner = String.fromCharCode(65 + index);
-                    const type = config.fixingTypes?.[index] || 'post';
-                    const orientation = config.eyeOrientations?.[index];
+              {isMobile ? (
+                <AccordionItem
+                  trigger={
+                    <span className="flex items-center gap-2">
+                      <span>Anchor Point Heights</span>
+                      <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
+                        {config.corners}
+                      </span>
+                    </span>
+                  }
+                  defaultOpen={false}
+                >
+                  <Card className="p-3 mt-2">
+                    <div className="space-y-2 text-xs">
+                      {config.fixingHeights.map((height, index) => {
+                        const corner = String.fromCharCode(65 + index);
+                        const type = config.fixingTypes?.[index] || 'post';
+                        const orientation = config.eyeOrientations?.[index];
 
-                    return (
-                      <div key={index} className="flex justify-between">
-                        <span className="text-slate-600">Anchor Point {corner}:</span>
-                        <div className="text-right">
-                          <div className="font-medium text-slate-900">
-                            {formatMeasurement(height, config.unit)}
-                            {' ('}{type}
-                            {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
-                            {')'}
+                        return (
+                          <div key={index} className="flex justify-between">
+                            <span className="text-slate-600">Point {corner}:</span>
+                            <div className="text-right">
+                              <div className="font-medium text-slate-900">
+                                {formatMeasurement(height, config.unit)}
+                                {' ('}{type}
+                                {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
+                                {')'}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </AccordionItem>
+              ) : (
+                <>
+                  <h4 className="text-lg font-semibold text-slate-900 mb-3">
+                    Anchor Point Heights
+                  </h4>
+                  <Card className="p-4 mb-4">
+                    <div className="space-y-2 text-sm">
+                      {config.fixingHeights.map((height, index) => {
+                        const corner = String.fromCharCode(65 + index);
+                        const type = config.fixingTypes?.[index] || 'post';
+                        const orientation = config.eyeOrientations?.[index];
+
+                        return (
+                          <div key={index} className="flex justify-between">
+                            <span className="text-slate-600">Anchor Point {corner}:</span>
+                            <div className="text-right">
+                              <div className="font-medium text-slate-900">
+                                {formatMeasurement(height, config.unit)}
+                                {' ('}{type}
+                                {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
+                                {')'}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </>
+              )}
             </div>
           </div>
 
@@ -848,7 +951,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         {/* Important Acknowledgments - Full width on desktop */}
         <Card
           ref={acknowledgementsCardRef}
-          className={`p-6 mt-6 border-2 transition-all duration-300 ${allAcknowledgmentsChecked
+          className={`${isMobile ? 'p-4 mt-4' : 'p-6 mt-6'} border-2 transition-all duration-300 ${allAcknowledgmentsChecked
             ? 'bg-emerald-50 border-emerald-200'
             : showValidationFeedback && !allAcknowledgmentsChecked
               ? 'bg-red-100 border-red-600 ring-4 ring-red-300 shadow-xl'
@@ -856,17 +959,17 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 ? '!border-red-500 bg-red-50 hover:!border-red-600 shadow-md'
                 : 'bg-slate-50 border-slate-200'
             } `}>
-          <h4 className="text-lg font-semibold text-slate-900 mb-4">
-            Important Acknowledgments
+          <h4 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-900 ${isMobile ? 'mb-3' : 'mb-4'}`}>
+            {isMobile ? 'Acknowledgments' : 'Important Acknowledgments'}
             {allAcknowledgmentsChecked && (
               <span className="ml-2 text-emerald-600">✓</span>
             )}
           </h4>
-          <div className="space-y-4 text-sm">
-            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
+          <div className={`${isMobile ? 'space-y-3 text-xs' : 'space-y-4 text-sm'}`}>
+            <div className={`flex items-start gap-3 ${isMobile ? 'p-1' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
               <input
                 type="checkbox"
-                className="acknowledgment-checkbox mt-0.5"
+                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
                 checked={acknowledgments.customManufactured}
                 onChange={() => handleAcknowledgmentChange('customManufactured')}
                 required
@@ -878,13 +981,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     ? 'text-emerald-700'
                     : 'text-slate-700'
               }>
-                I understand that this shade sail will be custom manufactured to my specifications and cannot be returned or exchanged.
+                I understand this shade sail is custom manufactured and cannot be returned or exchanged.
               </span>
             </div>
-            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
+            <div className={`flex items-start gap-3 ${isMobile ? 'p-1' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
               <input
                 type="checkbox"
-                className="acknowledgment-checkbox mt-0.5"
+                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
                 checked={acknowledgments.measurementsAccurate}
                 onChange={() => handleAcknowledgmentChange('measurementsAccurate')}
                 required
@@ -896,13 +999,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     ? 'text-emerald-700'
                     : 'text-slate-700'
               }>
-                I confirm that all measurements provided are accurate and have been verified on-site.
+                I confirm all measurements provided are accurate and verified on-site.
               </span>
             </div>
-            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
+            <div className={`flex items-start gap-3 ${isMobile ? 'p-1' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
               <input
                 type="checkbox"
-                className="acknowledgment-checkbox mt-0.5"
+                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
                 checked={acknowledgments.installationNotIncluded}
                 onChange={() => handleAcknowledgmentChange('installationNotIncluded')}
                 required
@@ -914,13 +1017,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     ? 'text-emerald-700'
                     : 'text-slate-700'
               }>
-                I acknowledge that installation is not included and I am responsible for proper installation according to provided guidelines.
+                I acknowledge installation is not included and I am responsible for proper installation.
               </span>
             </div>
-            <div className="flex items-start gap-3 p-2 -ml-2 rounded hover:bg-slate-50 transition-colors">
+            <div className={`flex items-start gap-3 ${isMobile ? 'p-1' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
               <input
                 type="checkbox"
-                className="acknowledgment-checkbox mt-0.5"
+                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
                 checked={acknowledgments.structuralResponsibility}
                 onChange={() => handleAcknowledgmentChange('structuralResponsibility')}
                 required
@@ -932,15 +1035,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     ? 'text-emerald-700'
                     : 'text-slate-700'
               }>
-                I understand that structural adequacy of fixing points is my responsibility and may require engineering approval.
+                I understand structural adequacy of fixing points is my responsibility.
               </span>
             </div>
           </div>
 
           {showValidationFeedback && !allAcknowledgmentsChecked && (
-            <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
-              <p className="text-sm text-red-800">
-                <strong>Required:</strong> Please check all acknowledgments above to proceed with your order.
+            <div className={`${isMobile ? 'mt-3 p-2' : 'mt-4 p-3'} bg-red-100 border border-red-300 rounded-lg`}>
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-red-800`}>
+                <strong>Required:</strong> Please check all acknowledgments to proceed.
               </p>
             </div>
           )}
