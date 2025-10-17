@@ -21,7 +21,7 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
       const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
       points.push({
         x: 200 + radius * Math.cos(angle),
-        y: 200 + radius * Math.sin(angle),
+        y: 215 + radius * Math.sin(angle),
         z: 0
       });
     }
@@ -37,7 +37,7 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
       const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
       points.push({
         x: 200 + radius * Math.cos(angle),
-        y: 200 + radius * Math.sin(angle),
+        y: 215 + radius * Math.sin(angle),
         z: 0
       });
     }
