@@ -63,6 +63,8 @@ export function MeasurementOptionVisualizer({
                     Adjust Size of Sail to Fit the Space
                   </h5>
                   <Tooltip
+                    width="min(90vw, 500px)"
+                    maxWidth="500px"
                     content={
                       <div>
                         <div className="mb-3">
@@ -163,6 +165,8 @@ export function MeasurementOptionVisualizer({
                 </svg>
                 <span className="font-semibold text-[#01312D] text-xs">Hardware Included</span>
                 <Tooltip
+                  width="min(90vw, 400px)"
+                  maxWidth="400px"
                   content={
                     <div>
                       <h4 className="font-bold text-slate-900 mb-2">Hardware Pack Included</h4>
@@ -231,6 +235,8 @@ export function MeasurementOptionVisualizer({
                   Fabricate Sail to the Dimensions You Provide
                 </h5>
                 <Tooltip
+                  width="min(90vw, 500px)"
+                  maxWidth="500px"
                   content={
                     <div>
                       <div className="mb-3">
@@ -323,6 +329,8 @@ export function MeasurementOptionVisualizer({
                 </svg>
                 <span className="font-semibold text-slate-900 text-xs">Tensioning Hardware Not Included</span>
                 <Tooltip
+                  width="min(90vw, 400px)"
+                  maxWidth="400px"
                   content={
                     <div>
                       <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>

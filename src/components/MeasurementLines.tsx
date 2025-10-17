@@ -13,8 +13,8 @@ interface MeasurementLinesProps {
 }
 
 export function MeasurementLines({ measurementType, corners, isActive }: MeasurementLinesProps) {
-  const getFixingPoints = (): Point3D[] => {
-    const radius = 120;
+  const getPoints = (): Point3D[] => {
+    const radius = measurementType === 'space' ? 120 : 90;
     const points: Point3D[] = [];
 
     for (let i = 0; i < corners; i++) {
@@ -29,23 +29,7 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
     return points;
   };
 
-  const getSailPoints = (): Point3D[] => {
-    const radius = 90;
-    const points: Point3D[] = [];
-
-    for (let i = 0; i < corners; i++) {
-      const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
-      points.push({
-        x: 200 + radius * Math.cos(angle),
-        y: 200 + radius * Math.sin(angle),
-        z: 0
-      });
-    }
-
-    return points;
-  };
-
-  const points = measurementType === 'space' ? getFixingPoints() : getSailPoints();
+  const points = getPoints();
 
   const renderMeasurementLine = (start: Point3D, end: Point3D, index: number) => {
     const midX = (start.x + end.x) / 2;

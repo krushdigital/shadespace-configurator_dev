@@ -6,9 +6,11 @@ interface TooltipProps {
   children: React.ReactNode;
   className?: string;
   onOpen?: () => void;
+  width?: string | number;
+  maxWidth?: string | number;
 }
 
-export function Tooltip({ content, children, className = '', onOpen }: TooltipProps) {
+export function Tooltip({ content, children, className = '', onOpen, width, maxWidth }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -20,7 +22,8 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
 
       // Check if mobile
       const isMobile = window.innerWidth < 768;
-      const tooltipWidth = isMobile ? 260 : 320;
+      const defaultWidth = isMobile ? 260 : 320;
+      const tooltipWidth = typeof width === 'number' ? width : (width ? parseInt(width) : defaultWidth);
       const tooltipMaxHeight = isMobile ? Math.min(350, window.innerHeight * 0.6) : 500;
       
       // Position tooltip to the right of the trigger, centered vertically
@@ -102,7 +105,8 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: 99999,
-        width: window.innerWidth < 768 ? '260px' : '320px',
+        width: width || (window.innerWidth < 768 ? '260px' : '320px'),
+        maxWidth: maxWidth || undefined,
         maxHeight: window.innerWidth < 768 ? `${Math.min(350, window.innerHeight * 0.6)}px` : '500px',
         overflowY: 'auto',
       }}
