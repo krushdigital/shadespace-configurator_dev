@@ -62,10 +62,11 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
   const sailColor = fabricColor || '#94C973';
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="relative w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-2">
       <svg
         viewBox="0 0 400 400"
         className="w-full h-full"
+        preserveAspectRatio="xMidYMid meet"
       >
         <defs>
           <filter id="dropShadow">
@@ -264,12 +265,12 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
 
       {measurementType && (
         <div
-          className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border-2 border-[#ef4444] animate-slide-in-left"
+          className="absolute top-2 left-2 bg-white/95 backdrop-blur-sm px-2 py-1.5 rounded-md shadow-md border-2 border-[#ef4444] animate-slide-in-left"
         >
-          <p className="text-xs font-bold text-[#01312D] mb-0.5">
+          <p className="text-[11px] font-bold text-[#01312D] mb-0">
             {measurementType === 'space' ? 'Space Measurements' : 'Sail Dimensions'}
           </p>
-          <p className="text-[10px] text-slate-600">
+          <p className="text-[9px] text-slate-600">
             {measurementType === 'space'
               ? 'Between fixing points'
               : 'Finished sail edges'}

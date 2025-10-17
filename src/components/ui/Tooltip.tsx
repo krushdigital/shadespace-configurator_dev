@@ -20,8 +20,8 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
 
       // Check if mobile
       const isMobile = window.innerWidth < 768;
-      const tooltipWidth = isMobile ? 300 : 380;
-      const tooltipMaxHeight = isMobile ? Math.min(400, window.innerHeight * 0.7) : 600;
+      const tooltipWidth = isMobile ? 280 : 340;
+      const tooltipMaxHeight = isMobile ? Math.min(350, window.innerHeight * 0.6) : 500;
       
       // Position tooltip to the right of the trigger, centered vertically
       let x = rect.right + 10;
@@ -102,8 +102,8 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: 99999,
-        width: window.innerWidth < 768 ? '300px' : '380px',
-        maxHeight: window.innerWidth < 768 ? `${Math.min(400, window.innerHeight * 0.7)}px` : '600px',
+        width: window.innerWidth < 768 ? '280px' : '340px',
+        maxHeight: window.innerWidth < 768 ? `${Math.min(350, window.innerHeight * 0.6)}px` : '500px',
         overflowY: 'auto',
       }}
       onMouseEnter={() => {
@@ -113,7 +113,7 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
       }}
       onMouseLeave={hideTooltip}
     >
-      <div className={`leading-relaxed p-3 sm:p-4 ${
+      <div className={`leading-relaxed p-2.5 sm:p-3 ${
         window.innerWidth < 768 ? 'text-xs' : 'text-sm'
       }`}>
         {content}
