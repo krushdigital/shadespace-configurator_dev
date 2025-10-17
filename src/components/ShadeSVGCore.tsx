@@ -596,6 +596,8 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
         const lineEndX = sailAttachmentPoint.x;
         const lineEndY = sailAttachmentPoint.y;
 
+        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
         return (
           <g key={`turnbuckle-${index}`}>
             {/* Turnbuckle line - red to indicate hardware connection */}
@@ -610,7 +612,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
               className="drop-shadow-sm"
             />
 
-            {/* Turnbuckle body (wider rectangle) */}
+            {/* Turnbuckle body (wider rectangle) - rotated to align with connection line */}
             <rect
               x={lineEndX - (compact ? 2.25 : (isMobile ? 4.5 : 3.75))}
               y={lineEndY - (compact ? 0.8 : (isMobile ? 1.5 : 1.2))}
@@ -621,6 +623,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
               strokeWidth="0.5"
               rx="0.5"
               className="drop-shadow-sm"
+              transform={`rotate(${angle} ${lineEndX} ${lineEndY})`}
             />
           </g>
         );
