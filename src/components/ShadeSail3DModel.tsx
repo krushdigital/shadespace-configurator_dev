@@ -115,8 +115,6 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
               const turnbuckleX = sailPoint.x + (dx / length) * (length / 2);
               const turnbuckleY = sailPoint.y + (dy / length) * (length / 2);
 
-              const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-
               return (
                 <g key={`fixing-point-${index}`}>
                   {/* Tensioning line from sail corner to turnbuckle */}
@@ -131,7 +129,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
                   />
 
                   {/* Turnbuckle representation */}
-                  <g transform={`rotate(${angle} ${turnbuckleX} ${turnbuckleY})`}>
+                  <g>
                     <rect
                       x={turnbuckleX - (turnbuckleLength / 2)}
                       y={turnbuckleY - 2.5}
