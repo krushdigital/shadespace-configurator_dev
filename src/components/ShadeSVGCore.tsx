@@ -225,19 +225,19 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       const current = points[i];
       const next = points[(i + 1) % points.length];
       
-      // Calculate control point for slight inward curve
+      // Calculate control point for inward curve
       const midX = (current.x + next.x) / 2;
       const midY = (current.y + next.y) / 2;
-      
-      // Small inward curve for realistic sail sag
+
+      // Enhanced inward curve for realistic sail sag
       const distance = Math.sqrt(Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2));
-      const curvature = Math.min(25, distance * 0.08);
+      const curvature = Math.min(30, distance * 0.12);
       const angle = Math.atan2(next.y - current.y, next.x - current.x);
       const perpAngle = angle + Math.PI / 2;
-      
+
       const controlX = midX + Math.cos(perpAngle) * curvature;
       const controlY = midY + Math.sin(perpAngle) * curvature;
-      
+
       path += ` Q ${controlX},${controlY} ${next.x},${next.y}`;
     }
     

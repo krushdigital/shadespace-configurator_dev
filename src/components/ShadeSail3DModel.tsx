@@ -22,18 +22,40 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
     return points;
   };
 
-  const getSailPolygon = () => {
+  const getSailPath = () => {
     const radius = 90;
-    const points: string[] = [];
+    const points: { x: number; y: number }[] = [];
 
     for (let i = 0; i < corners; i++) {
       const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
       const x = 200 + radius * Math.cos(angle);
       const y = 200 + radius * Math.sin(angle);
-      points.push(`${x},${y}`);
+      points.push({ x, y });
     }
 
-    return points.join(' ');
+    if (points.length < 3) return '';
+
+    let path = `M ${points[0].x},${points[0].y}`;
+
+    for (let i = 0; i < points.length; i++) {
+      const current = points[i];
+      const next = points[(i + 1) % points.length];
+
+      const midX = (current.x + next.x) / 2;
+      const midY = (current.y + next.y) / 2;
+
+      const distance = Math.sqrt(Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2));
+      const curvature = Math.min(15, distance * 0.10);
+      const angle = Math.atan2(next.y - current.y, next.x - current.x);
+      const perpAngle = angle + Math.PI / 2;
+
+      const controlX = midX + Math.cos(perpAngle) * curvature;
+      const controlY = midY + Math.sin(perpAngle) * curvature;
+
+      path += ` Q ${controlX},${controlY} ${next.x},${next.y}`;
+    }
+
+    return path;
   };
 
   const fixingPoints = getFixingPoints();
@@ -60,8 +82,8 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
         </defs>
 
         <g className="scene">
-          <polygon
-            points={getSailPolygon()}
+          <path
+            d={getSailPath()}
             fill={sailColor}
             fillOpacity="0.85"
             stroke="#307C31"
@@ -73,38 +95,85 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
             }}
           />
 
-          {measurementType === 'space' && fixingPoints.map((point, index) => (
-            <g key={`fixing-point-${index}`}>
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="8"
-                fill="#64748b"
-                stroke="#475569"
-                strokeWidth="2"
-              />
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="10"
-                fill="#ef4444"
-                stroke="white"
-                strokeWidth="2.5"
-                className="animate-pulse-subtle"
-              />
-              <text
-                x={point.x}
-                y={point.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="white"
-                fontSize="10"
-                fontWeight="bold"
-              >
-                {String.fromCharCode(65 + index)}
-              </text>
-            </g>
-          ))}
+          {measurementType === 'space' && (() => {
+            const sailRadius = 90;
+            const sailPoints: { x: number; y: number }[] = [];
+            for (let i = 0; i < corners; i++) {
+              const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
+              sailPoints.push({
+                x: 200 + sailRadius * Math.cos(angle),
+                y: 200 + sailRadius * Math.sin(angle)
+              });
+            }
+
+            return fixingPoints.map((point, index) => {
+              const sailPoint = sailPoints[index];
+              return (
+                <g key={`fixing-point-${index}`}>
+                  {/* Connection line from sail corner to fixing point */}
+                  <line
+                    x1={sailPoint.x}
+                    y1={sailPoint.y}
+                    x2={point.x}
+                    y2={point.y}
+                    stroke="#94a3b8"
+                    strokeWidth="2"
+                    strokeDasharray="4,4"
+                    opacity="0.6"
+                  />
+
+                  {/* Corner hardware on sail */}
+                  <g>
+                    <circle
+                      cx={sailPoint.x}
+                      cy={sailPoint.y}
+                      r="6"
+                      fill="#475569"
+                      stroke="#1e293b"
+                      strokeWidth="1.5"
+                    />
+                    <circle
+                      cx={sailPoint.x}
+                      cy={sailPoint.y}
+                      r="3"
+                      fill="none"
+                      stroke="#94a3b8"
+                      strokeWidth="1"
+                    />
+                  </g>
+
+                  {/* Fixing point with pulsating animation */}
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r="8"
+                    fill="#ef4444"
+                    opacity="0.3"
+                    className="animate-pulsate-ring"
+                  />
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r="8"
+                    fill="#ef4444"
+                    stroke="white"
+                    strokeWidth="2.5"
+                  />
+                  <text
+                    x={point.x}
+                    y={point.y}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="white"
+                    fontSize="10"
+                    fontWeight="bold"
+                  >
+                    {String.fromCharCode(65 + index)}
+                  </text>
+                </g>
+              );
+            });
+          })()}
 
           {measurementType === 'sail' && (() => {
             const radius = 90;
@@ -120,22 +189,30 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
 
             return sailPoints.map((point, index) => (
               <g key={`sail-point-${index}`}>
+                {/* Corner hardware on sail */}
                 <circle
                   cx={point.x}
                   cy={point.y}
-                  r="9"
-                  fill="#ef4444"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  className="animate-pulse-subtle"
+                  r="6"
+                  fill="#475569"
+                  stroke="#1e293b"
+                  strokeWidth="1.5"
+                />
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r="3"
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="1"
                 />
                 <text
-                  x={point.x}
-                  y={point.y}
+                  x={point.x + 12}
+                  y={point.y - 12}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fill="white"
-                  fontSize="9"
+                  fill="#1e293b"
+                  fontSize="11"
                   fontWeight="bold"
                 >
                   {String.fromCharCode(65 + index)}

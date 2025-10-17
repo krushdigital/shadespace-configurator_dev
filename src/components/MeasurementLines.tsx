@@ -48,6 +48,9 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
   const points = measurementType === 'space' ? getFixingPoints() : getSailPoints();
 
   const renderMeasurementLine = (start: Point3D, end: Point3D, index: number) => {
+    const midX = (start.x + end.x) / 2;
+    const midY = (start.y + end.y) / 2;
+
     return (
       <g key={`line-${index}`} className={isActive ? 'animate-fade-in' : ''}>
         <line
@@ -78,6 +81,21 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
             opacity: isActive ? 1 : 0
           }}
         />
+
+        {/* Pulsating point on measurement line */}
+        <circle
+          cx={midX}
+          cy={midY}
+          r="4"
+          fill="#ef4444"
+          stroke="white"
+          strokeWidth="1.5"
+          className="animate-pulsate-point"
+          style={{
+            transition: 'opacity 0.4s ease-in-out',
+            opacity: isActive ? 1 : 0
+          }}
+        />
       </g>
     );
   };
@@ -90,6 +108,18 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
         return (
           <React.Fragment key={index}>
             {renderMeasurementLine(point, nextPoint, index)}
+            {/* Pulsating point at each corner */}
+            {isActive && (
+              <circle
+                cx={point.x}
+                cy={point.y}
+                r="5"
+                fill="#ef4444"
+                stroke="white"
+                strokeWidth="2"
+                className="animate-pulsate-point"
+              />
+            )}
           </React.Fragment>
         );
       })}
