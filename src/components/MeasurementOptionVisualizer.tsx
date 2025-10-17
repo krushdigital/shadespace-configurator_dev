@@ -35,9 +35,9 @@ export function MeasurementOptionVisualizer({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="space-y-4 order-2 lg:order-1">
+      <div className="space-y-3 order-2 lg:order-1">
         <Card
-          className={`p-4 cursor-pointer transition-all duration-300 hover:shadow-xl ${
+          className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
             selectedOption === 'adjust'
               ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
               : validationErrors.measurementOption && !selectedOption
@@ -48,24 +48,24 @@ export function MeasurementOptionVisualizer({
           onMouseEnter={() => setHoveredOption('adjust')}
           onMouseLeave={() => setHoveredOption(null)}
         >
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                   selectedOption === 'adjust'
                     ? 'border-[#BFF102] bg-[#BFF102]'
                     : 'border-slate-300 bg-white'
                 }`}
               >
                 {selectedOption === 'adjust' && (
-                  <div className="w-3 h-3 bg-[#01312D] rounded-full" />
+                  <div className="w-2.5 h-2.5 bg-[#01312D] rounded-full" />
                 )}
               </div>
             </div>
             <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <h5 className="text-lg font-bold text-slate-900 leading-tight">
+                  <h5 className="text-base font-bold text-slate-900 leading-tight">
                     Adjust Size of Sail to Fit the Space
                   </h5>
                   <Tooltip
@@ -118,25 +118,25 @@ export function MeasurementOptionVisualizer({
                       </div>
                     }
                   >
-                    <span className="w-5 h-5 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] transition-colors">
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] transition-colors">
                       ?
                     </span>
                   </Tooltip>
                 </div>
-                <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                <span className="bg-[#BFF102] text-[#01312D] text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md">
                   Recommended
                 </span>
               </div>
 
-              <p className="text-sm text-slate-700 mb-3 leading-relaxed">
+              <p className="text-xs text-slate-700 mb-2 leading-relaxed">
                 We calculate deductions for hardware, material stretch, and perfect fit
               </p>
 
-              <div className="flex items-center gap-2 text-sm">
-                <svg className="w-5 h-5 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-1.5 text-xs">
+                <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="font-semibold text-[#01312D]">Hardware Included</span>
+                <span className="font-semibold text-[#01312D] text-xs">Hardware Included</span>
                 <Tooltip
                   content={
                     <div>
@@ -167,7 +167,7 @@ export function MeasurementOptionVisualizer({
                     </div>
                   }
                 >
-                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
                     ?
                   </span>
                 </Tooltip>
@@ -177,7 +177,7 @@ export function MeasurementOptionVisualizer({
         </Card>
 
         <Card
-          className={`p-4 cursor-pointer transition-all duration-300 hover:shadow-xl ${
+          className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
             selectedOption === 'exact'
               ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
               : validationErrors.measurementOption && !selectedOption
@@ -188,23 +188,23 @@ export function MeasurementOptionVisualizer({
           onMouseEnter={() => setHoveredOption('exact')}
           onMouseLeave={() => setHoveredOption(null)}
         >
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 mt-1">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                   selectedOption === 'exact'
                     ? 'border-[#BFF102] bg-[#BFF102]'
                     : 'border-slate-300 bg-white'
                 }`}
               >
                 {selectedOption === 'exact' && (
-                  <div className="w-3 h-3 bg-[#01312D] rounded-full" />
+                  <div className="w-2.5 h-2.5 bg-[#01312D] rounded-full" />
                 )}
               </div>
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h5 className="text-lg font-bold text-slate-900 leading-tight">
+              <div className="flex items-center gap-2 mb-1.5">
+                <h5 className="text-base font-bold text-slate-900 leading-tight">
                   Fabricate Sail to the Dimensions You Provide
                 </h5>
                 <Tooltip
@@ -253,21 +253,21 @@ export function MeasurementOptionVisualizer({
                     </div>
                   }
                 >
-                  <span className="w-5 h-5 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] transition-colors">
+                  <span className="w-4 h-4 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] transition-colors">
                     ?
                   </span>
                 </Tooltip>
               </div>
 
-              <p className="text-sm text-slate-700 mb-3 leading-relaxed">
+              <p className="text-xs text-slate-700 mb-2 leading-relaxed">
                 You provide exact sail measurements - no deductions applied
               </p>
 
-              <div className="flex items-center gap-2 text-sm">
-                <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex items-center gap-1.5 text-xs">
+                <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <span className="font-semibold text-slate-900">Hardware Not Included</span>
+                <span className="font-semibold text-slate-900 text-xs">Hardware Not Included</span>
                 <Tooltip
                   content={
                     <div>
@@ -294,7 +294,7 @@ export function MeasurementOptionVisualizer({
                     </div>
                   }
                 >
-                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
                     ?
                   </span>
                 </Tooltip>
@@ -306,13 +306,13 @@ export function MeasurementOptionVisualizer({
 
       <div className="order-1 lg:order-2 lg:sticky lg:top-28 lg:self-start">
         <div className="bg-white rounded-lg shadow-xl border-2 border-slate-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#01312D] to-[#307C31] px-4 py-3">
-            <h4 className="text-white font-bold text-lg">Interactive Visualization</h4>
-            <p className="text-[#BFF102] text-sm">Hover over options to see measurement differences</p>
+          <div className="bg-gradient-to-r from-[#01312D] to-[#307C31] px-3 py-2.5">
+            <h4 className="text-white font-bold text-base">Interactive Visualization</h4>
+            <p className="text-[#BFF102] text-xs">Hover over options to see measurement differences</p>
           </div>
 
-          <div className="relative" style={{ height: '500px' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-100">
+          <div className="relative" style={{ height: '280px' }}>
+            <div className="absolute inset-0">
               <ShadeSail3DModel
                 corners={corners > 0 ? corners : 4}
                 measurementType={activeMeasurementType}
@@ -322,7 +322,7 @@ export function MeasurementOptionVisualizer({
               {corners > 0 && activeMeasurementType && (
                 <svg
                   className="absolute inset-0 w-full h-full pointer-events-none"
-                  viewBox="0 0 600 600"
+                  viewBox="0 0 400 400"
                   style={{ zIndex: 10 }}
                 >
                   <MeasurementLines
@@ -336,26 +336,26 @@ export function MeasurementOptionVisualizer({
 
             {!activeMeasurementType && (
               <div className="absolute inset-0 flex items-center justify-center bg-slate-900/5 backdrop-blur-[2px]">
-                <div className="text-center px-6">
-                  <svg className="w-16 h-16 mx-auto mb-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="text-center px-4">
+                  <svg className="w-12 h-12 mx-auto mb-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
-                  <p className="text-slate-600 font-medium">Hover over an option to see the visualization</p>
+                  <p className="text-slate-600 font-medium text-sm">Hover over an option to see the visualization</p>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="bg-slate-50 px-4 py-3 border-t border-slate-200">
+          <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
             <div className="flex items-center gap-4 text-xs text-slate-600">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-1 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 4px, transparent 4px, transparent 8px)' }}></div>
+                <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
                 <span>Measurements</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-                <span>Measurement Points</span>
+                <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></div>
+                <span>Fixing Points</span>
               </div>
             </div>
           </div>
