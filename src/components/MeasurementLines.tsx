@@ -99,9 +99,53 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
     );
   };
 
+  const renderDiagonalLine = (start: Point3D, end: Point3D, key: string) => {
+    return (
+      <g key={key} className={isActive ? 'animate-fade-in' : ''}>
+        <line
+          x1={start.x}
+          y1={start.y}
+          x2={end.x}
+          y2={end.y}
+          stroke="white"
+          strokeWidth="4"
+          opacity="0.2"
+          style={{
+            transition: 'all 0.4s ease-in-out',
+            opacity: isActive ? 0.2 : 0
+          }}
+        />
+
+        <line
+          x1={start.x}
+          y1={start.y}
+          x2={end.x}
+          y2={end.y}
+          stroke="#ef4444"
+          strokeWidth="2"
+          strokeDasharray="6,6"
+          strokeLinecap="round"
+          style={{
+            transition: 'all 0.4s ease-in-out',
+            opacity: isActive ? 0.4 : 0
+          }}
+        />
+      </g>
+    );
+  };
+
 
   return (
     <g className="measurement-lines">
+      {/* Render diagonal lines first (behind edge lines) */}
+      {points.map((point, index) => {
+        return points.slice(index + 2, points.length - (index === 0 ? 1 : 0)).map((otherPoint, otherIndex) => {
+          const actualOtherIndex = index + 2 + otherIndex;
+          return renderDiagonalLine(point, otherPoint, `diagonal-${index}-${actualOtherIndex}`);
+        });
+      })}
+
+      {/* Render edge measurement lines */}
       {points.map((point, index) => {
         const nextPoint = points[(index + 1) % points.length];
         return (

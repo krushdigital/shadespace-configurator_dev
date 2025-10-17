@@ -108,18 +108,65 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
 
             return fixingPoints.map((point, index) => {
               const sailPoint = sailPoints[index];
+              const dx = point.x - sailPoint.x;
+              const dy = point.y - sailPoint.y;
+              const length = Math.sqrt(dx * dx + dy * dy);
+              const turnbuckleLength = 12;
+              const turnbuckleX = sailPoint.x + (dx / length) * (length / 2);
+              const turnbuckleY = sailPoint.y + (dy / length) * (length / 2);
+
               return (
                 <g key={`fixing-point-${index}`}>
-                  {/* Connection line from sail corner to fixing point */}
+                  {/* Tensioning line from sail corner to turnbuckle */}
                   <line
                     x1={sailPoint.x}
                     y1={sailPoint.y}
+                    x2={turnbuckleX - (dx / length) * (turnbuckleLength / 2)}
+                    y2={turnbuckleY - (dy / length) * (turnbuckleLength / 2)}
+                    stroke="#64748b"
+                    strokeWidth="2.5"
+                    opacity="0.8"
+                  />
+
+                  {/* Turnbuckle representation */}
+                  <g>
+                    <rect
+                      x={turnbuckleX - (turnbuckleLength / 2)}
+                      y={turnbuckleY - 2.5}
+                      width={turnbuckleLength}
+                      height={5}
+                      fill="#475569"
+                      stroke="#1e293b"
+                      strokeWidth="1"
+                      rx="1"
+                    />
+                    <line
+                      x1={turnbuckleX - 3}
+                      y1={turnbuckleY - 2.5}
+                      x2={turnbuckleX - 3}
+                      y2={turnbuckleY + 2.5}
+                      stroke="#94a3b8"
+                      strokeWidth="0.5"
+                    />
+                    <line
+                      x1={turnbuckleX + 3}
+                      y1={turnbuckleY - 2.5}
+                      x2={turnbuckleX + 3}
+                      y2={turnbuckleY + 2.5}
+                      stroke="#94a3b8"
+                      strokeWidth="0.5"
+                    />
+                  </g>
+
+                  {/* Tensioning line from turnbuckle to fixing point */}
+                  <line
+                    x1={turnbuckleX + (dx / length) * (turnbuckleLength / 2)}
+                    y1={turnbuckleY + (dy / length) * (turnbuckleLength / 2)}
                     x2={point.x}
                     y2={point.y}
-                    stroke="#94a3b8"
-                    strokeWidth="2"
-                    strokeDasharray="4,4"
-                    opacity="0.6"
+                    stroke="#64748b"
+                    strokeWidth="2.5"
+                    opacity="0.8"
                   />
 
                   {/* Corner hardware on sail */}

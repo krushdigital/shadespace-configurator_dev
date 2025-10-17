@@ -326,13 +326,13 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                   </Tooltip>
                 </div>
                 <p className="text-sm text-slate-600 mt-1">
-                  Hardware Not Included
+                  Tensioning Hardware Not Included
                   <Tooltip
                     content={
                       <div>
-                        <h4 className="font-bold text-slate-900 mb-2">Hardware Not Included</h4>
+                        <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
                         <p className="text-sm text-slate-600 mb-3">
-                          With this option, you'll receive only the shade sail fabric. All hardware (turnbuckles, shackles, eye bolts, etc.) must be sourced separately.
+                          With this option, you'll receive the shade sail fabric with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles, eye bolts, etc.) must be sourced separately.
                         </p>
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <p className="text-sm text-slate-700 font-medium mb-2">
