@@ -6,11 +6,9 @@ interface TooltipProps {
   children: React.ReactNode;
   className?: string;
   onOpen?: () => void;
-  width?: string | number;
-  maxWidth?: string | number;
 }
 
-export function Tooltip({ content, children, className = '', onOpen, width, maxWidth }: TooltipProps) {
+export function Tooltip({ content, children, className = '', onOpen }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -22,9 +20,8 @@ export function Tooltip({ content, children, className = '', onOpen, width, maxW
 
       // Check if mobile
       const isMobile = window.innerWidth < 768;
-      const defaultWidth = isMobile ? 260 : 320;
-      const tooltipWidth = typeof width === 'number' ? width : (width ? parseInt(width) : defaultWidth);
-      const tooltipMaxHeight = isMobile ? Math.min(350, window.innerHeight * 0.6) : 500;
+      const tooltipWidth = isMobile ? 300 : 380;
+      const tooltipMaxHeight = isMobile ? Math.min(400, window.innerHeight * 0.7) : 600;
       
       // Position tooltip to the right of the trigger, centered vertically
       let x = rect.right + 10;
@@ -105,9 +102,8 @@ export function Tooltip({ content, children, className = '', onOpen, width, maxW
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: 99999,
-        width: width || (window.innerWidth < 768 ? '260px' : '320px'),
-        maxWidth: maxWidth || undefined,
-        maxHeight: window.innerWidth < 768 ? `${Math.min(350, window.innerHeight * 0.6)}px` : '500px',
+        width: window.innerWidth < 768 ? '300px' : '380px',
+        maxHeight: window.innerWidth < 768 ? `${Math.min(400, window.innerHeight * 0.7)}px` : '600px',
         overflowY: 'auto',
       }}
       onMouseEnter={() => {
@@ -117,7 +113,7 @@ export function Tooltip({ content, children, className = '', onOpen, width, maxW
       }}
       onMouseLeave={hideTooltip}
     >
-      <div className={`leading-relaxed p-2.5 sm:p-3 ${
+      <div className={`leading-relaxed p-3 sm:p-4 ${
         window.innerWidth < 768 ? 'text-xs' : 'text-sm'
       }`}>
         {content}

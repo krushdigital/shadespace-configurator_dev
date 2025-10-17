@@ -63,14 +63,12 @@ export function MeasurementOptionVisualizer({
                     Adjust Size of Sail to Fit the Space
                   </h5>
                   <Tooltip
-                    width="min(90vw, 500px)"
-                    maxWidth="500px"
                     content={
                       <div>
                         <div className="mb-3">
-                          <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-2.5">
-                            <div className="relative pt-8" style={{ aspectRatio: '1/1', maxHeight: '200px' }}>
-                              <div className="absolute inset-0 pt-8">
+                          <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-3">
+                            <div className="relative" style={{ height: '280px' }}>
+                              <div className="absolute inset-0">
                                 <ShadeSail3DModel
                                   corners={corners > 0 ? corners : 4}
                                   measurementType="space"
@@ -91,21 +89,21 @@ export function MeasurementOptionVisualizer({
                                 )}
                               </div>
                             </div>
-                            <div className="bg-slate-50 px-2 py-1.5 border-t border-slate-200">
-                              <div className="flex items-center gap-3 text-xs text-slate-600">
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-4 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
-                                  <span className="text-[11px]">Measurements</span>
+                            <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
+                              <div className="flex items-center gap-4 text-xs text-slate-600">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
+                                  <span>Measurements</span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                  <div className="w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                                  <span className="text-[11px]">Fixing Points</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></div>
+                                  <span>Fixing Points</span>
                                 </div>
                               </div>
                             </div>
                           </div>
-                          <h4 className="font-bold text-[#01312D] text-sm mb-1.5">Perfect Fit, Every Time</h4>
-                          <p className="text-xs text-slate-700 leading-relaxed">
+                          <h4 className="font-bold text-[#01312D] text-base mb-2">Perfect Fit, Every Time</h4>
+                          <p className="text-sm text-slate-700 leading-relaxed">
                             Provide the fixing-point measurements of your space, and we'll engineer your sail for a flawless, professional tensioned fit.
                           </p>
                         </div>
@@ -165,8 +163,6 @@ export function MeasurementOptionVisualizer({
                 </svg>
                 <span className="font-semibold text-[#01312D] text-xs">Hardware Included</span>
                 <Tooltip
-                  width="min(90vw, 400px)"
-                  maxWidth="400px"
                   content={
                     <div>
                       <h4 className="font-bold text-slate-900 mb-2">Hardware Pack Included</h4>
@@ -235,14 +231,12 @@ export function MeasurementOptionVisualizer({
                   Fabricate Sail to the Dimensions You Provide
                 </h5>
                 <Tooltip
-                  width="min(90vw, 500px)"
-                  maxWidth="500px"
                   content={
                     <div>
                       <div className="mb-3">
-                        <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-2.5">
-                          <div className="relative pt-8" style={{ aspectRatio: '1/1', maxHeight: '200px' }}>
-                            <div className="absolute inset-0 pt-8">
+                        <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-3">
+                          <div className="relative" style={{ height: '280px' }}>
+                            <div className="absolute inset-0">
                               <ShadeSail3DModel
                                 corners={corners > 0 ? corners : 4}
                                 measurementType="sail"
@@ -263,21 +257,21 @@ export function MeasurementOptionVisualizer({
                               )}
                             </div>
                           </div>
-                          <div className="bg-slate-50 px-2 py-1.5 border-t border-slate-200">
-                            <div className="flex items-center gap-3 text-xs text-slate-600">
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-4 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
-                                <span className="text-[11px]">Measurements</span>
+                          <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
+                            <div className="flex items-center gap-4 text-xs text-slate-600">
+                              <div className="flex items-center gap-2">
+                                <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
+                                <span>Measurements</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <div className="w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-                                <span className="text-[11px]">Sail Corners</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></div>
+                                <span>Sail Corners</span>
                               </div>
                             </div>
                           </div>
                         </div>
-                        <h4 className="font-bold text-[#01312D] text-sm mb-1.5">Your Sail, Your Measurements</h4>
-                        <p className="text-xs text-slate-700 leading-relaxed">
+                        <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
+                        <p className="text-sm text-slate-700 leading-relaxed">
                           You provide the exact sail size measurements and add any required hardware additionally.
                         </p>
                       </div>
@@ -329,8 +323,6 @@ export function MeasurementOptionVisualizer({
                 </svg>
                 <span className="font-semibold text-slate-900 text-xs">Tensioning Hardware Not Included</span>
                 <Tooltip
-                  width="min(90vw, 400px)"
-                  maxWidth="400px"
                   content={
                     <div>
                       <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
