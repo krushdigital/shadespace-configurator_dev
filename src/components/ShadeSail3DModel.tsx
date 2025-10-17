@@ -15,7 +15,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
       const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
       points.push({
         x: 200 + radius * Math.cos(angle),
-        y: 200 + radius * Math.sin(angle)
+        y: 215 + radius * Math.sin(angle)
       });
     }
 
@@ -29,7 +29,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
     for (let i = 0; i < corners; i++) {
       const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
       const x = 200 + radius * Math.cos(angle);
-      const y = 200 + radius * Math.sin(angle);
+      const y = 215 + radius * Math.sin(angle);
       points.push({ x, y });
     }
 
@@ -102,7 +102,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
               const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
               sailPoints.push({
                 x: 200 + sailRadius * Math.cos(angle),
-                y: 200 + sailRadius * Math.sin(angle)
+                y: 215 + sailRadius * Math.sin(angle)
               });
             }
 
@@ -222,7 +222,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
               const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
               sailPoints.push({
                 x: 200 + radius * Math.cos(angle),
-                y: 200 + radius * Math.sin(angle)
+                y: 215 + radius * Math.sin(angle)
               });
             }
 
@@ -264,7 +264,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
 
       {measurementType && (
         <div
-          className="absolute top-8 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border-2 border-[#ef4444] animate-slide-in-left"
+          className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border-2 border-[#ef4444] animate-slide-in-left"
         >
           <p className="text-xs font-bold text-[#01312D] mb-0.5">
             {measurementType === 'space' ? 'Space Measurements' : 'Sail Dimensions'}
