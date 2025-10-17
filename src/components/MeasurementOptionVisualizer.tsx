@@ -67,8 +67,8 @@ export function MeasurementOptionVisualizer({
                       <div>
                         <div className="mb-3">
                           <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-2.5">
-                            <div className="relative" style={{ aspectRatio: '1/1', maxHeight: '180px' }}>
-                              <div className="absolute inset-0">
+                            <div className="relative pt-8" style={{ aspectRatio: '1/1', maxHeight: '200px' }}>
+                              <div className="absolute inset-0 pt-8">
                                 <ShadeSail3DModel
                                   corners={corners > 0 ? corners : 4}
                                   measurementType="space"
@@ -235,8 +235,8 @@ export function MeasurementOptionVisualizer({
                     <div>
                       <div className="mb-3">
                         <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-2.5">
-                          <div className="relative" style={{ aspectRatio: '1/1', maxHeight: '180px' }}>
-                            <div className="absolute inset-0">
+                          <div className="relative pt-8" style={{ aspectRatio: '1/1', maxHeight: '200px' }}>
+                            <div className="absolute inset-0 pt-8">
                               <ShadeSail3DModel
                                 corners={corners > 0 ? corners : 4}
                                 measurementType="sail"

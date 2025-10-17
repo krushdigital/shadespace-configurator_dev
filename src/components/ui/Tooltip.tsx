@@ -20,7 +20,7 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
 
       // Check if mobile
       const isMobile = window.innerWidth < 768;
-      const tooltipWidth = isMobile ? 280 : 340;
+      const tooltipWidth = isMobile ? 260 : 320;
       const tooltipMaxHeight = isMobile ? Math.min(350, window.innerHeight * 0.6) : 500;
       
       // Position tooltip to the right of the trigger, centered vertically
@@ -102,7 +102,7 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: 99999,
-        width: window.innerWidth < 768 ? '280px' : '340px',
+        width: window.innerWidth < 768 ? '260px' : '320px',
         maxHeight: window.innerWidth < 768 ? `${Math.min(350, window.innerHeight * 0.6)}px` : '500px',
         overflowY: 'auto',
       }}
