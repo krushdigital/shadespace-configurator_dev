@@ -24,11 +24,11 @@ export function AccordionItem({ trigger, children, defaultOpen = false }: Accord
         />
       </button>
       <div
-        className={`transition-all duration-200 ease-in-out overflow-hidden ${
-          isOpen ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
+        className={`transition-all duration-300 ease-in-out overflow-hidden ${
+          isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className="px-2 pb-3">
+        <div className="px-2 pb-3 pt-1">
           {children}
         </div>
       </div>

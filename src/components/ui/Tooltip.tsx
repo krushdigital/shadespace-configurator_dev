@@ -11,7 +11,10 @@ interface TooltipProps {
 export function Tooltip({ content, children, className = '', onOpen }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isScrollable, setIsScrollable] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const tooltipContentRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout>();
 
   const updatePosition = () => {
@@ -51,6 +54,21 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
     }
   };
 
+  const checkScrollability = () => {
+    if (tooltipContentRef.current) {
+      const { scrollHeight, clientHeight, scrollTop } = tooltipContentRef.current;
+      const isContentScrollable = scrollHeight > clientHeight;
+      setIsScrollable(isContentScrollable);
+
+      const isNotAtBottom = scrollTop + clientHeight < scrollHeight - 10;
+      setShowScrollIndicator(isContentScrollable && isNotAtBottom);
+    }
+  };
+
+  const handleScroll = () => {
+    checkScrollability();
+  };
+
   const showTooltip = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -60,6 +78,7 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
     if (onOpen) {
       onOpen();
     }
+    setTimeout(checkScrollability, 100);
   };
 
   const hideTooltip = () => {
@@ -69,7 +88,7 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
   };
 
   useEffect(() => {
-    const handleScroll = () => {
+    const handleWindowScroll = () => {
       if (isVisible) {
         updatePosition();
       }
@@ -78,16 +97,18 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
     const handleResize = () => {
       if (isVisible) {
         updatePosition();
+        checkScrollability();
       }
     };
 
     if (isVisible) {
-      window.addEventListener('scroll', handleScroll, true);
+      window.addEventListener('scroll', handleWindowScroll, true);
       window.addEventListener('resize', handleResize);
+      checkScrollability();
     }
 
     return () => {
-      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('scroll', handleWindowScroll, true);
       window.removeEventListener('resize', handleResize);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -106,6 +127,8 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
         maxHeight: window.innerWidth < 768 ? `${Math.min(400, window.innerHeight * 0.7)}px` : '600px',
         overflowY: 'auto',
       }}
+      ref={tooltipContentRef}
+      onScroll={handleScroll}
       onMouseEnter={() => {
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
@@ -118,6 +141,21 @@ export function Tooltip({ content, children, className = '', onOpen }: TooltipPr
       }`}>
         {content}
       </div>
+      {showScrollIndicator && (
+        <div
+          className="sticky bottom-0 left-0 right-0 h-12 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.95) 70%, rgba(255, 255, 255, 1) 100%)',
+            marginTop: '-3rem'
+          }}
+        >
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 animate-bounce">
+            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   ) : null;
