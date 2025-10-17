@@ -264,7 +264,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
 
       {measurementType && (
         <div
-          className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border-2 border-[#ef4444] animate-slide-in-left"
+          className="absolute top-8 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border-2 border-[#ef4444] animate-slide-in-left"
         >
           <p className="text-xs font-bold text-[#01312D] mb-0.5">
             {measurementType === 'space' ? 'Space Measurements' : 'Sail Dimensions'}
