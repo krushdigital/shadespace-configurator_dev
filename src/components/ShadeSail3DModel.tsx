@@ -142,15 +142,7 @@ export function ShadeSail3DModel({ corners, measurementType, fabricColor }: Shad
                     />
                   </g>
 
-                  {/* Fixing point with pulsating animation */}
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r="8"
-                    fill="#ef4444"
-                    opacity="0.3"
-                    className="animate-pulsate-ring"
-                  />
+                  {/* Fixing point */}
                   <circle
                     cx={point.x}
                     cy={point.y}

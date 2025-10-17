@@ -82,7 +82,7 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
           }}
         />
 
-        {/* Pulsating point on measurement line */}
+        {/* Point on measurement line */}
         <circle
           cx={midX}
           cy={midY}
@@ -90,7 +90,6 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
           fill="#ef4444"
           stroke="white"
           strokeWidth="1.5"
-          className="animate-pulsate-point"
           style={{
             transition: 'opacity 0.4s ease-in-out',
             opacity: isActive ? 1 : 0
@@ -108,7 +107,7 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
         return (
           <React.Fragment key={index}>
             {renderMeasurementLine(point, nextPoint, index)}
-            {/* Pulsating point at each corner */}
+            {/* Point at each corner */}
             {isActive && (
               <circle
                 cx={point.x}
@@ -117,7 +116,6 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
                 fill="#ef4444"
                 stroke="white"
                 strokeWidth="2"
-                className="animate-pulsate-point"
               />
             )}
           </React.Fragment>

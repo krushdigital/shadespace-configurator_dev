@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ShadeSail3DModel } from './ShadeSail3DModel';
 import { MeasurementLines } from './MeasurementLines';
 import { Card } from './ui/Card';
@@ -20,9 +20,6 @@ export function MeasurementOptionVisualizer({
   onOptionChange,
   validationErrors = {}
 }: MeasurementOptionVisualizerProps) {
-  const [hoveredOption, setHoveredOption] = useState<'adjust' | 'exact' | null>(null);
-
-  const activeMeasurementType = hoveredOption || (selectedOption === 'adjust' ? 'space' : selectedOption === 'exact' ? 'sail' : null);
 
   const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
     3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
@@ -34,20 +31,17 @@ export function MeasurementOptionVisualizer({
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[corners];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="space-y-3 order-2 lg:order-1">
-        <Card
-          className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
-            selectedOption === 'adjust'
-              ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
-              : validationErrors.measurementOption && !selectedOption
-              ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-              : 'hover:border-[#307C31] hover:shadow-md'
-          }`}
-          onClick={() => onOptionChange('adjust')}
-          onMouseEnter={() => setHoveredOption('adjust')}
-          onMouseLeave={() => setHoveredOption(null)}
-        >
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card
+        className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
+          selectedOption === 'adjust'
+            ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
+            : validationErrors.measurementOption && !selectedOption
+            ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+            : 'hover:border-[#307C31] hover:shadow-md'
+        }`}
+        onClick={() => onOptionChange('adjust')}
+      >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
               <div
@@ -72,11 +66,42 @@ export function MeasurementOptionVisualizer({
                     content={
                       <div>
                         <div className="mb-3">
-                          <img
-                            src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/fit-area.webp?v=1760324780"
-                            alt="Fixing points measurement diagram"
-                            className="w-full h-auto rounded-lg mb-3"
-                          />
+                          <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-3">
+                            <div className="relative" style={{ height: '280px' }}>
+                              <div className="absolute inset-0">
+                                <ShadeSail3DModel
+                                  corners={corners > 0 ? corners : 4}
+                                  measurementType="space"
+                                  fabricColor={fabricColor}
+                                />
+                                {corners > 0 && (
+                                  <svg
+                                    className="absolute inset-0 w-full h-full pointer-events-none"
+                                    viewBox="0 0 400 400"
+                                    style={{ zIndex: 10 }}
+                                  >
+                                    <MeasurementLines
+                                      measurementType="space"
+                                      corners={corners}
+                                      isActive={true}
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                            </div>
+                            <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
+                              <div className="flex items-center gap-4 text-xs text-slate-600">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
+                                  <span>Measurements</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></div>
+                                  <span>Fixing Points</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                           <h4 className="font-bold text-[#01312D] text-base mb-2">Perfect Fit, Every Time</h4>
                           <p className="text-sm text-slate-700 leading-relaxed">
                             Provide the fixing-point measurements of your space, and we'll engineer your sail for a flawless, professional tensioned fit.
@@ -176,18 +201,16 @@ export function MeasurementOptionVisualizer({
           </div>
         </Card>
 
-        <Card
-          className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
-            selectedOption === 'exact'
-              ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
-              : validationErrors.measurementOption && !selectedOption
-              ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-              : 'hover:border-[#307C31] hover:shadow-md'
-          }`}
-          onClick={() => onOptionChange('exact')}
-          onMouseEnter={() => setHoveredOption('exact')}
-          onMouseLeave={() => setHoveredOption(null)}
-        >
+      <Card
+        className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
+          selectedOption === 'exact'
+            ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
+            : validationErrors.measurementOption && !selectedOption
+            ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+            : 'hover:border-[#307C31] hover:shadow-md'
+        }`}
+        onClick={() => onOptionChange('exact')}
+      >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
               <div
@@ -211,11 +234,42 @@ export function MeasurementOptionVisualizer({
                   content={
                     <div>
                       <div className="mb-3">
-                        <img
-                          src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/fit-dimensions.webp?v=1760324780"
-                          alt="Sail dimensions diagram"
-                          className="w-full h-auto rounded-lg mb-3"
-                        />
+                        <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden mb-3">
+                          <div className="relative" style={{ height: '280px' }}>
+                            <div className="absolute inset-0">
+                              <ShadeSail3DModel
+                                corners={corners > 0 ? corners : 4}
+                                measurementType="sail"
+                                fabricColor={fabricColor}
+                              />
+                              {corners > 0 && (
+                                <svg
+                                  className="absolute inset-0 w-full h-full pointer-events-none"
+                                  viewBox="0 0 400 400"
+                                  style={{ zIndex: 10 }}
+                                >
+                                  <MeasurementLines
+                                    measurementType="sail"
+                                    corners={corners}
+                                    isActive={true}
+                                  />
+                                </svg>
+                              )}
+                            </div>
+                          </div>
+                          <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
+                            <div className="flex items-center gap-4 text-xs text-slate-600">
+                              <div className="flex items-center gap-2">
+                                <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
+                                <span>Measurements</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></div>
+                                <span>Sail Corners</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                         <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
                         <p className="text-sm text-slate-700 leading-relaxed">
                           You provide the exact sail size measurements and add any required hardware additionally.
@@ -302,65 +356,6 @@ export function MeasurementOptionVisualizer({
             </div>
           </div>
         </Card>
-      </div>
-
-      <div className="order-1 lg:order-2 lg:sticky lg:top-28 lg:self-start">
-        <div className="bg-white rounded-lg shadow-xl border-2 border-slate-200 overflow-hidden">
-          <div className="bg-gradient-to-r from-[#01312D] to-[#307C31] px-3 py-2.5">
-            <h4 className="text-white font-bold text-base">Interactive Visualization</h4>
-            <p className="text-[#BFF102] text-xs">Hover over options to see measurement differences</p>
-          </div>
-
-          <div className="relative" style={{ height: '280px' }}>
-            <div className="absolute inset-0">
-              <ShadeSail3DModel
-                corners={corners > 0 ? corners : 4}
-                measurementType={activeMeasurementType}
-                fabricColor={fabricColor}
-              />
-
-              {corners > 0 && activeMeasurementType && (
-                <svg
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  viewBox="0 0 400 400"
-                  style={{ zIndex: 10 }}
-                >
-                  <MeasurementLines
-                    measurementType={activeMeasurementType}
-                    corners={corners}
-                    isActive={true}
-                  />
-                </svg>
-              )}
-            </div>
-
-            {!activeMeasurementType && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-900/5 backdrop-blur-[2px]">
-                <div className="text-center px-4">
-                  <svg className="w-12 h-12 mx-auto mb-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  <p className="text-slate-600 font-medium text-sm">Hover over an option to see the visualization</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
-            <div className="flex items-center gap-4 text-xs text-slate-600">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
-                <span>Measurements</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white"></div>
-                <span>Fixing Points</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
