@@ -561,7 +561,7 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                 </div>
                 ${config.measurementOption === 'adjust' ? `
                 <div class="config-item">
-                    <span class="config-label">Hardware Included:</span>
+                    <span class="config-label">Tensioning Hardware Included:</span>
                     <span class="config-value">
                         Yes - Turnbuckles & Shackles
                         ${HARDWARE_PACK_IMAGES[config.corners] ? `

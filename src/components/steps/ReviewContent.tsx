@@ -591,7 +591,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 </div>
                 {config.measurementOption === 'adjust' && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Hardware Included:</span>
+                    <span className="text-slate-600">Tensioning Hardware Included:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-slate-900">Yes</span>
                       {(() => {

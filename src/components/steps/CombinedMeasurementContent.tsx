@@ -177,7 +177,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                                 <h5 className="font-semibold text-slate-800 mb-2 text-sm">Heads-up:</h5>
                                 <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
                                   <li>The finished sail will be slightly smaller than your measurements (to allow for stretch).</li>
-                                  <li>Tensioning Hardware is included. (Wall brackets or eyebolts can be added to cart separately if required).</li>
+                                  <li>Tensioning hardware is included. (Wall brackets or eyebolts can be added to cart separately if required).</li>
                                   <li>If measurement discrepancies arise, we'll contact you before manufacturing.</li>
                                   <li>Unresolvable discrepancies = full credit or refund.</li>
                                 </ul>
@@ -197,11 +197,11 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                   </span>
                 </div>
                 <p className="text-sm text-slate-600 mt-1">
-                  Hardware Included
+                  Tensioning Hardware Included
                   <Tooltip
                     content={
                       <div>
-                        <h4 className="font-bold text-slate-900 mb-2">Hardware Pack Included</h4>
+                        <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Pack Included</h4>
                         {config.corners > 0 && hardwarePackImageUrl && (
                           <img 
                             src={hardwarePackImageUrl} 

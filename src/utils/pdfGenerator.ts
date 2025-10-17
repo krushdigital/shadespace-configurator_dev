@@ -263,7 +263,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
         : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`],
       ['Measurement Units:', config.unit === 'metric' ? 'Metric: mm' : 'Imperial: Inches'],
       ['Manufacturing Option:', config.measurementOption === 'adjust' ? 'Adjust to fit space (hardware included)' : 'Exact dimensions (hardware not included)'],
-      ...(config.measurementOption === 'adjust' ? [['Hardware Included:', 'Yes - Turnbuckles & Shackles']] : []),
+      ...(config.measurementOption === 'adjust' ? [['Tensioning Hardware Included:', 'Yes - Turnbuckles & Shackles']] : []),
       ['Fixing Points Installed:', config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'],
     ];
     
@@ -286,7 +286,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     
     configDetails.forEach(([label, value]) => {
       const isColorRow = label === 'Fabric Color:';
-      const isHardwareRow = label === 'Hardware Included:';
+      const isHardwareRow = label === 'Tensioning Hardware Included:';
       pdf.setTextColor(...textMedium);
       pdf.text(label, 20, yPos);
       pdf.setTextColor(...textDark);

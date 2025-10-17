@@ -161,11 +161,11 @@ export function MeasurementOptionVisualizer({
                 <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="font-semibold text-[#01312D] text-xs">Hardware Included</span>
+                <span className="font-semibold text-[#01312D] text-xs">Tensioning Hardware Included</span>
                 <Tooltip
                   content={
                     <div>
-                      <h4 className="font-bold text-slate-900 mb-2">Hardware Pack Included</h4>
+                      <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Pack Included</h4>
                       {corners > 0 && hardwarePackImageUrl && (
                         <img
                           src={hardwarePackImageUrl}

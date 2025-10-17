@@ -79,13 +79,13 @@ export function PriceSummaryDisplay({
           <div className="space-y-4 border-t border-slate-200 pt-4">
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-[#01312D]/60">Hardware & fittings:</span>
+                <span className="text-[#01312D]/60">Tensioning hardware & fittings:</span>
                 {config.measurementOption === 'adjust' ? (
                   <span className="text-[#01312D] font-semibold flex items-center gap-1">
                     <Tooltip
                       content={
                         <div>
-                          <h4 className="font-bold text-slate-900 mb-2">Hardware Pack Included</h4>
+                          <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Pack Included</h4>
                           {config.corners > 0 && HARDWARE_PACK_IMAGES[config.corners] && (
                             <img 
                               src={HARDWARE_PACK_IMAGES[config.corners]} 
