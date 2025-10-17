@@ -161,11 +161,11 @@ export function PriceSummaryDisplay({
 
               {onGeneratePDF && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={onGeneratePDF}
                   disabled={isGeneratingPDF}
-                  className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                  className="w-full"
                 >
                   {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
                 </Button>
@@ -173,10 +173,10 @@ export function PriceSummaryDisplay({
 
               {onEmailSummary && !showEmailInput && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   onClick={onEmailSummary}
-                  className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                  className="w-full"
                 >
                   Email Summary
                 </Button>
