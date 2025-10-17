@@ -108,7 +108,12 @@ export function MeasurementOptionVisualizer({
                           </p>
                         </div>
 
-                        <AccordionItem trigger="Learn more →">
+                        <AccordionItem trigger="Learn more →" onOpenChange={(isOpen) => {
+                          if (isOpen) {
+                            const event = new CustomEvent('accordionOpen');
+                            window.dispatchEvent(event);
+                          }
+                        }}>
                           <div className="space-y-4 mt-2">
                             <p className="text-xs text-slate-600 italic font-medium">
                               This is the industry best-practice and fail-safe approach for a perfect fit.
@@ -276,7 +281,12 @@ export function MeasurementOptionVisualizer({
                         </p>
                       </div>
 
-                      <AccordionItem trigger="Learn more →">
+                      <AccordionItem trigger="Learn more →" onOpenChange={(isOpen) => {
+                        if (isOpen) {
+                          const event = new CustomEvent('accordionOpen');
+                          window.dispatchEvent(event);
+                        }
+                      }}>
                         <div className="space-y-4 mt-2">
                           <div>
                             <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
