@@ -103,9 +103,15 @@ export function MeasurementOptionVisualizer({
                             </div>
                           </div>
                           <h4 className="font-bold text-[#01312D] text-base mb-2">Perfect Fit, Every Time</h4>
-                          <p className="text-sm text-slate-700 leading-relaxed">
-                            Provide the fixing-point measurements of your space, and we'll engineer your sail for a flawless, professional tensioned fit.
+                          <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                            Measure your space, and we'll calculate the perfect sail size to fit it beautifully.
                           </p>
+                          <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3 mb-3">
+                            <p className="text-xs text-[#01312D] font-semibold mb-1">How does this work?</p>
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              You measure between your fixing points. We engineer the sail smaller (accounting for fabric stretch and tensioning) so it installs tight and wrinkle-free.
+                            </p>
+                          </div>
                         </div>
 
                         <AccordionItem trigger="Learn more →" onOpenChange={(isOpen) => {
@@ -116,31 +122,32 @@ export function MeasurementOptionVisualizer({
                         }}>
                           <div className="space-y-4 mt-2">
                             <p className="text-xs text-slate-600 italic font-medium">
-                              This is the industry best-practice and fail-safe approach for a perfect fit.
+                              This is the industry best-practice approach for a perfect fit.
                             </p>
 
                             <div>
                               <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
                               <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                                <li>You provide the exact measurements between your fixing points or poles.</li>
-                                <li>If your poles or fixings aren't yet installed, you can estimate measurements for pricing, then re-measure and finalise before ordering once your poles or fixings are in place.</li>
+                                <li>Measure the distance between your fixing points (or where your poles will be)</li>
+                                <li>If your fixings aren't installed yet, you can estimate for now and finalize measurements later before ordering</li>
                               </ul>
                             </div>
 
                             <div>
                               <h5 className="font-semibold text-slate-800 mb-2 text-sm">What we do:</h5>
                               <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                                <li>We take your precise measurements and calculate the optimal sail size - factoring in fabric stretch and hardware deductions - to ensure a taut, wrinkle-free fit.</li>
-                                <li>All required tensioning hardware is included and selected by our team to match your sail size.</li>
+                                <li>Calculate the perfect sail size (smaller than your space) to account for fabric stretch and tensioning</li>
+                                <li>Include all the stainless steel hardware you need to install your sail</li>
+                                <li>Ensure your sail will be taut, wrinkle-free, and look professionally installed</li>
                               </ul>
                             </div>
 
                             <div>
                               <h5 className="font-semibold text-slate-800 mb-2 text-sm">Best for:</h5>
                               <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                                <li>Professional-looking, long-term installations</li>
-                                <li>High-wind or exposed locations</li>
-                                <li>All projects requiring tight tension and zero flapping</li>
+                                <li>Permanent installations that need to look great for years</li>
+                                <li>Windy locations where the sail needs to stay tight</li>
+                                <li>Anyone who wants a professional result without guesswork</li>
                               </ul>
                             </div>
                           </div>
@@ -158,8 +165,8 @@ export function MeasurementOptionVisualizer({
                 </span>
               </div>
 
-              <p className="text-xs text-slate-700 mb-2 leading-relaxed">
-                We calculate deductions for hardware, material stretch, and perfect fit
+              <p className="text-xs text-slate-700 mb-2 leading-relaxed font-medium">
+                <span className="text-[#01312D] font-semibold">Why Choose:</span> Your space measurements don't translate directly to sail size - we do the math to ensure a perfect, professional fit.
               </p>
 
               <div className="flex items-center gap-1.5 text-xs">
@@ -276,9 +283,15 @@ export function MeasurementOptionVisualizer({
                           </div>
                         </div>
                         <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
-                        <p className="text-sm text-slate-700 leading-relaxed">
-                          You provide the exact sail size measurements and add any required hardware additionally.
+                        <p className="text-sm text-slate-700 leading-relaxed mb-3">
+                          Tell us exactly what size sail you want, and that's exactly what we'll make.
                         </p>
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                          <p className="text-xs text-slate-900 font-semibold mb-1">How does this work?</p>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            You specify the finished sail dimensions. We make the sail to that exact size. You arrange your own fixing points and hardware to fit the sail you receive.
+                          </p>
+                        </div>
                       </div>
 
                       <AccordionItem trigger="Learn more →" onOpenChange={(isOpen) => {
@@ -291,25 +304,26 @@ export function MeasurementOptionVisualizer({
                           <div>
                             <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
                             <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                              <li>Provide the exact finished sail dimensions you want.</li>
-                              <li>Select your own hardware separately.</li>
-                              <li>Once you receive the sail, install your poles and fixings to suit.</li>
+                              <li>Decide what size sail you want (e.g., 4m x 4m)</li>
+                              <li>Purchase any hardware you need separately</li>
+                              <li>Set up your poles and fixings to fit the sail when it arrives</li>
                             </ul>
                           </div>
 
                           <div>
                             <h5 className="font-semibold text-slate-800 mb-2 text-sm">What we do:</h5>
                             <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                              <li>We manufacture the sail to your provided dimensions.</li>
-                              <li>Hardware can be added to your order at checkout.</li>
+                              <li>Make the sail exactly to your specified size - no adjustments</li>
+                              <li>Sew D-rings at each corner ready for your hardware</li>
                             </ul>
                           </div>
 
                           <div>
                             <h5 className="font-semibold text-slate-800 mb-2 text-sm">Best for:</h5>
                             <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                              <li>Urgent orders where poles or fixings aren't yet installed</li>
-                              <li>Smaller or temporary sails with a looser fit, that can be taken down easily</li>
+                              <li>Quick projects where you need the sail before setting up fixings</li>
+                              <li>Temporary or seasonal installations with a looser, relaxed fit</li>
+                              <li>Replacing an existing sail where you already know the size you need</li>
                             </ul>
                           </div>
                         </div>
@@ -323,8 +337,8 @@ export function MeasurementOptionVisualizer({
                 </Tooltip>
               </div>
 
-              <p className="text-xs text-slate-700 mb-2 leading-relaxed">
-                You provide exact sail measurements - no deductions applied
+              <p className="text-xs text-slate-700 mb-2 leading-relaxed font-medium">
+                <span className="text-[#01312D] font-semibold">Why Choose:</span> You know exactly what size sail you need - we make it to your specifications, no adjustments.
               </p>
 
               <div className="flex items-center gap-1.5 text-xs">
