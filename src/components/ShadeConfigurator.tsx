@@ -23,7 +23,7 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { MobilePricingBar } from './MobilePricingBar';
-import { getQuoteIdFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
+import { getQuoteIdFromUrl, getAccessTokenFromUrl, getQuoteById, getQuoteByToken, updateQuoteStatus, markQuoteConverted, storeQuoteToken } from '../utils/quoteManager';
 import { analytics } from '../utils/analytics';
 
 const INITIAL_STATE: ConfiguratorState = {
@@ -118,6 +118,8 @@ export function ShadeConfigurator() {
   useEffect(() => {
     const loadQuoteFromUrl = async () => {
       const quoteId = getQuoteIdFromUrl();
+      const accessToken = getAccessTokenFromUrl();
+
       if (!quoteId) return;
 
       setIsLoadingQuote(true);
@@ -129,7 +131,15 @@ export function ShadeConfigurator() {
       });
 
       try {
-        const quote = await getQuoteById(quoteId);
+        // Try to load with access token first (more secure), fallback to ID for legacy support
+        const quote = accessToken
+          ? await getQuoteByToken(accessToken)
+          : await getQuoteById(quoteId);
+
+        // Store the token if we successfully loaded the quote
+        if (quote.access_token) {
+          storeQuoteToken(quote.access_token);
+        }
 
         // Calculate quote age
         const createdAt = new Date(quote.created_at);
@@ -730,11 +740,15 @@ export function ShadeConfigurator() {
 
     // Check if this is a converted quote
     const quoteId = getQuoteIdFromUrl();
+    const accessToken = getAccessTokenFromUrl();
     let quoteData: any = null;
 
     if (quoteReference && quoteId) {
       try {
-        quoteData = await getQuoteById(quoteId);
+        // Try to load with access token first, fallback to ID
+        quoteData = accessToken
+          ? await getQuoteByToken(accessToken)
+          : await getQuoteById(quoteId);
       } catch (error) {
         console.error('Failed to load quote data for conversion tracking:', error);
       }

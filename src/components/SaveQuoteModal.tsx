@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { saveQuote, generateQuoteUrl } from '../utils/quoteManager';
+import { saveQuote, generateQuoteUrl, storeQuoteToken } from '../utils/quoteManager';
 import { useToast } from './ui/ToastProvider';
 import { analytics } from '../utils/analytics';
 import { MyQuotesModal } from './MyQuotesModal';
@@ -47,6 +47,7 @@ export function SaveQuoteModal({
     customerReference: string | null;
     url: string;
     expiresAt: string;
+    accessToken: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
@@ -97,7 +98,7 @@ export function SaveQuoteModal({
         sanitizedReference
       );
 
-      const quoteUrl = generateQuoteUrl(result.id);
+      const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
       const modalDuration = (Date.now() - modalOpenTime) / 1000;
       const emailDomain = email ? email.split('@')[1] : null;
 
@@ -107,6 +108,7 @@ export function SaveQuoteModal({
         customerReference: result.customerReference || null,
         url: quoteUrl,
         expiresAt: result.expiresAt,
+        accessToken: result.accessToken,
       });
 
       if (saveMethod === 'email' && email) {
@@ -323,7 +325,6 @@ if (saveMethod === 'email' && email) {
       <MyQuotesModal
         isOpen={showMyQuotesModal}
         onClose={() => setShowMyQuotesModal(false)}
-        initialEmail={savedEmail}
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
@@ -579,7 +580,12 @@ if (saveMethod === 'email' && email) {
                     variant="outline"
                     size="md"
                     onClick={() => {
-                      setShowMyQuotesModal(true);
+                      // Close this modal first before opening My Quotes
+                      handleClose();
+                      // Small delay to allow modal to close
+                      setTimeout(() => {
+                        setShowMyQuotesModal(true);
+                      }, 100);
                     }}
                     className="w-full"
                   >
