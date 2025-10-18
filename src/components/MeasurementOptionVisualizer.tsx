@@ -103,9 +103,6 @@ export function MeasurementOptionVisualizer({
                             </div>
                           </div>
                           <h4 className="font-bold text-[#01312D] text-base mb-2">Perfect Fit, Every Time</h4>
-                          <p className="text-sm text-slate-700 leading-relaxed mb-3">
-                            Measure your space, and we'll calculate the perfect sail size to fit it beautifully.
-                          </p>
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3 mb-3">
                             <p className="text-xs text-[#01312D] font-semibold mb-1">How does this work?</p>
                             <p className="text-xs text-slate-600 leading-relaxed">
@@ -283,9 +280,6 @@ export function MeasurementOptionVisualizer({
                           </div>
                         </div>
                         <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
-                        <p className="text-sm text-slate-700 leading-relaxed mb-3">
-                          Tell us exactly what size sail you want, and that's exactly what we'll make.
-                        </p>
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
                           <p className="text-xs text-slate-900 font-semibold mb-1">How does this work?</p>
                           <p className="text-xs text-slate-600 leading-relaxed">
