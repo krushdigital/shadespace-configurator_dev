@@ -4,8 +4,7 @@ import { Input } from './ui/Input';
 import { QuoteListItem } from './QuoteListItem';
 import { useToast } from './ui/ToastProvider';
 import {
-  getStoredQuotes,
-  getStoredQuoteTokens,
+  searchQuotes,
   QuoteSearchFilters,
   QuoteData,
   generateQuoteUrl,
@@ -16,9 +15,12 @@ import { analytics } from '../utils/analytics';
 interface MyQuotesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialEmail?: string;
 }
 
-export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
+export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalProps) {
+  const [email, setEmail] = useState(initialEmail || '');
+  const [emailConfirmed, setEmailConfirmed] = useState(!!initialEmail);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'expiring' | 'expired' | 'completed' | 'all'>('active');
   const [fabricFilter, setFabricFilter] = useState<string>('');
@@ -35,6 +37,8 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
   const { showToast } = useToast();
 
   const performSearch = useCallback(async (page: number = 1) => {
+    if (!emailConfirmed || !email) return;
+
     setIsLoading(true);
     try {
       const filters: QuoteSearchFilters = {
@@ -48,14 +52,12 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
         pageSize: 20,
       };
 
-      const result = await getStoredQuotes(filters);
+      const result = await searchQuotes(email, filters);
       setSearchResult(result);
       setCurrentPage(page);
 
-      const tokenCount = getStoredQuoteTokens().length;
-
       analytics.quoteSearchPerformed({
-        email_domain: 'token_based',
+        email_domain: email.split('@')[1] || 'unknown',
         search_text: searchText || null,
         status_filter: statusFilter,
         fabric_filter: fabricFilter || null,
@@ -71,13 +73,13 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [searchText, statusFilter, fabricFilter, cornerFilter, sortBy, sortOrder]);
+  }, [email, emailConfirmed, searchText, statusFilter, fabricFilter, cornerFilter, sortBy, sortOrder]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (emailConfirmed && isOpen) {
       performSearch();
     }
-  }, [isOpen, statusFilter, fabricFilter, cornerFilter, sortBy, sortOrder]);
+  }, [emailConfirmed, isOpen, statusFilter, fabricFilter, cornerFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -89,7 +91,7 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (searchText !== undefined) {
+      if (emailConfirmed && searchText !== undefined) {
         performSearch();
       }
     }, 500);
@@ -98,6 +100,20 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
   }, [searchText]);
 
   if (!isOpen) return null;
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email && email.includes('@')) {
+      setEmailConfirmed(true);
+      localStorage.setItem('savedQuotesEmail', email);
+
+      analytics.quoteSearchModalOpened({
+        email_domain: email.split('@')[1] || 'unknown',
+      });
+    } else {
+      showToast('Please enter a valid email address', 'error');
+    }
+  };
 
   const handleCopyLink = (quoteId: string) => {
     const url = generateQuoteUrl(quoteId);
@@ -113,7 +129,7 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
   const handleClose = () => {
     if (searchResult) {
       analytics.quoteSearchModalClosed({
-        email_domain: 'token_based',
+        email_domain: email.split('@')[1] || 'unknown',
         quotes_viewed: searchResult.quotes.length,
         had_selected_quote: !!selectedQuote,
       });
@@ -121,11 +137,72 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
     onClose();
   };
 
+  const handleChangeEmail = () => {
+    setEmailConfirmed(false);
+    setSearchResult(null);
+    setSelectedQuote(null);
+    localStorage.removeItem('savedQuotesEmail');
+  };
+
   const activeFilterCount = [
     fabricFilter,
     cornerFilter,
     statusFilter !== 'active',
   ].filter(Boolean).length;
+
+  if (!emailConfirmed) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+          <div className="p-6">
+            <h3 className="text-2xl font-bold text-[#01312D] mb-2">
+              View My Quotes
+            </h3>
+            <p className="text-sm text-slate-600 mb-6">
+              Enter your email address to view your saved quotes
+            </p>
+
+            <form onSubmit={handleEmailSubmit}>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={handleClose}
+                  className="flex-1"
+                  type="button"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  type="submit"
+                  className="flex-1"
+                  disabled={!email}
+                >
+                  Continue
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (selectedQuote) {
     const formatDate = (dateString: string) => {
@@ -249,7 +326,13 @@ export function MyQuotesModal({ isOpen, onClose }: MyQuotesModalProps) {
                 My Quotes
               </h3>
               <p className="text-sm text-slate-600">
-                Showing quotes saved on this device
+                {email}
+                <button
+                  onClick={handleChangeEmail}
+                  className="ml-2 text-[#307C31] hover:underline"
+                >
+                  Change
+                </button>
               </p>
             </div>
             <button

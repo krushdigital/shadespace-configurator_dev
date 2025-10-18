@@ -30,43 +30,13 @@ Deno.serve(async (req: Request) => {
     }
 
     const url = new URL(req.url);
-    const tokensParam = url.searchParams.get('tokens');
+    const email = url.searchParams.get('email');
 
-    if (!tokensParam) {
+    if (!email) {
       return new Response(
-        JSON.stringify({ error: 'Tokens parameter is required' }),
+        JSON.stringify({ error: 'Email parameter is required' }),
         {
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const accessTokens = tokensParam.split(',').map(t => t.trim()).filter(t => t.length > 0);
-
-    if (accessTokens.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          quotes: [],
-          pagination: {
-            page: 1,
-            pageSize: 20,
-            totalPages: 0,
-            totalResults: 0,
-            hasNextPage: false,
-            hasPreviousPage: false,
-          },
-          stats: {
-            total: 0,
-            active: 0,
-            expiring: 0,
-            expired: 0,
-            completed: 0,
-          },
-        }),
-        {
-          status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
@@ -88,7 +58,7 @@ Deno.serve(async (req: Request) => {
     let query = supabase
       .from('saved_quotes')
       .select('*', { count: 'exact' })
-      .in('access_token', accessTokens);
+      .eq('customer_email', email);
 
     if (status === 'active') {
       query = query
