@@ -10,6 +10,13 @@ import {
   generateQuoteUrl,
   QuoteSearchResult,
 } from '../utils/quoteManager';
+import {
+  getAllQuoteTokens,
+  getAccessTokens,
+  addQuoteToken,
+  importQuoteFromUrl,
+  hasTokenForEmail,
+} from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
 
 interface MyQuotesModalProps {
@@ -18,9 +25,16 @@ interface MyQuotesModalProps {
   initialEmail?: string;
 }
 
+interface ViewMode {
+  type: 'list' | 'import';
+}
+
 export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalProps) {
   const [email, setEmail] = useState(initialEmail || '');
   const [emailConfirmed, setEmailConfirmed] = useState(!!initialEmail);
+  const [viewMode, setViewMode] = useState<ViewMode>({ type: 'list' });
+  const [importUrl, setImportUrl] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<'active' | 'expiring' | 'expired' | 'completed' | 'all'>('active');
   const [fabricFilter, setFabricFilter] = useState<string>('');
@@ -37,10 +51,35 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
   const { showToast } = useToast();
 
   const performSearch = useCallback(async (page: number = 1) => {
-    if (!emailConfirmed || !email) return;
+    if (!emailConfirmed) return;
 
     setIsLoading(true);
     try {
+      const accessTokens = getAccessTokens(email || undefined);
+
+      if (accessTokens.length === 0) {
+        setSearchResult({
+          quotes: [],
+          pagination: {
+            page: 1,
+            pageSize: 20,
+            totalPages: 0,
+            totalResults: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          },
+          stats: {
+            total: 0,
+            active: 0,
+            expiring: 0,
+            expired: 0,
+            completed: 0,
+          },
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const filters: QuoteSearchFilters = {
         search: searchText || undefined,
         status: statusFilter,
@@ -52,12 +91,12 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
         pageSize: 20,
       };
 
-      const result = await searchQuotes(email, filters);
+      const result = await searchQuotes(accessTokens, filters);
       setSearchResult(result);
       setCurrentPage(page);
 
       analytics.quoteSearchPerformed({
-        email_domain: email.split('@')[1] || 'unknown',
+        email_domain: email ? email.split('@')[1] || 'unknown' : 'anonymous',
         search_text: searchText || null,
         status_filter: statusFilter,
         fabric_filter: fabricFilter || null,
@@ -73,7 +112,7 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
     } finally {
       setIsLoading(false);
     }
-  }, [email, emailConfirmed, searchText, statusFilter, fabricFilter, cornerFilter, sortBy, sortOrder]);
+  }, [emailConfirmed, email, searchText, statusFilter, fabricFilter, cornerFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     if (emailConfirmed && isOpen) {
@@ -103,37 +142,110 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && email.includes('@')) {
-      setEmailConfirmed(true);
-      localStorage.setItem('savedQuotesEmail', email);
 
+    if (email && !email.includes('@')) {
+      showToast('Please enter a valid email address', 'error');
+      return;
+    }
+
+    const hasTokens = email ? hasTokenForEmail(email) : getAllQuoteTokens().length > 0;
+
+    if (!hasTokens) {
+      showToast(
+        email
+          ? `No quotes found for ${email}. Save a quote first or import one using a quote link.`
+          : 'No quotes found. Save a quote first or import one using a quote link.',
+        'error'
+      );
+      return;
+    }
+
+    setEmailConfirmed(true);
+    if (email) {
+      localStorage.setItem('savedQuotesEmail', email);
       analytics.quoteSearchModalOpened({
         email_domain: email.split('@')[1] || 'unknown',
       });
     } else {
-      showToast('Please enter a valid email address', 'error');
+      analytics.quoteSearchModalOpened({
+        email_domain: 'anonymous',
+      });
     }
   };
 
   const handleCopyLink = (quoteId: string) => {
-    const url = generateQuoteUrl(quoteId);
+    const tokens = getAllQuoteTokens();
+    const token = tokens.find(t => t.quoteId === quoteId);
+
+    if (!token) {
+      showToast('Failed to copy link: Quote not found', 'error');
+      return;
+    }
+
+    const url = generateQuoteUrl(quoteId, token.accessToken);
     navigator.clipboard.writeText(url);
     showToast('Quote link copied to clipboard!', 'success');
 
     analytics.quoteLinkCopied({
-      quote_reference: quoteId,
+      quote_reference: token.quoteReference,
       copy_successful: true,
     });
+  };
+
+  const handleImportQuote = async () => {
+    if (!importUrl.trim()) {
+      showToast('Please enter a quote URL', 'error');
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const imported = importQuoteFromUrl(importUrl);
+
+      if (!imported) {
+        showToast('Invalid quote URL format', 'error');
+        setIsImporting(false);
+        return;
+      }
+
+      const quote = await import('../utils/quoteManager').then(m =>
+        m.getQuoteById(imported.quoteId, imported.accessToken)
+      );
+
+      addQuoteToken(
+        quote.id,
+        imported.accessToken,
+        quote.quote_name,
+        quote.quote_reference,
+        quote.expires_at,
+        email || undefined
+      );
+
+      showToast('Quote imported successfully!', 'success');
+      setImportUrl('');
+      setViewMode({ type: 'list' });
+      performSearch();
+    } catch (error: any) {
+      console.error('Failed to import quote:', error);
+      showToast(
+        error.message || 'Failed to import quote. Please check the URL and try again.',
+        'error'
+      );
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const handleClose = () => {
     if (searchResult) {
       analytics.quoteSearchModalClosed({
-        email_domain: email.split('@')[1] || 'unknown',
+        email_domain: email ? email.split('@')[1] || 'unknown' : 'anonymous',
         quotes_viewed: searchResult.quotes.length,
         had_selected_quote: !!selectedQuote,
       });
     }
+    setViewMode({ type: 'list' });
+    setImportUrl('');
     onClose();
   };
 
@@ -141,6 +253,8 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
     setEmailConfirmed(false);
     setSearchResult(null);
     setSelectedQuote(null);
+    setViewMode({ type: 'list' });
+    setImportUrl('');
     localStorage.removeItem('savedQuotesEmail');
   };
 
@@ -159,21 +273,20 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
               View My Quotes
             </h3>
             <p className="text-sm text-slate-600 mb-6">
-              Enter your email address to view your saved quotes
+              Enter your email address to view your saved quotes, or leave it blank to view all quotes on this device
             </p>
 
             <form onSubmit={handleEmailSubmit}>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email Address
+                  Email Address <span className="text-slate-500 font-normal">(Optional)</span>
                 </label>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
+                  placeholder="your@email.com (optional)"
                   className="w-full"
-                  required
                 />
               </div>
 
@@ -192,9 +305,8 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
                   size="md"
                   type="submit"
                   className="flex-1"
-                  disabled={!email}
                 >
-                  Continue
+                  View Quotes
                 </Button>
               </div>
             </form>
@@ -287,7 +399,11 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    value={generateQuoteUrl(selectedQuote.id)}
+                    value={(() => {
+                      const tokens = getAllQuoteTokens();
+                      const token = tokens.find(t => t.quoteId === selectedQuote.id);
+                      return token ? generateQuoteUrl(selectedQuote.id, token.accessToken) : '';
+                    })()}
                     readOnly
                     className="flex-1 text-xs bg-white border border-slate-300 rounded px-3 py-2 font-mono text-slate-700"
                   />
@@ -345,22 +461,75 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <Input
-                type="text"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="Search by quote name or reference..."
-                className="w-full"
-              />
+          {viewMode.type === 'import' ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Paste Quote URL
+                </label>
+                <Input
+                  type="text"
+                  value={importUrl}
+                  onChange={(e) => setImportUrl(e.target.value)}
+                  placeholder="https://example.com/configurator?quote=...&token=..."
+                  className="w-full"
+                />
+                <p className="text-xs text-slate-500 mt-2">
+                  Enter a quote link that was shared with you to add it to your quotes
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => {
+                    setViewMode({ type: 'list' });
+                    setImportUrl('');
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={handleImportQuote}
+                  disabled={isImporting || !importUrl.trim()}
+                  className="flex-1"
+                >
+                  {isImporting ? 'Importing...' : 'Import Quote'}
+                </Button>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="md"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
+          ) : (
+            <>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <Input
+                    type="text"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    placeholder="Search by quote name or reference..."
+                    className="w-full"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => setViewMode({ type: 'import' })}
+                  className="flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Import Quote
+                </Button>
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2"
+                >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
@@ -477,8 +646,10 @@ export function MyQuotesModal({ isOpen, onClose, initialEmail }: MyQuotesModalPr
               </Button>
             </div>
           )}
+            </>
+          )}
 
-          {searchResult && (
+          {viewMode.type === 'list' && searchResult && (
             <div className="mt-4 flex items-center justify-between text-sm">
               <div className="text-slate-600">
                 {searchResult.pagination.totalResults} quote{searchResult.pagination.totalResults !== 1 ? 's' : ''} found

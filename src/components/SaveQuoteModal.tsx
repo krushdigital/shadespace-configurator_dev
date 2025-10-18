@@ -3,6 +3,7 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { ConfiguratorState, ShadeCalculations } from '../types';
 import { saveQuote, generateQuoteUrl } from '../utils/quoteManager';
+import { addQuoteToken } from '../utils/tokenManager';
 import { useToast } from './ui/ToastProvider';
 import { analytics } from '../utils/analytics';
 import { MyQuotesModal } from './MyQuotesModal';
@@ -42,11 +43,13 @@ export function SaveQuoteModal({
   const [saveMethod, setSaveMethod] = useState<'email' | 'link' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedQuote, setSavedQuote] = useState<{
+    id: string;
     reference: string;
     quoteName: string;
     customerReference: string | null;
     url: string;
     expiresAt: string;
+    accessToken: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
@@ -97,16 +100,27 @@ export function SaveQuoteModal({
         sanitizedReference
       );
 
-      const quoteUrl = generateQuoteUrl(result.id);
+      const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
       const modalDuration = (Date.now() - modalOpenTime) / 1000;
       const emailDomain = email ? email.split('@')[1] : null;
 
+      addQuoteToken(
+        result.id,
+        result.accessToken,
+        result.quoteName,
+        result.reference,
+        result.expiresAt,
+        saveMethod === 'email' ? email : undefined
+      );
+
       setSavedQuote({
+        id: result.id,
         reference: result.reference,
         quoteName: result.quoteName,
         customerReference: result.customerReference || null,
         url: quoteUrl,
         expiresAt: result.expiresAt,
+        accessToken: result.accessToken,
       });
 
       if (saveMethod === 'email' && email) {

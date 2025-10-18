@@ -23,7 +23,8 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { MobilePricingBar } from './MobilePricingBar';
-import { getQuoteIdFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
+import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
+import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
 
 const INITIAL_STATE: ConfiguratorState = {
@@ -117,19 +118,29 @@ export function ShadeConfigurator() {
   // Load saved quote from URL if present
   useEffect(() => {
     const loadQuoteFromUrl = async () => {
-      const quoteId = getQuoteIdFromUrl();
-      if (!quoteId) return;
+      const quoteData = getQuoteFromUrl();
+      if (!quoteData) return;
 
       setIsLoadingQuote(true);
 
       // Track load attempt
       analytics.quoteLoadAttempted({
-        quote_id: quoteId,
+        quote_id: quoteData.id,
         source: 'url_parameter',
       });
 
       try {
-        const quote = await getQuoteById(quoteId);
+        const quote = await getQuoteById(quoteData.id, quoteData.token);
+
+        // Store the token locally for future access
+        addQuoteToken(
+          quote.id,
+          quoteData.token,
+          quote.quote_name,
+          quote.quote_reference,
+          quote.expires_at,
+          quote.customer_email || undefined
+        );
 
         // Calculate quote age
         const createdAt = new Date(quote.created_at);
@@ -157,12 +168,15 @@ export function ShadeConfigurator() {
         console.error('Failed to load quote:', error);
 
         analytics.quoteLoadFailed({
-          quote_id: quoteId,
+          quote_id: quoteData.id,
           error_message: error?.message || 'Unknown error',
           error_type: error?.name || 'LoadError',
         });
 
-        showToast('Failed to load quote. Please check the link and try again.', 'error');
+        showToast(
+          'Failed to load quote. It may have expired, been deleted, or you may not have access.',
+          'error'
+        );
       } finally {
         setIsLoadingQuote(false);
       }
@@ -729,12 +743,12 @@ export function ShadeConfigurator() {
     setLoading(true);
 
     // Check if this is a converted quote
-    const quoteId = getQuoteIdFromUrl();
+    const quoteParams = getQuoteFromUrl();
     let quoteData: any = null;
 
-    if (quoteReference && quoteId) {
+    if (quoteReference && quoteParams) {
       try {
-        quoteData = await getQuoteById(quoteId);
+        quoteData = await getQuoteById(quoteParams.id, quoteParams.token);
       } catch (error) {
         console.error('Failed to load quote data for conversion tracking:', error);
       }
@@ -910,7 +924,7 @@ export function ShadeConfigurator() {
             console.log('Added to cart');
 
             // Track quote conversion if applicable
-            if (quoteData && quoteId) {
+            if (quoteData && quoteParams) {
               try {
                 const createdAt = new Date(quoteData.created_at);
                 const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
@@ -925,7 +939,7 @@ export function ShadeConfigurator() {
                 });
 
                 // Mark quote as converted
-                await markQuoteConverted(quoteId);
+                await markQuoteConverted(quoteParams.id, quoteParams.token);
               } catch (error) {
                 console.error('Failed to track quote conversion:', error);
               }

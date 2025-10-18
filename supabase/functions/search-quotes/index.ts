@@ -30,11 +30,28 @@ Deno.serve(async (req: Request) => {
     }
 
     const url = new URL(req.url);
-    const email = url.searchParams.get('email');
+    const tokens = url.searchParams.get('tokens');
 
-    if (!email) {
+    if (!tokens) {
       return new Response(
-        JSON.stringify({ error: 'Email parameter is required' }),
+        JSON.stringify({ error: 'Tokens parameter is required' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // Parse tokens array from JSON string
+    let tokenArray: string[];
+    try {
+      tokenArray = JSON.parse(tokens);
+      if (!Array.isArray(tokenArray) || tokenArray.length === 0) {
+        throw new Error('Tokens must be a non-empty array');
+      }
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid tokens format. Must be a JSON array of token strings.' }),
         {
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -55,10 +72,11 @@ Deno.serve(async (req: Request) => {
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '20');
 
+    // Retrieve all quotes matching the provided tokens
     let query = supabase
       .from('saved_quotes')
       .select('*', { count: 'exact' })
-      .eq('customer_email', email);
+      .in('access_token', tokenArray);
 
     if (status === 'active') {
       query = query
@@ -88,7 +106,7 @@ Deno.serve(async (req: Request) => {
       query = query.lte('created_at', endDate);
     }
 
-    const { data: allQuotes, error: fetchError, count } = await query;
+    const { data: allQuotes, error: fetchError } = await query;
 
     if (fetchError) {
       throw new Error(`Failed to fetch quotes: ${fetchError.message}`);
@@ -219,5 +237,3 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
-  }
-});
