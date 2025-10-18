@@ -92,7 +92,7 @@ export function MeasurementOptionVisualizer({
                             <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
                               <div className="flex items-center gap-4 text-xs text-slate-600">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
+                                  <div className="w-5 h-0 border-t-2 border-dashed border-red-500"></div>
                                   <span>Measurements</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ export function MeasurementOptionVisualizer({
                           <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
                             <div className="flex items-center gap-4 text-xs text-slate-600">
                               <div className="flex items-center gap-2">
-                                <div className="w-5 h-0.5 bg-red-500 rounded" style={{ backgroundImage: 'repeating-linear-gradient(to right, #ef4444 0, #ef4444 3px, transparent 3px, transparent 6px)' }}></div>
+                                <div className="w-5 h-0 border-t-2 border-dashed border-red-500"></div>
                                 <span>Measurements</span>
                               </div>
                               <div className="flex items-center gap-2">
