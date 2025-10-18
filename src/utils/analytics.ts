@@ -91,9 +91,6 @@ export interface GAEventProperties {
  * 18. QUOTE LOADING (3 events)
  *     - quote_load_attempted, quote_load_success, quote_load_failed
  *
- * 19. QUOTE SEARCH & MANAGEMENT (3 events)
- *     - quote_search_modal_opened, quote_search_performed
- *     - quote_search_modal_closed
  *
  * 20. SHOPIFY INTEGRATION (3 events)
  *     - shopify_customer_created, shopify_customer_creation_failed
@@ -991,34 +988,4 @@ export const analytics = {
     trackEvent('email_summary_sent_with_shopify', data);
   },
 
-  // ============================================================================
-  // QUOTE SEARCH & MANAGEMENT EVENTS
-  // ============================================================================
-  quoteSearchModalOpened: (data: {
-    email_domain: string;
-  }) => {
-    trackEvent('quote_search_modal_opened', data);
-  },
-
-  quoteSearchPerformed: (data: {
-    email_domain: string;
-    search_text: string | null;
-    status_filter: string;
-    fabric_filter: string | null;
-    corner_filter: number | null;
-    sort_by: string;
-    sort_order: string;
-    results_count: number;
-    total_results: number;
-  }) => {
-    trackEvent('quote_search_performed', data);
-  },
-
-  quoteSearchModalClosed: (data: {
-    email_domain: string;
-    quotes_viewed: number;
-    had_selected_quote: boolean;
-  }) => {
-    trackEvent('quote_search_modal_closed', data);
-  },
 };

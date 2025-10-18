@@ -29,39 +29,6 @@ export interface QuoteData {
   status: string;
 }
 
-export interface QuoteSearchFilters {
-  search?: string;
-  status?: 'active' | 'expiring' | 'expired' | 'completed' | 'all' | 'saved';
-  fabricType?: string;
-  corners?: number;
-  minPrice?: number;
-  maxPrice?: number;
-  startDate?: string;
-  endDate?: string;
-  sortBy?: 'created_at' | 'expires_at' | 'price' | 'quote_name';
-  sortOrder?: 'asc' | 'desc';
-  page?: number;
-  pageSize?: number;
-}
-
-export interface QuoteSearchResult {
-  quotes: QuoteData[];
-  pagination: {
-    page: number;
-    pageSize: number;
-    totalPages: number;
-    totalResults: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
-  stats: {
-    total: number;
-    active: number;
-    expiring: number;
-    expired: number;
-    completed: number;
-  };
-}
 
 /**
  * Save a quote to the database
@@ -130,8 +97,6 @@ export async function getQuoteById(id: string, accessToken: string): Promise<Quo
 
   return data.quote;
 }
-
-
 
 /**
  * Update quote status (e.g., mark as completed)
@@ -206,75 +171,3 @@ export async function markQuoteConverted(quoteId: string, accessToken: string): 
   await updateQuoteStatus(quoteId, accessToken, 'completed');
 }
 
-/**
- * Search and filter quotes using access tokens
- */
-export async function searchQuotes(
-  accessTokens: string[],
-  filters: QuoteSearchFilters = {}
-): Promise<QuoteSearchResult> {
-  if (!accessTokens || accessTokens.length === 0) {
-    return {
-      quotes: [],
-      pagination: {
-        page: 1,
-        pageSize: filters.pageSize || 20,
-        totalPages: 0,
-        totalResults: 0,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      },
-      stats: {
-        total: 0,
-        active: 0,
-        expiring: 0,
-        expired: 0,
-        completed: 0,
-      },
-    };
-  }
-
-  const params = new URLSearchParams();
-  params.append('tokens', JSON.stringify(accessTokens));
-
-  if (filters.search) params.append('search', filters.search);
-  if (filters.status) params.append('status', filters.status);
-  if (filters.fabricType) params.append('fabricType', filters.fabricType);
-  if (filters.corners) params.append('corners', filters.corners.toString());
-  if (filters.minPrice) params.append('minPrice', filters.minPrice.toString());
-  if (filters.maxPrice) params.append('maxPrice', filters.maxPrice.toString());
-  if (filters.startDate) params.append('startDate', filters.startDate);
-  if (filters.endDate) params.append('endDate', filters.endDate);
-  if (filters.sortBy) params.append('sortBy', filters.sortBy);
-  if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-  if (filters.page) params.append('page', filters.page.toString());
-  if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
-
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/search-quotes?${params.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to search quotes');
-    }
-
-    return {
-      quotes: data.quotes,
-      pagination: data.pagination,
-      stats: data.stats,
-    };
-  } catch (error) {
-    console.error('Failed to search quotes:', error);
-    throw error;
-  }
-}
