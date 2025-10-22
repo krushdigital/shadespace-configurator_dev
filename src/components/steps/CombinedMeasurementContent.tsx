@@ -275,7 +275,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                           />
                           <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
                           <p className="text-sm text-slate-700 leading-relaxed">
-                            You provide the exact sail size measurements and add any required hardware additionally.
+                            You want to receive a sail to the exact dimensions you provide and take care of everything else.
                           </p>
                         </div>
 
