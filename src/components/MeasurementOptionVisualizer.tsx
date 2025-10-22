@@ -60,7 +60,7 @@ export function MeasurementOptionVisualizer({
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
                   <h5 className="text-base font-bold text-slate-900 leading-tight">
-                    Adjust Size of Sail to Fit the Space
+                    Manufactured to Fit my Space
                   </h5>
                   <Tooltip
                     content={
@@ -237,7 +237,7 @@ export function MeasurementOptionVisualizer({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1.5">
                 <h5 className="text-base font-bold text-slate-900 leading-tight">
-                  Fabricate Sail to the Dimensions You Provide
+                  Manufactured to the Dimensions I Provide
                 </h5>
                 <Tooltip
                   content={
@@ -332,7 +332,7 @@ export function MeasurementOptionVisualizer({
               </div>
 
               <p className="text-xs text-slate-700 mb-2 leading-relaxed font-medium">
-                <span className="text-[#01312D] font-semibold">Why Choose:</span> You know exactly what size sail you need - we make it to your specifications, no adjustments.
+                <span className="text-[#01312D] font-semibold">Why Choose:</span> You want to receive a sail to the exact dimensions you provide and take care of everything else.
               </p>
 
               <div className="flex items-center gap-1.5 text-xs">
