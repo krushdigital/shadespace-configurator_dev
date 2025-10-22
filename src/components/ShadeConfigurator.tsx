@@ -1026,6 +1026,17 @@ export function ShadeConfigurator() {
     return Math.max(prevStep, 0);
   };
 
+  // Helper function to calculate the displayed step number (accounting for skipped steps)
+  const getDisplayedStepNumber = (stepIndex: number): number => {
+    let displayNumber = 1;
+    for (let i = 0; i < stepIndex; i++) {
+      if (!shouldSkipStep(i)) {
+        displayNumber++;
+      }
+    }
+    return displayNumber;
+  };
+
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 0: // Fabric & Color
@@ -1087,7 +1098,9 @@ export function ShadeConfigurator() {
   };
 
   const smoothScrollToStep = (stepNumber: number) => {
-    const stepElement = document.getElementById(`step-${stepNumber + 1}`);
+    // stepNumber here is the step index (0-6), we need to get its displayed number
+    const displayedNumber = getDisplayedStepNumber(stepNumber);
+    const stepElement = document.getElementById(`step-${displayedNumber}`);
     if (!stepElement) return;
 
     const isMobileView = window.innerWidth < 1024;
@@ -1422,6 +1435,13 @@ export function ShadeConfigurator() {
     ];
 
     const actualNextStep = getActualNextStep(currentStep);
+
+    // Special case: If we're on step 4 (Dimensions) and step 5 will be skipped,
+    // the next step title should be "Review & Purchase"
+    if (currentStep === 4 && shouldSkipStep(5)) {
+      return 'Review & Purchase';
+    }
+
     return stepTitles[actualNextStep] || '';
   };
   const shouldShowBackButton = (currentStep: number) => currentStep > 0;
@@ -1545,7 +1565,7 @@ export function ShadeConfigurator() {
                   key={index}
                   title={step.title}
                   subtitle={step.subtitle}
-                  stepNumber={index + 1}
+                  stepNumber={getDisplayedStepNumber(index)}
                   isCompleted={isCompleted}
                   isCurrent={isCurrent}
                   isOpen={isOpen}
