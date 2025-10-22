@@ -1465,28 +1465,10 @@ export function ShadeConfigurator() {
     <>
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mb-4">
-            <a
-              href="https://shadespace.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block hover:opacity-80 transition-opacity duration-200"
-            >
-              <img
-                src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Logo-horizontal-color_3x_8d83ab71-75cc-4486-8cf3-b510cdb69aa7.png?v=1728339550"
-                alt="ShadeSpace Logo"
-                className="mx-auto h-12 sm:h-16 md:h-20 lg:h-24 w-auto max-w-full"
-              />
-            </a>
-          </div>
-          <p className="text-xl text-[#01312D]/70 max-w-2xl mx-auto font-extrabold" style={{ fontFamily: 'Poppins, sans-serif' }}>
-            Design your perfect shade solution and get instant custom pricing with our interactive configurator
-          </p>
-
+        <div className="text-center mb-6">
           {/* Quote Reference Display */}
           {quoteReference && (
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#BFF102]/20 border border-[#307C31]/30 rounded-full">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#BFF102]/20 border border-[#307C31]/30 rounded-full">
               <svg className="w-5 h-5 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
