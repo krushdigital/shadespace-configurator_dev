@@ -262,7 +262,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight">
-                    Manufactured to the Dimensions I Provide
+                    Fabricate Sail to the Dimensions You Provide
                   </h5>
                   <Tooltip
                     content={
@@ -275,7 +275,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                           />
                           <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
                           <p className="text-sm text-slate-700 leading-relaxed">
-                            You want to receive a sail to the exact dimensions you provide and take care of everything else.
+                            You know exactly what size sail you need - we make it to your specifications, no adjustments.
                           </p>
                         </div>
 
