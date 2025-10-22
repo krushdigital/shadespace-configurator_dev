@@ -125,7 +125,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-2">
                   <div className="flex items-center gap-2">
                     <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight">
-                      Manufactured to Fit my Space
+                      Adjust Size of Sail to Fit the Space
                     </h5>
                     <Tooltip
                       content={
