@@ -1025,9 +1025,6 @@ export function ShadeConfigurator() {
         }
         return edgeCount === config.corners;
       case 5: // Heights & Anchor Points
-        // If this step is not active (skipped for 'exact' measurement option), consider it complete
-        if (!isStepActive(5)) return true;
-
         // Check if fixing points installation status is selected
         if (config.fixingPointsInstalled === undefined) return false;
 
@@ -1059,10 +1056,8 @@ export function ShadeConfigurator() {
     }
   };
 
-  const smoothScrollToStep = (actualStepIndex: number) => {
-    // Use display step number for DOM ID
-    const displayNumber = getDisplayStepNumber(actualStepIndex);
-    const stepElement = document.getElementById(`step-${displayNumber}`);
+  const smoothScrollToStep = (stepNumber: number) => {
+    const stepElement = document.getElementById(`step-${stepNumber + 1}`);
     if (!stepElement) return;
 
     const isMobileView = window.innerWidth < 1024;
@@ -1111,44 +1106,6 @@ export function ShadeConfigurator() {
         }, 400);
       }
     }, 100);
-  };
-
-  // Helper functions for dynamic step management based on measurementOption
-  const getActiveSteps = (): number[] => {
-    // Step 5 (Heights & Anchor Points) is skipped when measurementOption is 'exact'
-    if (config.measurementOption === 'exact') {
-      return [0, 1, 2, 3, 4, 6]; // Skip step 5
-    }
-    return [0, 1, 2, 3, 4, 5, 6]; // All steps
-  };
-
-  const isStepActive = (stepIndex: number): boolean => {
-    const activeSteps = getActiveSteps();
-    return activeSteps.includes(stepIndex);
-  };
-
-  const getDisplayStepNumber = (actualStepIndex: number): number => {
-    const activeSteps = getActiveSteps();
-    const position = activeSteps.indexOf(actualStepIndex);
-    return position >= 0 ? position + 1 : actualStepIndex + 1;
-  };
-
-  const getNextActiveStep = (currentStep: number): number => {
-    const activeSteps = getActiveSteps();
-    const currentPosition = activeSteps.indexOf(currentStep);
-    if (currentPosition >= 0 && currentPosition < activeSteps.length - 1) {
-      return activeSteps[currentPosition + 1];
-    }
-    return currentStep;
-  };
-
-  const getPrevActiveStep = (currentStep: number): number => {
-    const activeSteps = getActiveSteps();
-    const currentPosition = activeSteps.indexOf(currentStep);
-    if (currentPosition > 0) {
-      return activeSteps[currentPosition - 1];
-    }
-    return currentStep;
   };
 
   const nextStep = () => {
@@ -1232,58 +1189,55 @@ export function ShadeConfigurator() {
         }
         break;
       case 5: // Heights & Anchor Points
-        // Only validate if this step is active (not skipped for 'exact' measurement option)
-        if (isStepActive(5)) {
-          // PRIORITY CHECK: Installation status must be selected first
-          if (config.fixingPointsInstalled === undefined) {
-            errors.fixingPointsInstalled = 'Please answer whether your fixing points are already installed first';
-            // Don't validate dependent fields until installation status is selected
-            break;
-          }
+        // PRIORITY CHECK: Installation status must be selected first
+        if (config.fixingPointsInstalled === undefined) {
+          errors.fixingPointsInstalled = 'Please answer whether your fixing points are already installed first';
+          // Don't validate dependent fields until installation status is selected
+          break;
+        }
 
-          // Only validate dependent fields after installation status is selected
-          // Validate heights
-          const heightValidation = validateHeights(config.fixingHeights, config.unit);
+        // Only validate dependent fields after installation status is selected
+        // Validate heights
+        const heightValidation = validateHeights(config.fixingHeights, config.unit);
 
-          // Add height validation errors with specific messages
-          Object.keys(heightValidation.errors).forEach(key => {
-            errors[key] = heightValidation.errors[key];
-          });
+        // Add height validation errors with specific messages
+        Object.keys(heightValidation.errors).forEach(key => {
+          errors[key] = heightValidation.errors[key];
+        });
 
-          // Add typo suggestions
-          Object.keys(heightValidation.typoSuggestions).forEach(key => {
-            suggestions[key] = heightValidation.typoSuggestions[key];
-          });
+        // Add typo suggestions
+        Object.keys(heightValidation.typoSuggestions).forEach(key => {
+          suggestions[key] = heightValidation.typoSuggestions[key];
+        });
 
-          if (!config.fixingHeights || config.fixingHeights.length !== config.corners) {
-            errors.fixingHeights = 'All anchor point heights are required';
-          } else {
-            config.fixingHeights.forEach((height, index) => {
-              if (height === undefined || height === null || height <= 0) {
-                errors[`height_${index}`] = 'Height measurement required';
-              }
-            });
-          }
-          if (!config.fixingTypes || config.fixingTypes.length !== config.corners) {
-            errors.fixingTypes = 'All attachment types must be selected';
-          } else {
-            config.fixingTypes.forEach((type, index) => {
-              if (type !== 'post' && type !== 'building') {
-                errors[`type_${index}`] = 'Please select attachment type (post or building)';
-              }
-            });
-          }
-          // Only validate eye orientations if fixing points are installed
-          if (config.fixingPointsInstalled === true) {
-            if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) {
-              errors.eyeOrientations = 'All eye orientations must be selected';
-            } else {
-              config.eyeOrientations.forEach((orientation, index) => {
-                if (orientation !== 'horizontal' && orientation !== 'vertical') {
-                  errors[`orientation_${index}`] = 'Please select eye orientation (horizontal or vertical)';
-                }
-              });
+        if (!config.fixingHeights || config.fixingHeights.length !== config.corners) {
+          errors.fixingHeights = 'All anchor point heights are required';
+        } else {
+          config.fixingHeights.forEach((height, index) => {
+            if (height === undefined || height === null || height <= 0) {
+              errors[`height_${index}`] = 'Height measurement required';
             }
+          });
+        }
+        if (!config.fixingTypes || config.fixingTypes.length !== config.corners) {
+          errors.fixingTypes = 'All attachment types must be selected';
+        } else {
+          config.fixingTypes.forEach((type, index) => {
+            if (type !== 'post' && type !== 'building') {
+              errors[`type_${index}`] = 'Please select attachment type (post or building)';
+            }
+          });
+        }
+        // Only validate eye orientations if fixing points are installed
+        if (config.fixingPointsInstalled === true) {
+          if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) {
+            errors.eyeOrientations = 'All eye orientations must be selected';
+          } else {
+            config.eyeOrientations.forEach((orientation, index) => {
+              if (orientation !== 'horizontal' && orientation !== 'vertical') {
+                errors[`orientation_${index}`] = 'Please select eye orientation (horizontal or vertical)';
+              }
+            });
           }
         }
         break;
@@ -1312,8 +1266,8 @@ export function ShadeConfigurator() {
       return; // Don't proceed to next step
     }
 
-    // If no validation errors, proceed to next step using dynamic step navigation
-    const nextStepIndex = getNextActiveStep(openStep);
+    // If no validation errors, proceed to next step
+    const nextStepIndex = Math.min(6, openStep + 1);
 
     // Auto-center shape when moving to next step
     const centeredPoints = centerShape(config.points);
@@ -1328,8 +1282,7 @@ export function ShadeConfigurator() {
   };
 
   const prevStep = () => {
-    // Use dynamic step navigation to skip inactive steps
-    const prevStepIndex = getPrevActiveStep(openStep);
+    const prevStepIndex = Math.max(0, openStep - 1);
 
     // Auto-center shape when moving to previous step
     const centeredPoints = centerShape(config.points);
@@ -1344,8 +1297,7 @@ export function ShadeConfigurator() {
   };
 
   const toggleStep = (stepIndex: number) => {
-    // Only allow toggling steps that are active and have been completed or are current
-    if (stepIndex <= config.step && isStepActive(stepIndex)) {
+    if (stepIndex <= config.step) {
       // Auto-center shape when switching steps
       const centeredPoints = centerShape(config.points);
       updateConfig({ points: centeredPoints });
@@ -1438,11 +1390,7 @@ export function ShadeConfigurator() {
     '' // No next step after review
   ];
 
-  const getNextStepTitle = (currentStep: number) => {
-    const nextStep = getNextActiveStep(currentStep);
-    return stepTitles[nextStep] || '';
-  };
-
+  const getNextStepTitle = (currentStep: number) => stepTitles[currentStep] || '';
   const shouldShowBackButton = (currentStep: number) => currentStep > 0;
 
   const steps = [
@@ -1540,16 +1488,11 @@ export function ShadeConfigurator() {
               : 'lg:col-span-4'
             }`}>
             {steps.map((step, index) => {
-              // Skip step 5 if measurementOption is 'exact'
-              if (!isStepActive(index)) {
-                return null;
-              }
-
               const StepComponent = step.component;
               const isCompleted = index < config.step;
               const isCurrent = index === config.step;
               const isOpen = openStep === index;
-              const canOpen = index <= config.step && isStepActive(index);
+              const canOpen = index <= config.step;
               const selection = getStepSelection(index);
 
               // On mobile, show current step, completed steps, and the next available step
@@ -1562,7 +1505,7 @@ export function ShadeConfigurator() {
                   key={index}
                   title={step.title}
                   subtitle={step.subtitle}
-                  stepNumber={getDisplayStepNumber(index)}
+                  stepNumber={index + 1}
                   isCompleted={isCompleted}
                   isCurrent={isCurrent}
                   isOpen={isOpen}
