@@ -768,75 +768,77 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               )}
             </div>
 
-            {/* Anchor Point Heights */}
-            <div>
-              {isMobile ? (
-                <AccordionItem
-                  trigger={
-                    <span className="flex items-center gap-2">
-                      <span>Anchor Point Heights</span>
-                      <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
-                        {config.corners}
+            {/* Anchor Point Heights - Only show for 'adjust' measurement option */}
+            {config.measurementOption === 'adjust' && config.fixingHeights && config.fixingHeights.length > 0 && (
+              <div>
+                {isMobile ? (
+                  <AccordionItem
+                    trigger={
+                      <span className="flex items-center gap-2">
+                        <span>Anchor Point Heights</span>
+                        <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
+                          {config.corners}
+                        </span>
                       </span>
-                    </span>
-                  }
-                  defaultOpen={false}
-                >
-                  <Card className="p-3 mt-2">
-                    <div className="space-y-2 text-xs">
-                      {config.fixingHeights.map((height, index) => {
-                        const corner = String.fromCharCode(65 + index);
-                        const type = config.fixingTypes?.[index] || 'post';
-                        const orientation = config.eyeOrientations?.[index];
+                    }
+                    defaultOpen={false}
+                  >
+                    <Card className="p-3 mt-2">
+                      <div className="space-y-2 text-xs">
+                        {config.fixingHeights.map((height, index) => {
+                          const corner = String.fromCharCode(65 + index);
+                          const type = config.fixingTypes?.[index] || 'post';
+                          const orientation = config.eyeOrientations?.[index];
 
-                        return (
-                          <div key={index} className="flex justify-between">
-                            <span className="text-slate-600">Point {corner}:</span>
-                            <div className="text-right">
-                              <div className="font-medium text-slate-900">
-                                {formatMeasurement(height, config.unit)}
-                                {' ('}{type}
-                                {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
-                                {')'}
+                          return (
+                            <div key={index} className="flex justify-between">
+                              <span className="text-slate-600">Point {corner}:</span>
+                              <div className="text-right">
+                                <div className="font-medium text-slate-900">
+                                  {formatMeasurement(height, config.unit)}
+                                  {' ('}{type}
+                                  {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
+                                  {')'}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-                </AccordionItem>
-              ) : (
-                <>
-                  <h4 className="text-lg font-semibold text-slate-900 mb-3">
-                    Anchor Point Heights
-                  </h4>
-                  <Card className="p-4 mb-4">
-                    <div className="space-y-2 text-sm">
-                      {config.fixingHeights.map((height, index) => {
-                        const corner = String.fromCharCode(65 + index);
-                        const type = config.fixingTypes?.[index] || 'post';
-                        const orientation = config.eyeOrientations?.[index];
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  </AccordionItem>
+                ) : (
+                  <>
+                    <h4 className="text-lg font-semibold text-slate-900 mb-3">
+                      Anchor Point Heights
+                    </h4>
+                    <Card className="p-4 mb-4">
+                      <div className="space-y-2 text-sm">
+                        {config.fixingHeights.map((height, index) => {
+                          const corner = String.fromCharCode(65 + index);
+                          const type = config.fixingTypes?.[index] || 'post';
+                          const orientation = config.eyeOrientations?.[index];
 
-                        return (
-                          <div key={index} className="flex justify-between">
-                            <span className="text-slate-600">Anchor Point {corner}:</span>
-                            <div className="text-right">
-                              <div className="font-medium text-slate-900">
-                                {formatMeasurement(height, config.unit)}
-                                {' ('}{type}
-                                {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
-                                {')'}
+                          return (
+                            <div key={index} className="flex justify-between">
+                              <span className="text-slate-600">Anchor Point {corner}:</span>
+                              <div className="text-right">
+                                <div className="font-medium text-slate-900">
+                                  {formatMeasurement(height, config.unit)}
+                                  {' ('}{type}
+                                  {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
+                                  {')'}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </Card>
-                </>
-              )}
-            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
