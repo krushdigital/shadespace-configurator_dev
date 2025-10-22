@@ -262,7 +262,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight">
-                    Fabricate Sail to the Dimensions You Provide
+                    Manufactured to the Dimensions I Provide
                   </h5>
                   <Tooltip
                     content={
