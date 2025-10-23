@@ -377,13 +377,19 @@ export function validateTriangle(a: number, b: number, c: number): { isValid: bo
   if (a <= 0 || b <= 0 || c <= 0) {
     return { isValid: false, error: 'All sides must be positive' };
   }
-  if (a + b <= c) {
+
+  // Add 3% tolerance to account for real-world measurement imprecision
+  const tolerance = 0.03;
+  const toleranceMultiplier = 1 - tolerance;
+
+  // Only flag if the violation is significant (beyond measurement error)
+  if (a + b <= c * toleranceMultiplier) {
     return { isValid: false, error: `Triangle inequality violated: ${a.toFixed(0)} + ${b.toFixed(0)} = ${(a+b).toFixed(0)} ≤ ${c.toFixed(0)}` };
   }
-  if (a + c <= b) {
+  if (a + c <= b * toleranceMultiplier) {
     return { isValid: false, error: `Triangle inequality violated: ${a.toFixed(0)} + ${c.toFixed(0)} = ${(a+c).toFixed(0)} ≤ ${b.toFixed(0)}` };
   }
-  if (b + c <= a) {
+  if (b + c <= a * toleranceMultiplier) {
     return { isValid: false, error: `Triangle inequality violated: ${b.toFixed(0)} + ${c.toFixed(0)} = ${(b+c).toFixed(0)} ≤ ${a.toFixed(0)}` };
   }
   return { isValid: true };
@@ -448,8 +454,9 @@ export function validateDiagonal(
 
   const range = calculateDiagonalRange(side1, side2, oppositeSide1, oppositeSide2);
 
-  // Add a small tolerance (1%) to account for measurement precision
-  const tolerance = 0.01;
+  // Add a generous tolerance (5%) to account for real-world measurement imprecision
+  // Customers use tape measures, not laser precision tools
+  const tolerance = 0.05;
   const minWithTolerance = range.min * (1 - tolerance);
   const maxWithTolerance = range.max * (1 + tolerance);
 

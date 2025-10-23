@@ -659,51 +659,51 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </div>
             </Card>
 
-            {/* Geometric Validation Warning */}
-            {!geometryValidation.isValid && calculations.area === 0 && hasAllEdgeMeasurements && allDiagonalsEntered && (
-              <Card className="p-4 mb-4 border-2 border-amber-400 bg-amber-50">
+            {/* Geometric Validation Warning - Only show for significant issues */}
+            {!geometryValidation.isValid && calculations.area === 0 && hasAllEdgeMeasurements && allDiagonalsEntered && geometryValidation.errors.length > 0 && (
+              <Card className="p-4 mb-4 border-2 border-blue-300 bg-blue-50">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 mt-1">
-                    <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-lg font-semibold text-amber-900 mb-2">
-                      Let's Double-Check Your Measurements
+                    <h4 className="text-lg font-semibold text-blue-900 mb-2">
+                      Measurement Review
                     </h4>
-                    <p className="text-sm text-amber-800 mb-3">
-                      We noticed some of your measurements don't quite add up. This is usually caused by a simple typo or mix-up when entering numbers. Please review the following:
+                    <p className="text-sm text-blue-800 mb-3">
+                      We've detected some measurements that may need a quick review. This could be due to measurement precision or a simple typo:
                     </p>
                     <div className="space-y-2 mb-4">
-                      {friendlyErrors.map((error, index) => (
+                      {friendlyErrors.slice(0, 3).map((error, index) => (
                         <div key={index} className="flex items-start gap-2">
-                          <span className="text-amber-600 font-bold">•</span>
-                          <p className="text-sm text-amber-800">{error}</p>
+                          <span className="text-blue-600 font-bold">•</span>
+                          <p className="text-sm text-blue-800">{error}</p>
                         </div>
                       ))}
                     </div>
 
-                    <div className="mt-3 p-3 bg-amber-100 border border-amber-300 rounded">
-                      <p className="text-sm text-amber-900">
-                        <strong>Common causes:</strong> Extra zeros, confusing feet with inches, or mixing up similar measurements.
+                    <div className="mt-3 p-3 bg-blue-100 border border-blue-200 rounded">
+                      <p className="text-sm text-blue-900">
+                        <strong>Tip:</strong> Double-check your measurements, especially diagonals. Small differences in measurement can trigger this notice.
                       </p>
                     </div>
 
-                    {/* Reassurance Section - You Can Continue */}
-                    <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                    {/* Reassurance Section */}
+                    <div className="mt-4 p-4 bg-emerald-50 border-2 border-emerald-300 rounded-lg">
                       <div className="flex items-start gap-3">
                         <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm text-blue-900 font-semibold mb-1">
-                            No worries - you can still complete your order!
+                          <p className="text-sm text-emerald-900 font-semibold mb-1">
+                            You can still complete your order!
                           </p>
-                          <p className="text-sm text-blue-800">
-                            Feel free to proceed with adding to cart. One of our team members will reach out to confirm your measurements before we start manufacturing your shade sail. We regularly help customers verify their measurements to ensure a perfect fit.
+                          <p className="text-sm text-emerald-800">
+                            Our team will verify all measurements before manufacturing. We'll contact you if any adjustments are needed to ensure your shade sail fits perfectly.
                           </p>
                         </div>
                       </div>
