@@ -106,7 +106,7 @@ export function MeasurementOptionVisualizer({
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3 mb-3">
                             <p className="text-xs text-[#01312D] font-semibold mb-1">How does this work?</p>
                             <p className="text-xs text-slate-600 leading-relaxed">
-                              You measure between your fixing points. We engineer the sail smaller (accounting for fabric stretch and tensioning) so it installs tight and wrinkle-free.
+                              You measure between your fixing points. We engineer the sail adjusting for both fabric stretch and tensioning hardware allowance.
                             </p>
                           </div>
                         </div>
