@@ -390,6 +390,119 @@ export function validateTriangle(a: number, b: number, c: number): { isValid: bo
 }
 
 /**
+ * Calculate the feasible range for a diagonal in a quadrilateral
+ * @param side1 First adjacent side
+ * @param side2 Second adjacent side
+ * @param oppositeSide1 First opposite side
+ * @param oppositeSide2 Second opposite side
+ * @returns Object with min and max feasible diagonal lengths
+ */
+export function calculateDiagonalRange(
+  side1: number,
+  side2: number,
+  oppositeSide1: number,
+  oppositeSide2: number
+): { min: number; max: number } {
+  // Minimum: The diagonal must satisfy triangle inequality with adjacent sides
+  // For a diagonal connecting two corners, it must be greater than |side1 - side2|
+  const minFromAdjacent = Math.abs(side1 - side2);
+
+  // Maximum: The diagonal must be less than the sum of adjacent sides
+  // Also, in a quadrilateral, no diagonal can exceed the perimeter
+  const maxFromAdjacent = side1 + side2;
+
+  // For opposite sides, the diagonal should generally be related to them as well
+  // In most cases, diagonal < sum of all sides, but we use a practical bound
+  const maxFromOpposite = oppositeSide1 + oppositeSide2;
+
+  // The absolute minimum is the larger of the adjacent difference
+  const min = minFromAdjacent;
+
+  // The absolute maximum is the smaller of the sums (more restrictive bound)
+  const max = Math.min(maxFromAdjacent, maxFromOpposite);
+
+  return { min, max };
+}
+
+/**
+ * Validate a diagonal measurement against edge measurements
+ * @param diagonal Diagonal length
+ * @param side1 First adjacent side
+ * @param side2 Second adjacent side
+ * @param oppositeSide1 First opposite side
+ * @param oppositeSide2 Second opposite side
+ * @param diagonalName Name of the diagonal (e.g., 'AC')
+ * @returns Object with isValid boolean and error message if invalid
+ */
+export function validateDiagonal(
+  diagonal: number,
+  side1: number,
+  side2: number,
+  oppositeSide1: number,
+  oppositeSide2: number,
+  diagonalName: string
+): { isValid: boolean; error?: string; suggestedRange?: { min: number; max: number } } {
+  if (diagonal <= 0) {
+    return { isValid: false, error: 'Diagonal must be positive' };
+  }
+
+  const range = calculateDiagonalRange(side1, side2, oppositeSide1, oppositeSide2);
+
+  // Add a small tolerance (1%) to account for measurement precision
+  const tolerance = 0.01;
+  const minWithTolerance = range.min * (1 - tolerance);
+  const maxWithTolerance = range.max * (1 + tolerance);
+
+  if (diagonal < minWithTolerance) {
+    return {
+      isValid: false,
+      error: `Diagonal ${diagonalName} (${diagonal.toFixed(0)}mm) is too short. With your edge measurements, it should be at least ${range.min.toFixed(0)}mm.`,
+      suggestedRange: range
+    };
+  }
+
+  if (diagonal > maxWithTolerance) {
+    return {
+      isValid: false,
+      error: `Diagonal ${diagonalName} (${diagonal.toFixed(0)}mm) is too long. With your edge measurements, it cannot exceed ${range.max.toFixed(0)}mm.`,
+      suggestedRange: range
+    };
+  }
+
+  return { isValid: true };
+}
+
+/**
+ * Format diagonal validation errors with helpful context
+ * @param errors Array of error messages from validation
+ * @returns Formatted error messages with context
+ */
+export function formatDiagonalErrors(errors: string[]): string[] {
+  if (errors.length === 0) return [];
+
+  const formattedErrors: string[] = [];
+  const hasDiagonalErrors = errors.some(err => err.includes('Diagonal'));
+
+  if (hasDiagonalErrors) {
+    formattedErrors.push(
+      "We noticed some of your measurements don't quite add up. This is usually caused by a simple typo or mix-up when entering numbers. Please review the following:"
+    );
+    formattedErrors.push('');
+    errors.forEach(err => {
+      formattedErrors.push(`• ${err}`);
+    });
+    formattedErrors.push('');
+    formattedErrors.push(
+      "Tip: Check that your diagonal measurements are compatible with your edge measurements. If you're unsure, try re-measuring or double-check for typos."
+    );
+  } else {
+    formattedErrors.push(...errors);
+  }
+
+  return formattedErrors;
+}
+
+/**
  * Validate polygon measurements for geometric feasibility
  * @param measurements Object containing all edge and diagonal measurements in mm
  * @param corners Number of corners (3, 4, 5, or 6)
@@ -422,7 +535,25 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const CD = measurements['CD'] || 0;
     const DA = measurements['DA'] || 0;
     const AC = measurements['AC'] || 0;
+    const BD = measurements['BD'] || 0;
 
+    // Validate diagonal AC against edges AB, BC, CD, DA
+    if (AC > 0 && AB > 0 && BC > 0 && CD > 0 && DA > 0) {
+      const diagonalValidation = validateDiagonal(AC, AB, BC, CD, DA, 'AC');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal AC is invalid');
+      }
+    }
+
+    // Validate diagonal BD against edges AB, BC, CD, DA
+    if (BD > 0 && AB > 0 && BC > 0 && CD > 0 && DA > 0) {
+      const diagonalValidation = validateDiagonal(BD, BC, CD, DA, AB, 'BD');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal BD is invalid');
+      }
+    }
+
+    // Validate triangles formed by diagonals
     if (AB > 0 && BC > 0 && AC > 0) {
       const validation = validateTriangle(AB, BC, AC);
       if (!validation.isValid) {
@@ -435,6 +566,18 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
         errors.push(`Triangle ACD: ${validation.error}`);
       }
     }
+    if (BD > 0 && AB > 0 && DA > 0) {
+      const validation = validateTriangle(BD, AB, DA);
+      if (!validation.isValid) {
+        errors.push(`Triangle ABD: ${validation.error}`);
+      }
+    }
+    if (BD > 0 && BC > 0 && CD > 0) {
+      const validation = validateTriangle(BD, BC, CD);
+      if (!validation.isValid) {
+        errors.push(`Triangle BCD: ${validation.error}`);
+      }
+    }
   } else if (corners === 5) {
     const AB = measurements['AB'] || 0;
     const BC = measurements['BC'] || 0;
@@ -443,7 +586,51 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const EA = measurements['EA'] || 0;
     const AC = measurements['AC'] || 0;
     const AD = measurements['AD'] || 0;
+    const BD = measurements['BD'] || 0;
+    const BE = measurements['BE'] || 0;
+    const CE = measurements['CE'] || 0;
 
+    // Validate diagonal AC
+    if (AC > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
+      const diagonalValidation = validateDiagonal(AC, AB, BC, DE, EA, 'AC');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal AC is invalid');
+      }
+    }
+
+    // Validate diagonal AD
+    if (AD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
+      const diagonalValidation = validateDiagonal(AD, AB, BC + CD, DE, EA, 'AD');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal AD is invalid');
+      }
+    }
+
+    // Validate diagonal BD
+    if (BD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
+      const diagonalValidation = validateDiagonal(BD, BC, CD, EA, AB, 'BD');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal BD is invalid');
+      }
+    }
+
+    // Validate diagonal BE
+    if (BE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
+      const diagonalValidation = validateDiagonal(BE, BC, CD + DE, EA, AB, 'BE');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal BE is invalid');
+      }
+    }
+
+    // Validate diagonal CE
+    if (CE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
+      const diagonalValidation = validateDiagonal(CE, CD, DE, AB, BC, 'CE');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal CE is invalid');
+      }
+    }
+
+    // Validate triangles
     if (AB > 0 && BC > 0 && AC > 0) {
       const validation = validateTriangle(AB, BC, AC);
       if (!validation.isValid) {
@@ -472,7 +659,86 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const AC = measurements['AC'] || 0;
     const AD = measurements['AD'] || 0;
     const AE = measurements['AE'] || 0;
+    const BD = measurements['BD'] || 0;
+    const BE = measurements['BE'] || 0;
+    const BF = measurements['BF'] || 0;
+    const CE = measurements['CE'] || 0;
+    const CF = measurements['CF'] || 0;
+    const DF = measurements['DF'] || 0;
 
+    // Validate diagonal AC
+    if (AC > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(AC, AB, BC, DE, EF + FA, 'AC');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal AC is invalid');
+      }
+    }
+
+    // Validate diagonal AD
+    if (AD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(AD, AB, BC + CD, DE, EF + FA, 'AD');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal AD is invalid');
+      }
+    }
+
+    // Validate diagonal AE
+    if (AE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(AE, AB, BC + CD + DE, EF, FA, 'AE');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal AE is invalid');
+      }
+    }
+
+    // Validate diagonal BD
+    if (BD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(BD, BC, CD, EF, FA + AB, 'BD');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal BD is invalid');
+      }
+    }
+
+    // Validate diagonal BE
+    if (BE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(BE, BC, CD + DE, EF, FA + AB, 'BE');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal BE is invalid');
+      }
+    }
+
+    // Validate diagonal BF
+    if (BF > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(BF, BC, CD + DE + EF, FA, AB, 'BF');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal BF is invalid');
+      }
+    }
+
+    // Validate diagonal CE
+    if (CE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(CE, CD, DE, FA, AB + BC, 'CE');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal CE is invalid');
+      }
+    }
+
+    // Validate diagonal CF
+    if (CF > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(CF, CD, DE + EF, FA, AB + BC, 'CF');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal CF is invalid');
+      }
+    }
+
+    // Validate diagonal DF
+    if (DF > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
+      const diagonalValidation = validateDiagonal(DF, DE, EF, AB, BC + CD, 'DF');
+      if (!diagonalValidation.isValid) {
+        errors.push(diagonalValidation.error || 'Diagonal DF is invalid');
+      }
+    }
+
+    // Validate triangles
     if (AB > 0 && BC > 0 && AC > 0) {
       const validation = validateTriangle(AB, BC, AC);
       if (!validation.isValid) {

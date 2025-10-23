@@ -188,6 +188,23 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   // Convert technical geometry errors into user-friendly messages
   const getUserFriendlyErrors = (errors: string[]): string[] => {
     return errors.map(error => {
+      // Handle diagonal validation errors (they already contain user-friendly messages)
+      if (error.includes('Diagonal') && (error.includes('too long') || error.includes('too short'))) {
+        // Convert mm measurements to user's preferred unit
+        const diagonalMatch = error.match(/Diagonal ([A-Z]+) \((\d+)mm\) is (too long|too short)\. With your edge measurements, it (should be at least|cannot exceed) (\d+)mm/);
+
+        if (diagonalMatch) {
+          const [, diagonalName, currentValue, condition, phrase, suggestedValue] = diagonalMatch;
+          const currentFormatted = formatMeasurement(parseFloat(currentValue), config.unit);
+          const suggestedFormatted = formatMeasurement(parseFloat(suggestedValue), config.unit);
+
+          return `Diagonal ${diagonalName} (${currentFormatted}) is ${condition}. With your edge measurements, it ${phrase} ${suggestedFormatted}.`;
+        }
+
+        // Return the error as-is if pattern doesn't match (it's already user-friendly)
+        return error;
+      }
+
       // Extract the measurements from the technical error message
       // Format: "Triangle ABC: Triangle inequality violated: X + Y = Z ≤ W"
       const match = error.match(/Triangle [A-Z]+: Triangle inequality violated: (\d+) \+ (\d+) = (\d+) ≤ (\d+)/);
