@@ -125,9 +125,11 @@ export function MeasurementOptionVisualizer({
                             <div>
                               <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
                               <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                                <li>Measure the distance between your fixing points (or where your poles will be)</li>
-                                <li>If your fixings aren't installed yet, you can estimate for now and finalize measurements later before ordering</li>
+                                <li>Provide the precise measurements between your fixing points.</li>
                               </ul>
+                              <p className="text-xs text-slate-600 mt-2 ml-4">
+                                <strong>Note:</strong> If your poles or fixings aren't installed yet, you can estimate the measurements for pricing now, then re-measure and order at a later date.
+                              </p>
                             </div>
 
                             <div>
@@ -135,7 +137,7 @@ export function MeasurementOptionVisualizer({
                               <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
                                 <li>Calculate the perfect sail size (smaller than your space) to account for fabric stretch and tensioning</li>
                                 <li>Include all the stainless steel hardware you need to install your sail</li>
-                                <li>Ensure your sail will be taut, wrinkle-free, and look professionally installed</li>
+                                <li>Provide guidance and installation instructions</li>
                               </ul>
                             </div>
 
@@ -298,9 +300,8 @@ export function MeasurementOptionVisualizer({
                           <div>
                             <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
                             <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                              <li>Decide what size sail you want (e.g., 4m x 4m)</li>
-                              <li>Purchase any hardware you need separately</li>
-                              <li>Set up your poles and fixings to fit the sail when it arrives</li>
+                              <li>If none of our standard sized sails suit your requirements, you provide the exact finished sail dimensions you want.</li>
+                              <li>Select your own hardware separately.</li>
                             </ul>
                           </div>
 
@@ -308,16 +309,15 @@ export function MeasurementOptionVisualizer({
                             <h5 className="font-semibold text-slate-800 mb-2 text-sm">What we do:</h5>
                             <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
                               <li>Make the sail exactly to your specified size - no adjustments</li>
-                              <li>Sew D-rings at each corner ready for your hardware</li>
                             </ul>
                           </div>
 
                           <div>
-                            <h5 className="font-semibold text-slate-800 mb-2 text-sm">Best for:</h5>
+                            <h5 className="font-semibold text-slate-800 mb-2 text-sm">Good for:</h5>
                             <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
-                              <li>Quick projects where you need the sail before setting up fixings</li>
-                              <li>Temporary or seasonal installations with a looser, relaxed fit</li>
-                              <li>Replacing an existing sail where you already know the size you need</li>
+                              <li>Urgent orders where your poles or fixings are not installed yet.</li>
+                              <li>Shorter term periodic use sails where a looser relaxed fit for ease of installation & removal is desired or acceptable.</li>
+                              <li>Orders where you are confident of arranging the fixing points and tensioning to suit the sail.</li>
                             </ul>
                           </div>
                         </div>
