@@ -659,8 +659,87 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </div>
             </Card>
 
+            {/* Invalid Triangle Warning - Show prominently when area is 0 for 3-corner shade */}
+            {config.corners === 3 && calculations.area === 0 && hasAllEdgeMeasurements && (
+              <Card className="p-4 mb-4 border-2 border-red-500 bg-red-50">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-1">
+                    <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-semibold text-red-900 mb-2">
+                      Invalid Triangle Measurements
+                    </h4>
+                    <p className="text-sm text-red-800 mb-3">
+                      The measurements you've entered cannot form a valid triangle. This is why the area shows 0.00 m².
+                    </p>
+                    <div className="p-3 bg-red-100 border border-red-300 rounded mb-3">
+                      <p className="text-sm text-red-900 font-medium mb-2">
+                        <strong>Triangle Rule:</strong> The sum of any two sides must be greater than the third side.
+                      </p>
+                      <div className="text-xs text-red-800 space-y-1 mt-2">
+                        {(() => {
+                          const AB = config.measurements['AB'] || 0;
+                          const BC = config.measurements['BC'] || 0;
+                          const CA = config.measurements['CA'] || 0;
+
+                          const checks = [
+                            { sides: 'B→C + C→A', sum: BC + CA, compare: 'A→B', value: AB, valid: BC + CA > AB },
+                            { sides: 'A→B + B→C', sum: AB + BC, compare: 'C→A', value: CA, valid: AB + BC > CA },
+                            { sides: 'A→B + C→A', sum: AB + CA, compare: 'B→C', value: BC, valid: AB + CA > BC }
+                          ];
+
+                          return checks.map((check, idx) => (
+                            <div key={idx} className={`flex items-start gap-2 ${!check.valid ? 'font-bold text-red-900' : ''}`}>
+                              <span>{check.valid ? '✓' : '✗'}</span>
+                              <span>
+                                {check.sides} ({formatMeasurement(check.sum, config.unit)}) {check.valid ? '>' : '≤'} {check.compare} ({formatMeasurement(check.value, config.unit)})
+                                {!check.valid && <span className="ml-2 text-red-700">← Problem here!</span>}
+                              </span>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+
+                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded">
+                      <p className="text-sm text-yellow-900 mb-2">
+                        <strong>Common Causes:</strong>
+                      </p>
+                      <ul className="text-xs text-yellow-800 space-y-1 ml-4 list-disc">
+                        <li>Typo or missing digit (e.g., 1344mm instead of 13440mm)</li>
+                        <li>Mixed units (e.g., entering some measurements in cm instead of mm)</li>
+                        <li>Swapped or transposed numbers</li>
+                        <li>Incorrect tape measure reading</li>
+                      </ul>
+                    </div>
+
+                    <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-blue-900 font-semibold mb-1">
+                            What to do:
+                          </p>
+                          <p className="text-sm text-blue-800">
+                            Please go back and re-check your edge measurements. Make sure all measurements are in the same unit ({config.unit === 'metric' ? 'millimeters' : 'inches'}) and verify each measurement on-site before proceeding.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Geometric Validation Warning - Only show for significant issues */}
-            {!geometryValidation.isValid && calculations.area === 0 && hasAllEdgeMeasurements && allDiagonalsEntered && geometryValidation.errors.length > 0 && (
+            {!geometryValidation.isValid && calculations.area === 0 && hasAllEdgeMeasurements && allDiagonalsEntered && geometryValidation.errors.length > 0 && config.corners > 3 && (
               <Card className="p-4 mb-4 border-2 border-blue-300 bg-blue-50">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 mt-1">
