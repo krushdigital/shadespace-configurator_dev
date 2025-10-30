@@ -101,25 +101,20 @@ export function useShadeCalculations(config: ConfiguratorState): ShadeCalculatio
       }
     }
     
-    // Apply base markup to all costs
-    const fabricCostWithMarkup = fabricCostNZD * BASE_PRICING_MARKUP;
-    const edgeCostWithMarkup = edgeCostNZD * BASE_PRICING_MARKUP;
-    const cornerCostWithMarkup = cornerCostNZD * BASE_PRICING_MARKUP;
-    const hardwareCostWithMarkup = hardwareCostNZD * BASE_PRICING_MARKUP;
-    
-    const totalNZD = fabricCostWithMarkup + edgeCostWithMarkup + cornerCostWithMarkup + hardwareCostWithMarkup;
-    
-    // Apply currency-specific markup
+    // Calculate total in NZD (base pricing at BAR rates)
+    const totalNZD = fabricCostNZD + edgeCostNZD + cornerCostNZD + hardwareCostNZD;
+
+    // Apply currency-specific markup (includes all pricing adjustments)
     const currencyMarkup = CURRENCY_MARKUPS[config.currency] || CURRENCY_MARKUPS['USD'];
-    const totalNZDWithCurrencyMarkup = totalNZD * currencyMarkup;
-    
+    const totalNZDWithMarkup = totalNZD * currencyMarkup;
+
     // Convert to user's currency
     const exchangeRate = EXCHANGE_RATES[config.currency] || EXCHANGE_RATES['USD'];
-    
-    const fabricCost = fabricCostWithMarkup * currencyMarkup * exchangeRate;
-    const edgeCost = edgeCostWithMarkup * currencyMarkup * exchangeRate;
-    const hardwareCost = (cornerCostWithMarkup + hardwareCostWithMarkup) * currencyMarkup * exchangeRate;
-    const totalPriceRaw = totalNZDWithCurrencyMarkup * exchangeRate;
+
+    const fabricCost = fabricCostNZD * currencyMarkup * exchangeRate;
+    const edgeCost = edgeCostNZD * currencyMarkup * exchangeRate;
+    const hardwareCost = (cornerCostNZD + hardwareCostNZD) * currencyMarkup * exchangeRate;
+    const totalPriceRaw = totalNZDWithMarkup * exchangeRate;
     const totalPrice = Math.ceil(totalPriceRaw); // Round up to nearest dollar
     
     // Calculate weight
