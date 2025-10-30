@@ -232,7 +232,7 @@ export const EXCHANGE_RATES: { [key: string]: number } = {
 // These values now include the former 40% base markup
 export const CURRENCY_MARKUPS: { [key: string]: number } = {
   'NZD': 1.40,   // 40% markup (former base markup)
-  'USD': 1.61,   // 61% markup 
+  'USD': 1.50,   // 50% markup 
   'AUD': 1.09,   // 9% markup 
   'GBP': 1.68,   // 68% markup 
   'EUR': 1.652,  // 65.2% markup 
