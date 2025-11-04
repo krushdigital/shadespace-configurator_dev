@@ -6,7 +6,7 @@ const App = () => {
   const [currency, setCurrency] = useState(null)
   console.log('currency: ', currency);
 
-  console.log('🚀 App component is rendering - this should appear in console');
+  console.log('🚀 App component is rendering - this should appear in console this is a test');
 
   useEffect(() => {
     const root = document.getElementById("SHADE_SPACE");
