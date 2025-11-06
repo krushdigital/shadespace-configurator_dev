@@ -23,6 +23,7 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { MobilePricingBar } from './MobilePricingBar';
+import { SaveProgressButton } from './SaveProgressButton';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
@@ -150,20 +151,25 @@ export function ShadeConfigurator() {
         setConfig(quote.config_data);
         setQuoteReference(quote.quote_reference);
 
-        // Jump to step 4 (where pricing is visible)
-        setOpenStep(4);
+        // Jump to the saved step, or step 4 if no step was saved (legacy quotes)
+        const resumeStep = quote.current_step ?? 4;
+        setOpenStep(resumeStep);
 
         // Track successful load
         analytics.quoteLoadSuccess({
           quote_reference: quote.quote_reference,
           quote_age_hours: quoteAgeHours,
-          landing_step: 4,
+          landing_step: resumeStep,
           had_email: !!quote.customer_email,
           total_price: quote.calculations_data.totalPrice,
           currency: quote.config_data.currency,
         });
 
-        showToast(`Quote ${quote.quote_reference} loaded successfully!`, 'success');
+        // Show appropriate message based on status
+        const statusMessage = quote.status === 'quote_ready'
+          ? `Quote ${quote.quote_reference} loaded successfully!`
+          : `Configuration ${quote.quote_reference} loaded. Continue where you left off!`;
+        showToast(statusMessage, 'success');
       } catch (error: any) {
         console.error('Failed to load quote:', error);
 
@@ -1690,6 +1696,8 @@ export function ShadeConfigurator() {
         onClose={() => setShowSaveQuoteModal(false)}
         config={config}
         calculations={calculations}
+        currentStep={openStep}
+        totalSteps={7}
       />
     </>
   );

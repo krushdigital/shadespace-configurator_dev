@@ -111,5 +111,3 @@ yarn-error.log
 
 # Bolt specific files
 .bolt/
-
-public/shadespace
