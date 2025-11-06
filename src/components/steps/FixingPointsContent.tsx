@@ -58,7 +58,8 @@ export function FixingPointsContent({
   setEmail = () => {},
   handleEmailSummary = () => {},
   hasAllEdgeMeasurements = false,
-  allDiagonalsEntered = false
+  allDiagonalsEntered = false,
+  onSaveQuote
 }: FixingPointsContentProps) {
 
   const updateFixingHeight = (index: number, height: number) => {
