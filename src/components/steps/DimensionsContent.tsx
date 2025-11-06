@@ -498,6 +498,7 @@ export function DimensionsContent({
                 </div>
               )}
 
+              {/* Removed premature quote ready message - users haven't completed all steps yet */}
 
               {/* Navigation Buttons */}
               <div className="flex flex-col sm:flex-row gap-4">

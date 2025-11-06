@@ -10,8 +10,6 @@ interface MobilePricingBarProps {
   onSaveQuote?: () => void;
   isLocked?: boolean;
   isNewQuote?: boolean;
-  currentStep?: number;
-  isReviewStep?: boolean;
 }
 
 export function MobilePricingBar({
@@ -23,8 +21,6 @@ export function MobilePricingBar({
   onSaveQuote,
   isLocked = false,
   isNewQuote = false,
-  currentStep = 4,
-  isReviewStep = false,
 }: MobilePricingBarProps) {
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -70,19 +66,19 @@ export function MobilePricingBar({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <div className="text-xs font-medium text-slate-600">
-                  {quoteReference ? `Quote ${quoteReference}` : 'Your Quote'}
+                  {quoteReference ? `Configuration ${quoteReference}` : 'Your Configuration'}
                 </div>
                 {isNewQuote && (
                   <span className="px-1.5 py-0.5 bg-[#BFF102] text-[#01312D] text-[10px] font-bold rounded-full animate-pulse">
-                    NEW
+                    PRICING
                   </span>
                 )}
               </div>
               <div className="text-lg font-bold text-[#01312D]">
                 {formatCurrency(totalPrice, currency)}
               </div>
-              <div className="text-xs text-[#307C31] font-medium">
-                {isReviewStep ? 'Quote Ready' : 'In Progress'}
+              <div className="text-xs text-slate-600 font-medium">
+                Pricing Available
               </div>
             </div>
 
@@ -91,7 +87,7 @@ export function MobilePricingBar({
                 <button
                   onClick={onSaveQuote}
                   className="flex-shrink-0 p-3 bg-white border-2 border-[#307C31] text-[#307C31] rounded-lg hover:bg-[#307C31] hover:text-white transition-all duration-200 shadow-md hover:shadow-lg"
-                  aria-label="Save Quote"
+                  aria-label="Save Progress"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />

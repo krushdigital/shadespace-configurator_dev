@@ -59,24 +59,17 @@ Deno.serve(async (req: Request) => {
 
     if (req.method === 'POST') {
       // Save a new quote
-      const { config, calculations, email, quoteName, customerReference, currentStep } = await req.json();
+      const { config, calculations, email, quoteName, customerReference, currentStep, totalSteps } = await req.json();
 
       if (!config || !calculations) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields: config and calculations' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
         );
       }
-
-      // Determine status and completion based on current step
-      const step = currentStep !== undefined ? currentStep : 5;
-      const totalSteps = 6;
-      const isComplete = step === 5; // Step 6 (Review) = index 5
-      const quoteStatus = isComplete ? 'quote_ready' : 'in_progress';
-      const completionPercentage = Math.round(((step + 1) / totalSteps) * 100);
 
       // Generate unique quote reference
       const { data: refData, error: refError } = await supabase
@@ -126,6 +119,12 @@ Deno.serve(async (req: Request) => {
         }
       }
 
+      // Determine status based on completion
+      // If currentStep is 6 (final review step) and all required steps are complete, it's a complete quote
+      // Otherwise, it's in progress
+      const isComplete = currentStep === 6 || currentStep === totalSteps - 1;
+      const quoteStatus = isComplete ? 'quote_ready' : 'in_progress';
+
       // Insert the quote
       const { data: quote, error: insertError } = await supabase
         .from('saved_quotes')
@@ -139,10 +138,9 @@ Deno.serve(async (req: Request) => {
           user_identifier: userIdentifier,
           config_data: config,
           calculations_data: calculations,
+          current_step: currentStep ?? null,
+          total_steps: totalSteps ?? 7,
           status: quoteStatus,
-          current_step: step,
-          completion_percentage: completionPercentage,
-          last_modified_step: step,
         })
         .select()
         .single();
@@ -209,6 +207,9 @@ Deno.serve(async (req: Request) => {
             accessToken: quote.access_token,
             shopifyCustomerCreated: shopifyCustomerCreated,
             shopifyCustomerId: shopifyCustomerId,
+            currentStep: quote.current_step,
+            totalSteps: quote.total_steps,
+            status: quote.status,
           },
         }),
         {
@@ -235,12 +236,13 @@ Deno.serve(async (req: Request) => {
       }
 
       // Retrieve quote with token validation
+      // Accept both 'saved' (legacy), 'in_progress', and 'quote_ready' status
       const { data: quote, error } = await supabase
         .from('saved_quotes')
         .select('*')
         .eq('id', id)
         .eq('access_token', token)
-        .in('status', ['in_progress', 'quote_ready', 'saved'])
+        .in('status', ['saved', 'in_progress', 'quote_ready'])
         .gte('expires_at', new Date().toISOString())
         .maybeSingle();
 
