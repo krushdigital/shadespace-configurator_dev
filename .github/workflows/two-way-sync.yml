@@ -1,0 +1,44 @@
+name: Two-Way Sync (Org ↔ Personal)
+
+on:
+  push:
+    branches:
+      - bolt-ai-playground
+      - dev
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Identify source repository
+        id: identify
+        run: |
+          echo "repo=${GITHUB_REPOSITORY}" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      # --- SYNC FROM PERSONAL → ORG ---
+      - name: Sync from personal → org
+        if: ${{ startsWith(github.repository, 'krushdigital/') }}
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PERSONAL_PAT }}
+        run: |
+          echo "🔁 Syncing from PERSONAL → ORG"
+          git remote add org https://github.com/KRUSH-Digital/shadespace-configurator_dev.git
+          git fetch org
+          git push https://${{ github.actor }}:${GH_TOKEN}@github.com/KRUSH-Digital/shadespace-configurator_dev.git HEAD:${{ steps.identify.outputs.branch }} --force || echo "⚠️ Push to ORG failed."
+
+      # --- SYNC FROM ORG → PERSONAL ---
+      - name: Sync from org → personal
+        if: ${{ startsWith(github.repository, 'KRUSH-Digital/') }}
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_ORG_PAT }}
+        run: |
+          echo "🔁 Syncing from ORG → PERSONAL"
+          git remote add personal https://github.com/krushdigital/shadespace-configurator_dev.git
+          git fetch personal
+          git push https://${{ github.actor }}:${GH_TOKEN}@github.com/krushdigital/shadespace-configurator_dev.git HEAD:${{ steps.identify.outputs.branch }} --force || echo "⚠️ Push to PERSONAL failed."
