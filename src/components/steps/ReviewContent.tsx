@@ -1278,21 +1278,33 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
         {/* Action Buttons - Full width on desktop */}
         <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
-          <div className="flex flex-col sm:flex-row gap-4" ref={addToCartButtonRef}>
-            {showBackButton && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPrev}
-                className="sm:w-auto"
-              >
-                Back
-              </Button>
-            )}
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              {showBackButton && (
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={onPrev}
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+              )}
+              {onSaveQuote && (
+                <Button
+                  variant="outline"
+                  size="md"
+                  onClick={onSaveQuote}
+                  className="flex-1 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                >
+                  Save Quote
+                </Button>
+              )}
+            </div>
 
             <Button
               size={isMobile ? "lg" : "md"}
-              className={`flex-1 transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
+              className={`w-full transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
                 ? '!bg-[#01312D]/40 hover:!bg-[#01312D]/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
                 : loading
                   ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'
@@ -1306,6 +1318,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 handleAttemptAddToCart();
               }}
               disabled={loading}
+              ref={addToCartButtonRef}
             >
               {loading ? (
                 'ADDING TO CART...'

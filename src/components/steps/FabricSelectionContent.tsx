@@ -334,54 +334,64 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
       )}
 
       <div className="flex flex-col gap-4 pt-4 border-t border-[#307C31]/30">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {showBackButton && onPrev && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrev}
-              className="sm:w-auto"
-            >
-              Back
-            </Button>
-          )}
-          <div className="flex-1 flex flex-col gap-2">
-            {(() => {
-              const incomplete = !config.fabricType || !config.fabricColor;
-              const missingItems = [];
+        {(() => {
+          const incomplete = !config.fabricType || !config.fabricColor;
+          const missingItems = [];
 
-              if (!config.fabricType) missingItems.push('fabric type');
-              if (!config.fabricColor) missingItems.push('color');
+          if (!config.fabricType) missingItems.push('fabric type');
+          if (!config.fabricColor) missingItems.push('color');
 
-              return (
-                <>
-                  {incomplete && (
-                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                      <span className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-slate-500" />
-                        <span>Please select {missingItems.join(' and ')} to continue</span>
-                      </span>
-                    </div>
+          return (
+            <>
+              {incomplete && (
+                <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                  <span className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-slate-500" />
+                    <span>Please select {missingItems.join(' and ')} to continue</span>
+                  </span>
+                </div>
+              )}
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2">
+                  {showBackButton && onPrev && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={onPrev}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
                   )}
-                  <Button
-                    onClick={() => {
-                      const timeSpent = (Date.now() - stepStartTime.current) / 1000;
-                      analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
-                        fabric_type: config.fabricType,
-                        fabric_color: config.fabricColor,
-                      });
-                      onNext();
-                    }}
-                    size="md"
-                    className={incomplete ? 'opacity-50 cursor-not-allowed' : ''}
-                  >
-                    Continue to {nextStepTitle}
-                  </Button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+                  {onSaveQuote && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={onSaveQuote}
+                      className="flex-1 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                    >
+                      Save Progress
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  onClick={() => {
+                    const timeSpent = (Date.now() - stepStartTime.current) / 1000;
+                    analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
+                      fabric_type: config.fabricType,
+                      fabric_color: config.fabricColor,
+                    });
+                    onNext();
+                  }}
+                  size="md"
+                  className={`w-full ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Continue to {nextStepTitle}
+                </Button>
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );

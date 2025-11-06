@@ -99,21 +99,33 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
       </div>
 
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {showBackButton && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onPrev}
-              className="sm:w-auto"
-            >
-              Back
-            </Button>
-          )}
-          <Button 
-            onClick={onNext} 
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-2">
+            {showBackButton && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={onPrev}
+                className="flex-1"
+              >
+                Back
+              </Button>
+            )}
+            {onSaveQuote && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={onSaveQuote}
+                className="flex-1 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+              >
+                Save Progress
+              </Button>
+            )}
+          </div>
+          <Button
+            onClick={onNext}
             size="md"
-            className={`flex-1 ${!config.corners ? 'opacity-50' : ''}`}
+            className={`w-full ${!config.corners ? 'opacity-50' : ''}`}
           >
             Continue to {nextStepTitle}
           </Button>
