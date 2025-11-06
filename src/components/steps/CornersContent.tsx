@@ -124,7 +124,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
           <Button
             onClick={onNext}
             size="md"
-            className={`w-full ${!config.corners ? 'opacity-50' : ''}`}
+            className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''}`}
           >
             Continue to {nextStepTitle}
           </Button>

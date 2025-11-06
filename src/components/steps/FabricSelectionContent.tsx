@@ -374,7 +374,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       onNext();
                     }}
                     size="md"
-                    className={incomplete ? 'opacity-50 cursor-not-allowed' : ''}
+                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     Continue to {nextStepTitle}
                   </Button>

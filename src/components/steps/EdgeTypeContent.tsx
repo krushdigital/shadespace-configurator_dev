@@ -127,7 +127,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           <Button
             onClick={onNext}
             size="md"
-            className={`w-full ${!config.edgeType ? 'opacity-50' : ''}`}
+            className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
           >
             Continue to {nextStepTitle}
           </Button>

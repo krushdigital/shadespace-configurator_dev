@@ -709,7 +709,7 @@ export function FixingPointsContent({
                 <Button
                   onClick={onNext}
                   size="md"
-                  className={`w-full ${!complete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full py-4 sm:py-2 ${!complete ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Continue to {nextStepTitle}
                 </Button>

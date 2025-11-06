@@ -525,7 +525,7 @@ export function DimensionsContent({
                 <Button
                   onClick={onNext}
                   size="md"
-                  className={`w-full ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`w-full py-4 sm:py-2 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Continue to {nextStepTitle}
                 </Button>
