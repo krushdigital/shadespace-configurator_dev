@@ -9,6 +9,7 @@ import { convertMmToUnit, convertUnitToMm } from '../../utils/geometry';
 import { formatMeasurement } from '../../utils/geometry';
 import { HeightVisualizationCanvas } from '../HeightVisualizationCanvas';
 import { AlertCircle } from 'lucide-react';
+import { SaveProgressButton } from '../SaveProgressButton';
 
 interface FixingPointsContentProps {
   config: ConfiguratorState;
@@ -57,7 +58,8 @@ export function FixingPointsContent({
   setEmail = () => {},
   handleEmailSummary = () => {},
   hasAllEdgeMeasurements = false,
-  allDiagonalsEntered = false
+  allDiagonalsEntered = false,
+  onSaveQuote
 }: FixingPointsContentProps) {
 
   const updateFixingHeight = (index: number, height: number) => {
@@ -641,72 +643,107 @@ export function FixingPointsContent({
 
 
       <div className="flex flex-col gap-4 pt-4 border-t border-[#307C31]/30 w-full">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {showBackButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrev}
-              className="sm:w-auto"
-            >
-              Back
-            </Button>
-          )}
-          <div className="flex-1 flex flex-col gap-2">
-            {(() => {
-              const complete = isStepComplete();
-              const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
+        {(() => {
+          const complete = isStepComplete();
+          const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
 
-              const missingHeights = config.fixingHeights.filter(h => h === undefined || h === null || h <= 0).length;
-              const missingTypes = (config.fixingTypes?.filter(t => t !== 'post' && t !== 'building') || []).length;
-              const missingOrientations = config.fixingPointsInstalled === true
-                ? (config.eyeOrientations?.filter(o => o !== 'horizontal' && o !== 'vertical') || []).length
-                : 0;
+          const missingHeights = config.fixingHeights.filter(h => h === undefined || h === null || h <= 0).length;
+          const missingTypes = (config.fixingTypes?.filter(t => t !== 'post' && t !== 'building') || []).length;
+          const missingOrientations = config.fixingPointsInstalled === true
+            ? (config.eyeOrientations?.filter(o => o !== 'horizontal' && o !== 'vertical') || []).length
+            : 0;
 
-              const totalMissing = missingHeights + missingTypes + missingOrientations;
-              const fixingPointsNotSelected = config.fixingPointsInstalled === undefined;
+          const totalMissing = missingHeights + missingTypes + missingOrientations;
+          const fixingPointsNotSelected = config.fixingPointsInstalled === undefined;
 
-              return (
-                <>
-                  {!complete && (
-                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                      {fixingPointsNotSelected ? (
-                        <span className="flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-slate-500" />
-                          <span>Please select whether your fixing points are installed</span>
-                        </span>
-                      ) : hasUnacknowledgedTypos ? (
-                        <span className="flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-amber-500" />
-                          <span>Please review and address the height warnings above</span>
-                        </span>
-                      ) : totalMissing > 0 ? (
-                        <span className="flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-slate-500" />
-                          <span>
-                            {missingHeights > 0 && `${missingHeights} height${missingHeights !== 1 ? 's' : ''}`}
-                            {missingHeights > 0 && (missingTypes > 0 || missingOrientations > 0) && ', '}
-                            {missingTypes > 0 && `${missingTypes} attachment type${missingTypes !== 1 ? 's' : ''}`}
-                            {missingTypes > 0 && missingOrientations > 0 && ', '}
-                            {missingOrientations > 0 && `${missingOrientations} eye orientation${missingOrientations !== 1 ? 's' : ''}`}
-                            {' '}required to continue
-                          </span>
-                        </span>
-                      ) : null}
-                    </div>
+          return (
+            <>
+              {!complete && (
+                <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                  {fixingPointsNotSelected ? (
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-slate-500" />
+                      <span>Please select whether your fixing points are installed</span>
+                    </span>
+                  ) : hasUnacknowledgedTypos ? (
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-500" />
+                      <span>Please review and address the height warnings above</span>
+                    </span>
+                  ) : totalMissing > 0 ? (
+                    <span className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-slate-500" />
+                      <span>
+                        {missingHeights > 0 && `${missingHeights} height${missingHeights !== 1 ? 's' : ''}`}
+                        {missingHeights > 0 && (missingTypes > 0 || missingOrientations > 0) && ', '}
+                        {missingTypes > 0 && `${missingTypes} attachment type${missingTypes !== 1 ? 's' : ''}`}
+                        {missingTypes > 0 && missingOrientations > 0 && ', '}
+                        {missingOrientations > 0 && `${missingOrientations} eye orientation${missingOrientations !== 1 ? 's' : ''}`}
+                        {' '}required to continue
+                      </span>
+                    </span>
+                  ) : null}
+                </div>
+              )}
+
+              {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
+              <div className="flex sm:hidden flex-col gap-3">
+                <div className="flex gap-3">
+                  {showBackButton && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={onPrev}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
                   )}
+                  {onSaveQuote && (
+                    <SaveProgressButton
+                      onClick={onSaveQuote}
+                      className="flex-1"
+                    />
+                  )}
+                </div>
+                <Button
+                  onClick={onNext}
+                  size="md"
+                  className={`w-full py-4 sm:py-2 ${!complete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Continue to {nextStepTitle}
+                </Button>
+              </div>
+
+              {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
+              <div className="hidden sm:flex gap-4">
+                {showBackButton && (
                   <Button
-                    onClick={onNext}
+                    variant="outline"
                     size="md"
-                    className={!complete ? 'opacity-50 cursor-not-allowed' : ''}
+                    onClick={onPrev}
+                    className="w-auto"
                   >
-                    Continue to {nextStepTitle}
+                    Back
                   </Button>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+                )}
+                {onSaveQuote && (
+                  <SaveProgressButton
+                    onClick={onSaveQuote}
+                    className="w-auto"
+                  />
+                )}
+                <Button
+                  onClick={onNext}
+                  size="md"
+                  className={`flex-1 ${!complete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Continue to {nextStepTitle}
+                </Button>
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );

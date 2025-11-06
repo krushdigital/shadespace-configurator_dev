@@ -3,6 +3,7 @@ import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
+import { Tooltip } from '../ui/Tooltip';
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { AccordionItem } from '../ui/AccordionItem';
@@ -1212,17 +1213,26 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         {/* Mobile Action Buttons - Save Quote, PDF and Email (positioned after acknowledgments) */}
         {isMobile && allDiagonalsEntered && (
           <div className="space-y-3 lg:hidden">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onSaveQuote}
-              className="w-full flex items-center justify-center gap-2 border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+            <Tooltip
+              content={
+                <div className="text-slate-700">
+                  <p className="font-semibold mb-1">Save Your Progress</p>
+                  <p>Save your configuration at any point and return later when you're ready to continue.</p>
+                </div>
+              }
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              Save Quote
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onSaveQuote}
+                className="w-full flex items-center justify-center gap-2 border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                Save Quote
+              </Button>
+            </Tooltip>
 
             <Button
               variant="outline"

@@ -13,6 +13,9 @@ export interface SavedQuote {
   accessToken: string;
   shopifyCustomerCreated?: boolean;
   shopifyCustomerId?: string | null;
+  currentStep?: number;
+  totalSteps?: number;
+  status?: string;
 }
 
 export interface QuoteData {
@@ -27,6 +30,8 @@ export interface QuoteData {
   created_at: string;
   expires_at: string;
   status: string;
+  current_step?: number;
+  total_steps?: number;
 }
 
 
@@ -38,7 +43,9 @@ export async function saveQuote(
   calculations: ShadeCalculations,
   email?: string,
   quoteName?: string,
-  customerReference?: string
+  customerReference?: string,
+  currentStep?: number,
+  totalSteps?: number
 ): Promise<SavedQuote> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
     method: 'POST',
@@ -52,6 +59,8 @@ export async function saveQuote(
       email: email || null,
       quoteName: quoteName || null,
       customerReference: customerReference || null,
+      currentStep: currentStep ?? null,
+      totalSteps: totalSteps ?? 7,
     }),
   });
 
@@ -71,6 +80,9 @@ export async function saveQuote(
     accessToken: data.quote.accessToken,
     shopifyCustomerCreated: data.quote.shopifyCustomerCreated,
     shopifyCustomerId: data.quote.shopifyCustomerId,
+    currentStep: data.quote.currentStep,
+    totalSteps: data.quote.totalSteps,
+    status: data.quote.status,
   };
 }
 
