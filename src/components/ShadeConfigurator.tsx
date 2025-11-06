@@ -83,6 +83,12 @@ export function ShadeConfigurator() {
   const [showSaveQuoteModal, setShowSaveQuoteModal] = useState(false);
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const [showWelcomeBackBanner, setShowWelcomeBackBanner] = useState(false);
+  const [resumedQuoteData, setResumedQuoteData] = useState<{
+    step: number;
+    percentage: number;
+    quoteName: string;
+  } | null>(null);
 
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
@@ -150,8 +156,22 @@ export function ShadeConfigurator() {
         setConfig(quote.config_data);
         setQuoteReference(quote.quote_reference);
 
-        // Jump to step 4 (where pricing is visible)
-        setOpenStep(4);
+        // Resume at saved step (or next step if on review)
+        const resumeStep = quote.current_step !== undefined ? quote.current_step : 4;
+        setOpenStep(resumeStep);
+
+        // Show welcome back banner with progress info
+        setResumedQuoteData({
+          step: resumeStep + 1, // Convert from 0-based to 1-based
+          percentage: quote.completion_percentage || Math.round(((resumeStep + 1) / 6) * 100),
+          quoteName: quote.quote_name || 'Your Quote',
+        });
+        setShowWelcomeBackBanner(true);
+
+        // Auto-hide banner after 10 seconds
+        setTimeout(() => {
+          setShowWelcomeBackBanner(false);
+        }, 10000);
 
         // Track successful load
         analytics.quoteLoadSuccess({
@@ -1517,6 +1537,48 @@ export function ShadeConfigurator() {
   return (
     <>
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
+        {/* Welcome Back Banner */}
+        {showWelcomeBackBanner && resumedQuoteData && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border-2 border-[#307C31] rounded-lg shadow-lg animate-slideDown">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-[#307C31] rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-[#01312D] mb-1">
+                  Welcome Back!
+                </h3>
+                <p className="text-sm text-[#01312D]/80 mb-2">
+                  You're continuing: <strong>{resumedQuoteData.quoteName}</strong>
+                </p>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-[#307C31] h-full transition-all duration-500"
+                      style={{ width: `${resumedQuoteData.percentage}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-bold text-[#307C31]">{resumedQuoteData.percentage}%</span>
+                </div>
+                <p className="text-xs text-[#01312D]/70">
+                  Step {resumedQuoteData.step} of 6 • {6 - resumedQuoteData.step} step{6 - resumedQuoteData.step !== 1 ? 's' : ''} remaining
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWelcomeBackBanner(false)}
+                className="flex-shrink-0 text-[#01312D]/60 hover:text-[#01312D] transition-colors"
+                aria-label="Close banner"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-6">
           {/* Quote Reference Display */}
@@ -1682,6 +1744,8 @@ export function ShadeConfigurator() {
         onSaveQuote={handleSaveQuote}
         isLocked={isBarLocked}
         isNewQuote={isNewQuote}
+        currentStep={openStep}
+        isReviewStep={openStep === 5}
       />
 
       {/* Save Quote Modal */}
@@ -1690,6 +1754,8 @@ export function ShadeConfigurator() {
         onClose={() => setShowSaveQuoteModal(false)}
         config={config}
         calculations={calculations}
+        currentStep={openStep}
+        totalSteps={6}
       />
     </>
   );

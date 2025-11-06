@@ -10,6 +10,8 @@ interface MobilePricingBarProps {
   onSaveQuote?: () => void;
   isLocked?: boolean;
   isNewQuote?: boolean;
+  currentStep?: number;
+  isReviewStep?: boolean;
 }
 
 export function MobilePricingBar({
@@ -21,6 +23,8 @@ export function MobilePricingBar({
   onSaveQuote,
   isLocked = false,
   isNewQuote = false,
+  currentStep = 4,
+  isReviewStep = false,
 }: MobilePricingBarProps) {
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -78,7 +82,7 @@ export function MobilePricingBar({
                 {formatCurrency(totalPrice, currency)}
               </div>
               <div className="text-xs text-[#307C31] font-medium">
-                Quote Ready
+                {isReviewStep ? 'Quote Ready' : 'In Progress'}
               </div>
             </div>
 

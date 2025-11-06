@@ -59,17 +59,24 @@ Deno.serve(async (req: Request) => {
 
     if (req.method === 'POST') {
       // Save a new quote
-      const { config, calculations, email, quoteName, customerReference } = await req.json();
+      const { config, calculations, email, quoteName, customerReference, currentStep } = await req.json();
 
       if (!config || !calculations) {
         return new Response(
           JSON.stringify({ error: 'Missing required fields: config and calculations' }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
+
+      // Determine status and completion based on current step
+      const step = currentStep !== undefined ? currentStep : 5;
+      const totalSteps = 6;
+      const isComplete = step === 5; // Step 6 (Review) = index 5
+      const quoteStatus = isComplete ? 'quote_ready' : 'in_progress';
+      const completionPercentage = Math.round(((step + 1) / totalSteps) * 100);
 
       // Generate unique quote reference
       const { data: refData, error: refError } = await supabase
@@ -132,6 +139,10 @@ Deno.serve(async (req: Request) => {
           user_identifier: userIdentifier,
           config_data: config,
           calculations_data: calculations,
+          status: quoteStatus,
+          current_step: step,
+          completion_percentage: completionPercentage,
+          last_modified_step: step,
         })
         .select()
         .single();
@@ -229,7 +240,7 @@ Deno.serve(async (req: Request) => {
         .select('*')
         .eq('id', id)
         .eq('access_token', token)
-        .eq('status', 'saved')
+        .in('status', ['in_progress', 'quote_ready', 'saved'])
         .gte('expires_at', new Date().toISOString())
         .maybeSingle();
 

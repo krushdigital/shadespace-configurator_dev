@@ -23,6 +23,8 @@ interface SaveQuoteModalProps {
   onClose: () => void;
   config: ConfiguratorState;
   calculations: ShadeCalculations;
+  currentStep?: number;
+  totalSteps?: number;
 }
 
 
@@ -31,6 +33,8 @@ export function SaveQuoteModal({
   onClose,
   config,
   calculations,
+  currentStep = 5,
+  totalSteps = 6,
 }: SaveQuoteModalProps) {
   const [email, setEmail] = useState('');
   const [quoteName, setQuoteName] = useState('');
@@ -79,6 +83,11 @@ export function SaveQuoteModal({
 
   if (!isOpen) return null;
 
+  // Determine if this is final step (Review) or in-progress
+  const isReviewStep = currentStep === 5; // Step 6 (Review) = index 5
+  const completionPercentage = Math.round(((currentStep + 1) / totalSteps) * 100);
+  const stepsComplete = currentStep + 1;
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -90,7 +99,8 @@ export function SaveQuoteModal({
         calculations,
         saveMethod === 'email' ? email : undefined,
         sanitizedQuoteName,
-        sanitizedReference
+        sanitizedReference,
+        currentStep
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
@@ -330,11 +340,29 @@ if (saveMethod === 'email' && email) {
           {!savedQuote ? (
             <>
               <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                Save Your Quote
+                {isReviewStep ? 'Save Your Quote' : 'Save Your Progress'}
               </h3>
-              <p className="text-sm text-slate-600 mb-6">
-                Your quote will be saved for 30 days. Choose how you'd like to access it later.
+              <p className="text-sm text-slate-600 mb-2">
+                {isReviewStep
+                  ? 'Your quote will be saved for 30 days. Choose how you\'d like to access it later.'
+                  : 'Save your progress and return anytime to continue where you left off (valid for 30 days).'}
               </p>
+              {!isReviewStep && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="bg-[#307C31] h-full transition-all duration-300"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-bold text-[#307C31]">{completionPercentage}%</span>
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    Step {stepsComplete} of {totalSteps} complete
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-4 mb-6">
                 <div>
@@ -462,7 +490,7 @@ if (saveMethod === 'email' && email) {
                       className="flex-1"
                       disabled={isSaving || (saveMethod === 'email' && !email)}
                     >
-                      {isSaving ? 'Saving...' : 'Save Quote'}
+                      {isSaving ? 'Saving...' : (isReviewStep ? 'Save Quote' : 'Save Progress')}
                     </Button>
                   </div>
                 </div>
@@ -477,10 +505,12 @@ if (saveMethod === 'email' && email) {
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                  Quote Saved!
+                  {isReviewStep ? 'Quote Saved!' : 'Progress Saved!'}
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Your quote has been saved successfully
+                  {isReviewStep
+                    ? 'Your quote has been saved successfully'
+                    : 'Your progress has been saved. You can return anytime to continue.'}
                 </p>
               </div>
 

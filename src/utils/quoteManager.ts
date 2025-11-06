@@ -27,6 +27,9 @@ export interface QuoteData {
   created_at: string;
   expires_at: string;
   status: string;
+  current_step?: number;
+  completion_percentage?: number;
+  last_modified_step?: number;
 }
 
 
@@ -38,7 +41,8 @@ export async function saveQuote(
   calculations: ShadeCalculations,
   email?: string,
   quoteName?: string,
-  customerReference?: string
+  customerReference?: string,
+  currentStep?: number
 ): Promise<SavedQuote> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
     method: 'POST',
@@ -52,6 +56,7 @@ export async function saveQuote(
       email: email || null,
       quoteName: quoteName || null,
       customerReference: customerReference || null,
+      currentStep: currentStep !== undefined ? currentStep : 5,
     }),
   });
 
