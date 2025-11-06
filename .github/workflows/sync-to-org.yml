@@ -1,0 +1,27 @@
+name: Sync Personal → Org
+
+on:
+  push:
+    branches:
+      - bolt-ai-playground
+      - dev
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout personal repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Add org repo remote
+        run: |
+          git remote add org https://github.com/KRUSH-Digital/shadespace-configurator_dev.git
+          git fetch org
+
+      - name: Push changes to org repo
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PERSONAL_PAT }}
+        run: |
+          git push https://krushdigital:${GH_TOKEN}@github.com/KRUSH-Digital/shadespace-configurator_dev.git HEAD:bolt-ai-playground --force
