@@ -23,7 +23,7 @@ export function Button({
   
   const sizeClasses = {
     sm: 'px-3 py-1.5 text-xs',
-    md: 'px-4 py-2 text-sm font-medium',
+    md: 'px-4 py-2 lg:py-3 text-sm font-medium',
     lg: 'px-8 py-4 text-lg font-semibold'
   };
 
