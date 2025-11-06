@@ -17,6 +17,7 @@ interface FabricSelectionContentProps {
   onPrev?: () => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
+  onSaveQuote?: () => void;
 }
 
 export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: FabricSelectionContentProps) {
