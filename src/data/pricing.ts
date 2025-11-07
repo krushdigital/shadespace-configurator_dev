@@ -236,7 +236,7 @@ export const CURRENCY_MARKUPS: { [key: string]: number } = {
   'AUD': 1.09,   // 9% markup 
   'GBP': 1.68,   // 68% markup 
   'EUR': 1.652,  // 65.2% markup 
-  'CAD': 1.568,  // 56.8% markup 
+  'CAD': 1.30,  // 30.0% markup 
   'AED': 2.10    // 110% markup 
 };
 
