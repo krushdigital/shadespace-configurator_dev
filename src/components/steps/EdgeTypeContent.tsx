@@ -3,6 +3,7 @@ import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
+import { SaveProgressButton } from '../SaveProgressButton';
 
 interface EdgeTypeContentProps {
   config: ConfiguratorState;
@@ -12,6 +13,7 @@ interface EdgeTypeContentProps {
   onPrev: () => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
+  onSaveQuote?: () => void;
 }
 
 const EDGE_OPTIONS = [
@@ -31,7 +33,7 @@ const EDGE_OPTIONS = [
   }
 ];
 
-export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: EdgeTypeContentProps) {
+export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote }: EdgeTypeContentProps) {
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -102,19 +104,55 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
       </div>
 
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200">
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
+        <div className="flex sm:hidden flex-col gap-3">
+          <div className="flex gap-3">
+            {showBackButton && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={onPrev}
+                className="flex-1"
+              >
+                Back
+              </Button>
+            )}
+            {onSaveQuote && (
+              <SaveProgressButton
+                onClick={onSaveQuote}
+                className="flex-1"
+              />
+            )}
+          </div>
+          <Button
+            onClick={onNext}
+            size="md"
+            className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
+          >
+            Continue to {nextStepTitle}
+          </Button>
+        </div>
+
+        {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
+        <div className="hidden sm:flex gap-4">
           {showBackButton && (
-            <Button 
-              variant="outline" 
-              size="sm"
+            <Button
+              variant="outline"
+              size="md"
               onClick={onPrev}
-              className="sm:w-auto"
+              className="w-auto"
             >
               Back
             </Button>
           )}
-          <Button 
-            onClick={onNext} 
+          {onSaveQuote && (
+            <SaveProgressButton
+              onClick={onSaveQuote}
+              className="w-auto"
+            />
+          )}
+          <Button
+            onClick={onNext}
             size="md"
             className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''}`}
           >

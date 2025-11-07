@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '../utils/currencyFormatter';
+import { Tooltip } from './ui/Tooltip';
 
 interface MobilePricingBarProps {
   totalPrice: number;
@@ -66,33 +67,42 @@ export function MobilePricingBar({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <div className="text-xs font-medium text-slate-600">
-                  {quoteReference ? `Quote ${quoteReference}` : 'Your Quote'}
+                  {quoteReference ? `Configuration ${quoteReference}` : 'Your Configuration'}
                 </div>
                 {isNewQuote && (
                   <span className="px-1.5 py-0.5 bg-[#BFF102] text-[#01312D] text-[10px] font-bold rounded-full animate-pulse">
-                    NEW
+                    PRICING
                   </span>
                 )}
               </div>
               <div className="text-lg font-bold text-[#01312D]">
                 {formatCurrency(totalPrice, currency)}
               </div>
-              <div className="text-xs text-[#307C31] font-medium">
-                Quote Ready
+              <div className="text-xs text-slate-600 font-medium">
+                Pricing Available
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               {onSaveQuote && (
-                <button
-                  onClick={onSaveQuote}
-                  className="flex-shrink-0 p-3 bg-white border-2 border-[#307C31] text-[#307C31] rounded-lg hover:bg-[#307C31] hover:text-white transition-all duration-200 shadow-md hover:shadow-lg"
-                  aria-label="Save Quote"
+                <Tooltip
+                  content={
+                    <div className="text-slate-700">
+                      <p className="font-semibold mb-1">Save Your Progress</p>
+                      <p>Save your configuration at any point and return later when you're ready to continue.</p>
+                    </div>
+                  }
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                  </svg>
-                </button>
+                  <button
+                    onClick={onSaveQuote}
+                    className="flex-shrink-0 p-3 bg-white border-2 border-[#307C31] text-[#307C31] rounded-lg hover:bg-[#307C31] hover:text-white transition-all duration-200 shadow-md hover:shadow-lg"
+                    aria-label="Save Progress"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </button>
+                </Tooltip>
               )}
 
               {onContinue && (
