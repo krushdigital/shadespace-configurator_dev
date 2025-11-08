@@ -532,13 +532,13 @@ export function DimensionsContent({
               </div>
 
               {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
-              <div className="hidden sm:flex gap-4">
+              <div className="hidden sm:flex gap-4 items-stretch">
                 {showBackButton && (
                   <Button
                     variant="outline"
                     size="md"
                     onClick={onPrev}
-                    className="w-auto"
+                    className="w-auto h-full"
                   >
                     Back
                   </Button>
@@ -546,13 +546,13 @@ export function DimensionsContent({
                 {onSaveQuote && (
                   <SaveProgressButton
                     onClick={onSaveQuote}
-                    className="w-auto"
+                    className="w-auto h-full"
                   />
                 )}
                 <Button
                   onClick={onNext}
                   size="md"
-                  className={`flex-1 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`flex-1 h-full ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   Continue to {nextStepTitle}
                 </Button>

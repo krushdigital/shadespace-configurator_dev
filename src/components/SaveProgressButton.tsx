@@ -22,7 +22,7 @@ export function SaveProgressButton({ onClick, className = '' }: SaveProgressButt
           variant="outline"
           size="md"
           onClick={onClick}
-          className="w-full"
+          className="w-full h-full"
           aria-label="Save your progress"
         >
           <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
