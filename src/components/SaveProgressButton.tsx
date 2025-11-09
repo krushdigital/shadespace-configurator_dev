@@ -8,6 +8,8 @@ interface SaveProgressButtonProps {
 }
 
 export function SaveProgressButton({ onClick, className = '' }: SaveProgressButtonProps) {
+  const isFullWidth = className.includes('w-full');
+
   return (
     <Tooltip
       content={
@@ -16,6 +18,7 @@ export function SaveProgressButton({ onClick, className = '' }: SaveProgressButt
           <p>Save your configuration at any point and return later when you're ready to continue.</p>
         </div>
       }
+      fullWidth={isFullWidth}
     >
       <Button
         variant="outline"
