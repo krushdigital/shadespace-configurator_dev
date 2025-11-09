@@ -23,6 +23,8 @@ interface SaveQuoteModalProps {
   onClose: () => void;
   config: ConfiguratorState;
   calculations: ShadeCalculations;
+  currentStep?: number;
+  totalSteps?: number;
 }
 
 
@@ -31,6 +33,8 @@ export function SaveQuoteModal({
   onClose,
   config,
   calculations,
+  currentStep,
+  totalSteps = 7,
 }: SaveQuoteModalProps) {
   const [email, setEmail] = useState('');
   const [quoteName, setQuoteName] = useState('');
@@ -90,7 +94,9 @@ export function SaveQuoteModal({
         calculations,
         saveMethod === 'email' ? email : undefined,
         sanitizedQuoteName,
-        sanitizedReference
+        sanitizedReference,
+        currentStep,
+        totalSteps
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
@@ -330,16 +336,16 @@ if (saveMethod === 'email' && email) {
           {!savedQuote ? (
             <>
               <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                Save Your Quote
+                Save Your Progress
               </h3>
               <p className="text-sm text-slate-600 mb-6">
-                Your quote will be saved for 30 days. Choose how you'd like to access it later.
+                Save your configuration and return anytime within 30 days to continue where you left off.
               </p>
 
               <div className="space-y-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Quote Name <span className="text-slate-500 font-normal">(Optional)</span>
+                    Configuration Name <span className="text-slate-500 font-normal">(Optional)</span>
                   </label>
                   <Input
                     type="text"
@@ -396,7 +402,7 @@ if (saveMethod === 'email' && email) {
                           Save with Email
                         </h4>
                         <p className="text-sm text-slate-600">
-                          We'll email you a link to resume your quote anytime
+                          We'll email you a link to resume your configuration anytime
                         </p>
                       </div>
                     </div>
@@ -414,7 +420,7 @@ if (saveMethod === 'email' && email) {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold text-[#01312D] mb-1">
-                          Get Quote Link
+                          Get Progress Link
                         </h4>
                         <p className="text-sm text-slate-600">
                           Generate a shareable link without providing an email
@@ -440,7 +446,7 @@ if (saveMethod === 'email' && email) {
                         className="w-full"
                       />
                       <p className="text-xs text-slate-500 mt-2">
-                        We'll send you a link to access your quote later
+                        We'll send you a link to continue your configuration later
                       </p>
                     </div>
                   )}
@@ -462,7 +468,7 @@ if (saveMethod === 'email' && email) {
                       className="flex-1"
                       disabled={isSaving || (saveMethod === 'email' && !email)}
                     >
-                      {isSaving ? 'Saving...' : 'Save Quote'}
+                      {isSaving ? 'Saving...' : 'Save Progress'}
                     </Button>
                   </div>
                 </div>
@@ -477,17 +483,17 @@ if (saveMethod === 'email' && email) {
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                  Quote Saved!
+                  Progress Saved!
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Your quote has been saved successfully
+                  Your configuration has been saved successfully. You can return anytime to continue.
                 </p>
               </div>
 
               <div className="space-y-4 mb-6">
                 <div className="bg-[#BFF102]/20 border-2 border-[#BFF102] rounded-lg p-4">
                   <div className="text-xs font-medium text-[#307C31] mb-1">
-                    Quote Name
+                    Configuration Name
                   </div>
                   <div className="text-lg font-bold text-[#01312D]">
                     {savedQuote.quoteName}
@@ -565,7 +571,7 @@ if (saveMethod === 'email' && email) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <p className="text-sm text-[#01312D]">
-                        We've sent an email to <strong>{email}</strong> with your quote details and access link.
+                        We've sent an email to <strong>{email}</strong> with your configuration details and access link.
                       </p>
                     </div>
                   </div>

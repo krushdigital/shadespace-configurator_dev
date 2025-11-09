@@ -7,9 +7,10 @@ interface TooltipProps {
   className?: string;
   onOpen?: () => void;
   onAccordionOpen?: () => void;
+  fullWidth?: boolean;
 }
 
-export function Tooltip({ content, children, className = '', onOpen, onAccordionOpen }: TooltipProps) {
+export function Tooltip({ content, children, className = '', onOpen, onAccordionOpen, fullWidth = false }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isScrollable, setIsScrollable] = useState(false);
@@ -24,35 +25,71 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
 
-      // Check if mobile
       const isMobile = window.innerWidth < 768;
       const tooltipWidth = isMobile ? 280 : 340;
       const tooltipMaxHeight = isMobile ? Math.min(400, window.innerHeight * 0.7) : 600;
-      
-      // Position tooltip to the right of the trigger, centered vertically
-      let x = rect.right + 10;
-      let y = rect.top + (rect.height / 2) - (tooltipMaxHeight / 2); // Center vertically on tooltip
-      
-      // If tooltip would go off the right edge, position it to the left
-      if (x + tooltipWidth > window.innerWidth - 20) {
-        x = rect.left - tooltipWidth - 10;
-      }
-      
-      // If tooltip would go off the left edge, position it above/below
-      if (x < 20) {
-        x = rect.left + (rect.width / 2) - (tooltipWidth / 2); // Center horizontally
-        y = rect.bottom + 10;
-        
-        // If tooltip would go off bottom, position above
-        if (y + tooltipMaxHeight > window.innerHeight - 20) {
-          y = rect.top - tooltipMaxHeight - 10;
+
+      let tooltipHeight = tooltipMaxHeight;
+      if (tooltipContentRef.current) {
+        const actualHeight = tooltipContentRef.current.offsetHeight;
+        if (actualHeight > 0) {
+          tooltipHeight = actualHeight;
         }
       }
-      
-      // Final bounds checking
+
+      // Check if trigger is in the bottom portion of the screen
+      const isNearBottom = rect.bottom > window.innerHeight * 0.5;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
+      let x = rect.right + 6;
+      let y = rect.top + (rect.height / 2) - (tooltipHeight / 2);
+
+      // On mobile, prioritize vertical positioning based on available space
+      if (isMobile) {
+        // If trigger is near bottom or insufficient space below, position above
+        if (isNearBottom || spaceBelow < tooltipHeight + 20) {
+          if (spaceAbove >= tooltipHeight + 20) {
+            // Position above the trigger
+            x = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+            y = rect.top - tooltipHeight - 6;
+          } else {
+            // Not enough space above either, try horizontal positioning
+            x = rect.right + 6;
+            y = rect.top + (rect.height / 2) - (tooltipHeight / 2);
+          }
+        } else {
+          // Enough space below, use default horizontal positioning
+          x = rect.right + 6;
+          y = rect.top + (rect.height / 2) - (tooltipHeight / 2);
+        }
+      }
+
+      // Check if horizontal positioning goes off screen
+      if (x + tooltipWidth > window.innerWidth - 20) {
+        x = rect.left - tooltipWidth - 6;
+      }
+
+      // If still off screen horizontally, center it above or below
+      if (x < 20) {
+        x = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+
+        // On mobile near bottom, prefer above
+        if (isMobile && isNearBottom && spaceAbove >= tooltipHeight + 20) {
+          y = rect.top - tooltipHeight - 6;
+        } else {
+          y = rect.bottom + 6;
+
+          // If tooltip would go off bottom, position above instead
+          if (y + tooltipHeight > window.innerHeight - 20) {
+            y = rect.top - tooltipHeight - 6;
+          }
+        }
+      }
+
       x = Math.max(10, Math.min(x, window.innerWidth - tooltipWidth - 10));
       y = Math.max(10, Math.min(y, window.innerHeight - tooltipMaxHeight - 10));
-      
+
       setPosition({ x, y });
     }
   };
@@ -113,7 +150,10 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
     if (onOpen) {
       onOpen();
     }
-    setTimeout(checkScrollability, 100);
+    setTimeout(() => {
+      updatePosition();
+      checkScrollability();
+    }, 10);
   };
 
   const hideTooltip = () => {
@@ -222,7 +262,7 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
         ref={triggerRef}
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
-        className="inline-block cursor-help"
+        className={fullWidth ? "block cursor-help" : "inline-block cursor-help"}
       >
         {children}
       </div>

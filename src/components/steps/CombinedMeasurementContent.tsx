@@ -7,6 +7,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { AccordionItem } from '../ui/AccordionItem';
 import { CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../../data/pricing';
 import { MeasurementOptionVisualizer } from '../MeasurementOptionVisualizer';
+import { SaveProgressButton } from '../SaveProgressButton';
 
 // Define the mapping for hardware pack images
 const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
@@ -25,9 +26,10 @@ interface CombinedMeasurementContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   isMobile?: boolean;
+  onSaveQuote?: () => void;
 }
 
-export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false }: CombinedMeasurementContentProps) {
+export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote }: CombinedMeasurementContentProps) {
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
     updateConfig({ measurementOption: option });
   };
@@ -363,19 +365,55 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
       </div>
 
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
+        <div className="flex sm:hidden flex-col gap-3">
+          <div className="flex gap-3">
+            {showBackButton && (
+              <Button
+                variant="outline"
+                size="md"
+                onClick={onPrev}
+                className="flex-1"
+              >
+                Back
+              </Button>
+            )}
+            {onSaveQuote && (
+              <SaveProgressButton
+                onClick={onSaveQuote}
+                className="flex-1"
+              />
+            )}
+          </div>
+          <Button
+            onClick={onNext}
+            size="md"
+            className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+          >
+            Continue to {nextStepTitle}
+          </Button>
+        </div>
+
+        {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
+        <div className="hidden sm:flex gap-4">
           {showBackButton && (
-            <Button 
-              variant="outline" 
-              size="sm"
+            <Button
+              variant="outline"
+              size="md"
               onClick={onPrev}
-              className="sm:w-auto"
+              className="w-auto"
             >
               Back
             </Button>
           )}
-          <Button 
-            onClick={onNext} 
+          {onSaveQuote && (
+            <SaveProgressButton
+              onClick={onSaveQuote}
+              className="w-auto"
+            />
+          )}
+          <Button
+            onClick={onNext}
             size="md"
             className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
           >

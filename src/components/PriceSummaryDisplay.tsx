@@ -147,17 +147,28 @@ export function PriceSummaryDisplay({
           {/* Quote Actions - Desktop Only */}
           {onSaveQuote && (
             <div className="space-y-3 mt-6 pt-6 border-t border-slate-200">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onSaveQuote}
-                className="w-full flex items-center justify-center gap-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+              <Tooltip
+                content={
+                  <div className="text-slate-700">
+                    <p className="font-semibold mb-1">Save Your Progress</p>
+                    <p>Save your configuration at any point and return later when you're ready to continue.</p>
+                  </div>
+                }
+                fullWidth
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-                Save Quote
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onSaveQuote}
+                  fullWidth
+                  className="items-center justify-center gap-2 border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  Save Progress
+                </Button>
+              </Tooltip>
 
               {onGeneratePDF && (
                 <Button
@@ -165,7 +176,8 @@ export function PriceSummaryDisplay({
                   size="sm"
                   onClick={onGeneratePDF}
                   disabled={isGeneratingPDF}
-                  className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                  fullWidth
+                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
                 >
                   {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
                 </Button>
@@ -176,7 +188,8 @@ export function PriceSummaryDisplay({
                   variant="outline"
                   size="sm"
                   onClick={onEmailSummary}
-                  className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                  fullWidth
+                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
                 >
                   Email Summary
                 </Button>

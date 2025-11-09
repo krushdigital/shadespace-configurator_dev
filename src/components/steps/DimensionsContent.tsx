@@ -9,6 +9,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle } from 'lucide-react';
+import { SaveProgressButton } from '../SaveProgressButton';
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -498,57 +499,55 @@ export function DimensionsContent({
                 </div>
               )}
 
-              {/* Quote Ready Message with Action Buttons - Desktop Only */}
-              {hasQuote && !isMobile && (
-                <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-[#307C31] rounded-full flex items-center justify-center">
-                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-[#01312D] text-lg mb-1">
-                        Your Quote is Ready!
-                      </h4>
-                      <p className="text-sm text-[#01312D]/80">
-                        Continue to complete your order requirements, or save your quote to return later.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onSaveQuote}
-                      className="w-full"
-                    >
-                      Save Quote
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleGeneratePDF}
-                      disabled={isGeneratingPDF}
-                      className="w-full"
-                    >
-                      {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
-                    </Button>
-                  </div>
-                </div>
-              )}
+              {/* Removed premature quote ready message - users haven't completed all steps yet */}
 
               {/* Navigation Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
+              <div className="flex sm:hidden flex-col gap-3">
+                <div className="flex gap-3">
+                  {showBackButton && (
+                    <Button
+                      variant="outline"
+                      size="md"
+                      onClick={onPrev}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
+                  )}
+                  {onSaveQuote && (
+                    <SaveProgressButton
+                      onClick={onSaveQuote}
+                      className="flex-1"
+                    />
+                  )}
+                </div>
+                <Button
+                  onClick={onNext}
+                  size="md"
+                  className={`w-full py-4 sm:py-2 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Continue to {nextStepTitle}
+                </Button>
+              </div>
+
+              {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
+              <div className="hidden sm:flex items-center gap-4">
                 {showBackButton && (
                   <Button
                     variant="outline"
                     size="md"
                     onClick={onPrev}
-                    className="sm:w-auto"
+                    className="w-auto"
                   >
                     Back
                   </Button>
+                )}
+                {onSaveQuote && (
+                  <SaveProgressButton
+                    onClick={onSaveQuote}
+                    className="w-auto"
+                  />
                 )}
                 <Button
                   onClick={onNext}
