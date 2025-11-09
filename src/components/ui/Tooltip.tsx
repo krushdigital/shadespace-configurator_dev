@@ -37,19 +37,53 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
         }
       }
 
+      // Check if trigger is in the bottom portion of the screen
+      const isNearBottom = rect.bottom > window.innerHeight * 0.5;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+
       let x = rect.right + 6;
       let y = rect.top + (rect.height / 2) - (tooltipHeight / 2);
 
+      // On mobile, prioritize vertical positioning based on available space
+      if (isMobile) {
+        // If trigger is near bottom or insufficient space below, position above
+        if (isNearBottom || spaceBelow < tooltipHeight + 20) {
+          if (spaceAbove >= tooltipHeight + 20) {
+            // Position above the trigger
+            x = rect.left + (rect.width / 2) - (tooltipWidth / 2);
+            y = rect.top - tooltipHeight - 6;
+          } else {
+            // Not enough space above either, try horizontal positioning
+            x = rect.right + 6;
+            y = rect.top + (rect.height / 2) - (tooltipHeight / 2);
+          }
+        } else {
+          // Enough space below, use default horizontal positioning
+          x = rect.right + 6;
+          y = rect.top + (rect.height / 2) - (tooltipHeight / 2);
+        }
+      }
+
+      // Check if horizontal positioning goes off screen
       if (x + tooltipWidth > window.innerWidth - 20) {
         x = rect.left - tooltipWidth - 6;
       }
 
+      // If still off screen horizontally, center it above or below
       if (x < 20) {
         x = rect.left + (rect.width / 2) - (tooltipWidth / 2);
-        y = rect.bottom + 6;
 
-        if (y + tooltipHeight > window.innerHeight - 20) {
+        // On mobile near bottom, prefer above
+        if (isMobile && isNearBottom && spaceAbove >= tooltipHeight + 20) {
           y = rect.top - tooltipHeight - 6;
+        } else {
+          y = rect.bottom + 6;
+
+          // If tooltip would go off bottom, position above instead
+          if (y + tooltipHeight > window.innerHeight - 20) {
+            y = rect.top - tooltipHeight - 6;
+          }
         }
       }
 
