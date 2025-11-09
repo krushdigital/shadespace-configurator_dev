@@ -532,7 +532,7 @@ export function DimensionsContent({
               </div>
 
               {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
-              <div className="hidden sm:flex gap-4">
+              <div className="hidden sm:flex items-center gap-4">
                 {showBackButton && (
                   <Button
                     variant="outline"
