@@ -1225,7 +1225,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 variant="outline"
                 size="sm"
                 onClick={onSaveQuote}
-                className="w-full flex items-center justify-center gap-2 border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                fullWidth
+                className="items-center justify-center gap-2 border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -1239,7 +1240,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               size="sm"
               onClick={handleGeneratePDFWithSVG}
               disabled={isGeneratingPDF}
-              className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+              fullWidth
+              className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
             >
               {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
             </Button>
@@ -1249,7 +1251,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 variant="outline"
                 size="sm"
                 onClick={handleEmailSummary}
-                className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                fullWidth
+                className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
               >
                 Email Summary
               </Button>
