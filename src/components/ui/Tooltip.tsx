@@ -7,9 +7,10 @@ interface TooltipProps {
   className?: string;
   onOpen?: () => void;
   onAccordionOpen?: () => void;
+  fullWidth?: boolean;
 }
 
-export function Tooltip({ content, children, className = '', onOpen, onAccordionOpen }: TooltipProps) {
+export function Tooltip({ content, children, className = '', onOpen, onAccordionOpen, fullWidth = false }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isScrollable, setIsScrollable] = useState(false);
@@ -227,7 +228,7 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
         ref={triggerRef}
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
-        className="inline-block cursor-help"
+        className={fullWidth ? "block cursor-help" : "inline-block cursor-help"}
       >
         {children}
       </div>
