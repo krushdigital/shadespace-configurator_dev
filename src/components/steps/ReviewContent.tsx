@@ -500,8 +500,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           ...(config.corners !== 3 && {
             fixingHeights: config.fixingHeights,
             fixingTypes: config.fixingTypes,
-            fixingPointsInstalled: config.fixingPointsInstalled,
-            ...(config.fixingPointsInstalled === true && { eyeOrientations: config.eyeOrientations }),
           }),
           // Add the properly calculated measurements
           edgeMeasurements: edgeMeasurements,
@@ -615,12 +613,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 <div className="flex justify-between">
                   <span className="text-slate-600">Corners:</span>
                   <span className="font-medium text-slate-900">{config.corners}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Fixing Points Installed:</span>
-                  <span className="font-medium text-slate-900">
-                    {config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'}
-                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Area:</span>
@@ -941,17 +933,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                         {config.fixingHeights.map((height, index) => {
                           const corner = String.fromCharCode(65 + index);
                           const type = config.fixingTypes?.[index] || 'post';
-                          const orientation = config.eyeOrientations?.[index];
 
                           return (
                             <div key={index} className="flex justify-between">
                               <span className="text-slate-600">Point {corner}:</span>
                               <div className="text-right">
                                 <div className="font-medium text-slate-900">
-                                  {formatMeasurement(height, config.unit)}
-                                  {' ('}{type}
-                                  {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
-                                  {')'}
+                                  {formatMeasurement(height, config.unit)} ({type})
                                 </div>
                               </div>
                             </div>
@@ -970,17 +958,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                         {config.fixingHeights.map((height, index) => {
                           const corner = String.fromCharCode(65 + index);
                           const type = config.fixingTypes?.[index] || 'post';
-                          const orientation = config.eyeOrientations?.[index];
 
                           return (
                             <div key={index} className="flex justify-between">
                               <span className="text-slate-600">Anchor Point {corner}:</span>
                               <div className="text-right">
                                 <div className="font-medium text-slate-900">
-                                  {formatMeasurement(height, config.unit)}
-                                  {' ('}{type}
-                                  {config.fixingPointsInstalled === true && orientation && `, ${orientation} eye`}
-                                  {')'}
+                                  {formatMeasurement(height, config.unit)} ({type})
                                 </div>
                               </div>
                             </div>

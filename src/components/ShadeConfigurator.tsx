@@ -520,8 +520,6 @@ export function ShadeConfigurator() {
         ...(config.corners !== 3 && {
           fixingHeights: config.fixingHeights,
           fixingTypes: config.fixingTypes,
-          fixingPointsInstalled: config.fixingPointsInstalled,
-          ...(config.fixingPointsInstalled === true && { eyeOrientations: config.eyeOrientations }),
         }),
         edgeMeasurements,
         diagonalMeasurementsObj,
@@ -833,9 +831,6 @@ export function ShadeConfigurator() {
       // Only format cart fixing heights if NOT a 3-corner sail
       const cartFixingHeights = config.corners !== 3 ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
       const cartFixingTypes = config.corners !== 3 ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
-      const cartEyeOrientations = (config.corners !== 3 && orderData.fixingPointsInstalled === true)
-        ? formatArrayForCart(orderData.eyeOrientations, 'Eye Orientation')
-        : {};
 
       const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
         method: 'POST',
@@ -850,7 +845,6 @@ export function ShadeConfigurator() {
           cartAnchorMeasurements,
           cartFixingHeights,
           cartFixingTypes,
-          ...(orderData.fixingPointsInstalled === true && { cartEyeOrientations }),
           // Pass dual measurements for backend/fulfillment (Shopify admin only)
           backendEdgeMeasurements,
           backendDiagonalMeasurements,
@@ -910,13 +904,6 @@ export function ShadeConfigurator() {
         Object.entries(cartFixingTypes).forEach(([key, value]) => {
           metafieldProperties[key] = value;
         });
-
-        // Only add eye orientation properties if fixing points are installed
-        if (orderData.fixingPointsInstalled === true) {
-          Object.entries(cartEyeOrientations).forEach(([key, value]) => {
-            metafieldProperties[key] = value;
-          });
-        }
 
         const gid = product?.variants?.edges?.[0]?.node?.id;
         if (gid) {
@@ -1085,9 +1072,6 @@ export function ShadeConfigurator() {
         // If this step is skipped due to 'exact' measurement option, it's automatically complete
         if (shouldSkipStep(5)) return true;
 
-        // Check if fixing points installation status is selected (only for 'adjust' measurement option)
-        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === undefined) return false;
-
         // Check if we have all required data for all corners
         if (!config.fixingHeights || config.fixingHeights.length !== config.corners) return false;
         if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return false;
@@ -1100,14 +1084,6 @@ export function ShadeConfigurator() {
         // Check if all types are selected
         const allTypesValid = config.fixingTypes.every(type => type === 'post' || type === 'building');
 
-        // If measurement option is 'adjust' AND fixing points are installed, also check eye orientations
-        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === true) {
-          if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) return false;
-          const allOrientationsValid = config.eyeOrientations.every(orientation => orientation === 'horizontal' || orientation === 'vertical');
-          return allHeightsValid && allTypesValid && allOrientationsValid;
-        }
-
-        // If measurement option is 'exact' OR fixing points are not installed, eye orientations are not required
         return allHeightsValid && allTypesValid;
       case 6: // Review
         return true;
@@ -1251,14 +1227,6 @@ export function ShadeConfigurator() {
         }
         break;
       case 5: // Heights & Anchor Points
-        // PRIORITY CHECK: Installation status must be selected first (only for 'adjust' measurement option)
-        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === undefined) {
-          errors.fixingPointsInstalled = 'Please answer whether your fixing points are already installed first';
-          // Don't validate dependent fields until installation status is selected
-          break;
-        }
-
-        // Only validate dependent fields after installation status is selected
         // Validate heights
         const heightValidation = validateHeights(config.fixingHeights, config.unit);
 
@@ -1289,18 +1257,6 @@ export function ShadeConfigurator() {
               errors[`type_${index}`] = 'Please select attachment type (post or building)';
             }
           });
-        }
-        // Only validate eye orientations if fixing points are installed AND measurement option is 'adjust'
-        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === true) {
-          if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) {
-            errors.eyeOrientations = 'All eye orientations must be selected';
-          } else {
-            config.eyeOrientations.forEach((orientation, index) => {
-              if (orientation !== 'horizontal' && orientation !== 'vertical') {
-                errors[`orientation_${index}`] = 'Please select eye orientation (horizontal or vertical)';
-              }
-            });
-          }
         }
         break;
     }
@@ -1415,30 +1371,16 @@ export function ShadeConfigurator() {
         // If step is skipped due to exact measurement option
         if (config.measurementOption === 'exact') return 'N/A - Exact dimensions selected';
 
-        if (config.fixingPointsInstalled === undefined) return 'Installation status not selected';
         if (!config.fixingHeights || config.fixingHeights.length !== config.corners) return 'Not configured';
         if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return 'Not configured';
 
         const validHeights = config.fixingHeights.filter(h => h !== undefined && h !== null && h > 0).length;
         const validTypes = config.fixingTypes.filter(t => t === 'post' || t === 'building').length;
 
-        // If fixing points are installed, check eye orientations
-        if (config.fixingPointsInstalled === true) {
-          if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) return 'Not configured';
-          const validOrientations = config.eyeOrientations.filter(o => o === 'horizontal' || o === 'vertical').length;
-
-          if (validHeights === config.corners && validTypes === config.corners && validOrientations === config.corners) {
-            return `${config.corners} anchor points configured`;
-          } else {
-            return `${Math.min(validHeights, validTypes, validOrientations)}/${config.corners} anchor points configured`;
-          }
+        if (validHeights === config.corners && validTypes === config.corners) {
+          return `${config.corners} anchor points configured`;
         } else {
-          // If fixing points are not installed, eye orientations are not required
-          if (validHeights === config.corners && validTypes === config.corners) {
-            return `${config.corners} anchor points configured`;
-          } else {
-            return `${Math.min(validHeights, validTypes)}/${config.corners} anchor points configured`;
-          }
+          return `${Math.min(validHeights, validTypes)}/${config.corners} anchor points configured`;
         }
       case 6: // Review
         return 'Ready for purchase';
