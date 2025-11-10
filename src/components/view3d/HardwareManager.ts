@@ -60,12 +60,10 @@ export class HardwareManager {
           this.hardwareGroup.add(cable);
         }
 
-        if (config.measurementOption === 'adjust') {
-          const turnbuckle = this.createTurnbuckle(i, config);
-          if (turnbuckle) {
-            instance.turnbuckles.push(turnbuckle);
-            this.hardwareGroup.add(turnbuckle);
-          }
+        const turnbuckle = this.createTurnbuckle(i, config);
+        if (turnbuckle) {
+          instance.turnbuckles.push(turnbuckle);
+          this.hardwareGroup.add(turnbuckle);
         }
       }
     }
@@ -124,7 +122,7 @@ export class HardwareManager {
       );
 
       const rotationAxis = new THREE.Vector3(-outwardZ, 0, outwardX).normalize();
-      pole.setRotationFromAxisAngle(rotationAxis, angleRadians);
+      pole.setRotationFromAxisAngle(rotationAxis, -angleRadians);
     } else {
       pole.position.set(position.x, heightMeters / 2, position.z);
     }
@@ -332,7 +330,7 @@ export class HardwareManager {
           );
 
           const rotationAxis = new THREE.Vector3(-outwardZ, 0, outwardX).normalize();
-          pole.setRotationFromAxisAngle(rotationAxis, angleRadians);
+          pole.setRotationFromAxisAngle(rotationAxis, -angleRadians);
         } else {
           pole.position.set(position.x, heightMeters / 2, position.z);
         }
@@ -399,7 +397,7 @@ export class HardwareManager {
 
     instance.turnbuckles.forEach((turnbuckle, index) => {
       const height = config.fixingHeights[index];
-      if (height && height > 0 && config.measurementOption === 'adjust') {
+      if (height && height > 0) {
         const sailPosition = this.getSailAttachmentPosition(index, config);
         const anchorPosition = this.getCornerPosition(index, config);
         anchorPosition.y = height / 1000;

@@ -72,9 +72,9 @@ export function View3DTabWrapper({
         </button>
       </div>
 
-      <div className="flex-1 min-h-[500px] lg:min-h-[800px]">
+      <div className="flex-1 relative w-full" style={{ paddingBottom: activeView === '2d' ? '100%' : '100%', minHeight: activeView === '3d' ? '600px' : '0' }}>
         {activeView === '2d' ? (
-          <div className="h-full">
+          <div className="absolute inset-0">
             <ShapeCanvas
               config={config}
               updateConfig={updateConfig}
@@ -86,7 +86,7 @@ export function View3DTabWrapper({
             />
           </div>
         ) : (
-          <div className="h-full bg-slate-50 rounded-lg overflow-hidden">
+          <div className="absolute inset-0 bg-slate-50 rounded-lg overflow-hidden">
             <Suspense
               fallback={
                 <div className="w-full h-full flex items-center justify-center">

@@ -165,25 +165,24 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
       sceneManagerRef.current.setControlsEnabled(true);
 
       if (sailMeshRef.current && updateConfig) {
-        const bounds = {
-          minX: Math.min(...config.points.map(p => p.x)),
-          maxX: Math.max(...config.points.map(p => p.x)),
-          minY: Math.min(...config.points.map(p => p.y)),
-          maxY: Math.max(...config.points.map(p => p.y))
-        };
-
-        const centerX = (bounds.minX + bounds.maxX) / 2;
-        const centerY = (bounds.minY + bounds.maxY) / 2;
-
         const offsetX = sailMeshRef.current.position.x * 100;
         const offsetZ = sailMeshRef.current.position.z * 100;
 
         const newPoints = config.points.map(point => ({
-          x: point.x - centerX + offsetX + centerX,
-          y: point.y - centerY + offsetZ + centerY
+          x: point.x + offsetX,
+          y: point.y + offsetZ
         }));
 
         updateConfig({ points: newPoints });
+
+        sailMeshRef.current.position.set(0, 0, 0);
+
+        if (hardwareManagerRef.current && hardwareInstanceRef.current) {
+          hardwareManagerRef.current.updateHardwarePositionOffset(
+            hardwareInstanceRef.current,
+            new THREE.Vector3(0, 0, 0)
+          );
+        }
       }
     }
   }, [isDragging, config.points, updateConfig]);
