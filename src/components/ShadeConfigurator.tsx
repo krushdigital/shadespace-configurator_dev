@@ -450,9 +450,9 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail
+      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const anchorPointMeasurements: Record<string, { unit: string; formatted: string }> = {};
-      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           if (height && height > 0) {
             const corner = String.fromCharCode(65 + index);
@@ -483,9 +483,9 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const backendAnchorMeasurementsEmail: Record<string, string> = {};
-      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           const corner = String.fromCharCode(65 + index);
           if (height && height > 0) {
@@ -518,8 +518,8 @@ export function ShadeConfigurator() {
         selectedFabric,
         selectedColor,
         warranty: selectedFabric?.warrantyYears || "",
-        // Only include fixing heights data if user provided them AND NOT a 3-corner sail
-        ...(config.corners !== 3 && config.heightsProvidedByUser && {
+        // Only include fixing heights data if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+        ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
           fixingHeights: config.fixingHeights,
           fixingTypes: config.fixingTypes,
         }),
@@ -807,9 +807,9 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const backendAnchorMeasurements: Record<string, string> = {};
-      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           const corner = String.fromCharCode(65 + index);
           if (height && height > 0) {
@@ -830,9 +830,9 @@ export function ShadeConfigurator() {
         return result;
       };
 
-      // Only format cart fixing heights if user provided them AND NOT a 3-corner sail
-      const cartFixingHeights = (config.corners !== 3 && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
-      const cartFixingTypes = (config.corners !== 3 && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
+      // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+      const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
+      const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
 
       const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
         method: 'POST',

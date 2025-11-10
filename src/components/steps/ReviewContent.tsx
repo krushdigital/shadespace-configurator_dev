@@ -431,9 +431,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       });
 
 
-      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail
+      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           if (height && height > 0) {
             const corner = String.fromCharCode(65 + index);
@@ -465,9 +465,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         }
       });
 
-      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const backendAnchorMeasurements: Record<string, string> = {};
-      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           const corner = String.fromCharCode(65 + index);
           if (height && height > 0) {
@@ -498,8 +498,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           selectedColor: selectedColor,
           canvasImageUrl: canvasImageUrl,
           warranty: selectedFabric?.warrantyYears || "",
-          // Only include fixing heights data if user provided them AND NOT a 3-corner sail
-          ...(config.corners !== 3 && config.heightsProvidedByUser && {
+          // Only include fixing heights data if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+          ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
             fixingHeights: config.fixingHeights,
             fixingTypes: config.fixingTypes,
           }),
@@ -915,8 +915,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               )}
             </div>
 
-            {/* Anchor Point Heights - Only show if user provided height data AND not for 3-corner sails */}
-            {config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.some(h => h > 0) && (
+            {/* Anchor Point Heights - Only show if user provided height data AND not for 3-corner sails AND measurementOption is 'adjust' */}
+            {config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.some(h => h > 0) && (
               <div>
                 {isMobile ? (
                   <AccordionItem
@@ -979,8 +979,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </div>
             )}
 
-            {/* Note when heights are not provided */}
-            {config.corners !== 3 && !config.heightsProvidedByUser && (
+            {/* Note when heights are not provided - only show for 'adjust' measurement option */}
+            {config.corners !== 3 && config.measurementOption === 'adjust' && !config.heightsProvidedByUser && (
               <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 mt-0.5">

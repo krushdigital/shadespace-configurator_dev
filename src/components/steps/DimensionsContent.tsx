@@ -479,8 +479,8 @@ export function DimensionsContent({
           </Card>
         </div>
 
-        {/* Optional Heights and Anchor Points Section */}
-        {config.corners !== 3 && (
+        {/* Optional Heights and Anchor Points Section - Only shown for "adjust" measurement option */}
+        {config.corners !== 3 && config.measurementOption === 'adjust' && (
           <div className="mt-6">
             <Card
               className={`overflow-hidden transition-all duration-300 ${

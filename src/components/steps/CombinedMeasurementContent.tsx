@@ -31,7 +31,17 @@ interface CombinedMeasurementContentProps {
 
 export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote }: CombinedMeasurementContentProps) {
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
-    updateConfig({ measurementOption: option });
+    const updates: Partial<ConfiguratorState> = { measurementOption: option };
+
+    // Clear height data when switching to 'exact' measurement option
+    if (option === 'exact') {
+      updates.fixingHeights = [];
+      updates.fixingTypes = undefined;
+      updates.eyeOrientations = undefined;
+      updates.heightsProvidedByUser = false;
+    }
+
+    updateConfig(updates);
   };
 
   // Get the correct hardware pack image URL based on the number of corners
