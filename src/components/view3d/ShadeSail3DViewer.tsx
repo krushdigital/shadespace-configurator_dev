@@ -321,6 +321,11 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
   useEffect(() => {
     if (!isInitialized || !sailMeshRef.current) return;
 
+    console.log('3D View: Updating geometry and hardware due to config change', {
+      points: config.points,
+      corners: config.corners
+    });
+
     const effectiveConfig = { ...config };
 
     if (!effectiveConfig.heightsProvidedByUser) {
@@ -334,6 +339,7 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
 
     const currentPosition = sailMeshRef.current.position.clone();
 
+    // Create new geometry with updated config
     const newGeometry = GeometryBuilder.createSailGeometry({ config: effectiveConfig });
     const oldGeometry = sailMeshRef.current.geometry;
     sailMeshRef.current.geometry = newGeometry;
@@ -341,10 +347,20 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
 
     sailMeshRef.current.position.copy(currentPosition);
 
+    // Force hardware update with new positions
     if (hardwareManagerRef.current && hardwareInstanceRef.current) {
+      console.log('3D View: Updating hardware positions');
       hardwareManagerRef.current.updateHardware(hardwareInstanceRef.current, effectiveConfig);
+
+      // Ensure hardware offset matches sail position
+      if (currentPosition.x !== 0 || currentPosition.z !== 0) {
+        hardwareManagerRef.current.updateHardwarePositionOffset(
+          hardwareInstanceRef.current,
+          new THREE.Vector3(currentPosition.x, 0, currentPosition.z)
+        );
+      }
     }
-  }, [config.points, config.measurements, config.fixingHeights, config.tensionPreset, config.fixingTypes, config.measurementOption, config.heightsProvidedByUser, isInitialized]);
+  }, [config.points, config.measurements, config.fixingHeights, config.tensionPreset, config.fixingTypes, config.measurementOption, config.heightsProvidedByUser, config.corners, isInitialized]);
 
   const handleCameraPreset = (preset: 'front' | 'side' | 'top' | 'isometric') => {
     if (sceneManagerRef.current) {

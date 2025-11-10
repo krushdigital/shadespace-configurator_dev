@@ -28,14 +28,28 @@ export function View3DTabWrapper({
   onScreenshotCapture
 }: View3DTabWrapperProps) {
   const [activeView, setActiveView] = useState<'2d' | '3d'>('2d');
+  const [viewKey, setViewKey] = useState(0);
 
   const canShow3D = config.corners >= 3 && config.corners <= 6;
+
+  // Force 3D view to remount when switching from 2D to 3D
+  const handleViewChange = (view: '2d' | '3d') => {
+    setActiveView(view);
+    if (view === '3d') {
+      // Increment key to force remount of 3D viewer with latest config
+      setViewKey(prev => prev + 1);
+      console.log('View switched to 3D, forcing viewer update with config:', {
+        points: config.points,
+        corners: config.corners
+      });
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex gap-2 mb-4 border-b border-slate-200">
         <button
-          onClick={() => setActiveView('2d')}
+          onClick={() => handleViewChange('2d')}
           className={`px-6 py-3 text-sm font-semibold transition-colors relative ${
             activeView === '2d'
               ? 'text-[#307C31] border-b-2 border-[#307C31]'
@@ -50,7 +64,7 @@ export function View3DTabWrapper({
           </span>
         </button>
         <button
-          onClick={() => setActiveView('3d')}
+          onClick={() => handleViewChange('3d')}
           disabled={!canShow3D}
           className={`px-6 py-3 text-sm font-semibold transition-colors relative disabled:opacity-50 disabled:cursor-not-allowed ${
             activeView === '3d'
@@ -97,6 +111,7 @@ export function View3DTabWrapper({
               }
             >
               <ShadeSail3DViewer
+                key={viewKey}
                 config={config}
                 updateConfig={updateConfig}
                 quoteId={quoteId}

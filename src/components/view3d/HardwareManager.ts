@@ -7,7 +7,7 @@ export interface HardwareInstance {
   corners: THREE.Group[];
   poles: THREE.Mesh[];
   cables: THREE.Line[];
-  turnbuckles: THREE.Group[];
+  connectors: THREE.Mesh[];
   buildings: THREE.Mesh[];
 }
 
@@ -26,7 +26,7 @@ export class HardwareManager {
       corners: [],
       poles: [],
       cables: [],
-      turnbuckles: [],
+      connectors: [],
       buildings: []
     };
 
@@ -60,10 +60,10 @@ export class HardwareManager {
           this.hardwareGroup.add(cable);
         }
 
-        const turnbuckle = this.createTurnbuckle(i, config);
-        if (turnbuckle) {
-          instance.turnbuckles.push(turnbuckle);
-          this.hardwareGroup.add(turnbuckle);
+        const connector = this.createConnector(i, config);
+        if (connector) {
+          instance.connectors.push(connector);
+          this.hardwareGroup.add(connector);
         }
       }
     }
@@ -177,17 +177,14 @@ export class HardwareManager {
     return wall;
   }
 
-  private createTurnbuckle(index: number, config: ConfiguratorState): THREE.Group | null {
+  private createConnector(index: number, config: ConfiguratorState): THREE.Mesh | null {
     const height = config.fixingHeights[index];
     if (!height || height <= 0) return null;
-
-    const group = new THREE.Group();
-    group.name = `turnbuckle-${index}`;
 
     const sailPosition = this.getSailAttachmentPosition(index, config);
     const poleTopPosition = this.getPoleTopPosition(index, config);
 
-    // Calculate the full 3D direction vector (not just horizontal)
+    // Calculate the direction vector from sail corner to pole top
     const direction = new THREE.Vector3(
       poleTopPosition.x - sailPosition.x,
       poleTopPosition.y - sailPosition.y,
@@ -197,51 +194,35 @@ export class HardwareManager {
 
     if (distance < 0.01) return null;
 
-    const bodyLength = Math.min(0.2, distance * 0.3);
-    const bodyGeometry = new THREE.CylinderGeometry(0.025, 0.025, bodyLength, 8);
-    const eyeGeometry = new THREE.TorusGeometry(0.04, 0.012, 8, 16);
-    const turnbuckleMaterial = this.materialsManager.createHardwareMaterial();
+    // Create an oval/capsule shape to connect sail corner to pole top
+    // Use a cylinder with spherical caps (capsule shape)
+    const connectorLength = distance * 0.6; // Cover 60% of the cable length
+    const connectorRadius = 0.04; // Slightly thicker than the cable
 
-    const body = new THREE.Mesh(bodyGeometry, turnbuckleMaterial);
-    body.castShadow = true;
-    body.receiveShadow = true;
+    const connectorGeometry = new THREE.CapsuleGeometry(connectorRadius, connectorLength, 4, 8);
+    const connectorMaterial = this.materialsManager.createHardwareMaterial();
 
-    const eye1 = new THREE.Mesh(eyeGeometry, turnbuckleMaterial);
-    const eye2 = new THREE.Mesh(eyeGeometry, turnbuckleMaterial);
+    const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+    connector.castShadow = true;
+    connector.receiveShadow = true;
+    connector.name = `connector-${index}`;
 
-    eye1.castShadow = true;
-    eye1.receiveShadow = true;
-    eye2.castShadow = true;
-    eye2.receiveShadow = true;
-
-    eye1.position.y = bodyLength / 2;
-    eye1.rotation.x = Math.PI / 2;
-    eye2.position.y = -bodyLength / 2;
-    eye2.rotation.x = Math.PI / 2;
-
-    group.add(body);
-    group.add(eye1);
-    group.add(eye2);
-
-    // Position at the midpoint between sail corner and pole top
-    const midPoint = new THREE.Vector3(
-      (sailPosition.x + poleTopPosition.x) / 2,
-      (sailPosition.y + poleTopPosition.y) / 2,
-      (sailPosition.z + poleTopPosition.z) / 2
+    // Position the connector near the sail corner (70% toward sail, 30% toward pole)
+    const positionFactor = 0.3; // Position 30% along the cable from sail corner
+    connector.position.set(
+      sailPosition.x + direction.x * positionFactor,
+      sailPosition.y + direction.y * positionFactor,
+      sailPosition.z + direction.z * positionFactor
     );
 
-    group.position.copy(midPoint);
-
-    // Orient the turnbuckle to point from sail to pole top
+    // Orient the connector along the cable direction
     direction.normalize();
-
-    // Calculate rotation to align the turnbuckle along the direction vector
     const quaternion = new THREE.Quaternion();
     const up = new THREE.Vector3(0, 1, 0);
     quaternion.setFromUnitVectors(up, direction);
-    group.quaternion.copy(quaternion);
+    connector.quaternion.copy(quaternion);
 
-    return group;
+    return connector;
   }
 
   private getPoleTopPosition(index: number, config: ConfiguratorState): THREE.Vector3 {
@@ -451,13 +432,13 @@ export class HardwareManager {
       }
     });
 
-    instance.turnbuckles.forEach((turnbuckle, index) => {
+    instance.connectors.forEach((connector, index) => {
       const height = config.fixingHeights[index];
       if (height && height > 0) {
         const sailPosition = this.getSailAttachmentPosition(index, config);
         const poleTopPosition = this.getPoleTopPosition(index, config);
 
-        // Calculate the full 3D direction vector
+        // Calculate the direction vector from sail corner to pole top
         const direction = new THREE.Vector3(
           poleTopPosition.x - sailPosition.x,
           poleTopPosition.y - sailPosition.y,
@@ -466,30 +447,32 @@ export class HardwareManager {
         const distance = direction.length();
 
         if (distance >= 0.01) {
-          // Position at midpoint between sail corner and pole top
-          const midPoint = new THREE.Vector3(
-            (sailPosition.x + poleTopPosition.x) / 2,
-            (sailPosition.y + poleTopPosition.y) / 2,
-            (sailPosition.z + poleTopPosition.z) / 2
+          // Position the connector near the sail corner
+          const positionFactor = 0.3;
+          connector.position.set(
+            sailPosition.x + direction.x * positionFactor,
+            sailPosition.y + direction.y * positionFactor,
+            sailPosition.z + direction.z * positionFactor
           );
 
-          turnbuckle.position.copy(midPoint);
-
-          // Orient the turnbuckle to point from sail to pole top
+          // Orient the connector along the cable direction
           direction.normalize();
-
-          // Calculate rotation to align the turnbuckle along the direction vector
           const quaternion = new THREE.Quaternion();
           const up = new THREE.Vector3(0, 1, 0);
           quaternion.setFromUnitVectors(up, direction);
-          turnbuckle.quaternion.copy(quaternion);
+          connector.quaternion.copy(quaternion);
 
-          turnbuckle.visible = true;
+          // Scale connector based on distance (optional, for visual continuity)
+          const baseScale = 1.0;
+          const scaleFactor = Math.min(1.5, Math.max(0.5, distance / 2));
+          connector.scale.set(baseScale, scaleFactor, baseScale);
+
+          connector.visible = true;
         } else {
-          turnbuckle.visible = false;
+          connector.visible = false;
         }
       } else {
-        turnbuckle.visible = false;
+        connector.visible = false;
       }
     });
   }
