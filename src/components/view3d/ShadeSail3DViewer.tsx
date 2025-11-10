@@ -45,9 +45,31 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
   const dragOffsetRef = useRef<THREE.Vector3>(new THREE.Vector3());
 
   const initialize3DScene = useCallback(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current) {
+      console.error('Canvas ref is not available');
+      return;
+    }
 
     try {
+      console.log('Initializing 3D scene with config:', {
+        corners: config.corners,
+        points: config.points,
+        measurements: config.measurements
+      });
+
+      // Ensure canvas has dimensions
+      const canvas = canvasRef.current;
+      const canvasWidth = canvas.clientWidth || canvas.offsetWidth || 600;
+      const canvasHeight = canvas.clientHeight || canvas.offsetHeight || 600;
+
+      console.log('Canvas dimensions:', { width: canvasWidth, height: canvasHeight });
+
+      if (canvasWidth === 0 || canvasHeight === 0) {
+        console.error('Canvas has zero dimensions, retrying...');
+        setTimeout(() => initialize3DScene(), 100);
+        return;
+      }
+
       const effectiveConfig = { ...config };
 
       if (!effectiveConfig.heightsProvidedByUser) {
@@ -61,7 +83,10 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
 
       const sceneManager = new SceneManager({
         canvas: canvasRef.current,
-        onError: (err) => setError(err.message),
+        onError: (err) => {
+          console.error('SceneManager error:', err);
+          setError(err.message);
+        },
         qualityLevel: 'auto'
       });
 
@@ -74,7 +99,15 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
       hardwareManagerRef.current = hardwareManager;
       animationSystemRef.current = animationSystem;
 
+      console.log('Creating sail geometry...');
       const sailGeometry = GeometryBuilder.createSailGeometry({ config: effectiveConfig });
+      console.log('Sail geometry created:', {
+        vertices: sailGeometry.attributes.position?.count || 0,
+        hasPosition: !!sailGeometry.attributes.position,
+        hasNormal: !!sailGeometry.attributes.normal
+      });
+
+      console.log('Creating sail material...');
       const sailMaterial = materialsManager.createSailMaterial(effectiveConfig);
 
       const sailMesh = new THREE.Mesh(sailGeometry, sailMaterial);
@@ -87,8 +120,11 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
         sailMesh.position.z = effectiveConfig.sail3DOffset.z;
       }
 
+      console.log('Sail mesh created at position:', sailMesh.position);
+
       sailMeshRef.current = sailMesh;
       sceneManager.getScene().add(sailMesh);
+      console.log('Sail mesh added to scene');
 
       const hardwareInstance = hardwareManager.createHardware(effectiveConfig);
       hardwareInstanceRef.current = hardwareInstance;
@@ -101,8 +137,11 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
         );
       }
 
+      console.log('Framing camera to object...');
       sceneManager.frameObject(sailMesh);
+      console.log('Camera position after framing:', sceneManager.getCamera().position);
 
+      console.log('Starting animation loop...');
       sceneManager.startAnimation(() => {
         if (animationSystem.getState().enabled && sailMeshRef.current) {
           const windEffect = animationSystem.getWindEffect();
@@ -115,6 +154,7 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
         animationSystem.update();
       });
 
+      console.log('3D scene initialization complete');
       setIsInitialized(true);
     } catch (err) {
       console.error('Failed to initialize 3D scene:', err);
@@ -389,11 +429,17 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
   }
 
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative" style={{ minHeight: '600px' }}>
       <canvas
         ref={canvasRef}
         className="w-full h-full rounded-lg"
-        style={{ display: 'block', cursor: isDragging ? 'grabbing' : 'grab' }}
+        style={{
+          display: 'block',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          width: '100%',
+          height: '100%',
+          minHeight: '600px'
+        }}
       />
 
       {!isInitialized && (

@@ -72,7 +72,7 @@ export function View3DTabWrapper({
         </button>
       </div>
 
-      <div className="flex-1 relative w-full" style={{ paddingBottom: activeView === '2d' ? '100%' : '100%', minHeight: activeView === '3d' ? '600px' : '0' }}>
+      <div className="flex-1 relative w-full" style={{ paddingBottom: activeView === '2d' ? '100%' : '0', minHeight: activeView === '3d' ? '600px' : '0', height: activeView === '3d' ? '600px' : 'auto' }}>
         <div className="absolute inset-0" style={{ display: activeView === '2d' ? 'block' : 'none' }}>
           <ShapeCanvas
             config={config}
@@ -84,7 +84,7 @@ export function View3DTabWrapper({
             isMobile={isMobile}
           />
         </div>
-        <div className="absolute inset-0 bg-slate-50 rounded-lg overflow-hidden" style={{ display: activeView === '3d' ? 'block' : 'none' }}>
+        <div className="absolute inset-0 bg-slate-50 rounded-lg overflow-hidden" style={{ display: activeView === '3d' ? 'block' : 'none', width: '100%', height: '100%' }}>
           {canShow3D && (
             <Suspense
               fallback={

@@ -27,29 +27,58 @@ export class SceneManager {
     this.canvas = options.canvas;
     this.onError = options.onError;
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: options.canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance'
+    console.log('SceneManager: Initializing renderer...');
+    console.log('Canvas dimensions:', {
+      clientWidth: this.canvas.clientWidth,
+      clientHeight: this.canvas.clientHeight,
+      offsetWidth: this.canvas.offsetWidth,
+      offsetHeight: this.canvas.offsetHeight
     });
 
+    try {
+      this.renderer = new THREE.WebGLRenderer({
+        canvas: options.canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+
+      console.log('WebGLRenderer created successfully');
+    } catch (error) {
+      console.error('Failed to create WebGLRenderer:', error);
+      throw error;
+    }
+
+    const width = this.canvas.clientWidth || this.canvas.offsetWidth || 600;
+    const height = this.canvas.clientHeight || this.canvas.offsetHeight || 600;
+
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight, false);
+    this.renderer.setSize(width, height, false);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
+    console.log('Renderer configured:', {
+      width,
+      height,
+      pixelRatio: this.renderer.getPixelRatio()
+    });
+
+    console.log('Creating scene...');
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xf8fafc);
     this.scene.fog = new THREE.Fog(0xf8fafc, 10, 50);
+    console.log('Scene created');
 
-    const aspect = this.canvas.clientWidth / this.canvas.clientHeight;
+    const aspect = width / height;
+    console.log('Creating camera with aspect:', aspect);
     this.camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
     this.camera.position.set(5, 4, 5);
+    console.log('Camera created at position:', this.camera.position);
 
+    console.log('Setting up OrbitControls...');
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
@@ -58,6 +87,7 @@ export class SceneManager {
     this.controls.maxDistance = 20;
     this.controls.target.set(0, 1, 0);
     this.controls.update();
+    console.log('OrbitControls configured');
 
     this.lights = {
       ambient: new THREE.AmbientLight(0xffffff, 0.6),
@@ -82,11 +112,14 @@ export class SceneManager {
     this.scene.add(this.lights.directional);
     this.scene.add(this.lights.fill);
 
+    console.log('Adding grid helper...');
     const gridHelper = new THREE.GridHelper(20, 20, 0xe2e8f0, 0xf1f5f9);
     gridHelper.position.y = 0;
     this.scene.add(gridHelper);
 
     window.addEventListener('resize', this.handleResize);
+
+    console.log('SceneManager initialization complete');
   }
 
   private handleResize = () => {
