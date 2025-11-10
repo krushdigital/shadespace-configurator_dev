@@ -450,14 +450,17 @@ export function ShadeConfigurator() {
         }
       });
 
+      // Only include anchor point measurements if NOT a 3-corner sail
       const anchorPointMeasurements: Record<string, { unit: string; formatted: string }> = {};
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        anchorPointMeasurements[corner] = {
-          unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-          formatted: formatMeasurement(height, config.unit)
-        };
-      });
+      if (config.corners !== 3) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          anchorPointMeasurements[corner] = {
+            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+            formatted: formatMeasurement(height, config.unit)
+          };
+        });
+      }
 
       // Create backend-only dual measurement objects for email to fulfillment team
       const backendEdgeMeasurementsEmail: Record<string, string> = {};
@@ -478,13 +481,16 @@ export function ShadeConfigurator() {
         }
       });
 
+      // Only include backend anchor measurements if NOT a 3-corner sail
       const backendAnchorMeasurementsEmail: Record<string, string> = {};
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        if (height && height > 0) {
-          backendAnchorMeasurementsEmail[corner] = formatDualMeasurement(height, config.unit);
-        }
-      });
+      if (config.corners !== 3) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          if (height && height > 0) {
+            backendAnchorMeasurementsEmail[corner] = formatDualMeasurement(height, config.unit);
+          }
+        });
+      }
 
       const userCurrency = window.Shopify?.currency?.active || 'USD';
       console.log('userCurrency: ', userCurrency);
@@ -510,10 +516,13 @@ export function ShadeConfigurator() {
         selectedFabric,
         selectedColor,
         warranty: selectedFabric?.warrantyYears || "",
-        fixingHeights: config.fixingHeights,
-        fixingTypes: config.fixingTypes,
-        fixingPointsInstalled: config.fixingPointsInstalled,
-        ...(config.fixingPointsInstalled === true && { eyeOrientations: config.eyeOrientations }),
+        // Only include fixing heights data if NOT a 3-corner sail
+        ...(config.corners !== 3 && {
+          fixingHeights: config.fixingHeights,
+          fixingTypes: config.fixingTypes,
+          fixingPointsInstalled: config.fixingPointsInstalled,
+          ...(config.fixingPointsInstalled === true && { eyeOrientations: config.eyeOrientations }),
+        }),
         edgeMeasurements,
         diagonalMeasurementsObj,
         anchorPointMeasurements,
@@ -798,13 +807,16 @@ export function ShadeConfigurator() {
         }
       });
 
+      // Only include backend anchor measurements if NOT a 3-corner sail
       const backendAnchorMeasurements: Record<string, string> = {};
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        if (height && height > 0) {
-          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
-        }
-      });
+      if (config.corners !== 3) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          if (height && height > 0) {
+            backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+          }
+        });
+      }
 
       // Format arrays for cart display
       const formatArrayForCart = (array: any[], label: string) => {
@@ -818,9 +830,10 @@ export function ShadeConfigurator() {
         return result;
       };
 
-      const cartFixingHeights = formatArrayForCart(orderData.fixingHeights, 'Fixing Height');
-      const cartFixingTypes = formatArrayForCart(orderData.fixingTypes, 'Fixing Type');
-      const cartEyeOrientations = orderData.fixingPointsInstalled === true
+      // Only format cart fixing heights if NOT a 3-corner sail
+      const cartFixingHeights = config.corners !== 3 ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
+      const cartFixingTypes = config.corners !== 3 ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
+      const cartEyeOrientations = (config.corners !== 3 && orderData.fixingPointsInstalled === true)
         ? formatArrayForCart(orderData.eyeOrientations, 'Eye Orientation')
         : {};
 
@@ -1007,8 +1020,8 @@ export function ShadeConfigurator() {
 
   // Helper function to check if a step should be skipped
   const shouldSkipStep = (step: number): boolean => {
-    // Skip Step 5 (Heights & Anchor Points) if measurementOption is 'exact'
-    if (step === 5 && config.measurementOption === 'exact') {
+    // Skip Step 5 (Heights & Anchor Points) if measurementOption is 'exact' OR if corners equals 3
+    if (step === 5 && (config.measurementOption === 'exact' || config.corners === 3)) {
       return true;
     }
     return false;
@@ -1396,6 +1409,12 @@ export function ShadeConfigurator() {
         }
         return edgeCount === config.corners ? `${edgeCount} edge measurements entered` : `${edgeCount}/${config.corners} edges measured`;
       case 5: // Heights & Anchor Points
+        // If step is skipped for 3-corner sails, show N/A
+        if (config.corners === 3) return 'N/A - Not required for 3-sided sails';
+
+        // If step is skipped due to exact measurement option
+        if (config.measurementOption === 'exact') return 'N/A - Exact dimensions selected';
+
         if (config.fixingPointsInstalled === undefined) return 'Installation status not selected';
         if (!config.fixingHeights || config.fixingHeights.length !== config.corners) return 'Not configured';
         if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return 'Not configured';

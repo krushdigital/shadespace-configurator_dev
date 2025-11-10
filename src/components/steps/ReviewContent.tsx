@@ -431,14 +431,17 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       });
 
 
+      // Only include anchor point measurements if NOT a 3-corner sail
       const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        anchorPointMeasurements[corner] = {
-          unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-          formatted: formatMeasurement(height, config.unit)
-        };
-      });
+      if (config.corners !== 3) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          anchorPointMeasurements[corner] = {
+            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+            formatted: formatMeasurement(height, config.unit)
+          };
+        });
+      }
 
       // Create backend-only dual measurement objects for Shopify admin
       const backendEdgeMeasurements: Record<string, string> = {};
@@ -460,13 +463,16 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         }
       });
 
+      // Only include backend anchor measurements if NOT a 3-corner sail
       const backendAnchorMeasurements: Record<string, string> = {};
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        if (height && height > 0) {
-          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
-        }
-      });
+      if (config.corners !== 3) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          if (height && height > 0) {
+            backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+          }
+        });
+      }
 
       const hardwareIncluded = config.measurementOption === 'adjust';
       const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
@@ -490,10 +496,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           selectedColor: selectedColor,
           canvasImageUrl: canvasImageUrl,
           warranty: selectedFabric?.warrantyYears || "",
-          fixingHeights: config.fixingHeights,
-          fixingTypes: config.fixingTypes,
-          fixingPointsInstalled: config.fixingPointsInstalled,
-          ...(config.fixingPointsInstalled === true && { eyeOrientations: config.eyeOrientations }),
+          // Only include fixing heights data if NOT a 3-corner sail
+          ...(config.corners !== 3 && {
+            fixingHeights: config.fixingHeights,
+            fixingTypes: config.fixingTypes,
+            fixingPointsInstalled: config.fixingPointsInstalled,
+            ...(config.fixingPointsInstalled === true && { eyeOrientations: config.eyeOrientations }),
+          }),
           // Add the properly calculated measurements
           edgeMeasurements: edgeMeasurements,
           diagonalMeasurementsObj: diagonalMeasurementsObj,
@@ -912,8 +921,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               )}
             </div>
 
-            {/* Anchor Point Heights - Only show for 'adjust' measurement option */}
-            {config.measurementOption === 'adjust' && config.fixingHeights && config.fixingHeights.length > 0 && (
+            {/* Anchor Point Heights - Only show for 'adjust' measurement option AND not for 3-corner sails */}
+            {config.measurementOption === 'adjust' && config.corners !== 3 && config.fixingHeights && config.fixingHeights.length > 0 && (
               <div>
                 {isMobile ? (
                   <AccordionItem
