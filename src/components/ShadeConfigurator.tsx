@@ -88,6 +88,9 @@ export function ShadeConfigurator() {
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
 
+  // Highlighted corner state for height input fields
+  const [highlightedCorner, setHighlightedCorner] = useState<number | null>(null);
+
   // Mobile pricing bar state
   const [isBarLocked, setIsBarLocked] = useState(false);
   const [isNewQuote, setIsNewQuote] = useState(false);
@@ -1516,6 +1519,8 @@ export function ShadeConfigurator() {
                     isMobile={isMobile}
                     setHighlightedMeasurement={setHighlightedMeasurement}
                     highlightedMeasurement={highlightedMeasurement}
+                    highlightedCorner={highlightedCorner}
+                    setHighlightedCorner={setHighlightedCorner}
                     canvasRef={canvasRef}
                     ref={index === 6 ? reviewContentRef : undefined}
                     loading={loading}
@@ -1550,6 +1555,7 @@ export function ShadeConfigurator() {
                 readonly={false}
                 snapToGrid={true}
                 highlightedMeasurement={highlightedMeasurement}
+                highlightedCorner={highlightedCorner}
                 isMobile={isMobile}
               />
             </div>

@@ -10,15 +10,17 @@ interface ShapeCanvasProps {
   readonly?: boolean;
   snapToGrid?: boolean;
   highlightedMeasurement?: string | null;
+  highlightedCorner?: number | null;
   isMobile?: boolean;
 }
 
-export function ShapeCanvas({ 
-  config, 
-  updateConfig, 
+export function ShapeCanvas({
+  config,
+  updateConfig,
   readonly = false,
   snapToGrid = true,
   highlightedMeasurement = null,
+  highlightedCorner = null,
   isMobile = false
 }: ShapeCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -298,15 +300,18 @@ export function ShapeCanvas({
           >
             {/* Corner points */}
             {cornerPoints.map(({ point, index, labelPosition, cornerColor, label }) => {
+              const isHighlighted = highlightedCorner === index;
+              const displayColor = isHighlighted ? '#EF4444' : cornerColor;
+
               return (
                 <g key={index}>
-                  {/* Pulse effect circle - only shown during animation */}
-                  {showCornerPulse && !readonly && (
+                  {/* Pulse effect circle - shown during initial animation OR when highlighted */}
+                  {(showCornerPulse && !readonly || isHighlighted) && (
                     <circle
                       cx={point.x}
                       cy={point.y}
                       r={isMobile ? "14" : "10"}
-                      fill={cornerColor}
+                      fill={displayColor}
                       stroke="none"
                       className={isMobile ? "corner-pulse-mobile" : "corner-pulse"}
                       style={{
@@ -319,7 +324,7 @@ export function ShapeCanvas({
                     cx={point.x}
                     cy={point.y}
                     r={isMobile ? "14" : "10"}
-                    fill={cornerColor}
+                    fill={displayColor}
                     stroke="white"
                     strokeWidth="3"
                     className={readonly ? '' : 'cursor-grab'}

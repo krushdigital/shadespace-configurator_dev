@@ -36,6 +36,8 @@ interface DimensionsContentProps {
   isMobile?: boolean;
   highlightedMeasurement?: string | null;
   onSaveQuote?: () => void;
+  highlightedCorner?: number | null;
+  setHighlightedCorner?: (corner: number | null) => void;
 }
 
 export function DimensionsContent({
@@ -62,7 +64,9 @@ export function DimensionsContent({
   hasAllEdgeMeasurements = false,
   isMobile = false,
   highlightedMeasurement = null,
-  onSaveQuote = () => {}
+  onSaveQuote = () => {},
+  highlightedCorner = null,
+  setHighlightedCorner = () => {}
 }: DimensionsContentProps) {
   const [showHeightsSection, setShowHeightsSection] = useState(false);
 
@@ -577,6 +581,8 @@ export function DimensionsContent({
                                       }
                                     }
                                   }}
+                                  onFocus={() => setHighlightedCorner(index)}
+                                  onBlur={() => setHighlightedCorner(null)}
                                   placeholder={config.unit === 'imperial' ? '100' : '2500'}
                                   autoComplete="off"
                                   className="flex-1 py-2"
