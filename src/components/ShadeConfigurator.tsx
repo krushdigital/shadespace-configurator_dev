@@ -1085,8 +1085,8 @@ export function ShadeConfigurator() {
         // If this step is skipped due to 'exact' measurement option, it's automatically complete
         if (shouldSkipStep(5)) return true;
 
-        // Check if fixing points installation status is selected
-        if (config.fixingPointsInstalled === undefined) return false;
+        // Check if fixing points installation status is selected (only for 'adjust' measurement option)
+        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === undefined) return false;
 
         // Check if we have all required data for all corners
         if (!config.fixingHeights || config.fixingHeights.length !== config.corners) return false;
@@ -1100,14 +1100,14 @@ export function ShadeConfigurator() {
         // Check if all types are selected
         const allTypesValid = config.fixingTypes.every(type => type === 'post' || type === 'building');
 
-        // If fixing points are installed, also check eye orientations
-        if (config.fixingPointsInstalled === true) {
+        // If measurement option is 'adjust' AND fixing points are installed, also check eye orientations
+        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === true) {
           if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) return false;
           const allOrientationsValid = config.eyeOrientations.every(orientation => orientation === 'horizontal' || orientation === 'vertical');
           return allHeightsValid && allTypesValid && allOrientationsValid;
         }
 
-        // If fixing points are not installed, eye orientations are not required
+        // If measurement option is 'exact' OR fixing points are not installed, eye orientations are not required
         return allHeightsValid && allTypesValid;
       case 6: // Review
         return true;
@@ -1251,8 +1251,8 @@ export function ShadeConfigurator() {
         }
         break;
       case 5: // Heights & Anchor Points
-        // PRIORITY CHECK: Installation status must be selected first
-        if (config.fixingPointsInstalled === undefined) {
+        // PRIORITY CHECK: Installation status must be selected first (only for 'adjust' measurement option)
+        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === undefined) {
           errors.fixingPointsInstalled = 'Please answer whether your fixing points are already installed first';
           // Don't validate dependent fields until installation status is selected
           break;
@@ -1290,8 +1290,8 @@ export function ShadeConfigurator() {
             }
           });
         }
-        // Only validate eye orientations if fixing points are installed
-        if (config.fixingPointsInstalled === true) {
+        // Only validate eye orientations if fixing points are installed AND measurement option is 'adjust'
+        if (config.measurementOption === 'adjust' && config.fixingPointsInstalled === true) {
           if (!config.eyeOrientations || config.eyeOrientations.length !== config.corners) {
             errors.eyeOrientations = 'All eye orientations must be selected';
           } else {

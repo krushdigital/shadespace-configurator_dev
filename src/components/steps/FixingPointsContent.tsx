@@ -190,7 +190,8 @@ export function FixingPointsContent({
 
   return (
     <div className="p-6">
-      {/* Fixing Points Installation Question */}
+      {/* Fixing Points Installation Question - Only show for 'adjust' measurement option */}
+      {config.measurementOption === 'adjust' && (
       <Card className={`p-4 mb-6 border-2 transition-all duration-300 ${
         hasInstallationError
           ? 'border-red-500 bg-red-50 animate-pulse-error'
@@ -296,6 +297,7 @@ export function FixingPointsContent({
           </div>
         )}
       </Card>
+      )}
 
       {/* Info Banner - Only shown when user tries to proceed without selecting */}
       {!isInstallationStatusSelected && hasInstallationError && (
@@ -351,9 +353,9 @@ export function FixingPointsContent({
                 </h5>
               </div>
               
-              {/* Responsive Grid Layout - Conditional columns based on fixing points installation */}
+              {/* Responsive Grid Layout - Conditional columns based on fixing points installation and measurement option */}
               <div className={`grid grid-cols-1 gap-3 md:gap-4 ${
-                config.fixingPointsInstalled === true ? 'md:grid-cols-3' : 'md:grid-cols-2'
+                config.measurementOption === 'adjust' && config.fixingPointsInstalled === true ? 'md:grid-cols-3' : 'md:grid-cols-2'
               }`}>
                 {/* Height Input */}
                 <div>
@@ -537,8 +539,8 @@ export function FixingPointsContent({
                   </div>
                 </div>
 
-                {/* Eye Orientation - Only show if fixing points are installed */}
-                {config.fixingPointsInstalled === true && (
+                {/* Eye Orientation - Only show if fixing points are installed AND measurement option is 'adjust' */}
+                {config.measurementOption === 'adjust' && config.fixingPointsInstalled === true && (
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium text-[#01312D]">
