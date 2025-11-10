@@ -1,6 +1,6 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Line } from '@react-three/drei';
+import { OrbitControls, Text, Environment, ContactShadows, Sky } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface ShadeSail3DProps {
@@ -9,114 +9,198 @@ interface ShadeSail3DProps {
   fabricColor: string;
 }
 
-function ShadeSailMesh({ corners, measurementType, fabricColor }: ShadeSail3DProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
+// Create a realistic subdivided shade sail mesh with proper curvature
+function createSailGeometry(corners: number): THREE.BufferGeometry {
+  if (corners < 3) return new THREE.BufferGeometry();
 
-  const getCornerPositions = (radius: number, heightOffset: number = 0) => {
-    const positions: THREE.Vector3[] = [];
-    for (let i = 0; i < corners; i++) {
-      const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
-      const x = radius * Math.cos(angle);
-      const z = radius * Math.sin(angle);
-      positions.push(new THREE.Vector3(x, heightOffset, z));
-    }
-    return positions;
-  };
+  const sailRadius = 3.0;
+  const radialSegments = 32; // Subdivisions from center to edge
+  const angularSegments = corners * 8; // Subdivisions around the perimeter
 
-  const sailGeometry = useMemo(() => {
-    if (corners < 3) return new THREE.BufferGeometry();
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const uvs: number[] = [];
 
-    const sailRadius = 2.5;
-    const centerY = -0.8;
-    const edgeY = 0;
+  // Corner positions in world space
+  const cornerPositions: THREE.Vector3[] = [];
+  for (let i = 0; i < corners; i++) {
+    const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
+    const x = sailRadius * Math.cos(angle);
+    const z = sailRadius * Math.sin(angle);
+    cornerPositions.push(new THREE.Vector3(x, 3.2, z)); // Corners higher
+  }
 
-    const positions: number[] = [];
-    const indices: number[] = [];
-    const uvs: number[] = [];
+  // Center point - lowest point of the sail (sag in the middle)
+  const centerY = 2.0; // Center sags down
 
-    const centerIndex = 0;
-    positions.push(0, centerY, 0);
-    uvs.push(0.5, 0.5);
+  // Generate vertices in a radial pattern
+  for (let r = 0; r <= radialSegments; r++) {
+    const radiusRatio = r / radialSegments;
 
-    for (let i = 0; i < corners; i++) {
-      const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
-      const x = sailRadius * Math.cos(angle);
-      const z = sailRadius * Math.sin(angle);
+    // Calculate how many angular divisions for this ring
+    const angDivisions = r === 0 ? 1 : angularSegments;
 
-      const curvature = 0.3;
-      const distanceFromCenter = Math.sqrt(x * x + z * z) / sailRadius;
-      const y = edgeY + curvature * (1 - Math.pow(distanceFromCenter, 2));
+    for (let a = 0; a < angDivisions; a++) {
+      if (r === 0 && a > 0) continue; // Only one center vertex
+
+      let x: number, y: number, z: number, u: number, v: number;
+
+      if (r === 0) {
+        // Center vertex
+        x = 0;
+        y = centerY;
+        z = 0;
+        u = 0.5;
+        v = 0.5;
+      } else {
+        // Calculate angular position
+        const angleStep = (2 * Math.PI) / angularSegments;
+        const angle = a * angleStep;
+
+        // Find which two corners this vertex is between
+        const cornerAngle = (2 * Math.PI) / corners;
+        const baseCornerIndex = Math.floor((angle + Math.PI / 2) / cornerAngle) % corners;
+        const nextCornerIndex = (baseCornerIndex + 1) % corners;
+
+        // Interpolate between corner positions
+        const baseAngle = baseCornerIndex * cornerAngle - Math.PI / 2;
+        const nextAngle = nextCornerIndex * cornerAngle - Math.PI / 2;
+        const t = ((angle + Math.PI / 2) % cornerAngle) / cornerAngle;
+
+        // Base position (circular interpolation)
+        const interpAngle = baseAngle + t * (nextAngle - baseAngle);
+        x = radiusRatio * sailRadius * Math.cos(interpAngle);
+        z = radiusRatio * sailRadius * Math.sin(interpAngle);
+
+        // Calculate Y with realistic fabric sag
+        // Fabric sags more in the middle, less at edges
+        const distanceFromCenter = radiusRatio;
+        const sagAmount = 1.2; // Maximum sag
+
+        // Catenary-like curve for realistic fabric droop
+        const sag = sagAmount * (1 - Math.pow(distanceFromCenter, 1.5));
+        y = centerY + sag * (1 - distanceFromCenter * 0.3);
+
+        // UV coordinates
+        u = (Math.cos(interpAngle) + 1) / 2;
+        v = (Math.sin(interpAngle) + 1) / 2;
+      }
 
       positions.push(x, y, z);
-
-      const u = (Math.cos(angle) + 1) / 2;
-      const v = (Math.sin(angle) + 1) / 2;
       uvs.push(u, v);
     }
+  }
 
-    for (let i = 1; i <= corners; i++) {
-      const next = i === corners ? 1 : i + 1;
-      indices.push(centerIndex, i, next);
+  // Generate indices for triangulation
+  let vertexIndex = 0;
+
+  // Center fan
+  for (let a = 0; a < angularSegments; a++) {
+    const next = (a + 1) % angularSegments;
+    indices.push(0, 1 + next, 1 + a);
+  }
+
+  vertexIndex = 1 + angularSegments;
+
+  // Rings
+  for (let r = 1; r < radialSegments; r++) {
+    for (let a = 0; a < angularSegments; a++) {
+      const current = vertexIndex + a;
+      const next = vertexIndex + ((a + 1) % angularSegments);
+      const currentOuter = vertexIndex + angularSegments + a;
+      const nextOuter = vertexIndex + angularSegments + ((a + 1) % angularSegments);
+
+      // Two triangles per quad
+      indices.push(current, next, nextOuter);
+      indices.push(current, nextOuter, currentOuter);
     }
+    vertexIndex += angularSegments;
+  }
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
 
-    return geometry;
-  }, [corners]);
+  return geometry;
+}
+
+// Realistic shade sail mesh component
+function ShadeSailMesh({ corners, fabricColor }: ShadeSail3DProps) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  const sailGeometry = useMemo(() => createSailGeometry(corners), [corners]);
 
   const sailMaterial = useMemo(() => {
-    const color = fabricColor || '#94C973';
-    return new THREE.MeshStandardMaterial({
+    const color = new THREE.Color(fabricColor || '#94C973');
+
+    return new THREE.MeshPhysicalMaterial({
       color: color,
       side: THREE.DoubleSide,
       roughness: 0.8,
-      metalness: 0.1,
+      metalness: 0.0,
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.85,
+      transmission: 0.15, // Light passes through slightly
+      thickness: 0.5,
+      envMapIntensity: 0.4,
     });
   }, [fabricColor]);
 
   return (
-    <mesh ref={meshRef} geometry={sailGeometry} material={sailMaterial}>
+    <mesh ref={meshRef} geometry={sailGeometry} material={sailMaterial} castShadow receiveShadow>
     </mesh>
   );
 }
 
-function FixingPoints({ corners, measurementType }: { corners: number; measurementType: 'space' | 'sail' | null }) {
-  const getFixingPointPositions = () => {
-    const radius = measurementType === 'space' ? 3.5 : 2.5;
-    const height = measurementType === 'space' ? 0 : 0.3;
-    const positions: THREE.Vector3[] = [];
+// Support posts at each corner
+function SupportPosts({ corners, measurementType }: { corners: number; measurementType: 'space' | 'sail' | null }) {
+  const postRadius = measurementType === 'space' ? 3.5 : 3.0;
+  const postHeight = 3.5;
 
+  const postPositions = useMemo(() => {
+    const positions: THREE.Vector3[] = [];
     for (let i = 0; i < corners; i++) {
       const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
-      const x = radius * Math.cos(angle);
-      const z = radius * Math.sin(angle);
-      positions.push(new THREE.Vector3(x, height, z));
+      const x = postRadius * Math.cos(angle);
+      const z = postRadius * Math.sin(angle);
+      positions.push(new THREE.Vector3(x, 0, z));
     }
     return positions;
-  };
-
-  const positions = getFixingPointPositions();
+  }, [corners, postRadius]);
 
   return (
     <>
-      {positions.map((position, index) => (
+      {postPositions.map((position, index) => (
         <group key={index} position={position}>
-          <mesh>
-            <sphereGeometry args={[0.15, 16, 16]} />
-            <meshStandardMaterial color="#ef4444" />
+          {/* Post */}
+          <mesh position={[0, postHeight / 2, 0]} castShadow>
+            <cylinderGeometry args={[0.08, 0.08, postHeight, 16]} />
+            <meshStandardMaterial color="#4a4a4a" metalness={0.6} roughness={0.4} />
           </mesh>
+
+          {/* Post cap */}
+          <mesh position={[0, postHeight, 0]} castShadow>
+            <sphereGeometry args={[0.12, 16, 16]} />
+            <meshStandardMaterial color="#3a3a3a" metalness={0.7} roughness={0.3} />
+          </mesh>
+
+          {/* Base plate */}
+          <mesh position={[0, 0.05, 0]} castShadow>
+            <cylinderGeometry args={[0.15, 0.18, 0.1, 16]} />
+            <meshStandardMaterial color="#2a2a2a" metalness={0.5} roughness={0.6} />
+          </mesh>
+
+          {/* Corner label */}
           <Text
-            position={[0, 0.4, 0]}
-            fontSize={0.3}
+            position={[0, postHeight + 0.5, 0]}
+            fontSize={0.35}
             color="#01312D"
             anchorX="center"
             anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="#ffffff"
             font="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff"
           >
             {String.fromCharCode(65 + index)}
@@ -127,65 +211,66 @@ function FixingPoints({ corners, measurementType }: { corners: number; measureme
   );
 }
 
+// Tensioning hardware and cables
 function TensioningHardware({ corners }: { corners: number }) {
-  const getSailCorners = () => {
-    const sailRadius = 2.5;
-    const positions: THREE.Vector3[] = [];
+  const sailRadius = 3.0;
+  const postRadius = 3.5;
+  const sailHeight = 3.2;
+  const postHeight = 3.5;
+
+  const connections = useMemo(() => {
+    const result: Array<{ sail: THREE.Vector3; post: THREE.Vector3 }> = [];
 
     for (let i = 0; i < corners; i++) {
       const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
-      const x = sailRadius * Math.cos(angle);
-      const z = sailRadius * Math.sin(angle);
-      positions.push(new THREE.Vector3(x, 0.3, z));
+
+      const sailX = sailRadius * Math.cos(angle);
+      const sailZ = sailRadius * Math.sin(angle);
+      const sailPos = new THREE.Vector3(sailX, sailHeight, sailZ);
+
+      const postX = postRadius * Math.cos(angle);
+      const postZ = postRadius * Math.sin(angle);
+      const postPos = new THREE.Vector3(postX, postHeight, postZ);
+
+      result.push({ sail: sailPos, post: postPos });
     }
-    return positions;
-  };
 
-  const getFixingPoints = () => {
-    const radius = 3.5;
-    const positions: THREE.Vector3[] = [];
-
-    for (let i = 0; i < corners; i++) {
-      const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
-      const x = radius * Math.cos(angle);
-      const z = radius * Math.sin(angle);
-      positions.push(new THREE.Vector3(x, 0, z));
-    }
-    return positions;
-  };
-
-  const sailCorners = getSailCorners();
-  const fixingPoints = getFixingPoints();
+    return result;
+  }, [corners]);
 
   return (
     <>
-      {sailCorners.map((sailCorner, index) => {
-        const fixingPoint = fixingPoints[index];
-        const midPoint = new THREE.Vector3(
-          (sailCorner.x + fixingPoint.x) / 2,
-          (sailCorner.y + fixingPoint.y) / 2,
-          (sailCorner.z + fixingPoint.z) / 2
+      {connections.map(({ sail, post }, index) => {
+        const direction = new THREE.Vector3().subVectors(post, sail);
+        const length = direction.length();
+        const midPoint = new THREE.Vector3().addVectors(sail, post).multiplyScalar(0.5);
+
+        // Create cable curve
+        const curve = new THREE.QuadraticBezierCurve3(
+          sail,
+          new THREE.Vector3(midPoint.x, midPoint.y - 0.1, midPoint.z),
+          post
         );
+        const points = curve.getPoints(20);
 
         return (
           <group key={index}>
-            <Line
-              points={[sailCorner, midPoint]}
-              color="#64748b"
-              lineWidth={2}
-            />
-            <mesh position={midPoint}>
-              <boxGeometry args={[0.1, 0.05, 0.05]} />
-              <meshStandardMaterial color="#475569" />
+            {/* Cable */}
+            <mesh>
+              <tubeGeometry args={[curve, 20, 0.02, 8, false]} />
+              <meshStandardMaterial color="#888888" metalness={0.7} roughness={0.3} />
             </mesh>
-            <Line
-              points={[midPoint, fixingPoint]}
-              color="#64748b"
-              lineWidth={2}
-            />
-            <mesh position={sailCorner}>
-              <sphereGeometry args={[0.08, 16, 16]} />
-              <meshStandardMaterial color="#475569" />
+
+            {/* Sail corner grommet */}
+            <mesh position={sail}>
+              <torusGeometry args={[0.08, 0.025, 8, 16]} />
+              <meshStandardMaterial color="#3a3a3a" metalness={0.8} roughness={0.2} />
+            </mesh>
+
+            {/* Turnbuckle at midpoint */}
+            <mesh position={midPoint}>
+              <cylinderGeometry args={[0.04, 0.04, 0.15, 8]} />
+              <meshStandardMaterial color="#666666" metalness={0.8} roughness={0.3} />
             </mesh>
           </group>
         );
@@ -194,28 +279,113 @@ function TensioningHardware({ corners }: { corners: number }) {
   );
 }
 
+// Ground plane with texture
+function GroundPlane() {
+  const texture = useMemo(() => {
+    // Create a simple grass-like texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d')!;
+
+    // Base grass color
+    ctx.fillStyle = '#5a7c45';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Add some variation
+    for (let i = 0; i < 2000; i++) {
+      const x = Math.random() * 512;
+      const y = Math.random() * 512;
+      const brightness = Math.random() * 40 - 20;
+      ctx.fillStyle = `rgb(${90 + brightness}, ${124 + brightness}, ${69 + brightness})`;
+      ctx.fillRect(x, y, 2, 2);
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 4);
+
+    return tex;
+  }, []);
+
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <planeGeometry args={[50, 50]} />
+      <meshStandardMaterial
+        map={texture}
+        color="#6b8e57"
+        roughness={0.9}
+        metalness={0.0}
+      />
+    </mesh>
+  );
+}
+
+// Main scene component
 function Scene({ corners, measurementType, fabricColor }: ShadeSail3DProps) {
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
-      <directionalLight position={[-10, -10, -5]} intensity={0.3} />
-      <pointLight position={[0, 5, 0]} intensity={0.5} />
+      {/* Environment and Sky */}
+      <Sky
+        distance={450000}
+        sunPosition={[100, 20, 100]}
+        inclination={0.6}
+        azimuth={0.25}
+      />
 
+      <Environment preset="sunset" />
+
+      {/* Lighting */}
+      <ambientLight intensity={0.5} />
+      <directionalLight
+        position={[10, 20, 10]}
+        intensity={1.5}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={50}
+        shadow-camera-left={-20}
+        shadow-camera-right={20}
+        shadow-camera-top={20}
+        shadow-camera-bottom={-20}
+      />
+      <directionalLight position={[-10, 10, -10]} intensity={0.3} />
+      <hemisphereLight args={['#87ceeb', '#5a7c45', 0.5]} />
+
+      {/* Ground */}
+      <GroundPlane />
+
+      {/* Contact shadows for better ground contact */}
+      <ContactShadows
+        position={[0, 0.01, 0]}
+        opacity={0.4}
+        scale={20}
+        blur={2}
+        far={10}
+      />
+
+      {/* Shade sail */}
       <ShadeSailMesh corners={corners} measurementType={measurementType} fabricColor={fabricColor} />
 
-      {measurementType === 'space' && <TensioningHardware corners={corners} />}
+      {/* Support structure */}
+      <SupportPosts corners={corners} measurementType={measurementType} />
 
-      <FixingPoints corners={corners} measurementType={measurementType} />
+      {/* Tensioning hardware */}
+      <TensioningHardware corners={corners} />
 
+      {/* Camera controls */}
       <OrbitControls
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
-        minDistance={3}
-        maxDistance={15}
-        maxPolarAngle={Math.PI / 2}
-        minPolarAngle={Math.PI / 6}
+        minDistance={5}
+        maxDistance={25}
+        maxPolarAngle={Math.PI / 2.1}
+        minPolarAngle={Math.PI / 12}
+        target={[0, 2, 0]}
+        autoRotate={false}
+        autoRotateSpeed={0.5}
       />
     </>
   );
@@ -224,23 +394,25 @@ function Scene({ corners, measurementType, fabricColor }: ShadeSail3DProps) {
 export function Interactive3DShadeSail({ corners, measurementType, fabricColor }: ShadeSail3DProps) {
   if (corners < 3) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100">
         <p className="text-slate-600">Select number of corners to view 3D model</p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="relative w-full h-full bg-gradient-to-br from-sky-100 to-emerald-100">
       <Canvas
-        camera={{ position: [5, 4, 5], fov: 50 }}
+        shadows
+        camera={{ position: [8, 6, 8], fov: 50 }}
         style={{ width: '100%', height: '100%' }}
+        gl={{ antialias: true, alpha: false }}
       >
         <Scene corners={corners} measurementType={measurementType} fabricColor={fabricColor} />
       </Canvas>
 
       {measurementType && (
-        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border-2 border-[#ef4444]">
+        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border-2 border-[#307C31]">
           <p className="text-xs font-bold text-[#01312D] mb-0.5">
             {measurementType === 'space' ? 'Space Measurements' : 'Sail Dimensions'}
           </p>
