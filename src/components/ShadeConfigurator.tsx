@@ -1545,7 +1545,10 @@ export function ShadeConfigurator() {
               <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
                 <p className="text-sm text-[#01312D]">
                   <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
-                  Enter measurements in the fields to the right to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
+                  {config.measurementOption === 'adjust'
+                    ? ' Enter your space measurements (distance between fixing points) in the fields to the right to calculate pricing.'
+                    : ' Enter your desired shade dimensions in the fields to the right to calculate pricing.'}
+                  {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
                 </p>
               </div>
 

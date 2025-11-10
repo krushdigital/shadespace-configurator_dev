@@ -176,18 +176,58 @@ export function DimensionsContent({
 
   return (
     <div className="px-6 pt-6 pb-6">
+      {/* Measurement Context Banner */}
+      {config.measurementOption === 'adjust' && (
+        <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h5 className="text-base font-bold text-blue-900 mb-1">
+                You're Measuring Your Space
+              </h5>
+              <p className="text-sm text-blue-800 leading-relaxed">
+                Enter the measurements <strong>between your fixing points</strong> (the space where the shade will be installed). We'll calculate the perfect sail size to fit your space, accounting for fabric stretch and tensioning hardware.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {config.measurementOption === 'exact' && (
+        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h5 className="text-base font-bold text-amber-900 mb-1">
+                You're Specifying Finished Shade Dimensions
+              </h5>
+              <p className="text-sm text-amber-800 leading-relaxed">
+                Enter the exact measurements for <strong>the finished shade sail</strong> as you want it manufactured. We'll make it to these precise dimensions with no adjustments.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Diagram - Only show on mobile */}
       {isMobile && (
         <div className="mb-6">
           <h4 className="text-lg font-semibold text-slate-900 mb-4">
             Interactive Measurement Guide
           </h4>
-          
+
           {/* Canvas Tip */}
           <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
             <p className="text-sm text-[#01312D]">
-              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape. 
-              Enter measurements in the fields below to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
+              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
+              {config.measurementOption === 'adjust'
+                ? 'Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
+                : 'Enter your desired shade dimensions in the fields below to calculate pricing.'}
+              {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
             </p>
           </div>
           
@@ -227,7 +267,10 @@ export function DimensionsContent({
         {/* Measurement Inputs */}
         <div>
           <h4 className="text-base md:text-lg font-semibold text-[#01312D] mt-4 mb-3">
-            Precise Measurements ({config.unit === 'metric' ? 'mm' : 'inches'})
+            {config.measurementOption === 'adjust'
+              ? `Space Measurements - Distance Between Fixing Points`
+              : `Finished Shade Dimensions`}
+            {' '}({config.unit === 'metric' ? 'mm' : 'inches'})
           </h4>
           <Card className={`p-3 md:p-4 ${
             Object.keys(validationErrors).some(key => 
@@ -282,7 +325,9 @@ export function DimensionsContent({
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
                       errorKey={edgeKey}
-                      label={`Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)}`}
+                      label={config.measurementOption === 'adjust'
+                        ? `Space Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Fixing Point to Fixing Point)`
+                        : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
                       secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
                      />
                      <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
@@ -354,6 +399,16 @@ export function DimensionsContent({
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-2">
                             <p className="text-sm text-[#01312D]">
                               <strong>Why are diagonals needed?</strong> They ensure our manufacturing team can create your exact shape with precision accuracy.
+                              {config.measurementOption === 'adjust' && (
+                                <span className="block mt-1">
+                                  <em>Note: Measure diagonals between the fixing points in your space.</em>
+                                </span>
+                              )}
+                              {config.measurementOption === 'exact' && (
+                                <span className="block mt-1">
+                                  <em>Note: Provide diagonal measurements of the finished shade sail.</em>
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -371,7 +426,9 @@ export function DimensionsContent({
                       const isSuccess = hasValidValue && !hasError;
                       
                       // Generate label from key (e.g., 'AC' -> 'Diagonal A → C')
-                      const label = `Diagonal ${key.charAt(0)} → ${key.charAt(1)}`;
+                      const label = config.measurementOption === 'adjust'
+                        ? `Space Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
+                        : `Shade Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
                       
                       return (
                         <div key={key}>
