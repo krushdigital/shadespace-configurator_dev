@@ -26,6 +26,7 @@ export interface ConfiguratorState {
   tensionPreset?: TensionPreset;
   animationEnabled?: boolean;
   windIntensity?: number;
+  sail3DOffset?: { x: number; y: number; z: number };
 }
 
 export interface ShadeCalculations {

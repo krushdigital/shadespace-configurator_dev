@@ -83,8 +83,8 @@ export class HardwareManager {
 
     group.add(ring);
 
-    const position = this.getCornerPosition(index, config);
-    group.position.copy(position);
+    const sailPosition = this.getSailAttachmentPosition(index, config);
+    group.position.copy(sailPosition);
 
     return group;
   }
@@ -184,17 +184,25 @@ export class HardwareManager {
     const group = new THREE.Group();
     group.name = `turnbuckle-${index}`;
 
-    const bodyGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.15, 8);
-    const eyeGeometry = new THREE.TorusGeometry(0.025, 0.008, 8, 12);
+    const bodyGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.2, 8);
+    const eyeGeometry = new THREE.TorusGeometry(0.04, 0.012, 8, 16);
     const turnbuckleMaterial = this.materialsManager.createHardwareMaterial();
 
     const body = new THREE.Mesh(bodyGeometry, turnbuckleMaterial);
+    body.castShadow = true;
+    body.receiveShadow = true;
+
     const eye1 = new THREE.Mesh(eyeGeometry, turnbuckleMaterial);
     const eye2 = new THREE.Mesh(eyeGeometry, turnbuckleMaterial);
 
-    eye1.position.y = 0.075;
+    eye1.castShadow = true;
+    eye1.receiveShadow = true;
+    eye2.castShadow = true;
+    eye2.receiveShadow = true;
+
+    eye1.position.y = 0.1;
     eye1.rotation.x = Math.PI / 2;
-    eye2.position.y = -0.075;
+    eye2.position.y = -0.1;
     eye2.rotation.x = Math.PI / 2;
 
     group.add(body);
@@ -290,7 +298,7 @@ export class HardwareManager {
       return new THREE.Vector3(cornerPos.x, -sagAmplitude * minDim, cornerPos.z);
     }
 
-    const offsetDistance = 0.3;
+    const offsetDistance = 0.25;
     const sailX = cornerPos.x - (dx / length) * offsetDistance;
     const sailZ = cornerPos.z - (dz / length) * offsetDistance;
 
@@ -299,8 +307,8 @@ export class HardwareManager {
 
   public updateHardware(instance: HardwareInstance, config: ConfiguratorState): void {
     instance.corners.forEach((corner, index) => {
-      const position = this.getCornerPosition(index, config);
-      corner.position.copy(position);
+      const sailPosition = this.getSailAttachmentPosition(index, config);
+      corner.position.copy(sailPosition);
     });
 
     instance.poles.forEach((pole, index) => {

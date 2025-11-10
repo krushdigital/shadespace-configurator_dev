@@ -73,20 +73,19 @@ export function View3DTabWrapper({
       </div>
 
       <div className="flex-1 relative w-full" style={{ paddingBottom: activeView === '2d' ? '100%' : '100%', minHeight: activeView === '3d' ? '600px' : '0' }}>
-        {activeView === '2d' ? (
-          <div className="absolute inset-0">
-            <ShapeCanvas
-              config={config}
-              updateConfig={updateConfig}
-              readonly={readonly}
-              snapToGrid={true}
-              highlightedMeasurement={highlightedMeasurement || undefined}
-              highlightedCorner={highlightedCorner || undefined}
-              isMobile={isMobile}
-            />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-slate-50 rounded-lg overflow-hidden">
+        <div className="absolute inset-0" style={{ display: activeView === '2d' ? 'block' : 'none' }}>
+          <ShapeCanvas
+            config={config}
+            updateConfig={updateConfig}
+            readonly={readonly}
+            snapToGrid={true}
+            highlightedMeasurement={highlightedMeasurement || undefined}
+            highlightedCorner={highlightedCorner || undefined}
+            isMobile={isMobile}
+          />
+        </div>
+        <div className="absolute inset-0 bg-slate-50 rounded-lg overflow-hidden" style={{ display: activeView === '3d' ? 'block' : 'none' }}>
+          {canShow3D && (
             <Suspense
               fallback={
                 <div className="w-full h-full flex items-center justify-center">
@@ -104,8 +103,8 @@ export function View3DTabWrapper({
                 onScreenshotCapture={onScreenshotCapture}
               />
             </Suspense>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {!canShow3D && activeView === '3d' && (

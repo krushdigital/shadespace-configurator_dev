@@ -7,7 +7,7 @@ import { MaterialsManager } from './MaterialsManager';
 import { HardwareManager, HardwareInstance } from './HardwareManager';
 import { AnimationSystem } from './AnimationSystem';
 import { Button } from '../ui/Button';
-import { Download, Camera, Play, Pause, Wind, Upload, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, Camera, Play, Pause, Wind, Upload, Check, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 import { uploadScreenshot3D } from '../../utils/screenshot3DManager';
 import { useToast } from '../ui/ToastProvider';
 
@@ -82,12 +82,24 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
       sailMesh.receiveShadow = true;
       sailMesh.position.y = 0;
 
+      if (effectiveConfig.sail3DOffset) {
+        sailMesh.position.x = effectiveConfig.sail3DOffset.x;
+        sailMesh.position.z = effectiveConfig.sail3DOffset.z;
+      }
+
       sailMeshRef.current = sailMesh;
       sceneManager.getScene().add(sailMesh);
 
       const hardwareInstance = hardwareManager.createHardware(effectiveConfig);
       hardwareInstanceRef.current = hardwareInstance;
       sceneManager.getScene().add(hardwareManager.getHardwareGroup());
+
+      if (effectiveConfig.sail3DOffset) {
+        hardwareManager.updateHardwarePositionOffset(
+          hardwareInstance,
+          new THREE.Vector3(effectiveConfig.sail3DOffset.x, 0, effectiveConfig.sail3DOffset.z)
+        );
+      }
 
       sceneManager.frameObject(sailMesh);
 
@@ -156,6 +168,14 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
           new THREE.Vector3(newPosition.x, 0, newPosition.z)
         );
       }
+
+      updateConfig({
+        sail3DOffset: {
+          x: newPosition.x,
+          y: 0,
+          z: newPosition.z
+        }
+      });
     }
   }, [isDragging, updateConfig]);
 
@@ -163,29 +183,8 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
     if (isDragging && sceneManagerRef.current) {
       setIsDragging(false);
       sceneManagerRef.current.setControlsEnabled(true);
-
-      if (sailMeshRef.current && updateConfig) {
-        const offsetX = sailMeshRef.current.position.x * 100;
-        const offsetZ = sailMeshRef.current.position.z * 100;
-
-        const newPoints = config.points.map(point => ({
-          x: point.x + offsetX,
-          y: point.y + offsetZ
-        }));
-
-        updateConfig({ points: newPoints });
-
-        sailMeshRef.current.position.set(0, 0, 0);
-
-        if (hardwareManagerRef.current && hardwareInstanceRef.current) {
-          hardwareManagerRef.current.updateHardwarePositionOffset(
-            hardwareInstanceRef.current,
-            new THREE.Vector3(0, 0, 0)
-          );
-        }
-      }
     }
-  }, [isDragging, config.points, updateConfig]);
+  }, [isDragging]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -251,10 +250,14 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
       }
     }
 
+    const currentPosition = sailMeshRef.current.position.clone();
+
     const newGeometry = GeometryBuilder.createSailGeometry({ config: effectiveConfig });
     const oldGeometry = sailMeshRef.current.geometry;
     sailMeshRef.current.geometry = newGeometry;
     oldGeometry.dispose();
+
+    sailMeshRef.current.position.copy(currentPosition);
 
     if (hardwareManagerRef.current && hardwareInstanceRef.current) {
       hardwareManagerRef.current.updateHardware(hardwareInstanceRef.current, effectiveConfig);
@@ -270,6 +273,22 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
   const handleResetCamera = () => {
     if (sceneManagerRef.current) {
       sceneManagerRef.current.resetCamera();
+    }
+  };
+
+  const handleResetPosition = () => {
+    if (sailMeshRef.current && updateConfig) {
+      sailMeshRef.current.position.set(0, 0, 0);
+
+      if (hardwareManagerRef.current && hardwareInstanceRef.current) {
+        hardwareManagerRef.current.updateHardwarePositionOffset(
+          hardwareInstanceRef.current,
+          new THREE.Vector3(0, 0, 0)
+        );
+      }
+
+      updateConfig({ sail3DOffset: undefined });
+      showToast('Position reset to center', 'success');
     }
   };
 
@@ -432,6 +451,16 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
               >
                 Reset View
               </button>
+              {config.sail3DOffset && (
+                <button
+                  onClick={handleResetPosition}
+                  className="w-full px-3 py-1.5 text-xs bg-amber-600 text-white hover:bg-amber-700 rounded transition-colors flex items-center justify-center gap-1"
+                  title="Reset sail position to center"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  Reset Position
+                </button>
+              )}
             </div>
           ) : (
             <button
