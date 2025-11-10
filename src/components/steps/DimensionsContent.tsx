@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
+import { View3DTabWrapper } from '../View3DTabWrapper';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
@@ -38,6 +39,8 @@ interface DimensionsContentProps {
   onSaveQuote?: () => void;
   highlightedCorner?: number | null;
   setHighlightedCorner?: (corner: number | null) => void;
+  quoteReference?: string | null;
+  onScreenshotCapture?: (dataUrl: string) => void;
 }
 
 export function DimensionsContent({
@@ -66,7 +69,9 @@ export function DimensionsContent({
   highlightedMeasurement = null,
   onSaveQuote = () => {},
   highlightedCorner = null,
-  setHighlightedCorner = () => {}
+  setHighlightedCorner = () => {},
+  quoteReference,
+  onScreenshotCapture
 }: DimensionsContentProps) {
   const [showHeightsSection, setShowHeightsSection] = useState(false);
 
@@ -213,32 +218,36 @@ export function DimensionsContent({
         </div>
       )}
 
-      {/* Mobile Diagram - Only show on mobile */}
+      {/* Interactive Visualization - Only show on mobile */}
       {isMobile && (
         <div className="mb-6">
           <h4 className="text-lg font-semibold text-slate-900 mb-4">
-            Interactive Measurement Guide
+            Interactive Visualization
           </h4>
 
           {/* Canvas Tip */}
           <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
             <p className="text-sm text-[#01312D]">
-              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
+              <strong>Tip:</strong> Switch between 2D and 3D views to visualize your shade sail. In 2D view, drag the corners to adjust your shape.
               {config.measurementOption === 'adjust'
-                ? 'Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
-                : 'Enter your desired shade dimensions in the fields below to calculate pricing.'}
+                ? ' Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
+                : ' Enter your desired shade dimensions in the fields below to calculate pricing.'}
               {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
             </p>
           </div>
-          
-          <ShapeCanvas 
-            config={config} 
-            updateConfig={updateConfig}
-            readonly={false}
-            snapToGrid={true}
-            highlightedMeasurement={highlightedMeasurement}
-            isMobile={isMobile}
-          />
+
+          <div className="min-h-[400px]">
+            <View3DTabWrapper
+              config={config}
+              updateConfig={updateConfig}
+              highlightedMeasurement={highlightedMeasurement}
+              highlightedCorner={highlightedCorner}
+              isMobile={isMobile}
+              readonly={false}
+              quoteId={quoteReference || undefined}
+              onScreenshotCapture={onScreenshotCapture}
+            />
+          </div>
         </div>
       )}
 
