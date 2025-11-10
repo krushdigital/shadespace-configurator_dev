@@ -203,6 +203,10 @@ export class SceneManager {
     return this.renderer;
   }
 
+  public setControlsEnabled(enabled: boolean) {
+    this.controls.enabled = enabled;
+  }
+
   public dispose() {
     this.stopAnimation();
 

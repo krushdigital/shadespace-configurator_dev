@@ -1,23 +1,24 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
-import { ConfiguratorState } from '../../types';
+import { ConfiguratorState, Point } from '../../types';
 import { SceneManager } from './SceneManager';
 import { GeometryBuilder } from './GeometryBuilder';
 import { MaterialsManager } from './MaterialsManager';
 import { HardwareManager, HardwareInstance } from './HardwareManager';
 import { AnimationSystem } from './AnimationSystem';
 import { Button } from '../ui/Button';
-import { Download, Camera, Play, Pause, Wind, Upload, Check } from 'lucide-react';
+import { Download, Camera, Play, Pause, Wind, Upload, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { uploadScreenshot3D } from '../../utils/screenshot3DManager';
 import { useToast } from '../ui/ToastProvider';
 
 interface ShadeSail3DViewerProps {
   config: ConfiguratorState;
+  updateConfig?: (updates: Partial<ConfiguratorState>) => void;
   quoteId?: string;
   onScreenshotCapture?: (dataUrl: string) => void;
 }
 
-export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: ShadeSail3DViewerProps) {
+export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotCapture }: ShadeSail3DViewerProps) {
   const { showToast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneManagerRef = useRef<SceneManager | null>(null);
@@ -35,11 +36,29 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
   const [isCapturing, setIsCapturing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [lastUploadSuccess, setLastUploadSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [cameraPresetsCollapsed, setCameraPresetsCollapsed] = useState(false);
+
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const dragPlaneRef = useRef<THREE.Plane>(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
+  const dragOffsetRef = useRef<THREE.Vector3>(new THREE.Vector3());
 
   const initialize3DScene = useCallback(() => {
     if (!canvasRef.current) return;
 
     try {
+      const effectiveConfig = { ...config };
+
+      if (!effectiveConfig.heightsProvidedByUser) {
+        const hasHeights = effectiveConfig.fixingHeights.length > 0 &&
+                          effectiveConfig.fixingHeights.some(h => h > 0);
+
+        if (!hasHeights) {
+          effectiveConfig.fixingHeights = Array(effectiveConfig.corners).fill(2200);
+        }
+      }
+
       const sceneManager = new SceneManager({
         canvas: canvasRef.current,
         onError: (err) => setError(err.message),
@@ -55,8 +74,8 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
       hardwareManagerRef.current = hardwareManager;
       animationSystemRef.current = animationSystem;
 
-      const sailGeometry = GeometryBuilder.createSailGeometry({ config });
-      const sailMaterial = materialsManager.createSailMaterial(config);
+      const sailGeometry = GeometryBuilder.createSailGeometry({ config: effectiveConfig });
+      const sailMaterial = materialsManager.createSailMaterial(effectiveConfig);
 
       const sailMesh = new THREE.Mesh(sailGeometry, sailMaterial);
       sailMesh.castShadow = true;
@@ -66,7 +85,7 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
       sailMeshRef.current = sailMesh;
       sceneManager.getScene().add(sailMesh);
 
-      const hardwareInstance = hardwareManager.createHardware(config);
+      const hardwareInstance = hardwareManager.createHardware(effectiveConfig);
       hardwareInstanceRef.current = hardwareInstance;
       sceneManager.getScene().add(hardwareManager.getHardwareGroup());
 
@@ -77,7 +96,7 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
           const windEffect = animationSystem.getWindEffect();
           GeometryBuilder.updateSailGeometry(
             sailMeshRef.current.geometry,
-            config,
+            effectiveConfig,
             windEffect
           );
         }
@@ -90,6 +109,84 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
       setError(err instanceof Error ? err.message : 'Failed to initialize 3D scene');
     }
   }, [config]);
+
+  const handleMouseDown = useCallback((event: MouseEvent) => {
+    if (!sceneManagerRef.current || !sailMeshRef.current || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycasterRef.current.setFromCamera(mouseRef.current, sceneManagerRef.current.getCamera());
+    const intersects = raycasterRef.current.intersectObject(sailMeshRef.current);
+
+    if (intersects.length > 0 && updateConfig) {
+      setIsDragging(true);
+      sceneManagerRef.current.setControlsEnabled(false);
+
+      const intersectionPoint = intersects[0].point;
+      dragOffsetRef.current.copy(intersectionPoint).sub(sailMeshRef.current.position);
+    }
+  }, [updateConfig]);
+
+  const handleMouseMove = useCallback((event: MouseEvent) => {
+    if (!isDragging || !sceneManagerRef.current || !sailMeshRef.current || !updateConfig) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycasterRef.current.setFromCamera(mouseRef.current, sceneManagerRef.current.getCamera());
+
+    const intersectPoint = new THREE.Vector3();
+    raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint);
+
+    if (intersectPoint) {
+      const newPosition = intersectPoint.sub(dragOffsetRef.current);
+      sailMeshRef.current.position.x = newPosition.x;
+      sailMeshRef.current.position.z = newPosition.z;
+
+      if (hardwareManagerRef.current && hardwareInstanceRef.current) {
+        hardwareManagerRef.current.updateHardwarePositionOffset(
+          hardwareInstanceRef.current,
+          new THREE.Vector3(newPosition.x, 0, newPosition.z)
+        );
+      }
+    }
+  }, [isDragging, updateConfig]);
+
+  const handleMouseUp = useCallback(() => {
+    if (isDragging && sceneManagerRef.current) {
+      setIsDragging(false);
+      sceneManagerRef.current.setControlsEnabled(true);
+
+      if (sailMeshRef.current && updateConfig) {
+        const bounds = {
+          minX: Math.min(...config.points.map(p => p.x)),
+          maxX: Math.max(...config.points.map(p => p.x)),
+          minY: Math.min(...config.points.map(p => p.y)),
+          maxY: Math.max(...config.points.map(p => p.y))
+        };
+
+        const centerX = (bounds.minX + bounds.maxX) / 2;
+        const centerY = (bounds.minY + bounds.maxY) / 2;
+
+        const offsetX = sailMeshRef.current.position.x * 100;
+        const offsetZ = sailMeshRef.current.position.z * 100;
+
+        const newPoints = config.points.map(point => ({
+          x: point.x - centerX + offsetX + centerX,
+          y: point.y - centerY + offsetZ + centerY
+        }));
+
+        updateConfig({ points: newPoints });
+      }
+    }
+  }, [isDragging, config.points, updateConfig]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -109,8 +206,18 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
 
     initialize3DScene();
 
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('mouseleave', handleMouseUp);
+
     return () => {
       observer.disconnect();
+
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('mouseleave', handleMouseUp);
 
       if (sceneManagerRef.current) {
         sceneManagerRef.current.dispose();
@@ -122,7 +229,7 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
         hardwareManagerRef.current.dispose();
       }
     };
-  }, []);
+  }, [handleMouseDown, handleMouseMove, handleMouseUp]);
 
   useEffect(() => {
     if (!isInitialized || !sailMeshRef.current || !materialsManagerRef.current) return;
@@ -134,15 +241,26 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
   useEffect(() => {
     if (!isInitialized || !sailMeshRef.current) return;
 
-    const newGeometry = GeometryBuilder.createSailGeometry({ config });
+    const effectiveConfig = { ...config };
+
+    if (!effectiveConfig.heightsProvidedByUser) {
+      const hasHeights = effectiveConfig.fixingHeights.length > 0 &&
+                        effectiveConfig.fixingHeights.some(h => h > 0);
+
+      if (!hasHeights) {
+        effectiveConfig.fixingHeights = Array(effectiveConfig.corners).fill(2200);
+      }
+    }
+
+    const newGeometry = GeometryBuilder.createSailGeometry({ config: effectiveConfig });
     const oldGeometry = sailMeshRef.current.geometry;
     sailMeshRef.current.geometry = newGeometry;
     oldGeometry.dispose();
 
     if (hardwareManagerRef.current && hardwareInstanceRef.current) {
-      hardwareManagerRef.current.updateHardware(hardwareInstanceRef.current, config);
+      hardwareManagerRef.current.updateHardware(hardwareInstanceRef.current, effectiveConfig);
     }
-  }, [config.points, config.measurements, config.fixingHeights, config.tensionPreset, isInitialized]);
+  }, [config.points, config.measurements, config.fixingHeights, config.tensionPreset, config.fixingTypes, config.measurementOption, config.heightsProvidedByUser, isInitialized]);
 
   const handleCameraPreset = (preset: 'front' | 'side' | 'top' | 'isometric') => {
     if (sceneManagerRef.current) {
@@ -257,7 +375,7 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
       <canvas
         ref={canvasRef}
         className="w-full h-full rounded-lg"
-        style={{ display: 'block' }}
+        style={{ display: 'block', cursor: isDragging ? 'grabbing' : 'grab' }}
       />
 
       {!isInitialized && (
@@ -271,41 +389,60 @@ export function ShadeSail3DViewer({ config, quoteId, onScreenshotCapture }: Shad
 
       {isInitialized && (
         <>
-          <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 space-y-2">
-            <div className="text-xs font-semibold text-slate-700 mb-2">Camera Presets</div>
-            <div className="grid grid-cols-2 gap-2">
+          {!cameraPresetsCollapsed ? (
+            <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 space-y-2 transition-all duration-300">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-slate-700">Camera Presets</div>
+                <button
+                  onClick={() => setCameraPresetsCollapsed(true)}
+                  className="p-1 hover:bg-slate-200 rounded transition-colors"
+                  title="Minimize"
+                >
+                  <ChevronLeft className="w-3 h-3 text-slate-600" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleCameraPreset('front')}
+                  className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                >
+                  Front
+                </button>
+                <button
+                  onClick={() => handleCameraPreset('side')}
+                  className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                >
+                  Side
+                </button>
+                <button
+                  onClick={() => handleCameraPreset('top')}
+                  className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                >
+                  Top
+                </button>
+                <button
+                  onClick={() => handleCameraPreset('isometric')}
+                  className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                >
+                  Isometric
+                </button>
+              </div>
               <button
-                onClick={() => handleCameraPreset('front')}
-                className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                onClick={handleResetCamera}
+                className="w-full px-3 py-1.5 text-xs bg-[#307C31] text-white hover:bg-[#255c25] rounded transition-colors"
               >
-                Front
-              </button>
-              <button
-                onClick={() => handleCameraPreset('side')}
-                className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
-              >
-                Side
-              </button>
-              <button
-                onClick={() => handleCameraPreset('top')}
-                className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
-              >
-                Top
-              </button>
-              <button
-                onClick={() => handleCameraPreset('isometric')}
-                className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors"
-              >
-                Isometric
+                Reset View
               </button>
             </div>
+          ) : (
             <button
-              onClick={handleResetCamera}
-              className="w-full px-3 py-1.5 text-xs bg-[#307C31] text-white hover:bg-[#255c25] rounded transition-colors"
+              onClick={() => setCameraPresetsCollapsed(false)}
+              className="absolute top-4 left-4 p-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg hover:bg-slate-100 transition-all duration-300"
+              title="Show Camera Presets"
             >
-              Reset View
+              <ChevronRight className="w-4 h-4 text-slate-600" />
             </button>
-          </div>
+          )}
 
           <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-3 space-y-3">
             <div className="flex items-center gap-2">

@@ -72,7 +72,7 @@ export function View3DTabWrapper({
         </button>
       </div>
 
-      <div className="flex-1 min-h-[400px] lg:min-h-[600px]">
+      <div className="flex-1 min-h-[500px] lg:min-h-[800px]">
         {activeView === '2d' ? (
           <div className="h-full">
             <ShapeCanvas
@@ -99,6 +99,7 @@ export function View3DTabWrapper({
             >
               <ShadeSail3DViewer
                 config={config}
+                updateConfig={updateConfig}
                 quoteId={quoteId}
                 onScreenshotCapture={onScreenshotCapture}
               />

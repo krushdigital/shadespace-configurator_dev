@@ -7,6 +7,8 @@ export interface HardwareInstance {
   corners: THREE.Group[];
   poles: THREE.Mesh[];
   cables: THREE.Line[];
+  turnbuckles: THREE.Group[];
+  buildings: THREE.Mesh[];
 }
 
 export class HardwareManager {
@@ -23,25 +25,47 @@ export class HardwareManager {
     const instance: HardwareInstance = {
       corners: [],
       poles: [],
-      cables: []
+      cables: [],
+      turnbuckles: [],
+      buildings: []
     };
 
-    if (config.measurementOption === 'adjust' && config.fixingHeights.length > 0) {
+    const hasHeights = config.fixingHeights.length > 0 && config.fixingHeights.some(h => h > 0);
+
+    if (hasHeights) {
       for (let i = 0; i < config.corners; i++) {
         const cornerGroup = this.createCornerHardware(i, config);
         instance.corners.push(cornerGroup);
         this.hardwareGroup.add(cornerGroup);
 
-        const pole = this.createPole(i, config);
-        if (pole) {
-          instance.poles.push(pole);
-          this.hardwareGroup.add(pole);
+        const fixingType = config.fixingTypes?.[i] || 'post';
+
+        if (fixingType === 'post') {
+          const pole = this.createPole(i, config);
+          if (pole) {
+            instance.poles.push(pole);
+            this.hardwareGroup.add(pole);
+          }
+        } else if (fixingType === 'building') {
+          const building = this.createBuilding(i, config);
+          if (building) {
+            instance.buildings.push(building);
+            this.hardwareGroup.add(building);
+          }
         }
 
         const cable = this.createCable(i, config);
         if (cable) {
           instance.cables.push(cable);
           this.hardwareGroup.add(cable);
+        }
+
+        if (config.measurementOption === 'adjust') {
+          const turnbuckle = this.createTurnbuckle(i, config);
+          if (turnbuckle) {
+            instance.turnbuckles.push(turnbuckle);
+            this.hardwareGroup.add(turnbuckle);
+          }
         }
       }
     }
@@ -80,9 +104,124 @@ export class HardwareManager {
     pole.receiveShadow = true;
 
     const position = this.getCornerPosition(index, config);
-    pole.position.set(position.x, heightMeters / 2, position.z);
+
+    const centerX = 0;
+    const centerZ = 0;
+    const dx = position.x - centerX;
+    const dz = position.z - centerZ;
+    const length = Math.sqrt(dx * dx + dz * dz);
+
+    const angleRadians = 12 * (Math.PI / 180);
+
+    if (length > 0) {
+      const outwardX = dx / length;
+      const outwardZ = dz / length;
+
+      pole.position.set(
+        position.x + outwardX * heightMeters * Math.sin(angleRadians),
+        heightMeters / 2,
+        position.z + outwardZ * heightMeters * Math.sin(angleRadians)
+      );
+
+      const rotationAxis = new THREE.Vector3(-outwardZ, 0, outwardX).normalize();
+      pole.setRotationFromAxisAngle(rotationAxis, angleRadians);
+    } else {
+      pole.position.set(position.x, heightMeters / 2, position.z);
+    }
 
     return pole;
+  }
+
+  private createBuilding(index: number, config: ConfiguratorState): THREE.Mesh | null {
+    const height = config.fixingHeights[index];
+    if (!height || height <= 0) return null;
+
+    const heightMeters = height / 1000;
+    const wallWidth = 0.2;
+    const wallHeight = heightMeters;
+    const wallDepth = 2;
+
+    const wallGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0xcccccc,
+      roughness: 0.8,
+      metalness: 0.1
+    });
+
+    const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+
+    const position = this.getCornerPosition(index, config);
+
+    const centerX = 0;
+    const centerZ = 0;
+    const dx = position.x - centerX;
+    const dz = position.z - centerZ;
+    const length = Math.sqrt(dx * dx + dz * dz);
+
+    if (length > 0) {
+      const outwardX = dx / length;
+      const outwardZ = dz / length;
+
+      wall.position.set(
+        position.x + outwardX * 0.5,
+        wallHeight / 2,
+        position.z + outwardZ * 0.5
+      );
+
+      const angle = Math.atan2(outwardX, outwardZ);
+      wall.rotation.y = angle;
+    } else {
+      wall.position.set(position.x, wallHeight / 2, position.z);
+    }
+
+    return wall;
+  }
+
+  private createTurnbuckle(index: number, config: ConfiguratorState): THREE.Group | null {
+    const height = config.fixingHeights[index];
+    if (!height || height <= 0) return null;
+
+    const group = new THREE.Group();
+    group.name = `turnbuckle-${index}`;
+
+    const bodyGeometry = new THREE.CylinderGeometry(0.015, 0.015, 0.15, 8);
+    const eyeGeometry = new THREE.TorusGeometry(0.025, 0.008, 8, 12);
+    const turnbuckleMaterial = this.materialsManager.createHardwareMaterial();
+
+    const body = new THREE.Mesh(bodyGeometry, turnbuckleMaterial);
+    const eye1 = new THREE.Mesh(eyeGeometry, turnbuckleMaterial);
+    const eye2 = new THREE.Mesh(eyeGeometry, turnbuckleMaterial);
+
+    eye1.position.y = 0.075;
+    eye1.rotation.x = Math.PI / 2;
+    eye2.position.y = -0.075;
+    eye2.rotation.x = Math.PI / 2;
+
+    group.add(body);
+    group.add(eye1);
+    group.add(eye2);
+
+    const sailPosition = this.getSailAttachmentPosition(index, config);
+    const anchorPosition = this.getCornerPosition(index, config);
+    anchorPosition.y = height / 1000;
+
+    const midPoint = new THREE.Vector3()
+      .addVectors(sailPosition, anchorPosition)
+      .multiplyScalar(0.5);
+
+    group.position.copy(midPoint);
+
+    const direction = new THREE.Vector3()
+      .subVectors(anchorPosition, sailPosition)
+      .normalize();
+
+    const up = new THREE.Vector3(0, 1, 0);
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
+    group.setRotationFromQuaternion(quaternion);
+
+    return group;
   }
 
   private createCable(index: number, config: ConfiguratorState): THREE.Line | null {
@@ -168,14 +307,76 @@ export class HardwareManager {
 
     instance.poles.forEach((pole, index) => {
       const height = config.fixingHeights[index];
-      if (height && height > 0) {
+      const fixingType = config.fixingTypes?.[index] || 'post';
+
+      if (height && height > 0 && fixingType === 'post') {
         const heightMeters = height / 1000;
         const position = this.getCornerPosition(index, config);
-        pole.position.set(position.x, heightMeters / 2, position.z);
+
+        const centerX = 0;
+        const centerZ = 0;
+        const dx = position.x - centerX;
+        const dz = position.z - centerZ;
+        const length = Math.sqrt(dx * dx + dz * dz);
+
+        const angleRadians = 12 * (Math.PI / 180);
+
+        if (length > 0) {
+          const outwardX = dx / length;
+          const outwardZ = dz / length;
+
+          pole.position.set(
+            position.x + outwardX * heightMeters * Math.sin(angleRadians),
+            heightMeters / 2,
+            position.z + outwardZ * heightMeters * Math.sin(angleRadians)
+          );
+
+          const rotationAxis = new THREE.Vector3(-outwardZ, 0, outwardX).normalize();
+          pole.setRotationFromAxisAngle(rotationAxis, angleRadians);
+        } else {
+          pole.position.set(position.x, heightMeters / 2, position.z);
+        }
+
         pole.scale.y = 1;
         pole.visible = true;
       } else {
         pole.visible = false;
+      }
+    });
+
+    instance.buildings.forEach((building, index) => {
+      const height = config.fixingHeights[index];
+      const fixingType = config.fixingTypes?.[index] || 'post';
+
+      if (height && height > 0 && fixingType === 'building') {
+        const heightMeters = height / 1000;
+        const position = this.getCornerPosition(index, config);
+
+        const centerX = 0;
+        const centerZ = 0;
+        const dx = position.x - centerX;
+        const dz = position.z - centerZ;
+        const length = Math.sqrt(dx * dx + dz * dz);
+
+        if (length > 0) {
+          const outwardX = dx / length;
+          const outwardZ = dz / length;
+
+          building.position.set(
+            position.x + outwardX * 0.5,
+            heightMeters / 2,
+            position.z + outwardZ * 0.5
+          );
+
+          const angle = Math.atan2(outwardX, outwardZ);
+          building.rotation.y = angle;
+        } else {
+          building.position.set(position.x, heightMeters / 2, position.z);
+        }
+
+        building.visible = true;
+      } else {
+        building.visible = false;
       }
     });
 
@@ -195,6 +396,37 @@ export class HardwareManager {
         cable.visible = false;
       }
     });
+
+    instance.turnbuckles.forEach((turnbuckle, index) => {
+      const height = config.fixingHeights[index];
+      if (height && height > 0 && config.measurementOption === 'adjust') {
+        const sailPosition = this.getSailAttachmentPosition(index, config);
+        const anchorPosition = this.getCornerPosition(index, config);
+        anchorPosition.y = height / 1000;
+
+        const midPoint = new THREE.Vector3()
+          .addVectors(sailPosition, anchorPosition)
+          .multiplyScalar(0.5);
+
+        turnbuckle.position.copy(midPoint);
+
+        const direction = new THREE.Vector3()
+          .subVectors(anchorPosition, sailPosition)
+          .normalize();
+
+        const up = new THREE.Vector3(0, 1, 0);
+        const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
+        turnbuckle.setRotationFromQuaternion(quaternion);
+
+        turnbuckle.visible = true;
+      } else {
+        turnbuckle.visible = false;
+      }
+    });
+  }
+
+  public updateHardwarePositionOffset(instance: HardwareInstance, offset: THREE.Vector3): void {
+    this.hardwareGroup.position.copy(offset);
   }
 
   public getHardwareGroup(): THREE.Group {
