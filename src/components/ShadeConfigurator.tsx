@@ -26,6 +26,7 @@ import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { MobilePricingBar } from './MobilePricingBar';
 import { SaveProgressButton } from './SaveProgressButton';
+import { Interactive3DModal } from './Interactive3DModal';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
@@ -103,6 +104,7 @@ export function ShadeConfigurator() {
 
   // 3D view state for sticky sidebar
   const [stickyViewMode, setStickyViewMode] = useState<'2D' | '3D'>('2D');
+  const [show3DModal, setShow3DModal] = useState(false);
 
   const calculations = useShadeCalculations(config);
 
@@ -1559,13 +1561,13 @@ export function ShadeConfigurator() {
                     2D View
                   </button>
                   <button
-                    onClick={() => setStickyViewMode('3D')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${
-                      stickyViewMode === '3D'
-                        ? 'bg-white text-[#01312D] shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    onClick={() => setShow3DModal(true)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 bg-[#01312D] text-white hover:bg-[#307C31] shadow-sm flex items-center gap-1"
                   >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
                     3D View
                   </button>
                 </div>
@@ -1574,7 +1576,7 @@ export function ShadeConfigurator() {
               {/* Canvas Tip */}
               <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
                 <p className="text-sm text-[#01312D]">
-                  <strong>Tip:</strong> {stickyViewMode === '2D' ? 'Drag the corners on the canvas to visualize your shape.' : 'View your shade sail in 3D to better understand the configuration.'}
+                  <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape. Click the 3D View button to see your shade sail in an interactive 3D environment.
                   {' '}{config.measurementOption === 'adjust'
                     ? 'Enter your space measurements (distance between fixing points) in the fields to the right to calculate pricing.'
                     : 'Enter your desired shade dimensions in the fields to the right to calculate pricing.'}
@@ -1582,41 +1584,16 @@ export function ShadeConfigurator() {
                 </p>
               </div>
 
-              {/* Conditional Rendering: 2D or 3D View */}
-              {stickyViewMode === '2D' ? (
-                <ShapeCanvas
-                  config={config}
-                  updateConfig={updateConfig}
-                  readonly={false}
-                  snapToGrid={true}
-                  highlightedMeasurement={highlightedMeasurement}
-                  highlightedCorner={highlightedCorner}
-                  isMobile={isMobile}
-                />
-              ) : (
-                <div className="relative bg-white rounded-lg border-2 border-slate-200 overflow-hidden" style={{ height: '600px' }}>
-                  <div className="absolute inset-0">
-                    <ShadeSail3DModel
-                      corners={config.corners}
-                      measurementType={config.measurementOption === 'adjust' ? 'space' : 'sail'}
-                      fabricColor={config.fabricColor}
-                    />
-                    {config.corners > 0 && (
-                      <svg
-                        className="absolute inset-0 w-full h-full pointer-events-none"
-                        viewBox="0 0 400 400"
-                        style={{ zIndex: 10 }}
-                      >
-                        <MeasurementLines
-                          measurementType={config.measurementOption === 'adjust' ? 'space' : 'sail'}
-                          corners={config.corners}
-                          isActive={true}
-                        />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* 2D View Canvas */}
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={false}
+                snapToGrid={true}
+                highlightedMeasurement={highlightedMeasurement}
+                highlightedCorner={highlightedCorner}
+                isMobile={isMobile}
+              />
             </div>
           )}
 
@@ -1667,6 +1644,14 @@ export function ShadeConfigurator() {
         calculations={calculations}
         currentStep={openStep}
         totalSteps={7}
+      />
+
+      <Interactive3DModal
+        isOpen={show3DModal}
+        onClose={() => setShow3DModal(false)}
+        corners={config.corners}
+        measurementType={config.measurementOption === 'adjust' ? 'space' : 'sail'}
+        fabricColor={config.fabricColor}
       />
     </>
   );

@@ -252,10 +252,29 @@ export function Interactive3DShadeSail({ corners, measurementType, fabricColor }
         </div>
       )}
 
-      <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md">
-        <p className="text-[10px] text-slate-600 font-semibold">
-          Drag to rotate • Scroll to zoom • Right-click to pan
-        </p>
+      <div className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm px-4 py-2.5 rounded-lg shadow-lg border border-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+            </svg>
+            <span className="text-[11px] text-slate-700 font-medium">Drag</span>
+          </div>
+          <div className="w-px h-4 bg-slate-300"></div>
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+            </svg>
+            <span className="text-[11px] text-slate-700 font-medium">Scroll</span>
+          </div>
+          <div className="w-px h-4 bg-slate-300"></div>
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+            </svg>
+            <span className="text-[11px] text-slate-700 font-medium">Right-click</span>
+          </div>
+        </div>
       </div>
     </div>
   );
