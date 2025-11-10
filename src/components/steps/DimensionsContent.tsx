@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
-import { ShadeSail3DModel } from '../ShadeSail3DModel';
-import { MeasurementLines } from '../MeasurementLines';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { Interactive3DModal } from '../Interactive3DModal';
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -71,8 +69,6 @@ export function DimensionsContent({
   setHighlightedCorner = () => {}
 }: DimensionsContentProps) {
   const [showHeightsSection, setShowHeightsSection] = useState(false);
-  const [viewMode, setViewMode] = useState<'2D' | '3D'>('2D');
-  const [show3DModal, setShow3DModal] = useState(false);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -220,49 +216,23 @@ export function DimensionsContent({
       {/* Mobile Diagram - Only show on mobile */}
       {isMobile && (
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-slate-900">
-              Interactive Measurement Guide
-            </h4>
-            {/* View Mode Toggle */}
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('2D')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${
-                  viewMode === '2D'
-                    ? 'bg-white text-[#01312D] shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                2D View
-              </button>
-              <button
-                onClick={() => setShow3DModal(true)}
-                className="px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 bg-[#01312D] text-white hover:bg-[#307C31] shadow-sm flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                3D View
-              </button>
-            </div>
-          </div>
+          <h4 className="text-lg font-semibold text-slate-900 mb-4">
+            Interactive Measurement Guide
+          </h4>
 
           {/* Canvas Tip */}
           <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
             <p className="text-sm text-[#01312D]">
-              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape. Click the 3D View button to see your shade sail in an interactive 3D environment.
-              {' '}{config.measurementOption === 'adjust'
+              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
+              {config.measurementOption === 'adjust'
                 ? 'Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
                 : 'Enter your desired shade dimensions in the fields below to calculate pricing.'}
               {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
             </p>
           </div>
-
-          {/* 2D View Canvas */}
-          <ShapeCanvas
-            config={config}
+          
+          <ShapeCanvas 
+            config={config} 
             updateConfig={updateConfig}
             readonly={false}
             snapToGrid={true}
@@ -863,15 +833,6 @@ export function DimensionsContent({
           );
         })()}
       </div>
-
-      {/* 3D Modal */}
-      <Interactive3DModal
-        isOpen={show3DModal}
-        onClose={() => setShow3DModal(false)}
-        corners={config.corners}
-        measurementType={config.measurementOption === 'adjust' ? 'space' : 'sail'}
-        fabricColor={config.fabricColor}
-      />
     </div>
   );
 }
