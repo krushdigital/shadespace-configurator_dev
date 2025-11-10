@@ -6,7 +6,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -252,9 +252,6 @@ export function DimensionsContent({
                 
                 return (
                   <div key={edgeKey}>
-                    <label className="block text-xs md:text-sm font-medium text-[#01312D] mb-1">
-                      Edge {getCornerLabel(index)} → {getCornerLabel(nextIndex)}
-                    </label>
                    <div className="relative">
                      <Input
                        type="number"
@@ -285,6 +282,8 @@ export function DimensionsContent({
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
                       errorKey={edgeKey}
+                      label={`Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)}`}
+                      secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
                      />
                      <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
@@ -376,9 +375,6 @@ export function DimensionsContent({
                       
                       return (
                         <div key={key}>
-                          <label className="block text-xs md:text-sm font-medium text-[#01312D] mb-1">
-                            {label}
-                          </label>
                           <div className="relative">
                             <Input
                               type="number"
@@ -413,6 +409,8 @@ export function DimensionsContent({
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
                               isSuggestedTypo={!!typoSuggestions[key]}
+                              label={label}
+                              secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
                             />
                             <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
                               {config.unit === 'metric' ? 'mm' : 'in'}
@@ -539,28 +537,7 @@ export function DimensionsContent({
                           <div className="grid grid-cols-1 gap-3 md:gap-4 md:grid-cols-2">
                             {/* Height Input */}
                             <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="text-xs font-medium text-[#01312D]">
-                                  Height from Ground
-                                </span>
-                                <Tooltip
-                                  content={
-                                    <div>
-                                      <p className="text-sm text-[#01312D] font-medium mb-2">
-                                        What is this measurement?
-                                      </p>
-                                      <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
-                                        Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
-                                      </p>
-                                    </div>
-                                  }
-                                >
-                                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                                    ?
-                                  </span>
-                                </Tooltip>
-                              </div>
-                              <div className="flex items-center gap-2">
+                              <div className="relative">
                                 <Input
                                   type="number"
                                   value={config.fixingHeights[index]
@@ -585,10 +562,34 @@ export function DimensionsContent({
                                   onBlur={() => setHighlightedCorner(null)}
                                   placeholder={config.unit === 'imperial' ? '100' : '2500'}
                                   autoComplete="off"
-                                  className="flex-1 py-2"
+                                  className="flex-1 py-2 pr-12"
                                   step={config.unit === 'imperial' ? '0.1' : '10'}
+                                  label={
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-medium text-[#01312D]">
+                                        Height from Ground
+                                      </span>
+                                      <Tooltip
+                                        content={
+                                          <div>
+                                            <p className="text-sm text-[#01312D] font-medium mb-2">
+                                              What is this measurement?
+                                            </p>
+                                            <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
+                                              Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
+                                            </p>
+                                          </div>
+                                        }
+                                      >
+                                        <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                          ?
+                                        </span>
+                                      </Tooltip>
+                                    </div>
+                                  }
+                                  secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
                                 />
-                                <span className="text-xs text-[#01312D]/50 min-w-[2rem]">
+                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50">
                                   {config.unit === 'metric' ? 'mm' : 'in'}
                                 </span>
                               </div>

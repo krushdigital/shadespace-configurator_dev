@@ -5,8 +5,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Tooltip } from '../ui/Tooltip';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { convertMmToUnit, convertUnitToMm } from '../../utils/geometry';
-import { formatMeasurement } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
 import { HeightVisualizationCanvas } from '../HeightVisualizationCanvas';
 import { AlertCircle } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -214,7 +213,7 @@ export function FixingPointsContent({
                       </span>
                     </Tooltip>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="relative">
                     {(() => {
                       const currentHeight = config.fixingHeights[index];
                       const hasValidValue = currentHeight !== undefined && currentHeight !== null && currentHeight > 0;
@@ -253,16 +252,17 @@ export function FixingPointsContent({
                       }}
                       placeholder={config.unit === 'imperial' ? '100' : '2500'}
                      autoComplete="off"
-                      className="flex-1 py-2"
+                      className="flex-1 py-2 pr-12"
                       isSuccess={isSuccess}
                       isSuggestedTypo={!!typoSuggestions[`height_${index}`]}
                      step={config.unit === 'imperial' ? '0.1' : '10'}
                      error={validationErrors[`height_${index}`]}
                      errorKey={`height_${index}`}
+                     secondaryValue={hasValidValue ? formatSecondaryUnit(currentHeight, config.unit) : ''}
                     />
                       );
                     })()}
-                    <span className="text-xs text-[#01312D]/50 min-w-[2rem]">
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50">
                       {config.unit === 'metric' ? 'mm' : 'in'}
                     </span>
                   </div>

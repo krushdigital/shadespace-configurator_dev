@@ -50,6 +50,34 @@ export function formatMeasurement(mm: number, unit: 'metric' | 'imperial', displ
   return `${Math.round(mm)}mm`;
 }
 
+/**
+ * Format a secondary unit display for measurement inputs
+ * @param mm Measurement in millimeters
+ * @param unit Current unit mode
+ * @returns Formatted secondary unit string (e.g., "2.5m" or "8'3\"")
+ */
+export function formatSecondaryUnit(mm: number, unit: 'metric' | 'imperial'): string {
+  if (!mm || mm <= 0) return '';
+
+  if (unit === 'metric') {
+    // Convert mm to meters for secondary display
+    const meters = mm / 1000;
+    return `${meters.toFixed(2)}m`;
+  } else {
+    // Convert mm to inches, then to feet and inches for secondary display
+    const inches = mm * MM_TO_INCHES;
+    if (inches >= 12) {
+      const feet = Math.floor(inches / 12);
+      const remainingInches = inches % 12;
+      if (parseFloat(remainingInches.toFixed(1)) > 0) {
+        return `${feet}'${remainingInches.toFixed(1)}"`;
+      }
+      return `${feet}'`;
+    }
+    return `${inches.toFixed(1)}"`;
+  }
+}
+
 export function formatArea(mm2: number, unit: 'metric' | 'imperial'): string {
   if (unit === 'imperial') {
     const sqInches = mm2 * (MM_TO_INCHES * MM_TO_INCHES);

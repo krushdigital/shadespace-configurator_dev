@@ -7,9 +7,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   errorKey?: string;
   isSuccess?: boolean;
   isSuggestedTypo?: boolean;
+  secondaryValue?: string;
 }
 
-export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTypo = false, className = '', ...props }: InputProps) {
+export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTypo = false, secondaryValue, className = '', ...props }: InputProps) {
   // Prevent scroll wheel from changing number input values
   const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
     if (props.type === 'number') {
@@ -22,6 +23,11 @@ export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTy
       {label && (
         <label className="block text-sm font-medium text-[#01312D] mb-2 flex items-center gap-2">
           {label}
+          {secondaryValue && (
+            <span className="text-xs font-normal text-[#01312D]/60">
+              ({secondaryValue})
+            </span>
+          )}
           {isSuccess && (
             <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white">
               <Check className="w-3 h-3" strokeWidth={3} />
