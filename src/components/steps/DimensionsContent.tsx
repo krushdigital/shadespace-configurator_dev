@@ -8,7 +8,7 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 
 interface DimensionsContentProps {
@@ -64,6 +64,7 @@ export function DimensionsContent({
   highlightedMeasurement = null,
   onSaveQuote = () => {}
 }: DimensionsContentProps) {
+  const [showHeightsSection, setShowHeightsSection] = useState(false);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -135,7 +136,7 @@ export function DimensionsContent({
     if (correctedValue) {
       const newMeasurements = { ...config.measurements, [measurementKey]: correctedValue };
       updateConfig({ measurements: newMeasurements });
-      
+
       // Clear validation errors and suggestions for this field
       if (setValidationErrors && setTypoSuggestions) {
         const newErrors = { ...validationErrors };
@@ -147,6 +148,26 @@ export function DimensionsContent({
       }
     }
   };
+
+  const updateFixingHeight = (index: number, height: number) => {
+    const mmHeight = convertUnitToMm(height, config.unit);
+    const newHeights = [...config.fixingHeights];
+    while (newHeights.length < config.corners) {
+      newHeights.push(0);
+    }
+    newHeights[index] = mmHeight;
+    updateConfig({ fixingHeights: newHeights, heightsProvidedByUser: true });
+  };
+
+  const updateFixingType = (index: number, type: 'post' | 'building') => {
+    const newTypes = [...(config.fixingTypes || [])];
+    while (newTypes.length < config.corners) {
+      newTypes.push('post');
+    }
+    newTypes[index] = type;
+    updateConfig({ fixingTypes: newTypes, heightsProvidedByUser: true });
+  };
+
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
   return (
@@ -457,6 +478,193 @@ export function DimensionsContent({
             </div>
           </Card>
         </div>
+
+        {/* Optional Heights and Anchor Points Section */}
+        {config.corners !== 3 && (
+          <div className="mt-6">
+            <Card
+              className={`overflow-hidden transition-all duration-300 ${
+                showHeightsSection ? 'border-2 border-[#307C31]' : 'border border-slate-300'
+              }`}
+            >
+              <button
+                onClick={() => setShowHeightsSection(!showHeightsSection)}
+                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {showHeightsSection ? (
+                      <ChevronUp className="w-5 h-5 text-[#307C31]" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-slate-600" />
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <h5 className="text-base font-semibold text-[#01312D] flex items-center gap-2">
+                      Optional: Heights & Anchor Points for Custom Fit
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                        Optional
+                      </span>
+                    </h5>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {showHeightsSection
+                        ? 'Providing this information allows for more customized manufacturing'
+                        : 'Click to add height and attachment information for a more customized fit'}
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              {showHeightsSection && (
+                <div className="p-4 pt-0 border-t border-slate-200 space-y-4">
+                  <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg">
+                    <p className="text-sm text-[#01312D]">
+                      <strong>Note:</strong> Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.
+                    </p>
+                  </div>
+
+                  {/* Height inputs for each corner */}
+                  <div className="space-y-3">
+                    {Array.from({ length: config.corners }, (_, index) => (
+                      <Card key={index} className="p-3 border-l-4 border-l-[#01312D]">
+                        <div className="space-y-2">
+                          <h6 className="font-semibold text-[#01312D] text-sm">
+                            Anchor Point {getCornerLabel(index)} Configuration
+                          </h6>
+
+                          <div className="grid grid-cols-1 gap-3 md:gap-4 md:grid-cols-2">
+                            {/* Height Input */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-medium text-[#01312D]">
+                                  Height from Ground
+                                </span>
+                                <Tooltip
+                                  content={
+                                    <div>
+                                      <p className="text-sm text-[#01312D] font-medium mb-2">
+                                        What is this measurement?
+                                      </p>
+                                      <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
+                                        Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
+                                      </p>
+                                    </div>
+                                  }
+                                >
+                                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                    ?
+                                  </span>
+                                </Tooltip>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  value={config.fixingHeights[index]
+                                    ? (config.unit === 'imperial'
+                                      ? String(Math.round(convertMmToUnit(config.fixingHeights[index], config.unit) * 100) / 100)
+                                      : Math.round(convertMmToUnit(config.fixingHeights[index], config.unit)).toString()
+                                    )
+                                    : ''}
+                                  onChange={(e) => {
+                                    if (e.target.value === '') {
+                                      const newHeights = [...config.fixingHeights];
+                                      newHeights[index] = 0;
+                                      updateConfig({ fixingHeights: newHeights });
+                                    } else {
+                                      const numValue = parseFloat(e.target.value);
+                                      if (!isNaN(numValue)) {
+                                        updateFixingHeight(index, numValue);
+                                      }
+                                    }
+                                  }}
+                                  placeholder={config.unit === 'imperial' ? '100' : '2500'}
+                                  autoComplete="off"
+                                  className="flex-1 py-2"
+                                  step={config.unit === 'imperial' ? '0.1' : '10'}
+                                />
+                                <span className="text-xs text-[#01312D]/50 min-w-[2rem]">
+                                  {config.unit === 'metric' ? 'mm' : 'in'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Attachment Type */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-medium text-[#01312D]">
+                                  Attachment Type
+                                </span>
+                                <Tooltip
+                                  content={
+                                    <div>
+                                      <p className="text-sm text-[#01312D] font-medium mb-1">
+                                        Attachment Type
+                                      </p>
+                                      <p className="text-sm text-[#01312D]/70">
+                                        Post: Freestanding pole installation. Building: Attached to wall, roof, or existing structure.
+                                      </p>
+                                    </div>
+                                  }
+                                >
+                                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                    ?
+                                  </span>
+                                </Tooltip>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => updateFixingType(index, 'post')}
+                                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                                    config.fixingTypes?.[index] === 'post'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                  }`}
+                                >
+                                  Post
+                                </button>
+                                <button
+                                  onClick={() => updateFixingType(index, 'building')}
+                                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                                    config.fixingTypes?.[index] === 'building'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                  }`}
+                                >
+                                  Building
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Installation Guidelines */}
+                  <Card className="p-3 bg-slate-50 border-slate-200">
+                    <h6 className="text-xs md:text-sm font-semibold text-[#01312D] mb-2">
+                      Installation Guidelines
+                    </h6>
+                    <ul className="space-y-1 text-xs text-slate-600">
+                      <li className="flex items-start">
+                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        Heights are measured from ground level to the anchor point
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        Different heights create natural water runoff and proper sail tension
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        Minimum recommended height is {config.unit === 'imperial' ? '7.2ft' : '2.2m'} for clearance
+                      </li>
+                    </ul>
+                  </Card>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">

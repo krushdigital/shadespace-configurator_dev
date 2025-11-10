@@ -450,15 +450,17 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include anchor point measurements if NOT a 3-corner sail
+      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail
       const anchorPointMeasurements: Record<string, { unit: string; formatted: string }> = {};
-      if (config.corners !== 3) {
+      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
-          const corner = String.fromCharCode(65 + index);
-          anchorPointMeasurements[corner] = {
-            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-            formatted: formatMeasurement(height, config.unit)
-          };
+          if (height && height > 0) {
+            const corner = String.fromCharCode(65 + index);
+            anchorPointMeasurements[corner] = {
+              unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+              formatted: formatMeasurement(height, config.unit)
+            };
+          }
         });
       }
 
@@ -481,9 +483,9 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include backend anchor measurements if NOT a 3-corner sail
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail
       const backendAnchorMeasurementsEmail: Record<string, string> = {};
-      if (config.corners !== 3) {
+      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           const corner = String.fromCharCode(65 + index);
           if (height && height > 0) {
@@ -516,8 +518,8 @@ export function ShadeConfigurator() {
         selectedFabric,
         selectedColor,
         warranty: selectedFabric?.warrantyYears || "",
-        // Only include fixing heights data if NOT a 3-corner sail
-        ...(config.corners !== 3 && {
+        // Only include fixing heights data if user provided them AND NOT a 3-corner sail
+        ...(config.corners !== 3 && config.heightsProvidedByUser && {
           fixingHeights: config.fixingHeights,
           fixingTypes: config.fixingTypes,
         }),
@@ -805,9 +807,9 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include backend anchor measurements if NOT a 3-corner sail
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail
       const backendAnchorMeasurements: Record<string, string> = {};
-      if (config.corners !== 3) {
+      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           const corner = String.fromCharCode(65 + index);
           if (height && height > 0) {
@@ -828,9 +830,9 @@ export function ShadeConfigurator() {
         return result;
       };
 
-      // Only format cart fixing heights if NOT a 3-corner sail
-      const cartFixingHeights = config.corners !== 3 ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
-      const cartFixingTypes = config.corners !== 3 ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
+      // Only format cart fixing heights if user provided them AND NOT a 3-corner sail
+      const cartFixingHeights = (config.corners !== 3 && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
+      const cartFixingTypes = (config.corners !== 3 && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
 
       const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
         method: 'POST',
@@ -1007,8 +1009,8 @@ export function ShadeConfigurator() {
 
   // Helper function to check if a step should be skipped
   const shouldSkipStep = (step: number): boolean => {
-    // Skip Step 5 (Heights & Anchor Points) if measurementOption is 'exact' OR if corners equals 3
-    if (step === 5 && (config.measurementOption === 'exact' || config.corners === 3)) {
+    // Always skip Step 5 (Heights & Anchor Points) - now integrated into Step 4 as optional
+    if (step === 5) {
       return true;
     }
     return false;
@@ -1069,22 +1071,8 @@ export function ShadeConfigurator() {
         }
         return edgeCount === config.corners;
       case 5: // Heights & Anchor Points
-        // If this step is skipped due to 'exact' measurement option, it's automatically complete
-        if (shouldSkipStep(5)) return true;
-
-        // Check if we have all required data for all corners
-        if (!config.fixingHeights || config.fixingHeights.length !== config.corners) return false;
-        if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return false;
-
-        // Check if all heights are valid (not undefined, not null, and greater than 0)
-        const allHeightsValid = config.fixingHeights.every(height =>
-          height !== undefined && height !== null && height > 0
-        );
-
-        // Check if all types are selected
-        const allTypesValid = config.fixingTypes.every(type => type === 'post' || type === 'building');
-
-        return allHeightsValid && allTypesValid;
+        // Step 5 is now always skipped (integrated into Step 4 as optional)
+        return true;
       case 6: // Review
         return true;
       default:
@@ -1227,37 +1215,7 @@ export function ShadeConfigurator() {
         }
         break;
       case 5: // Heights & Anchor Points
-        // Validate heights
-        const heightValidation = validateHeights(config.fixingHeights, config.unit);
-
-        // Add height validation errors with specific messages
-        Object.keys(heightValidation.errors).forEach(key => {
-          errors[key] = heightValidation.errors[key];
-        });
-
-        // Add typo suggestions
-        Object.keys(heightValidation.typoSuggestions).forEach(key => {
-          suggestions[key] = heightValidation.typoSuggestions[key];
-        });
-
-        if (!config.fixingHeights || config.fixingHeights.length !== config.corners) {
-          errors.fixingHeights = 'All anchor point heights are required';
-        } else {
-          config.fixingHeights.forEach((height, index) => {
-            if (height === undefined || height === null || height <= 0) {
-              errors[`height_${index}`] = 'Height measurement required';
-            }
-          });
-        }
-        if (!config.fixingTypes || config.fixingTypes.length !== config.corners) {
-          errors.fixingTypes = 'All attachment types must be selected';
-        } else {
-          config.fixingTypes.forEach((type, index) => {
-            if (type !== 'post' && type !== 'building') {
-              errors[`type_${index}`] = 'Please select attachment type (post or building)';
-            }
-          });
-        }
+        // Step 5 is now skipped - heights are optional in Step 4
         break;
     }
 
@@ -1365,23 +1323,8 @@ export function ShadeConfigurator() {
         }
         return edgeCount === config.corners ? `${edgeCount} edge measurements entered` : `${edgeCount}/${config.corners} edges measured`;
       case 5: // Heights & Anchor Points
-        // If step is skipped for 3-corner sails, show N/A
-        if (config.corners === 3) return 'N/A - Not required for 3-sided sails';
-
-        // If step is skipped due to exact measurement option
-        if (config.measurementOption === 'exact') return 'N/A - Exact dimensions selected';
-
-        if (!config.fixingHeights || config.fixingHeights.length !== config.corners) return 'Not configured';
-        if (!config.fixingTypes || config.fixingTypes.length !== config.corners) return 'Not configured';
-
-        const validHeights = config.fixingHeights.filter(h => h !== undefined && h !== null && h > 0).length;
-        const validTypes = config.fixingTypes.filter(t => t === 'post' || t === 'building').length;
-
-        if (validHeights === config.corners && validTypes === config.corners) {
-          return `${config.corners} anchor points configured`;
-        } else {
-          return `${Math.min(validHeights, validTypes)}/${config.corners} anchor points configured`;
-        }
+        // Step 5 is now integrated into Step 4 as optional
+        return 'Integrated into Dimensions step';
       case 6: // Review
         return 'Ready for purchase';
       default:

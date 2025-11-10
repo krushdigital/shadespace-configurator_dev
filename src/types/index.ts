@@ -21,6 +21,7 @@ export interface ConfiguratorState {
   fixingPointsInstalled?: boolean;
   currency: string;
   diagonalsInitiallyProvided?: boolean;
+  heightsProvidedByUser?: boolean;
 }
 
 export interface ShadeCalculations {

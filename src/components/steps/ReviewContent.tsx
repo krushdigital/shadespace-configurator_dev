@@ -431,15 +431,17 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       });
 
 
-      // Only include anchor point measurements if NOT a 3-corner sail
+      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail
       const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-      if (config.corners !== 3) {
+      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
-          const corner = String.fromCharCode(65 + index);
-          anchorPointMeasurements[corner] = {
-            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-            formatted: formatMeasurement(height, config.unit)
-          };
+          if (height && height > 0) {
+            const corner = String.fromCharCode(65 + index);
+            anchorPointMeasurements[corner] = {
+              unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+              formatted: formatMeasurement(height, config.unit)
+            };
+          }
         });
       }
 
@@ -463,9 +465,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         }
       });
 
-      // Only include backend anchor measurements if NOT a 3-corner sail
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail
       const backendAnchorMeasurements: Record<string, string> = {};
-      if (config.corners !== 3) {
+      if (config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
           const corner = String.fromCharCode(65 + index);
           if (height && height > 0) {
@@ -496,8 +498,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           selectedColor: selectedColor,
           canvasImageUrl: canvasImageUrl,
           warranty: selectedFabric?.warrantyYears || "",
-          // Only include fixing heights data if NOT a 3-corner sail
-          ...(config.corners !== 3 && {
+          // Only include fixing heights data if user provided them AND NOT a 3-corner sail
+          ...(config.corners !== 3 && config.heightsProvidedByUser && {
             fixingHeights: config.fixingHeights,
             fixingTypes: config.fixingTypes,
           }),
@@ -913,8 +915,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               )}
             </div>
 
-            {/* Anchor Point Heights - Only show for 'adjust' measurement option AND not for 3-corner sails */}
-            {config.measurementOption === 'adjust' && config.corners !== 3 && config.fixingHeights && config.fixingHeights.length > 0 && (
+            {/* Anchor Point Heights - Only show if user provided height data AND not for 3-corner sails */}
+            {config.corners !== 3 && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.some(h => h > 0) && (
               <div>
                 {isMobile ? (
                   <AccordionItem
@@ -975,6 +977,27 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </>
                 )}
               </div>
+            )}
+
+            {/* Note when heights are not provided */}
+            {config.corners !== 3 && !config.heightsProvidedByUser && (
+              <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-900`}>
+                      <strong>Height and Anchor Point Information Not Provided</strong>
+                    </p>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-800 mt-1`}>
+                      Your shade sail will be manufactured using our standard process. For a more customized fit based on your specific installation heights, you can go back to the Dimensions step and add this information.
+                    </p>
+                  </div>
+                </div>
+              </Card>
             )}
           </div>
 
