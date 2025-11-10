@@ -187,16 +187,17 @@ export class HardwareManager {
     const sailPosition = this.getSailAttachmentPosition(index, config);
     const poleTopPosition = this.getPoleTopPosition(index, config);
 
-    const horizontalDirection = new THREE.Vector3(
+    // Calculate the full 3D direction vector (not just horizontal)
+    const direction = new THREE.Vector3(
       poleTopPosition.x - sailPosition.x,
-      0,
+      poleTopPosition.y - sailPosition.y,
       poleTopPosition.z - sailPosition.z
     );
-    const horizontalDistance = horizontalDirection.length();
+    const distance = direction.length();
 
-    if (horizontalDistance < 0.01) return null;
+    if (distance < 0.01) return null;
 
-    const bodyLength = Math.min(0.2, horizontalDistance * 0.3);
+    const bodyLength = Math.min(0.2, distance * 0.3);
     const bodyGeometry = new THREE.CylinderGeometry(0.025, 0.025, bodyLength, 8);
     const eyeGeometry = new THREE.TorusGeometry(0.04, 0.012, 8, 16);
     const turnbuckleMaterial = this.materialsManager.createHardwareMaterial();
@@ -222,17 +223,23 @@ export class HardwareManager {
     group.add(eye1);
     group.add(eye2);
 
+    // Position at the midpoint between sail corner and pole top
     const midPoint = new THREE.Vector3(
       (sailPosition.x + poleTopPosition.x) / 2,
-      sailPosition.y,
+      (sailPosition.y + poleTopPosition.y) / 2,
       (sailPosition.z + poleTopPosition.z) / 2
     );
 
     group.position.copy(midPoint);
 
-    horizontalDirection.normalize();
-    const angle = Math.atan2(horizontalDirection.x, horizontalDirection.z);
-    group.rotation.set(Math.PI / 2, 0, -angle);
+    // Orient the turnbuckle to point from sail to pole top
+    direction.normalize();
+
+    // Calculate rotation to align the turnbuckle along the direction vector
+    const quaternion = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    quaternion.setFromUnitVectors(up, direction);
+    group.quaternion.copy(quaternion);
 
     return group;
   }
@@ -325,22 +332,27 @@ export class HardwareManager {
     const minDim = Math.min(width, height);
 
     const sagAmplitude = 0.04;
-    const centerX = 0;
-    const centerZ = 0;
 
-    const dx = cornerPos.x - centerX;
-    const dz = cornerPos.z - centerZ;
-    const length = Math.sqrt(dx * dx + dz * dz);
+    // Calculate height at corner based on fixing heights
+    let cornerHeight = -sagAmplitude * minDim;
 
-    if (length === 0) {
-      return new THREE.Vector3(cornerPos.x, -sagAmplitude * minDim, cornerPos.z);
+    if (config.fixingHeights && config.fixingHeights.length === config.corners) {
+      const heights = config.fixingHeights.map(h => h / 1000);
+
+      if (config.corners === 3) {
+        // For triangles, the corner is at the exact height
+        cornerHeight = (heights[index] || 0) - sagAmplitude * minDim;
+      } else if (config.corners === 4) {
+        // For quads, corners are at their specified heights
+        cornerHeight = (heights[index] || 0) - sagAmplitude * minDim;
+      } else {
+        const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
+        cornerHeight = avgHeight - sagAmplitude * minDim;
+      }
     }
 
-    const offsetDistance = 0.25;
-    const sailX = cornerPos.x - (dx / length) * offsetDistance;
-    const sailZ = cornerPos.z - (dz / length) * offsetDistance;
-
-    return new THREE.Vector3(sailX, -sagAmplitude * minDim, sailZ);
+    // Position the attachment point at the actual corner of the sail
+    return new THREE.Vector3(cornerPos.x, cornerHeight, cornerPos.z);
   }
 
   public updateHardware(instance: HardwareInstance, config: ConfiguratorState): void {
@@ -445,25 +457,32 @@ export class HardwareManager {
         const sailPosition = this.getSailAttachmentPosition(index, config);
         const poleTopPosition = this.getPoleTopPosition(index, config);
 
-        const horizontalDirection = new THREE.Vector3(
+        // Calculate the full 3D direction vector
+        const direction = new THREE.Vector3(
           poleTopPosition.x - sailPosition.x,
-          0,
+          poleTopPosition.y - sailPosition.y,
           poleTopPosition.z - sailPosition.z
         );
-        const horizontalDistance = horizontalDirection.length();
+        const distance = direction.length();
 
-        if (horizontalDistance >= 0.01) {
+        if (distance >= 0.01) {
+          // Position at midpoint between sail corner and pole top
           const midPoint = new THREE.Vector3(
             (sailPosition.x + poleTopPosition.x) / 2,
-            sailPosition.y,
+            (sailPosition.y + poleTopPosition.y) / 2,
             (sailPosition.z + poleTopPosition.z) / 2
           );
 
           turnbuckle.position.copy(midPoint);
 
-          horizontalDirection.normalize();
-          const angle = Math.atan2(horizontalDirection.x, horizontalDirection.z);
-          turnbuckle.rotation.set(Math.PI / 2, 0, -angle);
+          // Orient the turnbuckle to point from sail to pole top
+          direction.normalize();
+
+          // Calculate rotation to align the turnbuckle along the direction vector
+          const quaternion = new THREE.Quaternion();
+          const up = new THREE.Vector3(0, 1, 0);
+          quaternion.setFromUnitVectors(up, direction);
+          turnbuckle.quaternion.copy(quaternion);
 
           turnbuckle.visible = true;
         } else {
@@ -476,6 +495,7 @@ export class HardwareManager {
   }
 
   public updateHardwarePositionOffset(instance: HardwareInstance, offset: THREE.Vector3): void {
+    // Update the hardware group position to match the sail offset
     this.hardwareGroup.position.copy(offset);
   }
 

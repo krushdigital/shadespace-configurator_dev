@@ -53,58 +53,152 @@ export class GeometryBuilder {
     const width = (bounds.maxX - bounds.minX) / 100;
     const height = (bounds.maxY - bounds.minY) / 100;
 
-    const geometry = new THREE.PlaneGeometry(width, height, resolution, resolution);
-    geometry.rotateX(-Math.PI / 2);
+    // Create the geometry with proper dimensions based on actual shape
+    const geometry = new THREE.BufferGeometry();
 
-    const positionAttribute = geometry.attributes.position;
-    const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
-    const minDim = Math.min(width, height);
+    // Generate vertices for a shaped mesh that matches the actual corner positions
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    const uvs: number[] = [];
 
-    for (let i = 0; i < positionAttribute.count; i++) {
-      const x = positionAttribute.getX(i);
-      const z = positionAttribute.getZ(i);
+    // For triangles (3 corners)
+    if (config.corners === 3) {
+      // Create a triangular mesh
+      for (let row = 0; row <= resolution; row++) {
+        for (let col = 0; col <= resolution - row; col++) {
+          const u = col / resolution;
+          const v = row / resolution;
 
-      const u = (x / width) + 0.5;
-      const v = (z / height) + 0.5;
-
-      let y = this.radialSag(u, v, sagAmplitude) * minDim;
-
-      if (config.fixingHeights && config.fixingHeights.length === config.corners) {
-        const heights = config.fixingHeights.map(h => h / 1000);
-
-        if (config.corners === 3) {
-          const h0 = heights[0] || 0;
-          const h1 = heights[1] || 0;
-          const h2 = heights[2] || 0;
-
-          const w0 = (1 - u) * (1 - v);
-          const w1 = u * (1 - v);
+          // Barycentric interpolation for triangle shape
+          const w0 = 1 - u - v;
+          const w1 = u;
           const w2 = v;
 
-          y += h0 * w0 + h1 * w1 + h2 * w2;
-        } else if (config.corners === 4) {
-          const h0 = heights[0] || 0;
-          const h1 = heights[1] || 0;
-          const h2 = heights[2] || 0;
-          const h3 = heights[3] || 0;
+          if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+            // Get corner positions in 3D space
+            const c0 = this.get3DCornerPosition(0, config);
+            const c1 = this.get3DCornerPosition(1, config);
+            const c2 = this.get3DCornerPosition(2, config);
 
-          y += h0 * (1 - u) * (1 - v) +
-               h1 * u * (1 - v) +
-               h2 * u * v +
-               h3 * (1 - u) * v;
-        } else {
-          const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
-          y += avgHeight;
+            const x = w0 * c0.x + w1 * c1.x + w2 * c2.x;
+            const z = w0 * c0.z + w1 * c1.z + w2 * c2.z;
+
+            // Calculate sag
+            const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
+            const minDim = Math.min(width, height);
+            let y = this.radialSag(u, v, sagAmplitude) * minDim;
+
+            // Add height interpolation
+            if (config.fixingHeights && config.fixingHeights.length === 3) {
+              const heights = config.fixingHeights.map(h => h / 1000);
+              y += w0 * (heights[0] || 0) + w1 * (heights[1] || 0) + w2 * (heights[2] || 0);
+            }
+
+            vertices.push(x, y, z);
+            uvs.push(u, v);
+          }
+        }
+      }
+    } else {
+      // For quads and other shapes, use a regular grid
+      for (let row = 0; row <= resolution; row++) {
+        for (let col = 0; col <= resolution; col++) {
+          const u = col / resolution;
+          const v = row / resolution;
+
+          // Get interpolated position based on corner positions
+          const pos = this.interpolatePosition(u, v, config);
+
+          const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
+          const minDim = Math.min(width, height);
+          let y = this.radialSag(u, v, sagAmplitude) * minDim;
+
+          // Add height interpolation
+          if (config.fixingHeights && config.fixingHeights.length === config.corners) {
+            const heights = config.fixingHeights.map(h => h / 1000);
+
+            if (config.corners === 4) {
+              y += (heights[0] || 0) * (1 - u) * (1 - v) +
+                   (heights[1] || 0) * u * (1 - v) +
+                   (heights[2] || 0) * u * v +
+                   (heights[3] || 0) * (1 - u) * v;
+            } else {
+              const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
+              y += avgHeight;
+            }
+          }
+
+          vertices.push(pos.x, y, pos.z);
+          uvs.push(u, v);
         }
       }
 
-      positionAttribute.setY(i, y);
+      // Generate indices for quad grid
+      for (let row = 0; row < resolution; row++) {
+        for (let col = 0; col < resolution; col++) {
+          const a = row * (resolution + 1) + col;
+          const b = row * (resolution + 1) + col + 1;
+          const c = (row + 1) * (resolution + 1) + col + 1;
+          const d = (row + 1) * (resolution + 1) + col;
+
+          indices.push(a, b, c);
+          indices.push(a, c, d);
+        }
+      }
+    }
+
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    if (indices.length > 0) {
+      geometry.setIndex(indices);
     }
 
     geometry.computeVertexNormals();
-    positionAttribute.needsUpdate = true;
 
     return geometry;
+  }
+
+  private static get3DCornerPosition(index: number, config: ConfiguratorState): THREE.Vector3 {
+    if (index >= config.points.length) {
+      return new THREE.Vector3(0, 0, 0);
+    }
+
+    const point = config.points[index];
+    const bounds = {
+      minX: Math.min(...config.points.map(p => p.x)),
+      maxX: Math.max(...config.points.map(p => p.x)),
+      minY: Math.min(...config.points.map(p => p.y)),
+      maxY: Math.max(...config.points.map(p => p.y))
+    };
+
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+
+    const x = (point.x - centerX) / 100;
+    const z = (point.y - centerY) / 100;
+
+    return new THREE.Vector3(x, 0, z);
+  }
+
+  private static interpolatePosition(u: number, v: number, config: ConfiguratorState): THREE.Vector3 {
+    const points = config.points;
+    const bounds = {
+      minX: Math.min(...points.map(p => p.x)),
+      maxX: Math.max(...points.map(p => p.x)),
+      minY: Math.min(...points.map(p => p.y)),
+      maxY: Math.max(...points.map(p => p.y))
+    };
+
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
+    const width = (bounds.maxX - bounds.minX) / 100;
+    const height = (bounds.maxY - bounds.minY) / 100;
+
+    // Default grid-based interpolation
+    const x = (u - 0.5) * width;
+    const z = (v - 0.5) * height;
+
+    return new THREE.Vector3(x, 0, z);
   }
 
   public static createPoleGeometry(height: number): THREE.BufferGeometry {
@@ -145,15 +239,18 @@ export class GeometryBuilder {
     const width = (bounds.maxX - bounds.minX) / 100;
     const height = (bounds.maxY - bounds.minY) / 100;
     const minDim = Math.min(width, height);
-
     const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
+
+    const centerX = (bounds.minX + bounds.maxX) / 2;
+    const centerY = (bounds.minY + bounds.maxY) / 2;
 
     for (let i = 0; i < positionAttribute.count; i++) {
       const x = positionAttribute.getX(i);
       const z = positionAttribute.getZ(i);
 
-      const u = (x / width) + 0.5;
-      const v = (z / height) + 0.5;
+      // Calculate UV coordinates based on bounds
+      const u = width > 0 ? (x / width) + 0.5 : 0.5;
+      const v = height > 0 ? (z / height) + 0.5 : 0.5;
 
       let y = this.radialSag(u, v, sagAmplitude) * minDim;
 
@@ -172,16 +269,20 @@ export class GeometryBuilder {
       if (config.fixingHeights && config.fixingHeights.length === config.corners) {
         const heights = config.fixingHeights.map(h => h / 1000);
 
-        if (config.corners === 4) {
-          const h0 = heights[0] || 0;
-          const h1 = heights[1] || 0;
-          const h2 = heights[2] || 0;
-          const h3 = heights[3] || 0;
+        if (config.corners === 3) {
+          const w0 = (1 - u) * (1 - v);
+          const w1 = u * (1 - v);
+          const w2 = v;
 
-          y += h0 * (1 - u) * (1 - v) +
-               h1 * u * (1 - v) +
-               h2 * u * v +
-               h3 * (1 - u) * v;
+          y += (heights[0] || 0) * w0 + (heights[1] || 0) * w1 + (heights[2] || 0) * w2;
+        } else if (config.corners === 4) {
+          y += (heights[0] || 0) * (1 - u) * (1 - v) +
+               (heights[1] || 0) * u * (1 - v) +
+               (heights[2] || 0) * u * v +
+               (heights[3] || 0) * (1 - u) * v;
+        } else {
+          const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
+          y += avgHeight;
         }
       }
 
