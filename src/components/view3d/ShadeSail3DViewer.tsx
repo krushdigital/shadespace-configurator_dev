@@ -43,6 +43,7 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
   const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
   const dragPlaneRef = useRef<THREE.Plane>(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
   const dragOffsetRef = useRef<THREE.Vector3>(new THREE.Vector3());
+  const draggedCornerIndexRef = useRef<number | null>(null);
 
   const initialize3DScene = useCallback(() => {
     if (!canvasRef.current) {
@@ -163,7 +164,7 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
   }, [config]);
 
   const handleMouseDown = useCallback((event: MouseEvent) => {
-    if (!sceneManagerRef.current || !sailMeshRef.current || !canvasRef.current) return;
+    if (!sceneManagerRef.current || !sailMeshRef.current || !canvasRef.current || !hardwareInstanceRef.current) return;
 
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -171,13 +172,31 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
     mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     raycasterRef.current.setFromCamera(mouseRef.current, sceneManagerRef.current.getCamera());
-    const intersects = raycasterRef.current.intersectObject(sailMeshRef.current);
 
-    if (intersects.length > 0 && updateConfig) {
+    const cornersToIntersect = hardwareInstanceRef.current.corners;
+    const cornerIntersects = raycasterRef.current.intersectObjects(cornersToIntersect, true);
+
+    if (cornerIntersects.length > 0 && updateConfig) {
+      for (let i = 0; i < cornersToIntersect.length; i++) {
+        if (cornerIntersects[0].object.parent === cornersToIntersect[i] ||
+            cornerIntersects[0].object === cornersToIntersect[i]) {
+          setIsDragging(true);
+          draggedCornerIndexRef.current = i;
+          sceneManagerRef.current.setControlsEnabled(false);
+
+          const intersectionPoint = cornerIntersects[0].point;
+          dragOffsetRef.current.copy(intersectionPoint).sub(cornersToIntersect[i].position);
+          return;
+        }
+      }
+    }
+
+    const sailIntersects = raycasterRef.current.intersectObject(sailMeshRef.current);
+    if (sailIntersects.length > 0 && updateConfig) {
       setIsDragging(true);
       sceneManagerRef.current.setControlsEnabled(false);
 
-      const intersectionPoint = intersects[0].point;
+      const intersectionPoint = sailIntersects[0].point;
       dragOffsetRef.current.copy(intersectionPoint).sub(sailMeshRef.current.position);
     }
   }, [updateConfig]);
@@ -198,30 +217,53 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
     raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint);
 
     if (intersectPoint) {
-      const newPosition = intersectPoint.sub(dragOffsetRef.current);
-      sailMeshRef.current.position.x = newPosition.x;
-      sailMeshRef.current.position.z = newPosition.z;
+      if (draggedCornerIndexRef.current !== null && hardwareInstanceRef.current) {
+        const cornerIndex = draggedCornerIndexRef.current;
+        const newPosition = intersectPoint.sub(dragOffsetRef.current);
 
-      if (hardwareManagerRef.current && hardwareInstanceRef.current) {
-        hardwareManagerRef.current.updateHardwarePositionOffset(
-          hardwareInstanceRef.current,
-          new THREE.Vector3(newPosition.x, 0, newPosition.z)
-        );
-      }
+        const bounds = {
+          minX: Math.min(...config.points.map(p => p.x)),
+          maxX: Math.max(...config.points.map(p => p.x)),
+          minY: Math.min(...config.points.map(p => p.y)),
+          maxY: Math.max(...config.points.map(p => p.y))
+        };
+        const centerX = (bounds.minX + bounds.maxX) / 2;
+        const centerY = (bounds.minY + bounds.maxY) / 2;
 
-      updateConfig({
-        sail3DOffset: {
-          x: newPosition.x,
-          y: 0,
-          z: newPosition.z
+        const new2DX = centerX + newPosition.x * 100;
+        const new2DY = centerY + newPosition.z * 100;
+
+        const newPoints = [...config.points];
+        newPoints[cornerIndex] = { x: new2DX, y: new2DY };
+
+        updateConfig({ points: newPoints });
+      } else {
+        const newPosition = intersectPoint.sub(dragOffsetRef.current);
+        sailMeshRef.current.position.x = newPosition.x;
+        sailMeshRef.current.position.z = newPosition.z;
+
+        if (hardwareManagerRef.current && hardwareInstanceRef.current) {
+          hardwareManagerRef.current.updateHardwarePositionOffset(
+            hardwareInstanceRef.current,
+            new THREE.Vector3(newPosition.x, 0, newPosition.z)
+          );
         }
-      });
+
+        updateConfig({
+          sail3DOffset: {
+            x: newPosition.x,
+            y: 0,
+            z: newPosition.z
+          }
+        });
+      }
     }
-  }, [isDragging, updateConfig]);
+  }, [isDragging, updateConfig, config.points]);
 
   const handleMouseUp = useCallback(() => {
     if (isDragging && sceneManagerRef.current) {
       setIsDragging(false);
+      draggedCornerIndexRef.current = null;
       sceneManagerRef.current.setControlsEnabled(true);
     }
   }, [isDragging]);

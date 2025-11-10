@@ -184,7 +184,20 @@ export class HardwareManager {
     const group = new THREE.Group();
     group.name = `turnbuckle-${index}`;
 
-    const bodyGeometry = new THREE.CylinderGeometry(0.025, 0.025, 0.2, 8);
+    const sailPosition = this.getSailAttachmentPosition(index, config);
+    const poleTopPosition = this.getPoleTopPosition(index, config);
+
+    const horizontalDirection = new THREE.Vector3(
+      poleTopPosition.x - sailPosition.x,
+      0,
+      poleTopPosition.z - sailPosition.z
+    );
+    const horizontalDistance = horizontalDirection.length();
+
+    if (horizontalDistance < 0.01) return null;
+
+    const bodyLength = Math.min(0.2, horizontalDistance * 0.3);
+    const bodyGeometry = new THREE.CylinderGeometry(0.025, 0.025, bodyLength, 8);
     const eyeGeometry = new THREE.TorusGeometry(0.04, 0.012, 8, 16);
     const turnbuckleMaterial = this.materialsManager.createHardwareMaterial();
 
@@ -200,44 +213,69 @@ export class HardwareManager {
     eye2.castShadow = true;
     eye2.receiveShadow = true;
 
-    eye1.position.y = 0.1;
+    eye1.position.y = bodyLength / 2;
     eye1.rotation.x = Math.PI / 2;
-    eye2.position.y = -0.1;
+    eye2.position.y = -bodyLength / 2;
     eye2.rotation.x = Math.PI / 2;
 
     group.add(body);
     group.add(eye1);
     group.add(eye2);
 
-    const sailPosition = this.getSailAttachmentPosition(index, config);
-    const anchorPosition = this.getCornerPosition(index, config);
-    anchorPosition.y = height / 1000;
-
-    const midPoint = new THREE.Vector3()
-      .addVectors(sailPosition, anchorPosition)
-      .multiplyScalar(0.5);
+    const midPoint = new THREE.Vector3(
+      (sailPosition.x + poleTopPosition.x) / 2,
+      sailPosition.y,
+      (sailPosition.z + poleTopPosition.z) / 2
+    );
 
     group.position.copy(midPoint);
 
-    const direction = new THREE.Vector3()
-      .subVectors(anchorPosition, sailPosition)
-      .normalize();
-
-    const up = new THREE.Vector3(0, 1, 0);
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
-    group.setRotationFromQuaternion(quaternion);
+    horizontalDirection.normalize();
+    const angle = Math.atan2(horizontalDirection.x, horizontalDirection.z);
+    group.rotation.set(Math.PI / 2, 0, -angle);
 
     return group;
+  }
+
+  private getPoleTopPosition(index: number, config: ConfiguratorState): THREE.Vector3 {
+    const height = config.fixingHeights[index];
+    if (!height || height <= 0) {
+      return this.getCornerPosition(index, config);
+    }
+
+    const heightMeters = height / 1000;
+    const position = this.getCornerPosition(index, config);
+    const fixingType = config.fixingTypes?.[index] || 'post';
+
+    if (fixingType === 'post') {
+      const centerX = 0;
+      const centerZ = 0;
+      const dx = position.x - centerX;
+      const dz = position.z - centerZ;
+      const length = Math.sqrt(dx * dx + dz * dz);
+      const angleRadians = 12 * (Math.PI / 180);
+
+      if (length > 0) {
+        const outwardX = dx / length;
+        const outwardZ = dz / length;
+
+        return new THREE.Vector3(
+          position.x + outwardX * heightMeters * Math.sin(angleRadians),
+          heightMeters,
+          position.z + outwardZ * heightMeters * Math.sin(angleRadians)
+        );
+      }
+    }
+
+    return new THREE.Vector3(position.x, heightMeters, position.z);
   }
 
   private createCable(index: number, config: ConfiguratorState): THREE.Line | null {
     const height = config.fixingHeights[index];
     if (!height || height <= 0) return null;
 
-    const heightMeters = height / 1000;
     const sailPosition = this.getSailAttachmentPosition(index, config);
-    const poleTopPosition = this.getCornerPosition(index, config);
-    poleTopPosition.y = heightMeters;
+    const poleTopPosition = this.getPoleTopPosition(index, config);
 
     const points = [sailPosition, poleTopPosition];
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -389,10 +427,8 @@ export class HardwareManager {
     instance.cables.forEach((cable, index) => {
       const height = config.fixingHeights[index];
       if (height && height > 0) {
-        const heightMeters = height / 1000;
         const sailPosition = this.getSailAttachmentPosition(index, config);
-        const poleTopPosition = this.getCornerPosition(index, config);
-        poleTopPosition.y = heightMeters;
+        const poleTopPosition = this.getPoleTopPosition(index, config);
 
         const points = [sailPosition, poleTopPosition];
         cable.geometry.dispose();
@@ -407,24 +443,32 @@ export class HardwareManager {
       const height = config.fixingHeights[index];
       if (height && height > 0) {
         const sailPosition = this.getSailAttachmentPosition(index, config);
-        const anchorPosition = this.getCornerPosition(index, config);
-        anchorPosition.y = height / 1000;
+        const poleTopPosition = this.getPoleTopPosition(index, config);
 
-        const midPoint = new THREE.Vector3()
-          .addVectors(sailPosition, anchorPosition)
-          .multiplyScalar(0.5);
+        const horizontalDirection = new THREE.Vector3(
+          poleTopPosition.x - sailPosition.x,
+          0,
+          poleTopPosition.z - sailPosition.z
+        );
+        const horizontalDistance = horizontalDirection.length();
 
-        turnbuckle.position.copy(midPoint);
+        if (horizontalDistance >= 0.01) {
+          const midPoint = new THREE.Vector3(
+            (sailPosition.x + poleTopPosition.x) / 2,
+            sailPosition.y,
+            (sailPosition.z + poleTopPosition.z) / 2
+          );
 
-        const direction = new THREE.Vector3()
-          .subVectors(anchorPosition, sailPosition)
-          .normalize();
+          turnbuckle.position.copy(midPoint);
 
-        const up = new THREE.Vector3(0, 1, 0);
-        const quaternion = new THREE.Quaternion().setFromUnitVectors(up, direction);
-        turnbuckle.setRotationFromQuaternion(quaternion);
+          horizontalDirection.normalize();
+          const angle = Math.atan2(horizontalDirection.x, horizontalDirection.z);
+          turnbuckle.rotation.set(Math.PI / 2, 0, -angle);
 
-        turnbuckle.visible = true;
+          turnbuckle.visible = true;
+        } else {
+          turnbuckle.visible = false;
+        }
       } else {
         turnbuckle.visible = false;
       }
