@@ -182,23 +182,98 @@ export class GeometryBuilder {
 
   private static interpolatePosition(u: number, v: number, config: ConfiguratorState): THREE.Vector3 {
     const points = config.points;
-    const bounds = {
-      minX: Math.min(...points.map(p => p.x)),
-      maxX: Math.max(...points.map(p => p.x)),
-      minY: Math.min(...points.map(p => p.y)),
-      maxY: Math.max(...points.map(p => p.y))
-    };
 
-    const centerX = (bounds.minX + bounds.maxX) / 2;
-    const centerY = (bounds.minY + bounds.maxY) / 2;
-    const width = (bounds.maxX - bounds.minX) / 100;
-    const height = (bounds.maxY - bounds.minY) / 100;
+    if (config.corners === 4) {
+      // Bilinear interpolation for quadrilaterals
+      const corners = [
+        this.get3DCornerPosition(0, config),
+        this.get3DCornerPosition(1, config),
+        this.get3DCornerPosition(2, config),
+        this.get3DCornerPosition(3, config)
+      ];
 
-    // Default grid-based interpolation
-    const x = (u - 0.5) * width;
-    const z = (v - 0.5) * height;
+      // Bilinear interpolation:
+      // (1-u)(1-v)*c0 + u(1-v)*c1 + uv*c2 + (1-u)v*c3
+      const x = (1 - u) * (1 - v) * corners[0].x +
+                u * (1 - v) * corners[1].x +
+                u * v * corners[2].x +
+                (1 - u) * v * corners[3].x;
 
-    return new THREE.Vector3(x, 0, z);
+      const z = (1 - u) * (1 - v) * corners[0].z +
+                u * (1 - v) * corners[1].z +
+                u * v * corners[2].z +
+                (1 - u) * v * corners[3].z;
+
+      return new THREE.Vector3(x, 0, z);
+    } else if (config.corners === 3) {
+      // Barycentric interpolation for triangles
+      const w0 = 1 - u - v;
+      const w1 = u;
+      const w2 = v;
+
+      if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+        const c0 = this.get3DCornerPosition(0, config);
+        const c1 = this.get3DCornerPosition(1, config);
+        const c2 = this.get3DCornerPosition(2, config);
+
+        const x = w0 * c0.x + w1 * c1.x + w2 * c2.x;
+        const z = w0 * c0.z + w1 * c1.z + w2 * c2.z;
+
+        return new THREE.Vector3(x, 0, z);
+      }
+    } else {
+      // For 5+ corners, use radial interpolation from centroid
+      const cornerPositions = [];
+      for (let i = 0; i < config.corners; i++) {
+        cornerPositions.push(this.get3DCornerPosition(i, config));
+      }
+
+      // Calculate centroid
+      let centroidX = 0;
+      let centroidZ = 0;
+      for (const pos of cornerPositions) {
+        centroidX += pos.x;
+        centroidZ += pos.z;
+      }
+      centroidX /= cornerPositions.length;
+      centroidZ /= cornerPositions.length;
+
+      // Use angular interpolation
+      const angle = u * 2 * Math.PI;
+      const radius = v;
+
+      // Find two nearest corners for interpolation
+      let minAngleDiff = Infinity;
+      let nearestIndex = 0;
+
+      for (let i = 0; i < cornerPositions.length; i++) {
+        const cornerAngle = Math.atan2(
+          cornerPositions[i].z - centroidZ,
+          cornerPositions[i].x - centroidX
+        );
+        const angleDiff = Math.abs(angle - cornerAngle);
+        if (angleDiff < minAngleDiff) {
+          minAngleDiff = angleDiff;
+          nearestIndex = i;
+        }
+      }
+
+      const nextIndex = (nearestIndex + 1) % cornerPositions.length;
+      const c1 = cornerPositions[nearestIndex];
+      const c2 = cornerPositions[nextIndex];
+
+      // Interpolate between centroid and edge
+      const edgeX = c1.x + (c2.x - c1.x) * 0.5;
+      const edgeZ = c1.z + (c2.z - c1.z) * 0.5;
+
+      const x = centroidX + (edgeX - centroidX) * radius;
+      const z = centroidZ + (edgeZ - centroidZ) * radius;
+
+      return new THREE.Vector3(x, 0, z);
+    }
+
+    // Fallback
+    return new THREE.Vector3(0, 0, 0);
   }
 
   public static createPoleGeometry(height: number): THREE.BufferGeometry {
@@ -241,22 +316,50 @@ export class GeometryBuilder {
     const minDim = Math.min(width, height);
     const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
 
-    const centerX = (bounds.minX + bounds.maxX) / 2;
-    const centerY = (bounds.minY + bounds.maxY) / 2;
+    const resolution = Math.sqrt(positionAttribute.count) - 1;
 
     for (let i = 0; i < positionAttribute.count; i++) {
-      const x = positionAttribute.getX(i);
-      const z = positionAttribute.getZ(i);
+      let u: number, v: number;
 
-      // Calculate UV coordinates based on bounds
-      const u = width > 0 ? (x / width) + 0.5 : 0.5;
-      const v = height > 0 ? (z / height) + 0.5 : 0.5;
+      if (config.corners === 3) {
+        // For triangles, calculate u,v from vertex index
+        let row = 0;
+        let col = 0;
+        let vertexCount = 0;
 
+        for (let r = 0; r <= resolution; r++) {
+          for (let c = 0; c <= resolution - r; c++) {
+            if (vertexCount === i) {
+              row = r;
+              col = c;
+              break;
+            }
+            vertexCount++;
+          }
+          if (vertexCount === i) break;
+        }
+
+        u = col / resolution;
+        v = row / resolution;
+      } else {
+        // For quads and other shapes
+        const row = Math.floor(i / (resolution + 1));
+        const col = i % (resolution + 1);
+        u = col / resolution;
+        v = row / resolution;
+      }
+
+      // Recalculate X and Z positions based on current corner positions
+      const pos = this.interpolatePosition(u, v, config);
+      positionAttribute.setX(i, pos.x);
+      positionAttribute.setZ(i, pos.z);
+
+      // Calculate Y with sag
       let y = this.radialSag(u, v, sagAmplitude) * minDim;
 
       if (windEffect) {
-        const waveX = Math.sin(x * 2 + windEffect.time * 2) * 0.02;
-        const waveZ = Math.sin(z * 3 + windEffect.time * 1.5) * 0.02;
+        const waveX = Math.sin(pos.x * 2 + windEffect.time * 2) * 0.02;
+        const waveZ = Math.sin(pos.z * 3 + windEffect.time * 1.5) * 0.02;
         const distanceFromEdge = Math.min(
           Math.abs(u - 0.5) * 2,
           Math.abs(v - 0.5) * 2
@@ -270,11 +373,13 @@ export class GeometryBuilder {
         const heights = config.fixingHeights.map(h => h / 1000);
 
         if (config.corners === 3) {
-          const w0 = (1 - u) * (1 - v);
-          const w1 = u * (1 - v);
+          const w0 = 1 - u - v;
+          const w1 = u;
           const w2 = v;
 
-          y += (heights[0] || 0) * w0 + (heights[1] || 0) * w1 + (heights[2] || 0) * w2;
+          if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+            y += (heights[0] || 0) * w0 + (heights[1] || 0) * w1 + (heights[2] || 0) * w2;
+          }
         } else if (config.corners === 4) {
           y += (heights[0] || 0) * (1 - u) * (1 - v) +
                (heights[1] || 0) * u * (1 - v) +

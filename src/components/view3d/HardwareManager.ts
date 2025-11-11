@@ -4,10 +4,8 @@ import { MaterialsManager } from './MaterialsManager';
 import { GeometryBuilder } from './GeometryBuilder';
 
 export interface HardwareInstance {
-  corners: THREE.Group[];
   poles: THREE.Mesh[];
   cables: THREE.Line[];
-  connectors: THREE.Mesh[];
   buildings: THREE.Mesh[];
 }
 
@@ -23,10 +21,8 @@ export class HardwareManager {
 
   public createHardware(config: ConfiguratorState): HardwareInstance {
     const instance: HardwareInstance = {
-      corners: [],
       poles: [],
       cables: [],
-      connectors: [],
       buildings: []
     };
 
@@ -34,10 +30,6 @@ export class HardwareManager {
 
     if (hasHeights) {
       for (let i = 0; i < config.corners; i++) {
-        const cornerGroup = this.createCornerHardware(i, config);
-        instance.corners.push(cornerGroup);
-        this.hardwareGroup.add(cornerGroup);
-
         const fixingType = config.fixingTypes?.[i] || 'post';
 
         if (fixingType === 'post') {
@@ -59,35 +51,12 @@ export class HardwareManager {
           instance.cables.push(cable);
           this.hardwareGroup.add(cable);
         }
-
-        const connector = this.createConnector(i, config);
-        if (connector) {
-          instance.connectors.push(connector);
-          this.hardwareGroup.add(connector);
-        }
       }
     }
 
     return instance;
   }
 
-  private createCornerHardware(index: number, config: ConfiguratorState): THREE.Group {
-    const group = new THREE.Group();
-    group.name = `corner-${index}`;
-
-    const ringGeometry = GeometryBuilder.createCornerHardwareGeometry('ring');
-    const ringMaterial = this.materialsManager.createHardwareMaterial();
-    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-    ring.castShadow = true;
-    ring.receiveShadow = true;
-
-    group.add(ring);
-
-    const sailPosition = this.getSailAttachmentPosition(index, config);
-    group.position.copy(sailPosition);
-
-    return group;
-  }
 
   private createPole(index: number, config: ConfiguratorState): THREE.Mesh | null {
     const height = config.fixingHeights[index];
@@ -177,53 +146,6 @@ export class HardwareManager {
     return wall;
   }
 
-  private createConnector(index: number, config: ConfiguratorState): THREE.Mesh | null {
-    const height = config.fixingHeights[index];
-    if (!height || height <= 0) return null;
-
-    const sailPosition = this.getSailAttachmentPosition(index, config);
-    const poleTopPosition = this.getPoleTopPosition(index, config);
-
-    // Calculate the direction vector from sail corner to pole top
-    const direction = new THREE.Vector3(
-      poleTopPosition.x - sailPosition.x,
-      poleTopPosition.y - sailPosition.y,
-      poleTopPosition.z - sailPosition.z
-    );
-    const distance = direction.length();
-
-    if (distance < 0.01) return null;
-
-    // Create an oval/capsule shape to connect sail corner to pole top
-    // Use a cylinder with spherical caps (capsule shape)
-    const connectorLength = distance * 0.6; // Cover 60% of the cable length
-    const connectorRadius = 0.04; // Slightly thicker than the cable
-
-    const connectorGeometry = new THREE.CapsuleGeometry(connectorRadius, connectorLength, 4, 8);
-    const connectorMaterial = this.materialsManager.createHardwareMaterial();
-
-    const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
-    connector.castShadow = true;
-    connector.receiveShadow = true;
-    connector.name = `connector-${index}`;
-
-    // Position the connector near the sail corner (70% toward sail, 30% toward pole)
-    const positionFactor = 0.3; // Position 30% along the cable from sail corner
-    connector.position.set(
-      sailPosition.x + direction.x * positionFactor,
-      sailPosition.y + direction.y * positionFactor,
-      sailPosition.z + direction.z * positionFactor
-    );
-
-    // Orient the connector along the cable direction
-    direction.normalize();
-    const quaternion = new THREE.Quaternion();
-    const up = new THREE.Vector3(0, 1, 0);
-    quaternion.setFromUnitVectors(up, direction);
-    connector.quaternion.copy(quaternion);
-
-    return connector;
-  }
 
   private getPoleTopPosition(index: number, config: ConfiguratorState): THREE.Vector3 {
     const height = config.fixingHeights[index];
@@ -337,10 +259,6 @@ export class HardwareManager {
   }
 
   public updateHardware(instance: HardwareInstance, config: ConfiguratorState): void {
-    instance.corners.forEach((corner, index) => {
-      const sailPosition = this.getSailAttachmentPosition(index, config);
-      corner.position.copy(sailPosition);
-    });
 
     instance.poles.forEach((pole, index) => {
       const height = config.fixingHeights[index];
@@ -432,49 +350,6 @@ export class HardwareManager {
       }
     });
 
-    instance.connectors.forEach((connector, index) => {
-      const height = config.fixingHeights[index];
-      if (height && height > 0) {
-        const sailPosition = this.getSailAttachmentPosition(index, config);
-        const poleTopPosition = this.getPoleTopPosition(index, config);
-
-        // Calculate the direction vector from sail corner to pole top
-        const direction = new THREE.Vector3(
-          poleTopPosition.x - sailPosition.x,
-          poleTopPosition.y - sailPosition.y,
-          poleTopPosition.z - sailPosition.z
-        );
-        const distance = direction.length();
-
-        if (distance >= 0.01) {
-          // Position the connector near the sail corner
-          const positionFactor = 0.3;
-          connector.position.set(
-            sailPosition.x + direction.x * positionFactor,
-            sailPosition.y + direction.y * positionFactor,
-            sailPosition.z + direction.z * positionFactor
-          );
-
-          // Orient the connector along the cable direction
-          direction.normalize();
-          const quaternion = new THREE.Quaternion();
-          const up = new THREE.Vector3(0, 1, 0);
-          quaternion.setFromUnitVectors(up, direction);
-          connector.quaternion.copy(quaternion);
-
-          // Scale connector based on distance (optional, for visual continuity)
-          const baseScale = 1.0;
-          const scaleFactor = Math.min(1.5, Math.max(0.5, distance / 2));
-          connector.scale.set(baseScale, scaleFactor, baseScale);
-
-          connector.visible = true;
-        } else {
-          connector.visible = false;
-        }
-      } else {
-        connector.visible = false;
-      }
-    });
   }
 
   public updateHardwarePositionOffset(instance: HardwareInstance, offset: THREE.Vector3): void {
