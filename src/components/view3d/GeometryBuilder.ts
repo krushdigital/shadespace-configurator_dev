@@ -99,8 +99,8 @@ export class GeometryBuilder {
           }
         }
       }
-    } else {
-      // For quads and other shapes, use a regular grid
+    } else if (config.corners === 4) {
+      // For quads, use bilinear interpolation
       for (let row = 0; row <= resolution; row++) {
         for (let col = 0; col <= resolution; col++) {
           const u = col / resolution;
@@ -114,18 +114,12 @@ export class GeometryBuilder {
           let y = this.radialSag(u, v, sagAmplitude) * minDim;
 
           // Add height interpolation
-          if (config.fixingHeights && config.fixingHeights.length === config.corners) {
+          if (config.fixingHeights && config.fixingHeights.length === 4) {
             const heights = config.fixingHeights.map(h => h / 1000);
-
-            if (config.corners === 4) {
-              y += (heights[0] || 0) * (1 - u) * (1 - v) +
-                   (heights[1] || 0) * u * (1 - v) +
-                   (heights[2] || 0) * u * v +
-                   (heights[3] || 0) * (1 - u) * v;
-            } else {
-              const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
-              y += avgHeight;
-            }
+            y += (heights[0] || 0) * (1 - u) * (1 - v) +
+                 (heights[1] || 0) * u * (1 - v) +
+                 (heights[2] || 0) * u * v +
+                 (heights[3] || 0) * (1 - u) * v;
           }
 
           vertices.push(pos.x, y, pos.z);
@@ -144,6 +138,103 @@ export class GeometryBuilder {
           indices.push(a, b, c);
           indices.push(a, c, d);
         }
+      }
+    } else {
+      // For 5+ corners, use fan triangulation
+      // Each corner forms a triangle with the centroid and the next corner
+      const numCorners = config.corners;
+      const segmentsPerEdge = Math.floor(resolution / Math.sqrt(numCorners));
+      const radialSegments = Math.max(8, Math.floor(resolution / 4));
+
+      // Calculate centroid
+      const cornerPositions: THREE.Vector3[] = [];
+      for (let i = 0; i < numCorners; i++) {
+        cornerPositions.push(this.get3DCornerPosition(i, config));
+      }
+
+      const centroid = new THREE.Vector3();
+      for (const pos of cornerPositions) {
+        centroid.add(pos);
+      }
+      centroid.divideScalar(numCorners);
+
+      // Create vertices using fan triangulation
+      // For each triangle in the fan, create a grid of vertices
+      for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
+        const nextCornerIndex = (cornerIndex + 1) % numCorners;
+        const corner1 = cornerPositions[cornerIndex];
+        const corner2 = cornerPositions[nextCornerIndex];
+
+        // Create a grid within this triangular section
+        for (let r = 0; r <= radialSegments; r++) {
+          for (let s = 0; s <= segmentsPerEdge - r; s++) {
+            const u = s / segmentsPerEdge; // Interpolation along the edge
+            const v = r / radialSegments; // Interpolation from centroid to edge
+
+            // Barycentric coordinates within this triangle
+            // w0 = centroid weight, w1 = corner1 weight, w2 = corner2 weight
+            const w0 = 1 - v; // Weight decreases as we move away from center
+            const w1 = v * (1 - u); // Weight along corner1 direction
+            const w2 = v * u; // Weight along corner2 direction
+
+            const x = w0 * centroid.x + w1 * corner1.x + w2 * corner2.x;
+            const z = w0 * centroid.z + w1 * corner1.z + w2 * corner2.z;
+
+            // Calculate sag
+            const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
+            const minDim = Math.min(width, height);
+
+            // Calculate distance from centroid for sag calculation
+            const distFromCenter = Math.sqrt(
+              Math.pow(x - centroid.x, 2) + Math.pow(z - centroid.z, 2)
+            );
+            const maxDist = Math.max(...cornerPositions.map(cp =>
+              Math.sqrt(Math.pow(cp.x - centroid.x, 2) + Math.pow(cp.z - centroid.z, 2))
+            ));
+            const normalizedDist = maxDist > 0 ? distFromCenter / maxDist : 0;
+
+            let y = this.radialSag(normalizedDist, normalizedDist, sagAmplitude) * minDim;
+
+            // Add height interpolation using barycentric coordinates
+            if (config.fixingHeights && config.fixingHeights.length === numCorners) {
+              const heights = config.fixingHeights.map(h => h / 1000);
+              // Height at this point is interpolated from the three vertices of this triangle
+              const centroidHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length;
+              y += w0 * centroidHeight + w1 * heights[cornerIndex] + w2 * heights[nextCornerIndex];
+            }
+
+            vertices.push(x, y, z);
+
+            // UV mapping: map to unit square based on position relative to bounds
+            const uvX = (x - centroid.x) / (width / 2) * 0.5 + 0.5;
+            const uvZ = (z - centroid.z) / (height / 2) * 0.5 + 0.5;
+            uvs.push(uvX, uvZ);
+          }
+        }
+      }
+
+      // Generate indices for the triangulated fan
+      let vertexOffset = 0;
+      for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
+        for (let r = 0; r < radialSegments; r++) {
+          const rowWidth1 = segmentsPerEdge - r + 1;
+          const rowWidth2 = segmentsPerEdge - r;
+
+          for (let s = 0; s < rowWidth2; s++) {
+            const a = vertexOffset + s;
+            const b = vertexOffset + s + 1;
+            const c = vertexOffset + rowWidth1 + s;
+
+            indices.push(a, b, c);
+
+            if (s < rowWidth2 - 1) {
+              const d = vertexOffset + rowWidth1 + s + 1;
+              indices.push(b, d, c);
+            }
+          }
+          vertexOffset += rowWidth1;
+        }
+        vertexOffset += 1; // Account for the last vertex in the triangle
       }
     }
 
@@ -181,8 +272,6 @@ export class GeometryBuilder {
   }
 
   private static interpolatePosition(u: number, v: number, config: ConfiguratorState): THREE.Vector3 {
-    const points = config.points;
-
     if (config.corners === 4) {
       // Bilinear interpolation for quadrilaterals
       const corners = [
@@ -221,59 +310,11 @@ export class GeometryBuilder {
 
         return new THREE.Vector3(x, 0, z);
       }
-    } else {
-      // For 5+ corners, use radial interpolation from centroid
-      const cornerPositions = [];
-      for (let i = 0; i < config.corners; i++) {
-        cornerPositions.push(this.get3DCornerPosition(i, config));
-      }
-
-      // Calculate centroid
-      let centroidX = 0;
-      let centroidZ = 0;
-      for (const pos of cornerPositions) {
-        centroidX += pos.x;
-        centroidZ += pos.z;
-      }
-      centroidX /= cornerPositions.length;
-      centroidZ /= cornerPositions.length;
-
-      // Use angular interpolation
-      const angle = u * 2 * Math.PI;
-      const radius = v;
-
-      // Find two nearest corners for interpolation
-      let minAngleDiff = Infinity;
-      let nearestIndex = 0;
-
-      for (let i = 0; i < cornerPositions.length; i++) {
-        const cornerAngle = Math.atan2(
-          cornerPositions[i].z - centroidZ,
-          cornerPositions[i].x - centroidX
-        );
-        const angleDiff = Math.abs(angle - cornerAngle);
-        if (angleDiff < minAngleDiff) {
-          minAngleDiff = angleDiff;
-          nearestIndex = i;
-        }
-      }
-
-      const nextIndex = (nearestIndex + 1) % cornerPositions.length;
-      const c1 = cornerPositions[nearestIndex];
-      const c2 = cornerPositions[nextIndex];
-
-      // Interpolate between centroid and edge
-      const edgeX = c1.x + (c2.x - c1.x) * 0.5;
-      const edgeZ = c1.z + (c2.z - c1.z) * 0.5;
-
-      const x = centroidX + (edgeX - centroidX) * radius;
-      const z = centroidZ + (edgeZ - centroidZ) * radius;
-
-      return new THREE.Vector3(x, 0, z);
     }
 
-    // Fallback
-    return new THREE.Vector3(0, 0, 0);
+    // For 5+ corners, this method should not be called as we use fan triangulation
+    // Fallback to first corner position
+    return this.get3DCornerPosition(0, config);
   }
 
   public static createPoleGeometry(height: number): THREE.BufferGeometry {
@@ -303,6 +344,14 @@ export class GeometryBuilder {
 
     const points = config.points;
     if (points.length < 3) return;
+
+    // For 5+ corners, recreate geometry instead of updating in place
+    // This is necessary because the vertex structure is different with fan triangulation
+    if (config.corners >= 5) {
+      // The geometry should be recreated by the caller
+      // This method is primarily for animation updates on existing geometry
+      return;
+    }
 
     const bounds = {
       minX: Math.min(...points.map(p => p.x)),
@@ -342,7 +391,7 @@ export class GeometryBuilder {
         u = col / resolution;
         v = row / resolution;
       } else {
-        // For quads and other shapes
+        // For quads
         const row = Math.floor(i / (resolution + 1));
         const col = i % (resolution + 1);
         u = col / resolution;
@@ -385,9 +434,6 @@ export class GeometryBuilder {
                (heights[1] || 0) * u * (1 - v) +
                (heights[2] || 0) * u * v +
                (heights[3] || 0) * (1 - u) * v;
-        } else {
-          const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
-          y += avgHeight;
         }
       }
 

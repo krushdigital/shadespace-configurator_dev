@@ -314,17 +314,16 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
 
     const currentPosition = sailMeshRef.current.position.clone();
 
-    // Update existing geometry instead of creating new one if animation is off
-    // This allows for smoother updates when dragging corners
-    if (animationSystemRef.current.getState().enabled) {
-      // If animation is on, we need to keep updating the geometry in the animation loop
-      // So we recreate it to ensure proper structure
+    // For 5+ corners, always recreate geometry because of fan triangulation structure
+    // For 3-4 corners, we can update in place for better performance when animation is off
+    if (effectiveConfig.corners >= 5 || animationSystemRef.current.getState().enabled) {
+      // Recreate geometry to ensure proper structure
       const newGeometry = GeometryBuilder.createSailGeometry({ config: effectiveConfig });
       const oldGeometry = sailMeshRef.current.geometry;
       sailMeshRef.current.geometry = newGeometry;
       oldGeometry.dispose();
     } else {
-      // If animation is off, update the existing geometry in place
+      // If animation is off and corners < 5, update the existing geometry in place
       // This is more efficient and provides immediate feedback
       GeometryBuilder.updateSailGeometry(
         sailMeshRef.current.geometry,
