@@ -178,7 +178,17 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
       sceneManagerRef.current.setControlsEnabled(false);
 
       const intersectionPoint = sailIntersects[0].point;
+      // Store the offset from sail position to intersection point
+      // This prevents jumping when starting the drag
       dragOffsetRef.current.copy(intersectionPoint).sub(sailMeshRef.current.position);
+
+      // Update drag plane to match the current Y position of the sail
+      // This ensures smooth dragging at the correct height
+      const sailCenterY = sailMeshRef.current.position.y;
+      dragPlaneRef.current.setFromNormalAndCoplanarPoint(
+        new THREE.Vector3(0, 1, 0),
+        new THREE.Vector3(0, sailCenterY, 0)
+      );
     }
   }, [updateConfig]);
 
@@ -195,13 +205,19 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
     raycasterRef.current.setFromCamera(mouseRef.current, sceneManagerRef.current.getCamera());
 
     const intersectPoint = new THREE.Vector3();
-    raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint);
+    const didIntersect = raycasterRef.current.ray.intersectPlane(dragPlaneRef.current, intersectPoint);
 
-    if (intersectPoint) {
-      const newPosition = intersectPoint.sub(dragOffsetRef.current);
+    if (didIntersect) {
+      // Calculate new position by subtracting the drag offset
+      // This ensures smooth movement without jumping
+      const newPosition = new THREE.Vector3();
+      newPosition.copy(intersectPoint).sub(dragOffsetRef.current);
+
+      // Only update X and Z positions, keep Y unchanged
       sailMeshRef.current.position.x = newPosition.x;
       sailMeshRef.current.position.z = newPosition.z;
 
+      // Update hardware to follow the sail position
       if (hardwareManagerRef.current && hardwareInstanceRef.current) {
         hardwareManagerRef.current.updateHardwarePositionOffset(
           hardwareInstanceRef.current,
@@ -209,6 +225,7 @@ export function ShadeSail3DViewer({ config, updateConfig, quoteId, onScreenshotC
         );
       }
 
+      // Store the offset in config for persistence
       updateConfig({
         sail3DOffset: {
           x: newPosition.x,

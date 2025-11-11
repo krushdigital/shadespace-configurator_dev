@@ -221,6 +221,7 @@ export class HardwareManager {
   }
 
   private getSailAttachmentPosition(index: number, config: ConfiguratorState): THREE.Vector3 {
+    // Get the exact corner position from the points array
     const cornerPos = this.getCornerPosition(index, config);
 
     const bounds = {
@@ -234,32 +235,53 @@ export class HardwareManager {
     const height = (bounds.maxY - bounds.minY) / 100;
     const minDim = Math.min(width, height);
 
-    const sagAmplitude = 0.04;
+    // Use the same sag amplitude calculation as GeometryBuilder for consistency
+    const tensionPreset = config.tensionPreset || 'medium';
+    let sagAmplitude: number;
+    switch (tensionPreset) {
+      case 'high':
+        sagAmplitude = 0.02;
+        break;
+      case 'low':
+        sagAmplitude = 0.06;
+        break;
+      case 'medium':
+      default:
+        sagAmplitude = 0.04;
+        break;
+    }
+
+    // Calculate radial sag at corner position (u=0 or 1, v=0 or 1)
+    // At corners, the sag is typically at its maximum deflection
+    const radialSag = -sagAmplitude * Math.cos(0) * minDim;
 
     // Calculate height at corner based on fixing heights
-    let cornerHeight = -sagAmplitude * minDim;
+    let cornerHeight = radialSag;
 
     if (config.fixingHeights && config.fixingHeights.length === config.corners) {
       const heights = config.fixingHeights.map(h => h / 1000);
 
       if (config.corners === 3) {
-        // For triangles, the corner is at the exact height
-        cornerHeight = (heights[index] || 0) - sagAmplitude * minDim;
+        // For triangles, use barycentric coordinates at the corner
+        // At corner index, weights are [1,0,0] or [0,1,0] or [0,0,1]
+        cornerHeight += (heights[index] || 0);
       } else if (config.corners === 4) {
         // For quads, corners are at their specified heights
-        cornerHeight = (heights[index] || 0) - sagAmplitude * minDim;
+        // Using bilinear interpolation at corner positions
+        cornerHeight += (heights[index] || 0);
       } else {
-        const avgHeight = heights.reduce((a, b) => a + b, 0) / heights.length;
-        cornerHeight = avgHeight - sagAmplitude * minDim;
+        // For 5+ corners, use the specific height for that corner
+        cornerHeight += (heights[index] || 0);
       }
     }
 
-    // Position the attachment point at the actual corner of the sail
+    // Return the exact corner position with calculated height
+    // This ensures the cable connects precisely to the sail corner
     return new THREE.Vector3(cornerPos.x, cornerHeight, cornerPos.z);
   }
 
   public updateHardware(instance: HardwareInstance, config: ConfiguratorState): void {
-
+    // Update poles with current corner positions and heights
     instance.poles.forEach((pole, index) => {
       const height = config.fixingHeights[index];
       const fixingType = config.fixingTypes?.[index] || 'post';
@@ -299,6 +321,7 @@ export class HardwareManager {
       }
     });
 
+    // Update buildings with current corner positions and heights
     instance.buildings.forEach((building, index) => {
       const height = config.fixingHeights[index];
       const fixingType = config.fixingTypes?.[index] || 'post';
@@ -335,12 +358,23 @@ export class HardwareManager {
       }
     });
 
+    // Update cables to connect pole tops to sail corners
+    // Recalculate both endpoints to ensure proper connection at all times
     instance.cables.forEach((cable, index) => {
       const height = config.fixingHeights[index];
       if (height && height > 0) {
+        // Get the exact sail corner position (dynamically calculated)
         const sailPosition = this.getSailAttachmentPosition(index, config);
+
+        // Get the exact pole top position (dynamically calculated)
         const poleTopPosition = this.getPoleTopPosition(index, config);
 
+        // Create new geometry with updated positions
+        // This ensures cables always connect correctly regardless of:
+        // - Changes to corner positions in 2D view
+        // - Changes to pole heights
+        // - Changes to shape of shade sail
+        // - Movement of sail in 3D space
         const points = [sailPosition, poleTopPosition];
         cable.geometry.dispose();
         cable.geometry = new THREE.BufferGeometry().setFromPoints(points);
@@ -349,7 +383,6 @@ export class HardwareManager {
         cable.visible = false;
       }
     });
-
   }
 
   public updateHardwarePositionOffset(instance: HardwareInstance, offset: THREE.Vector3): void {

@@ -199,9 +199,17 @@ export class SceneManager {
     const fov = this.camera.fov * (Math.PI / 180);
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
 
-    cameraZ *= 1.5;
+    // Increased multiplier from 1.5 to 2.5 to ensure full shade sail is visible on initial load
+    // This provides adequate padding on all sides for any device or browser
+    cameraZ *= 2.5;
 
-    this.camera.position.set(center.x + cameraZ * 0.6, center.y + cameraZ * 0.4, center.z + cameraZ * 0.6);
+    // Adjust camera position to provide isometric view with better framing
+    // Using slightly different ratios to improve initial visibility
+    this.camera.position.set(
+      center.x + cameraZ * 0.5,
+      center.y + cameraZ * 0.6,
+      center.z + cameraZ * 0.5
+    );
     this.controls.target.copy(center);
     this.controls.update();
   }
