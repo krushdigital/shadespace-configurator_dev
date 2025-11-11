@@ -63,7 +63,10 @@ export class GeometryBuilder {
 
     // For triangles (3 corners)
     if (config.corners === 3) {
-      // Create a triangular mesh
+      // Create a triangular mesh with proper indexing
+      const vertexMap: Map<string, number> = new Map();
+      let vertexIndex = 0;
+
       for (let row = 0; row <= resolution; row++) {
         for (let col = 0; col <= resolution - row; col++) {
           const u = col / resolution;
@@ -96,6 +99,30 @@ export class GeometryBuilder {
 
             vertices.push(x, y, z);
             uvs.push(u, v);
+
+            // Store vertex index for this row/col position
+            vertexMap.set(`${row},${col}`, vertexIndex++);
+          }
+        }
+      }
+
+      // Generate indices for the triangular grid
+      for (let row = 0; row < resolution; row++) {
+        for (let col = 0; col < resolution - row; col++) {
+          const a = vertexMap.get(`${row},${col}`);
+          const b = vertexMap.get(`${row},${col + 1}`);
+          const c = vertexMap.get(`${row + 1},${col}`);
+
+          if (a !== undefined && b !== undefined && c !== undefined) {
+            indices.push(a, b, c);
+          }
+
+          // Check if there's a second triangle in this cell
+          if (col < resolution - row - 1) {
+            const d = vertexMap.get(`${row + 1},${col + 1}`);
+            if (b !== undefined && d !== undefined && c !== undefined) {
+              indices.push(b, d, c);
+            }
           }
         }
       }
@@ -140,11 +167,11 @@ export class GeometryBuilder {
         }
       }
     } else {
-      // For 5+ corners, use fan triangulation
-      // Each corner forms a triangle with the centroid and the next corner
+      // For 5+ corners, use simplified fan triangulation
+      // Divide the polygon into triangles from a central point
       const numCorners = config.corners;
-      const segmentsPerEdge = Math.floor(resolution / Math.sqrt(numCorners));
-      const radialSegments = Math.max(8, Math.floor(resolution / 4));
+      const radialSegments = Math.max(12, Math.floor(resolution / 3));
+      const angularSegments = Math.max(16, Math.floor(resolution / 2));
 
       // Calculate centroid
       const cornerPositions: THREE.Vector3[] = [];
@@ -158,33 +185,56 @@ export class GeometryBuilder {
       }
       centroid.divideScalar(numCorners);
 
-      // Create vertices using fan triangulation
-      // For each triangle in the fan, create a grid of vertices
+      // Calculate average height for centroid
+      let centroidHeight = 0;
+      if (config.fixingHeights && config.fixingHeights.length === numCorners) {
+        const heights = config.fixingHeights.map(h => h / 1000);
+        centroidHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length;
+      }
+
+      const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
+      const minDim = Math.min(width, height);
+
+      // Add center vertex
+      const centerY = this.radialSag(0.5, 0.5, sagAmplitude) * minDim + centroidHeight;
+      vertices.push(centroid.x, centerY, centroid.z);
+      uvs.push(0.5, 0.5);
+      const centerVertexIndex = 0;
+
+      // Create vertices in a circular pattern around each edge
       for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
         const nextCornerIndex = (cornerIndex + 1) % numCorners;
         const corner1 = cornerPositions[cornerIndex];
         const corner2 = cornerPositions[nextCornerIndex];
 
-        // Create a grid within this triangular section
-        for (let r = 0; r <= radialSegments; r++) {
-          for (let s = 0; s <= segmentsPerEdge - r; s++) {
-            const u = s / segmentsPerEdge; // Interpolation along the edge
-            const v = r / radialSegments; // Interpolation from centroid to edge
+        // Get heights for interpolation
+        let height1 = 0;
+        let height2 = 0;
+        if (config.fixingHeights && config.fixingHeights.length === numCorners) {
+          const heights = config.fixingHeights.map(h => h / 1000);
+          height1 = heights[cornerIndex] || 0;
+          height2 = heights[nextCornerIndex] || 0;
+        }
 
-            // Barycentric coordinates within this triangle
-            // w0 = centroid weight, w1 = corner1 weight, w2 = corner2 weight
-            const w0 = 1 - v; // Weight decreases as we move away from center
-            const w1 = v * (1 - u); // Weight along corner1 direction
-            const w2 = v * u; // Weight along corner2 direction
+        // Create vertices along each radial segment from center to edge
+        for (let r = 1; r <= radialSegments; r++) {
+          const radialT = r / radialSegments;
 
-            const x = w0 * centroid.x + w1 * corner1.x + w2 * corner2.x;
-            const z = w0 * centroid.z + w1 * corner1.z + w2 * corner2.z;
+          // Create vertices along the edge between two corners
+          const edgeSegments = cornerIndex === numCorners - 1 ? angularSegments + 1 : angularSegments;
+          for (let a = 0; a <= edgeSegments; a++) {
+            const angularT = a / angularSegments;
 
-            // Calculate sag
-            const sagAmplitude = this.getSagAmplitude(config.tensionPreset || 'medium');
-            const minDim = Math.min(width, height);
+            // Interpolate position along the edge
+            const edgeX = corner1.x * (1 - angularT) + corner2.x * angularT;
+            const edgeZ = corner1.z * (1 - angularT) + corner2.z * angularT;
+            const edgeHeight = height1 * (1 - angularT) + height2 * angularT;
 
-            // Calculate distance from centroid for sag calculation
+            // Interpolate from center to edge
+            const x = centroid.x * (1 - radialT) + edgeX * radialT;
+            const z = centroid.z * (1 - radialT) + edgeZ * radialT;
+
+            // Calculate distance-based sag
             const distFromCenter = Math.sqrt(
               Math.pow(x - centroid.x, 2) + Math.pow(z - centroid.z, 2)
             );
@@ -193,19 +243,12 @@ export class GeometryBuilder {
             ));
             const normalizedDist = maxDist > 0 ? distFromCenter / maxDist : 0;
 
-            let y = this.radialSag(normalizedDist, normalizedDist, sagAmplitude) * minDim;
-
-            // Add height interpolation using barycentric coordinates
-            if (config.fixingHeights && config.fixingHeights.length === numCorners) {
-              const heights = config.fixingHeights.map(h => h / 1000);
-              // Height at this point is interpolated from the three vertices of this triangle
-              const centroidHeight = heights.reduce((sum, h) => sum + h, 0) / heights.length;
-              y += w0 * centroidHeight + w1 * heights[cornerIndex] + w2 * heights[nextCornerIndex];
-            }
+            const interpolatedHeight = centroidHeight * (1 - radialT) + edgeHeight * radialT;
+            const y = this.radialSag(normalizedDist, normalizedDist, sagAmplitude) * minDim + interpolatedHeight;
 
             vertices.push(x, y, z);
 
-            // UV mapping: map to unit square based on position relative to bounds
+            // UV mapping
             const uvX = (x - centroid.x) / (width / 2) * 0.5 + 0.5;
             const uvZ = (z - centroid.z) / (height / 2) * 0.5 + 0.5;
             uvs.push(uvX, uvZ);
@@ -213,28 +256,38 @@ export class GeometryBuilder {
         }
       }
 
-      // Generate indices for the triangulated fan
-      let vertexOffset = 0;
+      // Generate indices
+      // First ring connects to center
       for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
-        for (let r = 0; r < radialSegments; r++) {
-          const rowWidth1 = segmentsPerEdge - r + 1;
-          const rowWidth2 = segmentsPerEdge - r;
+        const edgeSegments = cornerIndex === numCorners - 1 ? angularSegments + 1 : angularSegments;
+        const firstRingOffset = 1 + cornerIndex * radialSegments * (angularSegments + 1);
 
-          for (let s = 0; s < rowWidth2; s++) {
-            const a = vertexOffset + s;
-            const b = vertexOffset + s + 1;
-            const c = vertexOffset + rowWidth1 + s;
-
-            indices.push(a, b, c);
-
-            if (s < rowWidth2 - 1) {
-              const d = vertexOffset + rowWidth1 + s + 1;
-              indices.push(b, d, c);
-            }
-          }
-          vertexOffset += rowWidth1;
+        for (let a = 0; a < edgeSegments; a++) {
+          const curr = firstRingOffset + a;
+          const next = firstRingOffset + a + 1;
+          indices.push(centerVertexIndex, next, curr);
         }
-        vertexOffset += 1; // Account for the last vertex in the triangle
+      }
+
+      // Connect subsequent rings
+      for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
+        const edgeSegments = cornerIndex === numCorners - 1 ? angularSegments + 1 : angularSegments;
+        const ringOffset = 1 + cornerIndex * radialSegments * (angularSegments + 1);
+
+        for (let r = 0; r < radialSegments - 1; r++) {
+          const currentRingStart = ringOffset + r * (angularSegments + 1);
+          const nextRingStart = ringOffset + (r + 1) * (angularSegments + 1);
+
+          for (let a = 0; a < edgeSegments; a++) {
+            const a1 = currentRingStart + a;
+            const a2 = currentRingStart + a + 1;
+            const b1 = nextRingStart + a;
+            const b2 = nextRingStart + a + 1;
+
+            indices.push(a1, b1, a2);
+            indices.push(a2, b1, b2);
+          }
+        }
       }
     }
 

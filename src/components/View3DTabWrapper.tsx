@@ -2,8 +2,8 @@ import React, { useState, lazy, Suspense } from 'react';
 import { ConfiguratorState } from '../types';
 import { ShapeCanvas } from './ShapeCanvas';
 
-const ShadeSail3DViewer = lazy(() =>
-  import('./view3d').then(module => ({ default: module.ShadeSail3DViewer }))
+const ShadeSail3DViewerR3F = lazy(() =>
+  import('./view3d/ShadeSail3DViewerR3F').then(module => ({ default: module.ShadeSail3DViewerR3F }))
 );
 
 interface View3DTabWrapperProps {
@@ -110,7 +110,7 @@ export function View3DTabWrapper({
                 </div>
               }
             >
-              <ShadeSail3DViewer
+              <ShadeSail3DViewerR3F
                 key={viewKey}
                 config={config}
                 updateConfig={updateConfig}
