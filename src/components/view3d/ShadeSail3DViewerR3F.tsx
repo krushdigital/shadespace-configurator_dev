@@ -99,7 +99,12 @@ function Hardware({
   const hardwareInstanceRef = useRef<HardwareInstance | null>(null);
 
   useEffect(() => {
-    console.log('🔧 Updating hardware for config changes');
+    console.log('🔧 Updating hardware for config changes:', {
+      corners: config.corners,
+      fixingHeights: config.fixingHeights?.length || 0,
+      fixingTypes: config.fixingTypes?.length || 0,
+      hasHeights: config.fixingHeights?.some(h => h > 0)
+    });
 
     if (!hardwareManagerRef.current) {
       hardwareManagerRef.current = new HardwareManager(materialsManager);
@@ -111,11 +116,13 @@ function Hardware({
     if (!hardwareInstanceRef.current) {
       console.log('🏭 Creating new hardware instance');
       hardwareInstanceRef.current = hardwareManager.createHardware(config);
-    } else {
-      console.log('🔄 Updating existing hardware:', {
-        fixingHeights: config.fixingHeights?.length || 0,
-        fixingTypes: config.fixingTypes?.length || 0
+      console.log('✅ Hardware created:', {
+        poles: hardwareInstanceRef.current.poles.length,
+        cables: hardwareInstanceRef.current.cables.length,
+        buildings: hardwareInstanceRef.current.buildings.length
       });
+    } else {
+      console.log('🔄 Updating existing hardware');
       hardwareManager.updateHardware(hardwareInstanceRef.current, config);
     }
 

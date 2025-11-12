@@ -20,6 +20,8 @@ export class HardwareManager {
   }
 
   public createHardware(config: ConfiguratorState): HardwareInstance {
+    console.log(`🔧 Creating hardware for ${config.corners}-corner shade sail`);
+
     const instance: HardwareInstance = {
       poles: [],
       cables: [],
@@ -27,30 +29,37 @@ export class HardwareManager {
     };
 
     const hasHeights = config.fixingHeights.length > 0 && config.fixingHeights.some(h => h > 0);
+    console.log(`📏 Heights provided: ${hasHeights}, count: ${config.fixingHeights.length}`);
 
-    if (hasHeights) {
-      for (let i = 0; i < config.corners; i++) {
-        const fixingType = config.fixingTypes?.[i] || 'post';
+    // Always create hardware elements for all corners to maintain array consistency
+    // This prevents index mismatch issues when updating hardware
+    for (let i = 0; i < config.corners; i++) {
+      const fixingType = config.fixingTypes?.[i] || 'post';
 
-        if (fixingType === 'post') {
-          const pole = this.createPole(i, config);
-          if (pole) {
-            instance.poles.push(pole);
-            this.hardwareGroup.add(pole);
-          }
-        } else if (fixingType === 'building') {
-          const building = this.createBuilding(i, config);
-          if (building) {
-            instance.buildings.push(building);
-            this.hardwareGroup.add(building);
-          }
+      if (fixingType === 'post') {
+        const pole = this.createPole(i, config);
+        if (pole) {
+          instance.poles.push(pole);
+          this.hardwareGroup.add(pole);
+          // Initially hide pole if no heights provided
+          pole.visible = hasHeights && config.fixingHeights[i] > 0;
         }
-
-        const cable = this.createCable(i, config);
-        if (cable) {
-          instance.cables.push(cable);
-          this.hardwareGroup.add(cable);
+      } else if (fixingType === 'building') {
+        const building = this.createBuilding(i, config);
+        if (building) {
+          instance.buildings.push(building);
+          this.hardwareGroup.add(building);
+          // Initially hide building if no heights provided
+          building.visible = hasHeights && config.fixingHeights[i] > 0;
         }
+      }
+
+      const cable = this.createCable(i, config);
+      if (cable) {
+        instance.cables.push(cable);
+        this.hardwareGroup.add(cable);
+        // Initially hide cable if no heights provided
+        cable.visible = hasHeights && config.fixingHeights[i] > 0;
       }
     }
 
@@ -59,8 +68,8 @@ export class HardwareManager {
 
 
   private createPole(index: number, config: ConfiguratorState): THREE.Mesh | null {
-    const height = config.fixingHeights[index];
-    if (!height || height <= 0) return null;
+    // Always create pole geometry, but use default height if not specified
+    const height = config.fixingHeights[index] || 2500; // Default 2.5m
 
     const heightMeters = height / 1000;
     const poleGeometry = GeometryBuilder.createPoleGeometry(heightMeters);
@@ -100,8 +109,8 @@ export class HardwareManager {
   }
 
   private createBuilding(index: number, config: ConfiguratorState): THREE.Mesh | null {
-    const height = config.fixingHeights[index];
-    if (!height || height <= 0) return null;
+    // Always create building geometry, but use default height if not specified
+    const height = config.fixingHeights[index] || 2500; // Default 2.5m
 
     const heightMeters = height / 1000;
     const wallWidth = 0.2;
@@ -181,8 +190,8 @@ export class HardwareManager {
   }
 
   private createCable(index: number, config: ConfiguratorState): THREE.Line | null {
-    const height = config.fixingHeights[index];
-    if (!height || height <= 0) return null;
+    // Always create cable geometry for consistency
+    const height = config.fixingHeights[index] || 2500; // Default 2.5m
 
     const sailPosition = this.getSailAttachmentPosition(index, config);
     const poleTopPosition = this.getPoleTopPosition(index, config);
@@ -282,7 +291,11 @@ export class HardwareManager {
 
   public updateHardware(instance: HardwareInstance, config: ConfiguratorState): void {
     // Update poles with current corner positions and heights
-    instance.poles.forEach((pole, index) => {
+    // Only update poles that exist in the array (prevent index out of bounds)
+    for (let index = 0; index < Math.min(instance.poles.length, config.corners); index++) {
+      const pole = instance.poles[index];
+      if (!pole) continue;
+
       const height = config.fixingHeights[index];
       const fixingType = config.fixingTypes?.[index] || 'post';
 
@@ -319,10 +332,13 @@ export class HardwareManager {
       } else {
         pole.visible = false;
       }
-    });
+    }
 
     // Update buildings with current corner positions and heights
-    instance.buildings.forEach((building, index) => {
+    for (let index = 0; index < Math.min(instance.buildings.length, config.corners); index++) {
+      const building = instance.buildings[index];
+      if (!building) continue;
+
       const height = config.fixingHeights[index];
       const fixingType = config.fixingTypes?.[index] || 'post';
 
@@ -356,11 +372,14 @@ export class HardwareManager {
       } else {
         building.visible = false;
       }
-    });
+    }
 
     // Update cables to connect pole tops to sail corners
     // Recalculate both endpoints to ensure proper connection at all times
-    instance.cables.forEach((cable, index) => {
+    for (let index = 0; index < Math.min(instance.cables.length, config.corners); index++) {
+      const cable = instance.cables[index];
+      if (!cable) continue;
+
       const height = config.fixingHeights[index];
       if (height && height > 0) {
         // Get the exact sail corner position (dynamically calculated)
@@ -382,7 +401,7 @@ export class HardwareManager {
       } else {
         cable.visible = false;
       }
-    });
+    }
   }
 
   public updateHardwarePositionOffset(instance: HardwareInstance, offset: THREE.Vector3): void {

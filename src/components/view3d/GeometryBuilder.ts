@@ -40,7 +40,12 @@ export class GeometryBuilder {
 
     const points = config.points;
     if (points.length < 3) {
+      console.warn('⚠️ Not enough points to create geometry');
       return new THREE.PlaneGeometry(1, 1);
+    }
+
+    if (config.corners !== points.length) {
+      console.warn(`⚠️ Corner count mismatch: corners=${config.corners}, points=${points.length}`);
     }
 
     const bounds = {
@@ -167,13 +172,14 @@ export class GeometryBuilder {
         }
       }
     } else {
-      // For 5+ corners, use simplified fan triangulation
-      // Divide the polygon into triangles from a central point
+      // For 5+ corners, use radial fan triangulation with proper vertex management
       const numCorners = config.corners;
-      const radialSegments = Math.max(12, Math.floor(resolution / 3));
-      const angularSegments = Math.max(16, Math.floor(resolution / 2));
+      const radialSegments = Math.max(8, Math.floor(resolution / 4));
+      const angularSegments = Math.max(12, Math.floor(resolution / 3));
 
-      // Calculate centroid
+      console.log(`🔨 Building ${numCorners}-corner sail with radial=${radialSegments}, angular=${angularSegments}`);
+
+      // Calculate centroid and corner positions
       const cornerPositions: THREE.Vector3[] = [];
       for (let i = 0; i < numCorners; i++) {
         cornerPositions.push(this.get3DCornerPosition(i, config));
@@ -199,96 +205,93 @@ export class GeometryBuilder {
       const centerY = this.radialSag(0.5, 0.5, sagAmplitude) * minDim + centroidHeight;
       vertices.push(centroid.x, centerY, centroid.z);
       uvs.push(0.5, 0.5);
-      const centerVertexIndex = 0;
 
-      // Create vertices in a circular pattern around each edge
-      for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
-        const nextCornerIndex = (cornerIndex + 1) % numCorners;
-        const corner1 = cornerPositions[cornerIndex];
-        const corner2 = cornerPositions[nextCornerIndex];
+      // Build vertex grid: radial rings from center to edges
+      // For each edge segment, create rings of vertices
+      const totalAngularSegments = numCorners * angularSegments;
 
-        // Get heights for interpolation
-        let height1 = 0;
-        let height2 = 0;
-        if (config.fixingHeights && config.fixingHeights.length === numCorners) {
-          const heights = config.fixingHeights.map(h => h / 1000);
-          height1 = heights[cornerIndex] || 0;
-          height2 = heights[nextCornerIndex] || 0;
-        }
+      for (let r = 1; r <= radialSegments; r++) {
+        const radialT = r / radialSegments;
 
-        // Create vertices along each radial segment from center to edge
-        for (let r = 1; r <= radialSegments; r++) {
-          const radialT = r / radialSegments;
+        // Create vertices around the circumference at this radial distance
+        for (let a = 0; a < totalAngularSegments; a++) {
+          const angularT = a / totalAngularSegments;
 
-          // Create vertices along the edge between two corners
-          const edgeSegments = cornerIndex === numCorners - 1 ? angularSegments + 1 : angularSegments;
-          for (let a = 0; a <= edgeSegments; a++) {
-            const angularT = a / angularSegments;
+          // Determine which edge we're on
+          const edgeIndex = Math.floor(angularT * numCorners);
+          const nextEdgeIndex = (edgeIndex + 1) % numCorners;
 
-            // Interpolate position along the edge
-            const edgeX = corner1.x * (1 - angularT) + corner2.x * angularT;
-            const edgeZ = corner1.z * (1 - angularT) + corner2.z * angularT;
-            const edgeHeight = height1 * (1 - angularT) + height2 * angularT;
+          // Position along this edge (0 to 1)
+          const edgeT = (angularT * numCorners) - edgeIndex;
 
-            // Interpolate from center to edge
-            const x = centroid.x * (1 - radialT) + edgeX * radialT;
-            const z = centroid.z * (1 - radialT) + edgeZ * radialT;
+          const corner1 = cornerPositions[edgeIndex];
+          const corner2 = cornerPositions[nextEdgeIndex];
 
-            // Calculate distance-based sag
-            const distFromCenter = Math.sqrt(
-              Math.pow(x - centroid.x, 2) + Math.pow(z - centroid.z, 2)
-            );
-            const maxDist = Math.max(...cornerPositions.map(cp =>
-              Math.sqrt(Math.pow(cp.x - centroid.x, 2) + Math.pow(cp.z - centroid.z, 2))
-            ));
-            const normalizedDist = maxDist > 0 ? distFromCenter / maxDist : 0;
-
-            const interpolatedHeight = centroidHeight * (1 - radialT) + edgeHeight * radialT;
-            const y = this.radialSag(normalizedDist, normalizedDist, sagAmplitude) * minDim + interpolatedHeight;
-
-            vertices.push(x, y, z);
-
-            // UV mapping
-            const uvX = (x - centroid.x) / (width / 2) * 0.5 + 0.5;
-            const uvZ = (z - centroid.z) / (height / 2) * 0.5 + 0.5;
-            uvs.push(uvX, uvZ);
+          // Get heights for interpolation
+          let height1 = 0;
+          let height2 = 0;
+          if (config.fixingHeights && config.fixingHeights.length === numCorners) {
+            const heights = config.fixingHeights.map(h => h / 1000);
+            height1 = heights[edgeIndex] || 0;
+            height2 = heights[nextEdgeIndex] || 0;
           }
+
+          // Interpolate position along the edge
+          const edgeX = corner1.x * (1 - edgeT) + corner2.x * edgeT;
+          const edgeZ = corner1.z * (1 - edgeT) + corner2.z * edgeT;
+          const edgeHeight = height1 * (1 - edgeT) + height2 * edgeT;
+
+          // Interpolate from center to edge
+          const x = centroid.x * (1 - radialT) + edgeX * radialT;
+          const z = centroid.z * (1 - radialT) + edgeZ * radialT;
+
+          // Calculate distance-based sag
+          const distFromCenter = Math.sqrt(
+            Math.pow(x - centroid.x, 2) + Math.pow(z - centroid.z, 2)
+          );
+          const maxDist = Math.max(...cornerPositions.map(cp =>
+            Math.sqrt(Math.pow(cp.x - centroid.x, 2) + Math.pow(cp.z - centroid.z, 2))
+          ));
+          const normalizedDist = maxDist > 0 ? distFromCenter / maxDist : 0;
+
+          const interpolatedHeight = centroidHeight * (1 - radialT) + edgeHeight * radialT;
+          const y = this.radialSag(normalizedDist, normalizedDist, sagAmplitude) * minDim + interpolatedHeight;
+
+          vertices.push(x, y, z);
+
+          // UV mapping
+          const uvX = (x - centroid.x) / (width / 2) * 0.5 + 0.5;
+          const uvZ = (z - centroid.z) / (height / 2) * 0.5 + 0.5;
+          uvs.push(uvX, uvZ);
         }
       }
 
-      // Generate indices
-      // First ring connects to center
-      for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
-        const edgeSegments = cornerIndex === numCorners - 1 ? angularSegments + 1 : angularSegments;
-        const firstRingOffset = 1 + cornerIndex * radialSegments * (angularSegments + 1);
+      console.log(`✅ Generated ${vertices.length / 3} vertices for ${numCorners}-corner sail`);
 
-        for (let a = 0; a < edgeSegments; a++) {
-          const curr = firstRingOffset + a;
-          const next = firstRingOffset + a + 1;
-          indices.push(centerVertexIndex, next, curr);
-        }
+      // Generate indices
+      // Connect center to first ring
+      const centerVertexIndex = 0;
+      for (let a = 0; a < totalAngularSegments; a++) {
+        const curr = 1 + a;
+        const next = 1 + ((a + 1) % totalAngularSegments);
+        indices.push(centerVertexIndex, next, curr);
       }
 
       // Connect subsequent rings
-      for (let cornerIndex = 0; cornerIndex < numCorners; cornerIndex++) {
-        const edgeSegments = cornerIndex === numCorners - 1 ? angularSegments + 1 : angularSegments;
-        const ringOffset = 1 + cornerIndex * radialSegments * (angularSegments + 1);
+      for (let r = 0; r < radialSegments - 1; r++) {
+        for (let a = 0; a < totalAngularSegments; a++) {
+          const a1 = 1 + r * totalAngularSegments + a;
+          const a2 = 1 + r * totalAngularSegments + ((a + 1) % totalAngularSegments);
+          const b1 = 1 + (r + 1) * totalAngularSegments + a;
+          const b2 = 1 + (r + 1) * totalAngularSegments + ((a + 1) % totalAngularSegments);
 
-        for (let r = 0; r < radialSegments - 1; r++) {
-          const currentRingStart = ringOffset + r * (angularSegments + 1);
-          const nextRingStart = ringOffset + (r + 1) * (angularSegments + 1);
-
-          for (let a = 0; a < edgeSegments; a++) {
-            const a1 = currentRingStart + a;
-            const a2 = currentRingStart + a + 1;
-            const b1 = nextRingStart + a;
-            const b2 = nextRingStart + a + 1;
-
-            indices.push(a1, b1, a2);
-            indices.push(a2, b1, b2);
-          }
+          // Create two triangles for this quad
+          indices.push(a1, b1, a2);
+          indices.push(a2, b1, b2);
         }
       }
+
+      console.log(`✅ Generated ${indices.length / 3} triangles for ${numCorners}-corner sail`);
     }
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
@@ -298,6 +301,16 @@ export class GeometryBuilder {
     }
 
     geometry.computeVertexNormals();
+
+    // Validate geometry
+    const vertexCount = vertices.length / 3;
+    const triangleCount = indices.length / 3;
+    console.log(`✅ Geometry complete: ${vertexCount} vertices, ${triangleCount} triangles (${config.corners} corners)`);
+
+    if (vertexCount === 0 || triangleCount === 0) {
+      console.error('❌ Invalid geometry created - no vertices or triangles!');
+      return new THREE.PlaneGeometry(1, 1);
+    }
 
     return geometry;
   }
