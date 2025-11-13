@@ -10,6 +10,8 @@ const App = () => {
 
   console.log(`Action is implemented successfully.`);
 
+  console.log('After pipeline implemented.');
+
   useEffect(() => {
     const root = document.getElementById("SHADE_SPACE");
     if (root) {
