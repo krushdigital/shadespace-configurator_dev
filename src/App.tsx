@@ -8,6 +8,8 @@ const App = () => {
 
   console.log('🚀 App component is rendering - this should appear in console');
 
+  console.log(`Action is implemented successfully.`);
+
   useEffect(() => {
     const root = document.getElementById("SHADE_SPACE");
     if (root) {
