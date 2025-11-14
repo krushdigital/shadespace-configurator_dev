@@ -5,8 +5,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Tooltip } from '../ui/Tooltip';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { convertMmToUnit, convertUnitToMm } from '../../utils/geometry';
-import { formatMeasurement } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
 import { HeightVisualizationCanvas } from '../HeightVisualizationCanvas';
 import { AlertCircle } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -121,47 +120,10 @@ export function FixingPointsContent({
     }
   };
 
-  const updateEyeOrientation = (index: number, orientation: 'horizontal' | 'vertical') => {
-    const newOrientations = [...(config.eyeOrientations || [])];
-    while (newOrientations.length < config.corners) {
-      newOrientations.push('horizontal');
-    }
-    newOrientations[index] = orientation;
-    updateConfig({ eyeOrientations: newOrientations });
-
-    // Clear validation error for this field
-    if (setValidationErrors) {
-      const newErrors = { ...validationErrors };
-      delete newErrors[`orientation_${index}`];
-      setValidationErrors(newErrors);
-    }
-  };
-
-  const updateFixingPointsInstalled = (installed: boolean) => {
-    if (installed) {
-      // Initialize eye orientations array if not present
-      const newOrientations = [...(config.eyeOrientations || [])];
-      while (newOrientations.length < config.corners) {
-        newOrientations.push('horizontal');
-      }
-      updateConfig({ fixingPointsInstalled: installed, eyeOrientations: newOrientations });
-    } else {
-      // Clear eye orientations when not installed
-      updateConfig({ fixingPointsInstalled: installed, eyeOrientations: undefined });
-    }
-
-    // Clear ALL validation errors for this step when user makes a selection
-    if (setValidationErrors) {
-      setValidationErrors({});
-    }
-  };
 
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
   const isStepComplete = () => {
-    // First check if fixing points installation status is selected
-    if (config.fixingPointsInstalled === undefined) return false;
-
     // Check if all heights are valid (not undefined, not null, and greater than 0)
     const allHeightsValid = config.fixingHeights.length === config.corners &&
       config.fixingHeights.every(height =>
@@ -172,148 +134,11 @@ export function FixingPointsContent({
     const allTypesValid = config.fixingTypes?.length === config.corners &&
       config.fixingTypes?.every(type => type === 'post' || type === 'building');
 
-    if (!allHeightsValid || !allTypesValid) return false;
-
-    // If fixing points are installed, also check eye orientations
-    if (config.fixingPointsInstalled === true) {
-      const allOrientationsValid = config.eyeOrientations?.length === config.corners &&
-        config.eyeOrientations?.every(orientation => orientation === 'horizontal' || orientation === 'vertical');
-      return allOrientationsValid || false;
-    }
-
-    // If fixing points are not installed, eye orientations are not required
-    return true;
+    return allHeightsValid && allTypesValid;
   };
-
-  const isInstallationStatusSelected = config.fixingPointsInstalled !== undefined;
-  const hasInstallationError = validationErrors['fixingPointsInstalled'];
 
   return (
     <div className="p-6">
-      {/* Fixing Points Installation Question */}
-      <Card className={`p-4 mb-6 border-2 transition-all duration-300 ${
-        hasInstallationError
-          ? 'border-red-500 bg-red-50 animate-pulse-error'
-          : config.fixingPointsInstalled === undefined
-          ? 'border-[#307C31] bg-[#BFF102]/10'
-          : 'border-slate-200 bg-white'
-      }`}
-      data-error="fixingPointsInstalled">
-        <h4 className="text-base font-semibold text-[#01312D] mb-3">
-          Are your Fixing Points Installed?
-        </h4>
-        <p className="text-sm text-[#01312D]/70 mb-4">
-          This helps us understand if your anchor points are already in place or if you're planning the installation.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <button
-              onClick={() => updateFixingPointsInstalled(true)}
-              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center justify-between ${
-                config.fixingPointsInstalled === true
-                  ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
-                  : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
-              }`}
-            >
-              <span>Yes - Already Installed</span>
-              <span onClick={(e) => e.stopPropagation()}>
-                <Tooltip
-                  content={
-                    <div>
-                      <img
-                        src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/eyes-installed.webp?v=1760396404"
-                        alt="Eye plates already installed"
-                        className="w-full h-auto object-cover rounded-lg mb-3"
-                      />
-                      <p className="text-sm text-[#01312D] font-medium mb-2">
-                        Why do we need to know this?
-                      </p>
-                      <p className="text-sm text-[#01312D]/80 leading-relaxed">
-                        We need to know if your fixing points are already installed so we can deduct the necessary amounts to cater for the eye plates/bolts when manufacturing the shade sail. This ensures your shade sail fits perfectly.
-                      </p>
-                    </div>
-                  }
-                >
-                  <span className={`w-5 h-5 inline-flex items-center justify-center text-xs rounded-full cursor-help transition-colors ${
-                    config.fixingPointsInstalled === true
-                      ? 'bg-white/20 text-white hover:bg-white/30'
-                      : 'bg-[#01312D] text-white hover:bg-[#307C31]'
-                  }`}>
-                    ?
-                  </span>
-                </Tooltip>
-              </span>
-            </button>
-          </div>
-          <div className="flex-1">
-            <button
-              onClick={() => updateFixingPointsInstalled(false)}
-              className={`w-full px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center justify-between ${
-                config.fixingPointsInstalled === false
-                  ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
-                  : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
-              }`}
-            >
-              <span>No - Planning Installation</span>
-              <span onClick={(e) => e.stopPropagation()}>
-                <Tooltip
-                  content={
-                    <div>
-                      <img
-                        src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/eyes-notinstalled.webp?v=1760396404"
-                        alt="Eye plates not yet installed"
-                        className="w-full h-auto object-cover rounded-lg mb-3"
-                      />
-                      <p className="text-sm text-[#01312D] font-medium mb-2">
-                        Why do we need to know this?
-                      </p>
-                      <p className="text-sm text-[#01312D]/80 leading-relaxed">
-                        We need to know if your fixing points are already installed so we can deduct the necessary amounts to cater for the eye plates/bolts when manufacturing the shade sail. This ensures your shade sail fits perfectly.
-                      </p>
-                    </div>
-                  }
-                >
-                  <span className={`w-5 h-5 inline-flex items-center justify-center text-xs rounded-full cursor-help transition-colors ${
-                    config.fixingPointsInstalled === false
-                      ? 'bg-white/20 text-white hover:bg-white/30'
-                      : 'bg-[#01312D] text-white hover:bg-[#307C31]'
-                  }`}>
-                    ?
-                  </span>
-                </Tooltip>
-              </span>
-            </button>
-          </div>
-        </div>
-        {hasInstallationError && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-500 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-700 font-medium">
-                {validationErrors['fixingPointsInstalled']}
-              </p>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Info Banner - Only shown when user tries to proceed without selecting */}
-      {!isInstallationStatusSelected && hasInstallationError && (
-        <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-blue-800 mb-1">
-                Answer Required
-              </h4>
-              <p className="text-sm text-blue-700">
-                Please select whether your fixing points are already installed or if you're planning the installation. This will enable the configuration fields below.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* General Typo Warning */}
       {validationErrors.typoSuggestions && (
         <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-500 rounded-lg">
@@ -336,13 +161,9 @@ export function FixingPointsContent({
       )}
 
 
-      <div className={`space-y-2 transition-opacity duration-300 ${
-        !isInstallationStatusSelected ? 'opacity-50 pointer-events-none' : ''
-      }`}>
+      <div className="space-y-2">
         {Array.from({ length: config.corners }, (_, index) => (
-          <Card key={index} className={`p-3 border-l-4 border-l-[#01312D] relative ${
-            !isInstallationStatusSelected ? 'bg-slate-50' : ''
-          }`}>
+          <Card key={index} className="p-3 border-l-4 border-l-[#01312D] relative">
             <div className="space-y-1">
               {/* Header with Corner Label */}
               <div className="flex items-center justify-between">
@@ -351,10 +172,8 @@ export function FixingPointsContent({
                 </h5>
               </div>
               
-              {/* Responsive Grid Layout - Conditional columns based on fixing points installation */}
-              <div className={`grid grid-cols-1 gap-3 md:gap-4 ${
-                config.fixingPointsInstalled === true ? 'md:grid-cols-3' : 'md:grid-cols-2'
-              }`}>
+              {/* Responsive Grid Layout - Two columns for height and attachment type */}
+              <div className="grid grid-cols-1 gap-3 md:gap-4 md:grid-cols-2">
                 {/* Height Input */}
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
@@ -394,7 +213,7 @@ export function FixingPointsContent({
                       </span>
                     </Tooltip>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="relative">
                     {(() => {
                       const currentHeight = config.fixingHeights[index];
                       const hasValidValue = currentHeight !== undefined && currentHeight !== null && currentHeight > 0;
@@ -404,7 +223,6 @@ export function FixingPointsContent({
                       return (
                     <Input
                       type="number"
-                      disabled={!isInstallationStatusSelected}
                      value={hasValidValue
                        ? (config.unit === 'imperial'
                          ? String(Math.round(convertMmToUnit(currentHeight, config.unit) * 100) / 100)
@@ -434,16 +252,17 @@ export function FixingPointsContent({
                       }}
                       placeholder={config.unit === 'imperial' ? '100' : '2500'}
                      autoComplete="off"
-                      className="flex-1 py-2"
+                      className="flex-1 py-2 pr-12"
                       isSuccess={isSuccess}
                       isSuggestedTypo={!!typoSuggestions[`height_${index}`]}
                      step={config.unit === 'imperial' ? '0.1' : '10'}
                      error={validationErrors[`height_${index}`]}
                      errorKey={`height_${index}`}
+                     secondaryValue={hasValidValue ? formatSecondaryUnit(currentHeight, config.unit) : ''}
                     />
                       );
                     })()}
-                    <span className="text-xs text-[#01312D]/50 min-w-[2rem]">
+                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50">
                       {config.unit === 'metric' ? 'mm' : 'in'}
                     </span>
                   </div>
@@ -509,7 +328,6 @@ export function FixingPointsContent({
                   >
                     <button
                       onClick={() => updateFixingType(index, 'post')}
-                      disabled={!isInstallationStatusSelected}
                       className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                         config.fixingTypes?.[index] === 'post'
                           ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
@@ -522,7 +340,6 @@ export function FixingPointsContent({
                     </button>
                     <button
                       onClick={() => updateFixingType(index, 'building')}
-                      disabled={!isInstallationStatusSelected}
                       className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                         config.fixingTypes?.[index] === 'building'
                           ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
@@ -536,69 +353,6 @@ export function FixingPointsContent({
                   </div>
                   </div>
                 </div>
-
-                {/* Eye Orientation - Only show if fixing points are installed */}
-                {config.fixingPointsInstalled === true && (
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-[#01312D]">
-                      Eye Orientation
-                    </span>
-                    <Tooltip
-                      content={
-                        <div>
-                         <img 
-                           src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/EYE_ORIENTATION.jpg?v=1755924201" 
-                           alt="Horizontal vs Vertical eye orientation example"
-                           className="w-full h-auto object-cover rounded-lg mb-3"
-                         />
-                          <p className="text-sm text-[#01312D] font-medium mb-1">
-                            Eye Orientation
-                          </p>
-                          <p className="text-sm text-[#01312D]/70">
-                            Horizontal: Eye bolt parallel to ground. Vertical: Eye bolt perpendicular to ground. Affects hardware selection.
-                          </p>
-                        </div>
-                      }
-                    >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                        ?
-                      </span>
-                    </Tooltip>
-                  </div>
-                  <div 
-                    className="flex gap-1 w-full"
-                    {...(validationErrors[`orientation_${index}`] ? { 'data-error': `orientation_${index}` } : {})}
-                  >
-                    <button
-                      onClick={() => updateEyeOrientation(index, 'horizontal')}
-                      disabled={!isInstallationStatusSelected}
-                      className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
-                        config.eyeOrientations?.[index] === 'horizontal'
-                          ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
-                          : validationErrors[`orientation_${index}`]
-                          ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
-                          : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
-                      }`}
-                    >
-                      Horizontal
-                    </button>
-                    <button
-                      onClick={() => updateEyeOrientation(index, 'vertical')}
-                      disabled={!isInstallationStatusSelected}
-                      className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
-                        config.eyeOrientations?.[index] === 'vertical'
-                          ? 'bg-[#307C31] text-[#F3FFE3] shadow-md !border-[#307C31]'
-                          : validationErrors[`orientation_${index}`]
-                          ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
-                          : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
-                      }`}
-                    >
-                      Vertical
-                    </button>
-                  </div>
-                </div>
-                )}
               </div>
             </div>
           </Card>
@@ -631,10 +385,6 @@ export function FixingPointsContent({
             </li>
             <li className="flex items-start">
               <span className="w-1.5 h-1.5 bg-[#01312D] rounded-full mt-1.5 mr-2 flex-shrink-0" />
-              Eye orientation affects hardware selection and installation method
-            </li>
-            <li className="flex items-start">
-              <span className="w-1.5 h-1.5 bg-[#01312D] rounded-full mt-1.5 mr-2 flex-shrink-0" />
               Consider wind loads and local building codes - consult professionals for large installations
             </li>
           </ul>
@@ -649,23 +399,14 @@ export function FixingPointsContent({
 
           const missingHeights = config.fixingHeights.filter(h => h === undefined || h === null || h <= 0).length;
           const missingTypes = (config.fixingTypes?.filter(t => t !== 'post' && t !== 'building') || []).length;
-          const missingOrientations = config.fixingPointsInstalled === true
-            ? (config.eyeOrientations?.filter(o => o !== 'horizontal' && o !== 'vertical') || []).length
-            : 0;
 
-          const totalMissing = missingHeights + missingTypes + missingOrientations;
-          const fixingPointsNotSelected = config.fixingPointsInstalled === undefined;
+          const totalMissing = missingHeights + missingTypes;
 
           return (
             <>
               {!complete && (
                 <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                  {fixingPointsNotSelected ? (
-                    <span className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-slate-500" />
-                      <span>Please select whether your fixing points are installed</span>
-                    </span>
-                  ) : hasUnacknowledgedTypos ? (
+                  {hasUnacknowledgedTypos ? (
                     <span className="flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-500" />
                       <span>Please review and address the height warnings above</span>
@@ -675,10 +416,8 @@ export function FixingPointsContent({
                       <AlertCircle className="w-4 h-4 text-slate-500" />
                       <span>
                         {missingHeights > 0 && `${missingHeights} height${missingHeights !== 1 ? 's' : ''}`}
-                        {missingHeights > 0 && (missingTypes > 0 || missingOrientations > 0) && ', '}
+                        {missingHeights > 0 && missingTypes > 0 && ', '}
                         {missingTypes > 0 && `${missingTypes} attachment type${missingTypes !== 1 ? 's' : ''}`}
-                        {missingTypes > 0 && missingOrientations > 0 && ', '}
-                        {missingOrientations > 0 && `${missingOrientations} eye orientation${missingOrientations !== 1 ? 's' : ''}`}
                         {' '}required to continue
                       </span>
                     </span>

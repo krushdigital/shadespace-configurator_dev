@@ -5,11 +5,13 @@ import { formatMeasurement } from '../utils/geometry';
 interface HeightVisualizationCanvasProps {
   config: ConfiguratorState;
   compact?: boolean;
+  highlightedCorner?: number | null;
 }
 
-export function HeightVisualizationCanvas({ 
-  config, 
-  compact = false 
+export function HeightVisualizationCanvas({
+  config,
+  compact = false,
+  highlightedCorner = null
 }: HeightVisualizationCanvasProps) {
   const height = compact ? 200 : 300;
   const viewBoxHeight = compact ? 300 : 400;
@@ -188,52 +190,76 @@ export function HeightVisualizationCanvas({
               )}
 
               {/* Anchor point (eye bolt) */}
-              <circle
-                cx={pos.type === 'post' ? (() => {
+              {(() => {
+                const isHighlighted = highlightedCorner === index;
+                const anchorX = pos.type === 'post' ? (() => {
                   const centerX = 300;
                   const leanAngle = pos.x < centerX ? -12 : 12;
                   const angleRad = (leanAngle * Math.PI) / 180;
                   return pos.x + Math.sin(angleRad) * pos.scaledHeight;
-                })() : pos.x}
-                cy={pos.anchorY}
-                r="6"
-                fill="#EF4444"
-                stroke="white"
-                strokeWidth="2"
-              />
+                })() : pos.x;
+
+                return (
+                  <>
+                    {/* Pulse effect circle when highlighted */}
+                    {isHighlighted && (
+                      <circle
+                        cx={anchorX}
+                        cy={pos.anchorY}
+                        r="6"
+                        fill="#EF4444"
+                        stroke="none"
+                        className="corner-pulse"
+                        style={{
+                          pointerEvents: 'none',
+                          transformOrigin: `${anchorX}px ${pos.anchorY}px`
+                        }}
+                      />
+                    )}
+                    {/* Main anchor point */}
+                    <circle
+                      cx={anchorX}
+                      cy={pos.anchorY}
+                      r="6"
+                      fill="#EF4444"
+                      stroke={isHighlighted ? '#FCA5A5' : 'white'}
+                      strokeWidth={isHighlighted ? '3' : '2'}
+                    />
+                  </>
+                );
+              })()}
 
               {/* Eye orientation indicator */}
-              {pos.orientation === 'horizontal' ? (
-                <ellipse
-                  cx={pos.type === 'post' ? (() => {
-                    const centerX = 300;
-                    const leanAngle = pos.x < centerX ? -12 : 12;
-                    const angleRad = (leanAngle * Math.PI) / 180;
-                    return pos.x + Math.sin(angleRad) * pos.scaledHeight;
-                  })() : pos.x}
-                  cy={pos.anchorY}
-                  rx="8"
-                  ry="3"
-                  fill="none"
-                  stroke="#DC2626"
-                  strokeWidth="2"
-                />
-              ) : (
-                <ellipse
-                  cx={pos.type === 'post' ? (() => {
-                    const centerX = 300;
-                    const leanAngle = pos.x < centerX ? -12 : 12;
-                    const angleRad = (leanAngle * Math.PI) / 180;
-                    return pos.x + Math.sin(angleRad) * pos.scaledHeight;
-                  })() : pos.x}
-                  cy={pos.anchorY}
-                  rx="3"
-                  ry="8"
-                  fill="none"
-                  stroke="#DC2626"
-                  strokeWidth="2"
-                />
-              )}
+              {(() => {
+                const anchorX = pos.type === 'post' ? (() => {
+                  const centerX = 300;
+                  const leanAngle = pos.x < centerX ? -12 : 12;
+                  const angleRad = (leanAngle * Math.PI) / 180;
+                  return pos.x + Math.sin(angleRad) * pos.scaledHeight;
+                })() : pos.x;
+
+                return pos.orientation === 'horizontal' ? (
+                  <ellipse
+                    cx={anchorX}
+                    cy={pos.anchorY}
+                    rx="8"
+                    ry="3"
+                    fill="none"
+                    stroke="#DC2626"
+                    strokeWidth="2"
+                  />
+                ) : (
+                  <ellipse
+                    cx={anchorX}
+                    cy={pos.anchorY}
+                    rx="3"
+                    ry="8"
+                    fill="none"
+                    stroke="#DC2626"
+                    strokeWidth="2"
+                  />
+                );
+              })()}
 
               {/* Height measurement line */}
               {pos.height > 0 && (
@@ -261,23 +287,29 @@ export function HeightVisualizationCanvas({
               )}
 
               {/* Corner label */}
-              <text
-                x={pos.type === 'post' ? (() => {
+              {(() => {
+                const anchorX = pos.type === 'post' ? (() => {
                   const centerX = 300;
                   const leanAngle = pos.x < centerX ? -12 : 12;
                   const angleRad = (leanAngle * Math.PI) / 180;
                   return pos.x + Math.sin(angleRad) * pos.scaledHeight;
-                })() : pos.x}
-                y={pos.anchorY - 15}
-                fontSize="14"
-                className="fill-slate-900 font-bold"
-                textAnchor="middle"
-                style={{ 
-                  filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.8))'
-                }}
-              >
-                {pos.label}
-              </text>
+                })() : pos.x;
+
+                return (
+                  <text
+                    x={anchorX}
+                    y={pos.anchorY - 15}
+                    fontSize="14"
+                    className="fill-slate-900 font-bold"
+                    textAnchor="middle"
+                    style={{
+                      filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.8))'
+                    }}
+                  >
+                    {pos.label}
+                  </text>
+                );
+              })()}
 
               {/* Type label */}
               <text

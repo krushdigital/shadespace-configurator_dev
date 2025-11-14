@@ -6,9 +6,9 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 
 interface DimensionsContentProps {
@@ -36,6 +36,8 @@ interface DimensionsContentProps {
   isMobile?: boolean;
   highlightedMeasurement?: string | null;
   onSaveQuote?: () => void;
+  highlightedCorner?: number | null;
+  setHighlightedCorner?: (corner: number | null) => void;
 }
 
 export function DimensionsContent({
@@ -62,8 +64,11 @@ export function DimensionsContent({
   hasAllEdgeMeasurements = false,
   isMobile = false,
   highlightedMeasurement = null,
-  onSaveQuote = () => {}
+  onSaveQuote = () => {},
+  highlightedCorner = null,
+  setHighlightedCorner = () => {}
 }: DimensionsContentProps) {
+  const [showHeightsSection, setShowHeightsSection] = useState(false);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -135,7 +140,7 @@ export function DimensionsContent({
     if (correctedValue) {
       const newMeasurements = { ...config.measurements, [measurementKey]: correctedValue };
       updateConfig({ measurements: newMeasurements });
-      
+
       // Clear validation errors and suggestions for this field
       if (setValidationErrors && setTypoSuggestions) {
         const newErrors = { ...validationErrors };
@@ -147,22 +152,82 @@ export function DimensionsContent({
       }
     }
   };
+
+  const updateFixingHeight = (index: number, height: number) => {
+    const mmHeight = convertUnitToMm(height, config.unit);
+    const newHeights = [...config.fixingHeights];
+    while (newHeights.length < config.corners) {
+      newHeights.push(0);
+    }
+    newHeights[index] = mmHeight;
+    updateConfig({ fixingHeights: newHeights, heightsProvidedByUser: true });
+  };
+
+  const updateFixingType = (index: number, type: 'post' | 'building') => {
+    const newTypes = [...(config.fixingTypes || [])];
+    while (newTypes.length < config.corners) {
+      newTypes.push('post');
+    }
+    newTypes[index] = type;
+    updateConfig({ fixingTypes: newTypes, heightsProvidedByUser: true });
+  };
+
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
   return (
     <div className="px-6 pt-6 pb-6">
+      {/* Measurement Context Banner */}
+      {config.measurementOption === 'adjust' && (
+        <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h5 className="text-base font-bold text-blue-900 mb-1">
+                You're Measuring Your Space
+              </h5>
+              <p className="text-sm text-blue-800 leading-relaxed">
+                Enter the measurements <strong>between your fixing points</strong> (the space where the shade will be installed). We'll calculate the perfect sail size to fit your space, accounting for fabric stretch and tensioning hardware.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {config.measurementOption === 'exact' && (
+        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h5 className="text-base font-bold text-amber-900 mb-1">
+                You're Specifying Finished Shade Dimensions
+              </h5>
+              <p className="text-sm text-amber-800 leading-relaxed">
+                Enter the exact measurements for <strong>the finished shade sail</strong> as you want it manufactured. We'll make it to these precise dimensions with no adjustments.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Diagram - Only show on mobile */}
       {isMobile && (
         <div className="mb-6">
           <h4 className="text-lg font-semibold text-slate-900 mb-4">
             Interactive Measurement Guide
           </h4>
-          
+
           {/* Canvas Tip */}
           <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
             <p className="text-sm text-[#01312D]">
-              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape. 
-              Enter measurements in the fields below to calculate pricing. All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
+              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
+              {config.measurementOption === 'adjust'
+                ? 'Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
+                : 'Enter your desired shade dimensions in the fields below to calculate pricing.'}
+              {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
             </p>
           </div>
           
@@ -202,7 +267,10 @@ export function DimensionsContent({
         {/* Measurement Inputs */}
         <div>
           <h4 className="text-base md:text-lg font-semibold text-[#01312D] mt-4 mb-3">
-            Precise Measurements ({config.unit === 'metric' ? 'mm' : 'inches'})
+            {config.measurementOption === 'adjust'
+              ? `Space Measurements - Distance Between Fixing Points`
+              : `Finished Shade Dimensions`}
+            {' '}({config.unit === 'metric' ? 'mm' : 'inches'})
           </h4>
           <Card className={`p-3 md:p-4 ${
             Object.keys(validationErrors).some(key => 
@@ -227,9 +295,6 @@ export function DimensionsContent({
                 
                 return (
                   <div key={edgeKey}>
-                    <label className="block text-xs md:text-sm font-medium text-[#01312D] mb-1">
-                      Edge {getCornerLabel(index)} → {getCornerLabel(nextIndex)}
-                    </label>
                    <div className="relative">
                      <Input
                        type="number"
@@ -260,6 +325,10 @@ export function DimensionsContent({
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
                       errorKey={edgeKey}
+                      label={config.measurementOption === 'adjust'
+                        ? `Space Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Fixing Point to Fixing Point)`
+                        : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
+                      secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
                      />
                      <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
@@ -330,6 +399,16 @@ export function DimensionsContent({
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-2">
                             <p className="text-sm text-[#01312D]">
                               <strong>Why are diagonals needed?</strong> They ensure our manufacturing team can create your exact shape with precision accuracy.
+                              {config.measurementOption === 'adjust' && (
+                                <span className="block mt-1">
+                                  <em>Note: Measure diagonals between the fixing points in your space.</em>
+                                </span>
+                              )}
+                              {config.measurementOption === 'exact' && (
+                                <span className="block mt-1">
+                                  <em>Note: Provide diagonal measurements of the finished shade sail.</em>
+                                </span>
+                              )}
                             </p>
                           </div>
                         </div>
@@ -347,13 +426,12 @@ export function DimensionsContent({
                       const isSuccess = hasValidValue && !hasError;
                       
                       // Generate label from key (e.g., 'AC' -> 'Diagonal A → C')
-                      const label = `Diagonal ${key.charAt(0)} → ${key.charAt(1)}`;
+                      const label = config.measurementOption === 'adjust'
+                        ? `Space Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
+                        : `Shade Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
                       
                       return (
                         <div key={key}>
-                          <label className="block text-xs md:text-sm font-medium text-[#01312D] mb-1">
-                            {label}
-                          </label>
                           <div className="relative">
                             <Input
                               type="number"
@@ -388,6 +466,8 @@ export function DimensionsContent({
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
                               isSuggestedTypo={!!typoSuggestions[key]}
+                              label={label}
+                              secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
                             />
                             <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
                               {config.unit === 'metric' ? 'mm' : 'in'}
@@ -457,6 +537,198 @@ export function DimensionsContent({
             </div>
           </Card>
         </div>
+
+        {/* Optional Heights and Anchor Points Section - Only shown for "adjust" measurement option */}
+        {config.corners !== 3 && config.measurementOption === 'adjust' && (
+          <div className="mt-6">
+            <Card
+              className={`overflow-hidden transition-all duration-300 ${
+                showHeightsSection ? 'border-2 border-[#307C31]' : 'border border-slate-300'
+              }`}
+            >
+              <button
+                onClick={() => setShowHeightsSection(!showHeightsSection)}
+                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0">
+                    {showHeightsSection ? (
+                      <ChevronUp className="w-5 h-5 text-[#307C31]" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-slate-600" />
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <h5 className="text-base font-semibold text-[#01312D] flex items-center gap-2">
+                      Optional: Heights & Anchor Points for Custom Fit
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
+                        Optional
+                      </span>
+                    </h5>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {showHeightsSection
+                        ? 'Providing this information allows for more customized manufacturing'
+                        : 'Click to add height and attachment information for a more customized fit'}
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              {showHeightsSection && (
+                <div className="p-4 pt-0 border-t border-slate-200 space-y-4">
+                  <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg">
+                    <p className="text-sm text-[#01312D]">
+                      <strong>Note:</strong> Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.
+                    </p>
+                  </div>
+
+                  {/* Height inputs for each corner */}
+                  <div className="space-y-3">
+                    {Array.from({ length: config.corners }, (_, index) => (
+                      <Card key={index} className="p-3 border-l-4 border-l-[#01312D]">
+                        <div className="space-y-2">
+                          <h6 className="font-semibold text-[#01312D] text-sm">
+                            Anchor Point {getCornerLabel(index)} Configuration
+                          </h6>
+
+                          <div className="grid grid-cols-1 gap-3 md:gap-4 md:grid-cols-2">
+                            {/* Height Input */}
+                            <div>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  value={config.fixingHeights[index]
+                                    ? (config.unit === 'imperial'
+                                      ? String(Math.round(convertMmToUnit(config.fixingHeights[index], config.unit) * 100) / 100)
+                                      : Math.round(convertMmToUnit(config.fixingHeights[index], config.unit)).toString()
+                                    )
+                                    : ''}
+                                  onChange={(e) => {
+                                    if (e.target.value === '') {
+                                      const newHeights = [...config.fixingHeights];
+                                      newHeights[index] = 0;
+                                      updateConfig({ fixingHeights: newHeights });
+                                    } else {
+                                      const numValue = parseFloat(e.target.value);
+                                      if (!isNaN(numValue)) {
+                                        updateFixingHeight(index, numValue);
+                                      }
+                                    }
+                                  }}
+                                  onFocus={() => setHighlightedCorner(index)}
+                                  onBlur={() => setHighlightedCorner(null)}
+                                  placeholder={config.unit === 'imperial' ? '100' : '2500'}
+                                  autoComplete="off"
+                                  className="flex-1 py-2 pr-12"
+                                  step={config.unit === 'imperial' ? '0.1' : '10'}
+                                  label={
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs font-medium text-[#01312D]">
+                                        Height from Ground
+                                      </span>
+                                      <Tooltip
+                                        content={
+                                          <div>
+                                            <p className="text-sm text-[#01312D] font-medium mb-2">
+                                              What is this measurement?
+                                            </p>
+                                            <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
+                                              Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
+                                            </p>
+                                          </div>
+                                        }
+                                      >
+                                        <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                          ?
+                                        </span>
+                                      </Tooltip>
+                                    </div>
+                                  }
+                                  secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
+                                />
+                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50">
+                                  {config.unit === 'metric' ? 'mm' : 'in'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Attachment Type */}
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-medium text-[#01312D]">
+                                  Attachment Type
+                                </span>
+                                <Tooltip
+                                  content={
+                                    <div>
+                                      <p className="text-sm text-[#01312D] font-medium mb-1">
+                                        Attachment Type
+                                      </p>
+                                      <p className="text-sm text-[#01312D]/70">
+                                        Post: Freestanding pole installation. Building: Attached to wall, roof, or existing structure.
+                                      </p>
+                                    </div>
+                                  }
+                                >
+                                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                    ?
+                                  </span>
+                                </Tooltip>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => updateFixingType(index, 'post')}
+                                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                                    config.fixingTypes?.[index] === 'post'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                  }`}
+                                >
+                                  Post
+                                </button>
+                                <button
+                                  onClick={() => updateFixingType(index, 'building')}
+                                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                                    config.fixingTypes?.[index] === 'building'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                  }`}
+                                >
+                                  Building
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Installation Guidelines */}
+                  <Card className="p-3 bg-slate-50 border-slate-200">
+                    <h6 className="text-xs md:text-sm font-semibold text-[#01312D] mb-2">
+                      Installation Guidelines
+                    </h6>
+                    <ul className="space-y-1 text-xs text-slate-600">
+                      <li className="flex items-start">
+                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        Heights are measured from ground level to the anchor point
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        Different heights create natural water runoff and proper sail tension
+                      </li>
+                      <li className="flex items-start">
+                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        Minimum recommended height is {config.unit === 'imperial' ? '7.2ft' : '2.2m'} for clearance
+                      </li>
+                    </ul>
+                  </Card>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
