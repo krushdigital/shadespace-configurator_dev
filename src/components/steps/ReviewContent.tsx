@@ -6,7 +6,6 @@ import { Input } from '../ui/Input';
 import { Tooltip } from '../ui/Tooltip';
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
-import { View3DTabWrapper } from '../View3DTabWrapper';
 import { AccordionItem } from '../ui/AccordionItem';
 import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
@@ -1004,21 +1003,24 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
           <div className="lg:col-span-2 lg:sticky lg:top-8 lg:self-start space-y-6">
-            {/* Shade Sail Preview with 3D View */}
+            {/* Shade Sail Preview */}
             <div ref={ref} className="shade-canvas-container">
               <h4 className="text-lg font-semibold text-slate-900 mb-4">
                 Shade Sail Preview
               </h4>
-              <View3DTabWrapper
+              <InteractiveMeasurementCanvas
+                ref={canvasRef}
                 config={config}
                 updateConfig={updateConfig}
                 highlightedMeasurement={highlightedMeasurement}
-                isMobile={isMobile}
+                onMeasurementHover={setHighlightedMeasurement}
+                compact={false}
                 readonly={false}
+                isMobile={isMobile}
               />
               <div className="mt-2 text-xs text-slate-500">
                 Visual reference only<br />
-                Switch between 2D and 3D views to explore your design
+                Corner labels show edge positions
               </div>
             </div>
 
