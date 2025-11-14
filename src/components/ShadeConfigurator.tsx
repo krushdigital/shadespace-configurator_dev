@@ -17,8 +17,6 @@ import { Point } from '../types';
 import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues } from '../utils/geometry';
 import { generatePDF } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
-import { ShadeSail3DModel } from './ShadeSail3DModel';
-import { MeasurementLines } from './MeasurementLines';
 import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
 import { formatMeasurement, formatArea } from '../utils/geometry';
 import { useToast } from "../components/ui/ToastProvider";
@@ -100,9 +98,6 @@ export function ShadeConfigurator() {
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
-
-  // 3D view state for sticky sidebar
-  const [stickyViewMode, setStickyViewMode] = useState<'2D' | '3D'>('2D');
 
   const calculations = useShadeCalculations(config);
 
@@ -1542,81 +1537,30 @@ export function ShadeConfigurator() {
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
           {openStep === 4 && !isMobile && (
             <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-28 lg:self-start z-10">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold text-slate-900">
-                  Interactive Measurement Guide
-                </h4>
-                {/* View Mode Toggle */}
-                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setStickyViewMode('2D')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${
-                      stickyViewMode === '2D'
-                        ? 'bg-white text-[#01312D] shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    2D View
-                  </button>
-                  <button
-                    onClick={() => setStickyViewMode('3D')}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${
-                      stickyViewMode === '3D'
-                        ? 'bg-white text-[#01312D] shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    3D View
-                  </button>
-                </div>
-              </div>
+              <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                Interactive Measurement Guide
+              </h4>
 
               {/* Canvas Tip */}
               <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
                 <p className="text-sm text-[#01312D]">
-                  <strong>Tip:</strong> {stickyViewMode === '2D' ? 'Drag the corners on the canvas to visualize your shape.' : 'View your shade sail in 3D to better understand the configuration.'}
-                  {' '}{config.measurementOption === 'adjust'
-                    ? 'Enter your space measurements (distance between fixing points) in the fields to the right to calculate pricing.'
-                    : 'Enter your desired shade dimensions in the fields to the right to calculate pricing.'}
+                  <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
+                  {config.measurementOption === 'adjust'
+                    ? ' Enter your space measurements (distance between fixing points) in the fields to the right to calculate pricing.'
+                    : ' Enter your desired shade dimensions in the fields to the right to calculate pricing.'}
                   {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
                 </p>
               </div>
 
-              {/* Conditional Rendering: 2D or 3D View */}
-              {stickyViewMode === '2D' ? (
-                <ShapeCanvas
-                  config={config}
-                  updateConfig={updateConfig}
-                  readonly={false}
-                  snapToGrid={true}
-                  highlightedMeasurement={highlightedMeasurement}
-                  highlightedCorner={highlightedCorner}
-                  isMobile={isMobile}
-                />
-              ) : (
-                <div className="relative bg-white rounded-lg border-2 border-slate-200 overflow-hidden" style={{ height: '600px' }}>
-                  <div className="absolute inset-0">
-                    <ShadeSail3DModel
-                      corners={config.corners}
-                      measurementType={config.measurementOption === 'adjust' ? 'space' : 'sail'}
-                      fabricColor={config.fabricColor}
-                    />
-                    {config.corners > 0 && (
-                      <svg
-                        className="absolute inset-0 w-full h-full pointer-events-none"
-                        viewBox="0 0 400 400"
-                        style={{ zIndex: 10 }}
-                      >
-                        <MeasurementLines
-                          measurementType={config.measurementOption === 'adjust' ? 'space' : 'sail'}
-                          corners={config.corners}
-                          isActive={true}
-                        />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-              )}
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={false}
+                snapToGrid={true}
+                highlightedMeasurement={highlightedMeasurement}
+                highlightedCorner={highlightedCorner}
+                isMobile={isMobile}
+              />
             </div>
           )}
 
