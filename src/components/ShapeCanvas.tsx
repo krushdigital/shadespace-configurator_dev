@@ -269,6 +269,27 @@ export function ShapeCanvas({
     });
   }, [config.points, config.fabricType, config.fabricColor, centroid, isMobile]);
 
+  const viewBox = useMemo(() => {
+    if (config.points.length === 0) return "0 0 600 600";
+
+    const padding = 50;
+    const minX = Math.min(...config.points.map(p => p.x)) - padding;
+    const maxX = Math.max(...config.points.map(p => p.x)) + padding;
+    const minY = Math.min(...config.points.map(p => p.y)) - padding;
+    const maxY = Math.max(...config.points.map(p => p.y)) + padding;
+
+    const width = Math.max(600, maxX - minX);
+    const height = Math.max(600, maxY - minY);
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    const viewBoxX = centerX - width / 2;
+    const viewBoxY = centerY - height / 2;
+
+    return `${viewBoxX} ${viewBoxY} ${width} ${height}`;
+  }, [config.points]);
+
   return (
     <div>
       <div className="relative w-full pb-[100%] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
@@ -276,9 +297,9 @@ export function ShapeCanvas({
           ref={svgRef}
           width="100%"
           height="100%"
-          viewBox="0 0 600 600"
+          viewBox={viewBox}
           className="absolute inset-0"
-          style={{ 
+          style={{
             cursor: dragIndex !== null ? 'grabbing' : 'default',
             userSelect: 'none'
           }}
