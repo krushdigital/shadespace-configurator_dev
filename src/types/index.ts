@@ -22,11 +22,6 @@ export interface ConfiguratorState {
   currency: string;
   diagonalsInitiallyProvided?: boolean;
   heightsProvidedByUser?: boolean;
-  view3DMode?: 'hidden' | '2d' | '3d';
-  tensionPreset?: TensionPreset;
-  animationEnabled?: boolean;
-  windIntensity?: number;
-  sail3DOffset?: { x: number; y: number; z: number };
 }
 
 export interface ShadeCalculations {
@@ -64,23 +59,4 @@ export interface FabricColor {
   imageUrl: string;
   textColor: string;
   shadeFactor?: number;
-}
-
-export type TensionPreset = 'low' | 'medium' | 'high';
-export type HardwareCornerType = 'd-ring' | 'eye-bolt' | 'eye-plate';
-export type TensionerType = 'turnbuckle-m6' | 'turnbuckle-m8' | 'ratchet';
-
-export interface View3DConfig {
-  cameraPosition?: { x: number; y: number; z: number };
-  cameraTarget?: { x: number; y: number; z: number };
-  qualityLevel?: 'low' | 'medium' | 'high' | 'auto';
-  showGrid?: boolean;
-  showAxes?: boolean;
-}
-
-export interface AnimationState {
-  enabled: boolean;
-  windIntensity: number;
-  windDirection: { x: number; y: number; z: number };
-  time: number;
 }

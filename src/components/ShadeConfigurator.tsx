@@ -17,7 +17,6 @@ import { Point } from '../types';
 import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues } from '../utils/geometry';
 import { generatePDF } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
-import { View3DTabWrapper } from './View3DTabWrapper';
 import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
 import { formatMeasurement, formatArea } from '../utils/geometry';
 import { useToast } from "../components/ui/ToastProvider";
@@ -1535,17 +1534,17 @@ export function ShadeConfigurator() {
             })}
           </div>
 
-          {/* Sticky Visualization for Dimensions Step - Desktop Only */}
+          {/* Sticky Diagram for Dimensions Step - Desktop Only */}
           {openStep === 4 && !isMobile && (
             <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-28 lg:self-start z-10">
               <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                Interactive Visualization
+                Interactive Measurement Guide
               </h4>
 
               {/* Canvas Tip */}
               <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
                 <p className="text-sm text-[#01312D]">
-                  <strong>Tip:</strong> Switch between 2D and 3D views to visualize your shade sail. In 2D view, drag the corners to adjust your shape.
+                  <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
                   {config.measurementOption === 'adjust'
                     ? ' Enter your space measurements (distance between fixing points) in the fields to the right to calculate pricing.'
                     : ' Enter your desired shade dimensions in the fields to the right to calculate pricing.'}
@@ -1553,17 +1552,15 @@ export function ShadeConfigurator() {
                 </p>
               </div>
 
-              <div className="min-h-[600px]">
-                <View3DTabWrapper
-                  config={config}
-                  updateConfig={updateConfig}
-                  highlightedMeasurement={highlightedMeasurement}
-                  highlightedCorner={highlightedCorner}
-                  isMobile={isMobile}
-                  readonly={false}
-                  quoteId={quoteReference || undefined}
-                />
-              </div>
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={false}
+                snapToGrid={true}
+                highlightedMeasurement={highlightedMeasurement}
+                highlightedCorner={highlightedCorner}
+                isMobile={isMobile}
+              />
             </div>
           )}
 
