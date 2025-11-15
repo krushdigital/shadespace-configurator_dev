@@ -8,7 +8,7 @@ const App = () => {
 
   console.log('🚀 App component is rendering - this should appear in console');
 
-  console.log('Done.');
+  console.log(`---------CI/CD implemented 15112025103851--------`);
 
   useEffect(() => {
     const root = document.getElementById("SHADE_SPACE");
