@@ -8,11 +8,7 @@ const App = () => {
 
   console.log('🚀 App component is rendering - this should appear in console');
 
-  console.log(`Action is implemented successfully.`);
-
-  console.log('After pipeline implemented.');
-
-  console.log('Final test after pipeline implement...ppppp');
+  console.log('Done.');
 
   useEffect(() => {
     const root = document.getElementById("SHADE_SPACE");
