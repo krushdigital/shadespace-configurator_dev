@@ -38,6 +38,8 @@ interface DimensionsContentProps {
   onSaveQuote?: () => void;
   highlightedCorner?: number | null;
   setHighlightedCorner?: (corner: number | null) => void;
+  navigateToHeights?: boolean;
+  setNavigateToHeights?: (value: boolean) => void;
 }
 
 export function DimensionsContent({
@@ -66,9 +68,12 @@ export function DimensionsContent({
   highlightedMeasurement = null,
   onSaveQuote = () => {},
   highlightedCorner = null,
-  setHighlightedCorner = () => {}
+  setHighlightedCorner = () => {},
+  navigateToHeights = false,
+  setNavigateToHeights = () => {}
 }: DimensionsContentProps) {
   const [showHeightsSection, setShowHeightsSection] = useState(false);
+  const heightsSectionRef = React.useRef<HTMLDivElement>(null);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -173,6 +178,41 @@ export function DimensionsContent({
   };
 
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
+
+  // Handle navigation to heights section
+  React.useEffect(() => {
+    if (navigateToHeights && heightsSectionRef.current) {
+      // Expand the heights section
+      setShowHeightsSection(true);
+
+      // Wait for accordion expansion animation to complete
+      setTimeout(() => {
+        if (heightsSectionRef.current) {
+          const isMobileView = window.innerWidth < 1024;
+          const headerOffset = isMobileView ? 120 : 140;
+          const viewportOffset = window.innerHeight * 0.1; // 10% from top
+
+          const elementPosition = heightsSectionRef.current.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
+
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+          });
+
+          // Add pulse animation
+          setTimeout(() => {
+            heightsSectionRef.current?.classList.add('pulse-highlight');
+            setTimeout(() => {
+              heightsSectionRef.current?.classList.remove('pulse-highlight');
+              // Clear the navigation flag
+              setNavigateToHeights(false);
+            }, 2000);
+          }, 600);
+        }
+      }, 350); // Match accordion animation duration
+    }
+  }, [navigateToHeights, setNavigateToHeights]);
 
   return (
     <div className="px-6 pt-6 pb-6">
@@ -540,7 +580,7 @@ export function DimensionsContent({
 
         {/* Optional Heights and Anchor Points Section - Only shown for "adjust" measurement option */}
         {config.corners !== 3 && config.measurementOption === 'adjust' && (
-          <div className="mt-6">
+          <div className="mt-6" ref={heightsSectionRef}>
             <Card
               className={`overflow-hidden transition-all duration-300 ${
                 showHeightsSection ? 'border-2 border-[#307C31]' : 'border border-slate-300'

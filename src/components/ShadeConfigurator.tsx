@@ -91,6 +91,9 @@ export function ShadeConfigurator() {
   // Highlighted corner state for height input fields
   const [highlightedCorner, setHighlightedCorner] = useState<number | null>(null);
 
+  // State to track if user wants to navigate to heights section specifically
+  const [navigateToHeights, setNavigateToHeights] = useState(false);
+
   // Mobile pricing bar state
   const [isBarLocked, setIsBarLocked] = useState(false);
   const [isNewQuote, setIsNewQuote] = useState(false);
@@ -1260,11 +1263,16 @@ export function ShadeConfigurator() {
     }, 350);
   };
 
-  const prevStep = () => {
+  const prevStep = (options?: { navigateToHeights?: boolean }) => {
     const prevStepIndex = getActualPrevStep(openStep);
 
     // Auto-center shape when moving to previous step
     const centeredPoints = centerShape(config.points);
+
+    // Set the heights navigation flag if specified
+    if (options?.navigateToHeights) {
+      setNavigateToHeights(true);
+    }
 
     setConfig(prev => ({ ...prev, step: prevStepIndex }));
     updateConfig({ points: centeredPoints });
@@ -1528,6 +1536,8 @@ export function ShadeConfigurator() {
                     setShowLoadingOverlay={setShowLoadingOverlay}
                     onSaveQuote={handleSaveQuote}
                     quoteReference={quoteReference}
+                    navigateToHeights={index === 4 ? navigateToHeights : undefined}
+                    setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
                   />
                 </AccordionStep>
               );
