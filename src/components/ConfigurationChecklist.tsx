@@ -38,6 +38,7 @@ export const ConfigurationChecklist: React.FC<ConfigurationChecklistProps> = ({
 }) => {
   const [diagonalsExpanded, setDiagonalsExpanded] = useState(!allDiagonalsEntered);
   const [validationExpanded, setValidationExpanded] = useState(false);
+  const [isEditingDiagonals, setIsEditingDiagonals] = useState(false);
 
   const hasHeightInformation = config.corners !== 3 &&
     config.measurementOption === 'adjust' &&
@@ -56,7 +57,7 @@ export const ConfigurationChecklist: React.FC<ConfigurationChecklistProps> = ({
   const allRequirementsMet = hasAllEdgeMeasurements &&
     (!shouldShowDiagonalInputSection || allDiagonalsEntered);
 
-  if (allRequirementsMet && !showHeightOptional && !hasValidationIssues) {
+  if (allRequirementsMet && !showHeightOptional && !hasValidationIssues && !isEditingDiagonals) {
     return (
       <Card className="p-4 mb-6 bg-emerald-50 border-2 border-emerald-500">
         <div className="flex items-center gap-3">
@@ -184,8 +185,14 @@ export const ConfigurationChecklist: React.FC<ConfigurationChecklistProps> = ({
                             ? Math.round(convertMmToUnit(config.measurements[diagonal.key], config.unit))
                             : ''}
                           onChange={(e) => updateMeasurement(diagonal.key, e.target.value)}
-                          onFocus={() => setHighlightedMeasurement(diagonal.key)}
-                          onBlur={() => setHighlightedMeasurement(null)}
+                          onFocus={() => {
+                            setHighlightedMeasurement(diagonal.key);
+                            setIsEditingDiagonals(true);
+                          }}
+                          onBlur={() => {
+                            setHighlightedMeasurement(null);
+                            setIsEditingDiagonals(false);
+                          }}
                           placeholder={config.unit === 'imperial' ? '240' : '6000'}
                           min="100"
                           step={config.unit === 'imperial' ? '1' : '10'}
