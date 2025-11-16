@@ -1096,7 +1096,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={onPrev}
+                        onClick={() => onPrev({ navigateToHeights: true })}
                         className="text-xs py-0.5 px-2 border-blue-300 text-blue-700 hover:bg-blue-50"
                       >
                         Add Heights →
