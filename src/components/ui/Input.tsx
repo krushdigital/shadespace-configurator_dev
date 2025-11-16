@@ -28,11 +28,6 @@ export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTy
               ({secondaryValue})
             </span>
           )}
-          {isSuccess && (
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white">
-              <Check className="w-3 h-3" strokeWidth={3} />
-            </span>
-          )}
           {error && (
             <span className="inline-flex items-center justify-center w-4 h-4 text-red-500">
               <AlertCircle className="w-4 h-4" strokeWidth={2} />
