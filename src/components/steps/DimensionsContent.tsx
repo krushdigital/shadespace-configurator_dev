@@ -659,8 +659,9 @@ export function DimensionsContent({
                                   onBlur={() => setHighlightedCorner(null)}
                                   placeholder={config.unit === 'imperial' ? '100' : '2500'}
                                   autoComplete="off"
-                                  className="flex-1 py-2 pr-12"
+                                  className={`flex-1 py-2 ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'pr-16' : 'pr-12'}`}
                                   step={config.unit === 'imperial' ? '0.1' : '10'}
+                                  isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
                                   label={
                                     <div className="flex items-center gap-2">
                                       <span className="text-xs font-medium text-[#01312D]">
@@ -686,7 +687,7 @@ export function DimensionsContent({
                                   }
                                   secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
                                 />
-                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50">
+                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50 transition-all duration-200`}>
                                   {config.unit === 'metric' ? 'mm' : 'in'}
                                 </span>
                               </div>
