@@ -27,9 +27,14 @@ interface CombinedMeasurementContentProps {
   showBackButton?: boolean;
   isMobile?: boolean;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    shouldShowPulse: boolean;
+    recordSelection: () => void;
+    handleButtonInteraction: () => void;
+  };
 }
 
-export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote }: CombinedMeasurementContentProps) {
+export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote, mobileGuidance }: CombinedMeasurementContentProps) {
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
     const updates: Partial<ConfiguratorState> = { measurementOption: option };
 
@@ -42,6 +47,10 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
     }
 
     updateConfig(updates);
+
+    if (isMobile && mobileGuidance) {
+      mobileGuidance.recordSelection();
+    }
   };
 
   // Get the correct hardware pack image URL based on the number of corners
@@ -68,7 +77,12 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                 ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
                 : 'border-slate-300 text-slate-900 hover:border-slate-400 hover:shadow-md'
             }`}
-            onClick={() => updateConfig({ unit: 'metric' })}
+            onClick={() => {
+              updateConfig({ unit: 'metric' });
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.recordSelection();
+              }
+            }}
           >
             <div className="text-center">
               <div className="font-semibold text-base mb-0.5">Metric</div>
@@ -85,7 +99,12 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                 ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
                 : 'border-slate-300 text-slate-900 hover:border-slate-400 hover:shadow-md'
             }`}
-            onClick={() => updateConfig({ unit: 'imperial' })}
+            onClick={() => {
+              updateConfig({ unit: 'imperial' });
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.recordSelection();
+              }
+            }}
           >
             <div className="text-center">
               <div className="font-semibold text-base mb-0.5">Imperial</div>
@@ -396,9 +415,28 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             )}
           </div>
           <Button
-            onClick={onNext}
+            onClick={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+              onNext();
+            }}
             size="md"
-            className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+            className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''} ${
+              isMobile && config.unit && config.measurementOption && mobileGuidance?.shouldShowPulse
+                ? 'mobile-guidance-pulse mobile-guidance-bounce'
+                : ''
+            }`}
+            onMouseEnter={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+            }}
+            onFocus={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+            }}
           >
             Continue to {nextStepTitle}
           </Button>
@@ -423,7 +461,12 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             />
           )}
           <Button
-            onClick={onNext}
+            onClick={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+              onNext();
+            }}
             size="md"
             className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
           >

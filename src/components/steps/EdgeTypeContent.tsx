@@ -14,6 +14,12 @@ interface EdgeTypeContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  isMobile?: boolean;
+  mobileGuidance?: {
+    shouldShowPulse: boolean;
+    recordSelection: () => void;
+    handleButtonInteraction: () => void;
+  };
 }
 
 const EDGE_OPTIONS = [
@@ -33,7 +39,7 @@ const EDGE_OPTIONS = [
   }
 ];
 
-export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote }: EdgeTypeContentProps) {
+export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, isMobile = false, mobileGuidance }: EdgeTypeContentProps) {
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -54,7 +60,12 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                  ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
                  : 'hover:border-slate-300'
               }`}
-              onClick={() => updateConfig({ edgeType: edge.id })}
+              onClick={() => {
+                updateConfig({ edgeType: edge.id });
+                if (isMobile && mobileGuidance) {
+                  mobileGuidance.recordSelection();
+                }
+              }}
             >
               <div className="flex justify-between items-start mb-2">
                 <h5 className="font-semibold text-slate-900">
@@ -125,9 +136,28 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             )}
           </div>
           <Button
-            onClick={onNext}
+            onClick={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+              onNext();
+            }}
             size="md"
-            className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
+            className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''} ${
+              isMobile && config.edgeType && mobileGuidance?.shouldShowPulse
+                ? 'mobile-guidance-pulse mobile-guidance-bounce'
+                : ''
+            }`}
+            onMouseEnter={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+            }}
+            onFocus={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+            }}
           >
             Continue to {nextStepTitle}
           </Button>
@@ -152,7 +182,12 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             />
           )}
           <Button
-            onClick={onNext}
+            onClick={() => {
+              if (isMobile && mobileGuidance) {
+                mobileGuidance.handleButtonInteraction();
+              }
+              onNext();
+            }}
             size="md"
             className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''}`}
           >

@@ -18,9 +18,15 @@ interface FabricSelectionContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  isMobile?: boolean;
+  mobileGuidance?: {
+    shouldShowPulse: boolean;
+    recordSelection: () => void;
+    handleButtonInteraction: () => void;
+  };
 }
 
-export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: FabricSelectionContentProps) {
+export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, mobileGuidance }: FabricSelectionContentProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
 
@@ -63,6 +69,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     fabricType: fabric.id,
                     fabricColor: ''
                   });
+                  if (isMobile && mobileGuidance) {
+                    mobileGuidance.recordSelection();
+                  }
                 }}
               >
                 <div className="text-center">
@@ -293,6 +302,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     onClick={() => {
                       analytics.fabricColorSelected(config.fabricType, color.name, color.shadeFactor);
                       updateConfig({ fabricColor: color.name });
+                      if (isMobile && mobileGuidance) {
+                        mobileGuidance.recordSelection();
+                      }
                     }}
                     className={`group p-2 rounded-lg transition-all duration-300 w-full ${
                       isSelected
@@ -389,10 +401,27 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         fabric_type: config.fabricType,
                         fabric_color: config.fabricColor,
                       });
+                      if (isMobile && mobileGuidance) {
+                        mobileGuidance.handleButtonInteraction();
+                      }
                       onNext();
                     }}
                     size="md"
-                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''} ${
+                      isMobile && !incomplete && mobileGuidance?.shouldShowPulse
+                        ? 'mobile-guidance-pulse mobile-guidance-bounce'
+                        : ''
+                    }`}
+                    onMouseEnter={() => {
+                      if (isMobile && mobileGuidance) {
+                        mobileGuidance.handleButtonInteraction();
+                      }
+                    }}
+                    onFocus={() => {
+                      if (isMobile && mobileGuidance) {
+                        mobileGuidance.handleButtonInteraction();
+                      }
+                    }}
                   >
                     Continue to {nextStepTitle}
                   </Button>
