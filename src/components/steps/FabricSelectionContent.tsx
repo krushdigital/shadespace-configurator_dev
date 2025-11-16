@@ -50,7 +50,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
             return (
               <Card
                 key={fabric.id}
-                className={`relative p-4 cursor-pointer transition-all duration-300 ${
+                className={`relative p-3 md:p-4 cursor-pointer transition-all duration-300 ${
                   isSelected
                     ? '!border-2 !border-[#01312D] !ring-2 !ring-[#01312D] shadow-xl transform scale-105'
                     : hasError
@@ -97,6 +97,25 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                             <h4 className="font-bold text-[#01312D] mb-2">
                               {fabric.label}
                             </h4>
+                            <div className="grid grid-cols-2 gap-3 mb-3 p-3 bg-[#F3FFE3] rounded-lg">
+                              <div>
+                                <div className="text-xs text-[#01312D]/60 mb-1">Weight</div>
+                                <div className="font-semibold text-[#01312D]">{fabric.weightPerSqm} g/m²</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-[#01312D]/60 mb-1">Warranty</div>
+                                <div className="font-semibold text-[#01312D]">
+                                  <a
+                                    href="https://shadespace.com/pages/warranty"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                  >
+                                    {fabric.warrantyYears} Years
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
                             <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
                               {fabric.detailedDescription}
                             </p>
@@ -152,7 +171,6 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       </span>
                     </Tooltip>
                   </div>
-                  {/* Price tier badge - moved under title */}
                   <div className="mb-2">
                     {fabric.id === 'monotec370' && (
                       <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
@@ -170,10 +188,10 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-[#01312D]/70 mb-3">
+                  <p className="text-sm md:text-sm text-[#01312D]/70 mb-2 md:mb-3 line-clamp-2 md:line-clamp-none">
                     {fabric.description}
                   </p>
-                  <div className={`rounded-lg p-3 transition-all duration-300 ${
+                  <div className={`hidden md:block rounded-lg p-3 transition-all duration-300 ${
                     isSelected
                      ? 'bg-gradient-to-r from-[#01312D] to-[#307C31]'
                      : 'bg-[#F3FFE3]'
