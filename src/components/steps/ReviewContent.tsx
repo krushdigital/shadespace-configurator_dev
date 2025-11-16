@@ -11,7 +11,7 @@ import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { ConfigurationChecklist } from '../ConfigurationChecklist';
+import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
 
 interface ReviewContentProps {
   config: ConfiguratorState;
@@ -82,7 +82,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
   const [buttonShake, setButtonShake] = useState(false);
-  const diagonalCardRef = useRef<HTMLDivElement>(null);
+  const checklistRef = useRef<ConfigurationChecklistRef>(null);
   const acknowledgementsCardRef = useRef<HTMLDivElement>(null);
   const addToCartButtonRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
@@ -339,7 +339,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
         // Identify which section needs attention
         if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-          targetElement = diagonalCardRef.current;
+          // Expand the diagonal section programmatically
+          checklistRef.current?.expandDiagonals();
+          targetElement = checklistRef.current?.getDiagonalSectionElement() || null;
         } else if (!allAcknowledgmentsChecked) {
           targetElement = acknowledgementsCardRef.current;
         }
@@ -358,13 +360,17 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             behavior: 'smooth'
           });
 
-          // Apply pulse animation after scroll completes
-          setTimeout(() => {
-            targetElement?.classList.add('pulse-error');
+          // For acknowledgments, apply pulse animation after scroll completes
+          if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
+            // Diagonal section handles its own highlighting via the ref
+          } else if (!allAcknowledgmentsChecked) {
             setTimeout(() => {
-              targetElement?.classList.remove('pulse-error');
-            }, 2400);
-          }, 600);
+              targetElement?.classList.add('pulse-error');
+              setTimeout(() => {
+                targetElement?.classList.remove('pulse-error');
+              }, 2400);
+            }, 600);
+          }
         }
       }, 50);
 
@@ -545,6 +551,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       <div className="space-y-6">
         {/* Configuration Checklist */}
         <ConfigurationChecklist
+          ref={checklistRef}
           config={config}
           updateConfig={updateConfig}
           hasAllEdgeMeasurements={hasAllEdgeMeasurements}

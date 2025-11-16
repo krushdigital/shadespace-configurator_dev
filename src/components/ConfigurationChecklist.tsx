@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
@@ -22,23 +22,50 @@ interface ConfigurationChecklistProps {
   isMobile?: boolean;
 }
 
-export const ConfigurationChecklist: React.FC<ConfigurationChecklistProps> = ({
-  config,
-  hasAllEdgeMeasurements,
-  allDiagonalsEntered,
-  shouldShowDiagonalInputSection,
-  diagonalMeasurements,
-  onNavigateToDimensions,
-  highlightedMeasurement,
-  setHighlightedMeasurement,
-  updateMeasurement,
-  geometryValidation,
-  friendlyErrors = [],
-  isMobile = false,
-}) => {
+export interface ConfigurationChecklistRef {
+  expandDiagonals: () => void;
+  getDiagonalSectionElement: () => HTMLDivElement | null;
+}
+
+export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, ConfigurationChecklistProps>((
+  {
+    config,
+    hasAllEdgeMeasurements,
+    allDiagonalsEntered,
+    shouldShowDiagonalInputSection,
+    diagonalMeasurements,
+    onNavigateToDimensions,
+    highlightedMeasurement,
+    setHighlightedMeasurement,
+    updateMeasurement,
+    geometryValidation,
+    friendlyErrors = [],
+    isMobile = false,
+  },
+  ref
+) => {
   const [diagonalsExpanded, setDiagonalsExpanded] = useState(!allDiagonalsEntered);
   const [validationExpanded, setValidationExpanded] = useState(false);
   const [isEditingDiagonals, setIsEditingDiagonals] = useState(false);
+  const [isHighlighted, setIsHighlighted] = useState(false);
+  const diagonalSectionRef = useRef<HTMLDivElement>(null);
+  const firstEmptyInputRef = useRef<HTMLInputElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    expandDiagonals: () => {
+      setDiagonalsExpanded(true);
+      setIsHighlighted(true);
+      setTimeout(() => {
+        setIsHighlighted(false);
+      }, 2400);
+      setTimeout(() => {
+        if (firstEmptyInputRef.current) {
+          firstEmptyInputRef.current.focus();
+        }
+      }, 800);
+    },
+    getDiagonalSectionElement: () => diagonalSectionRef.current,
+  }));
 
   const hasHeightInformation = config.corners !== 3 &&
     config.measurementOption === 'adjust' &&
@@ -128,7 +155,14 @@ export const ConfigurationChecklist: React.FC<ConfigurationChecklistProps> = ({
 
         {/* Diagonal Measurements */}
         {shouldShowDiagonalInputSection && (
-          <div className="bg-white rounded-lg border-2 border-blue-300">
+          <div
+            ref={diagonalSectionRef}
+            className={`bg-white rounded-lg border-2 transition-all duration-300 ${
+              isHighlighted
+                ? 'border-red-500 ring-4 ring-red-300 shadow-xl pulse-error'
+                : 'border-blue-300'
+            }`}
+          >
             <div className="flex items-start gap-3 p-3">
               <div className="flex-shrink-0 mt-0.5">
                 {allDiagonalsEntered ? (
@@ -167,47 +201,57 @@ export const ConfigurationChecklist: React.FC<ConfigurationChecklistProps> = ({
 
             {diagonalsExpanded && (
               <div className="px-3 pb-3 pt-0 border-t border-blue-200 mt-2">
-                <div className="bg-blue-50 rounded-lg p-3 mb-3 mt-3">
-                  <p className="text-xs text-blue-800">
-                    Measure the straight-line distance between non-adjacent corners. Enter all measurements below.
+                <div className={`rounded-lg p-3 mb-3 mt-3 transition-colors duration-300 ${
+                  isHighlighted ? 'bg-red-100 border-2 border-red-400' : 'bg-blue-50'
+                }`}>
+                  <p className={`text-xs font-semibold ${
+                    isHighlighted ? 'text-red-900' : 'text-blue-800'
+                  }`}>
+                    {isHighlighted ? '⚠️ Please enter all diagonal measurements below to proceed:' : 'Measure the straight-line distance between non-adjacent corners. Enter all measurements below.'}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {diagonalMeasurements.map((diagonal) => (
-                    <div key={diagonal.key}>
-                      <label className="block text-xs font-medium text-slate-700 mb-1">
-                        {diagonal.label}
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          value={config.measurements[diagonal.key]
-                            ? Math.round(convertMmToUnit(config.measurements[diagonal.key], config.unit))
-                            : ''}
-                          onChange={(e) => updateMeasurement(diagonal.key, e.target.value)}
-                          onFocus={() => {
-                            setHighlightedMeasurement(diagonal.key);
-                            setIsEditingDiagonals(true);
-                          }}
-                          onBlur={() => {
-                            setHighlightedMeasurement(null);
-                            setIsEditingDiagonals(false);
-                          }}
-                          placeholder={config.unit === 'imperial' ? '240' : '6000'}
-                          min="100"
-                          step={config.unit === 'imperial' ? '1' : '10'}
-                          className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
-                            ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
-                            : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-500'
-                          }`}
-                          isSuccess={diagonal.hasValue}
-                        />
-                        <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-slate-500`}>
-                          {config.unit === 'metric' ? 'mm' : 'in'}
+                  {diagonalMeasurements.map((diagonal, index) => {
+                    const isFirstEmpty = !diagonal.hasValue && diagonalMeasurements.slice(0, index).every(d => d.hasValue);
+                    return (
+                      <div key={diagonal.key}>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          {diagonal.label}
+                        </label>
+                        <div className="relative">
+                          <Input
+                            ref={isFirstEmpty ? firstEmptyInputRef : undefined}
+                            type="number"
+                            value={config.measurements[diagonal.key]
+                              ? Math.round(convertMmToUnit(config.measurements[diagonal.key], config.unit))
+                              : ''}
+                            onChange={(e) => updateMeasurement(diagonal.key, e.target.value)}
+                            onFocus={() => {
+                              setHighlightedMeasurement(diagonal.key);
+                              setIsEditingDiagonals(true);
+                            }}
+                            onBlur={() => {
+                              setHighlightedMeasurement(null);
+                              setIsEditingDiagonals(false);
+                            }}
+                            placeholder={config.unit === 'imperial' ? '240' : '6000'}
+                            min="100"
+                            step={config.unit === 'imperial' ? '1' : '10'}
+                            className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
+                              ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
+                              : isHighlighted && !diagonal.hasValue
+                                ? '!border-red-400 !bg-red-50 !ring-2 !ring-red-200'
+                                : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-500'
+                            }`}
+                            isSuccess={diagonal.hasValue}
+                          />
+                          <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-slate-500`}>
+                            {config.unit === 'metric' ? 'mm' : 'in'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -310,4 +354,4 @@ export const ConfigurationChecklist: React.FC<ConfigurationChecklistProps> = ({
       </div>
     </Card>
   );
-};
+});
