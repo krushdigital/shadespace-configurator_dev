@@ -10,6 +10,12 @@ interface UseMobileGuidanceOptions {
   currentStep: number;
 }
 
+interface ScrollOptions {
+  delay?: number;
+  offset?: number;
+  alignToTop?: boolean;
+}
+
 export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOptions) {
   const [guidanceState, setGuidanceState] = useState<GuidanceState>({
     currentHighlightTarget: null,
@@ -49,7 +55,8 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
   const scrollToElement = useCallback((
     elementId: string,
     delay: number = 300,
-    offset: number = 120
+    offset: number = 120,
+    alignToTop: boolean = false
   ) => {
     if (!isMobile) return;
 
@@ -80,10 +87,16 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
       const elementHeight = rect.height;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
 
-      const centerOffset = (viewportHeight / 2) - (elementHeight / 2);
-      const targetPosition = elementTop - centerOffset;
+      let targetPosition;
 
-      console.log(`[Mobile Guidance] Scrolling to center ${elementId}, position: ${targetPosition}px`);
+      if (alignToTop) {
+        targetPosition = elementTop - offset;
+        console.log(`[Mobile Guidance] Scrolling to top of ${elementId}, position: ${targetPosition}px`);
+      } else {
+        const centerOffset = (viewportHeight / 2) - (elementHeight / 2);
+        targetPosition = elementTop - centerOffset;
+        console.log(`[Mobile Guidance] Scrolling to center ${elementId}, position: ${targetPosition}px`);
+      }
 
       window.scrollTo({
         top: Math.max(0, targetPosition),
