@@ -1,8 +1,8 @@
 @@ .. @@
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
-  fabricType: 'monotec370' as FabricType,
-  fabricColor: 'Koonunga Green',
+  fabricType: '' as FabricType,
+  fabricColor: '',
   edgeType: '' as EdgeType,
   corners: 0,
   unit: '' as 'metric' | 'imperial',
