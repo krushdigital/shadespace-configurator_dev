@@ -18,9 +18,29 @@ interface FabricSelectionContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  isMobile?: boolean;
+  onFabricTypeSelected?: (fabricType: string) => void;
+  onColorSelected?: (color: string) => void;
+  shouldShowButtonPulse?: boolean;
+  shouldShowHint?: boolean;
+  onContinueClick?: () => void;
 }
 
-export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: FabricSelectionContentProps) {
+export function FabricSelectionContent({
+  config,
+  updateConfig,
+  onNext,
+  onPrev,
+  nextStepTitle = '',
+  showBackButton = false,
+  validationErrors = {},
+  isMobile = false,
+  onFabricTypeSelected,
+  onColorSelected,
+  shouldShowButtonPulse = false,
+  shouldShowHint = false,
+  onContinueClick,
+}: FabricSelectionContentProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
 
@@ -63,6 +83,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     fabricType: fabric.id,
                     fabricColor: ''
                   });
+                  if (isMobile && onFabricTypeSelected) {
+                    onFabricTypeSelected(fabric.id);
+                  }
                 }}
               >
                 <div className="text-center">
@@ -233,7 +256,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
 
       {/* Color Selection */}
       {selectedFabric && (
-        <div className="mb-8">
+        <div id="color-selection-section" className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-lg font-semibold text-[#01312D]">
               Choose Color
@@ -293,6 +316,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     onClick={() => {
                       analytics.fabricColorSelected(config.fabricType, color.name, color.shadeFactor);
                       updateConfig({ fabricColor: color.name });
+                      if (isMobile && onColorSelected) {
+                        onColorSelected(color.name);
+                      }
                     }}
                     className={`group p-2 rounded-lg transition-all duration-300 w-full ${
                       isSelected
@@ -389,13 +415,23 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         fabric_type: config.fabricType,
                         fabric_color: config.fabricColor,
                       });
+                      if (onContinueClick) {
+                        onContinueClick();
+                      }
                       onNext();
                     }}
                     size="md"
-                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''} ${
+                      isMobile && shouldShowButtonPulse && !incomplete ? 'animate-button-pulsate animate-button-glow' : ''
+                    }`}
                   >
                     Continue to {nextStepTitle}
                   </Button>
+                  {isMobile && shouldShowHint && !incomplete && (
+                    <p className="guidance-hint text-center">
+                      Tap to continue to the next step
+                    </p>
+                  )}
                 </>
               );
             })()}
