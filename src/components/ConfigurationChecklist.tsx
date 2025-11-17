@@ -245,7 +245,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                             }`}
                             isSuccess={diagonal.hasValue}
                           />
-                          <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-slate-500`}>
+                          <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} bottom-[15px] text-xs text-slate-500 pointer-events-none`}>
                             {config.unit === 'metric' ? 'mm' : 'in'}
                           </div>
                         </div>

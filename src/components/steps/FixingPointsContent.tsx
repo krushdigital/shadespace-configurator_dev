@@ -262,7 +262,7 @@ export function FixingPointsContent({
                     />
                       );
                     })()}
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50">
+                    <span className="absolute right-3 bottom-[17px] text-xs text-[#01312D]/50 pointer-events-none">
                       {config.unit === 'metric' ? 'mm' : 'in'}
                     </span>
                   </div>
