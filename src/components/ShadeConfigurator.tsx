@@ -113,6 +113,17 @@ export function ShadeConfigurator() {
   const [showGuidanceSettings, setShowGuidanceSettings] = useState(false);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
 
+  // Log guidance state changes
+  useEffect(() => {
+    console.log('🎯 Guidance state updated:', {
+      isGuidanceEnabled: guidanceState.isGuidanceEnabled,
+      shouldShowButtonPulse: guidanceState.shouldShowButtonPulse,
+      shouldShowHint: guidanceState.shouldShowHint,
+      hasSeenOnboarding: guidanceState.hasSeenOnboarding,
+      preferences: guidanceState.preferences
+    });
+  }, [guidanceState]);
+
   // Check if user has seen onboarding
   useEffect(() => {
     if (isMobile && !guidanceState.hasSeenOnboarding && guidanceState.isGuidanceEnabled) {
@@ -125,10 +136,13 @@ export function ShadeConfigurator() {
   // Mobile detection effect
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+      const mobile = window.innerWidth < 1024;
+      console.log('📱 Mobile detection:', { width: window.innerWidth, isMobile: mobile });
+      setIsMobile(mobile);
     };
 
     // Initial check
+    console.log('🚀 ShadeConfigurator mounted, checking mobile state...');
     checkIsMobile();
 
     // Add event listener for window resize

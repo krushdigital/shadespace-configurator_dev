@@ -78,13 +78,17 @@ export function FabricSelectionContent({
                     : 'hover:border-[#307C31] hover:shadow-lg'
                 }`}
                 onClick={() => {
+                  console.log('👆 Fabric card clicked:', fabric.id, { isMobile, hasCallback: !!onFabricTypeSelected });
                   analytics.fabricTypeSelected(fabric.id, fabric.label);
                   updateConfig({
                     fabricType: fabric.id,
                     fabricColor: ''
                   });
                   if (isMobile && onFabricTypeSelected) {
+                    console.log('✅ Calling onFabricTypeSelected');
                     onFabricTypeSelected(fabric.id);
+                  } else {
+                    console.log('❌ Not calling onFabricTypeSelected:', { isMobile, hasCallback: !!onFabricTypeSelected });
                   }
                 }}
               >
@@ -314,10 +318,14 @@ export function FabricSelectionContent({
                 >
                   <button
                     onClick={() => {
+                      console.log('👆 Color button clicked:', color.name, { isMobile, hasCallback: !!onColorSelected });
                       analytics.fabricColorSelected(config.fabricType, color.name, color.shadeFactor);
                       updateConfig({ fabricColor: color.name });
                       if (isMobile && onColorSelected) {
+                        console.log('✅ Calling onColorSelected');
                         onColorSelected(color.name);
+                      } else {
+                        console.log('❌ Not calling onColorSelected:', { isMobile, hasCallback: !!onColorSelected });
                       }
                     }}
                     className={`group p-2 rounded-lg transition-all duration-300 w-full ${

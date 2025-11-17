@@ -63,45 +63,86 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
   const colorBrowsingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const autoScrollDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const backwardNavigationTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitializedRef = useRef(false);
+
+  console.log('🎯 useMobileGuidance hook called with:', { isMobile, currentStep });
 
   useEffect(() => {
-    const initPreferences = async () => {
-      const prefs = await loadPreferences();
-      setState(prev => ({
-        ...prev,
-        preferences: prefs,
-        isGuidanceEnabled: prefs.guidanceEnabled,
-        hasSeenOnboarding: prefs.hasSeenOnboarding,
-      }));
-    };
-
-    initPreferences();
-  }, []);
-
-  useEffect(() => {
+    console.log('📱 Mobile state changed:', { isMobile });
     if (!isMobile) {
       setState(prev => ({ ...prev, isGuidanceEnabled: false }));
+      console.log('❌ Guidance disabled because not mobile');
+    } else {
+      setState(prev => ({ ...prev, isGuidanceEnabled: prev.preferences.guidanceEnabled }));
+      console.log('✅ Mobile detected, guidance enabled based on preferences');
     }
   }, [isMobile]);
 
+  useEffect(() => {
+    const initPreferences = async () => {
+      console.log('🔄 Loading guidance preferences...');
+      const prefs = await loadPreferences();
+      console.log('📦 Preferences loaded:', prefs);
+      setState(prev => ({
+        ...prev,
+        preferences: prefs,
+        isGuidanceEnabled: isMobile && prefs.guidanceEnabled,
+        hasSeenOnboarding: prefs.hasSeenOnboarding,
+      }));
+      isInitializedRef.current = true;
+      console.log('✅ Guidance initialized:', {
+        isMobile,
+        guidanceEnabled: prefs.guidanceEnabled,
+        isGuidanceEnabled: isMobile && prefs.guidanceEnabled
+      });
+    };
+
+    initPreferences();
+  }, [isMobile]);
+
   const shouldAutoScroll = useCallback((): boolean => {
-    if (!isMobile || !state.isGuidanceEnabled || !state.preferences.guidanceEnabled) {
+    console.log('🔍 shouldAutoScroll called with:', {
+      isMobile,
+      isGuidanceEnabled: state.isGuidanceEnabled,
+      preferencesGuidanceEnabled: state.preferences.guidanceEnabled,
+      isBackwardNavigating: state.isBackwardNavigating,
+      timeSinceManualScroll: Date.now() - state.lastManualScrollTimestamp,
+      timeSinceAutoScroll: Date.now() - state.lastAutoScrollTimestamp,
+      isInitialized: isInitializedRef.current
+    });
+
+    if (!isMobile) {
+      console.log('❌ Auto-scroll blocked: not mobile');
+      return false;
+    }
+
+    if (!state.isGuidanceEnabled) {
+      console.log('❌ Auto-scroll blocked: guidance not enabled in state');
+      return false;
+    }
+
+    if (!state.preferences.guidanceEnabled) {
+      console.log('❌ Auto-scroll blocked: guidance disabled in preferences');
       return false;
     }
 
     if (state.isBackwardNavigating) {
+      console.log('❌ Auto-scroll blocked: backward navigating');
       return false;
     }
 
     const now = Date.now();
     if (now - state.lastManualScrollTimestamp < BACKWARD_SCROLL_THRESHOLD) {
+      console.log('❌ Auto-scroll blocked: recent manual scroll');
       return false;
     }
 
     if (now - state.lastAutoScrollTimestamp < AUTO_SCROLL_DEBOUNCE) {
+      console.log('❌ Auto-scroll blocked: debounce period');
       return false;
     }
 
+    console.log('✅ Auto-scroll allowed');
     return true;
   }, [isMobile, state.isGuidanceEnabled, state.preferences.guidanceEnabled, state.isBackwardNavigating, state.lastManualScrollTimestamp, state.lastAutoScrollTimestamp]);
 
@@ -109,10 +150,20 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
     elementId: string,
     offset: number = 80
   ) => {
-    if (!shouldAutoScroll()) return;
+    console.log('📜 smoothScrollToElement called for:', elementId);
+
+    if (!shouldAutoScroll()) {
+      console.log('❌ Scroll cancelled by shouldAutoScroll');
+      return;
+    }
 
     const element = document.getElementById(elementId);
-    if (!element) return;
+    if (!element) {
+      console.log('❌ Element not found:', elementId);
+      return;
+    }
+
+    console.log('✅ Element found, scrolling to:', elementId);
 
     const isMobileView = window.innerWidth < 1024;
     const headerOffset = isMobileView ? 120 : 140;
@@ -133,6 +184,8 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
       lastAutoScrollTimestamp: Date.now(),
     }));
 
+    console.log('✅ Scroll executed to:', elementId);
+
     const announceElement = document.getElementById('guidance-announcer');
     if (announceElement) {
       announceElement.textContent = `Scrolled to ${elementId}`;
@@ -140,23 +193,32 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
   }, [shouldAutoScroll, state.preferences.autoScrollSpeed]);
 
   const handleFabricTypeSelected = useCallback((fabricType: string) => {
-    if (!shouldAutoScroll()) return;
+    console.log('🎨 handleFabricTypeSelected called for:', fabricType);
+
+    if (!shouldAutoScroll()) {
+      console.log('❌ Fabric selection scroll blocked by shouldAutoScroll');
+      return;
+    }
 
     if (autoScrollDebounceRef.current) {
       clearTimeout(autoScrollDebounceRef.current);
     }
 
+    console.log('⏱️ Setting up 800ms timer to scroll to color section');
     autoScrollDebounceRef.current = setTimeout(() => {
+      console.log('⏱️ Timer fired, attempting scroll to color section');
       const colorSectionId = 'color-selection-section';
       smoothScrollToElement(colorSectionId, 40);
     }, 800);
   }, [shouldAutoScroll, smoothScrollToElement]);
 
   const handleColorSelected = useCallback((color: string) => {
+    console.log('🎨 handleColorSelected called for:', color);
     const now = Date.now();
 
     if (colorBrowsingTimerRef.current) {
       clearTimeout(colorBrowsingTimerRef.current);
+      console.log('⏱️ Cleared previous color browsing timer');
     }
 
     setState(prev => {
@@ -165,6 +227,12 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
         : false;
 
       const newCount = isWithinBrowsingWindow ? prev.colorSelectionCount + 1 : 1;
+
+      console.log('🔍 Color browsing state:', {
+        isWithinBrowsingWindow,
+        newCount,
+        timeSinceLastSelection: prev.colorSelectionTimestamp ? now - prev.colorSelectionTimestamp : 'N/A'
+      });
 
       return {
         ...prev,
@@ -175,7 +243,9 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
       };
     });
 
+    console.log('⏱️ Setting up 2500ms timer for button pulse');
     colorBrowsingTimerRef.current = setTimeout(() => {
+      console.log('✅ Color pause detected, showing button pulse and hint');
       setState(prev => ({
         ...prev,
         shouldShowButtonPulse: true,
