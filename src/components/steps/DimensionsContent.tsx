@@ -588,24 +588,26 @@ export function DimensionsContent({
             >
               <button
                 onClick={() => setShowHeightsSection(!showHeightsSection)}
-                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                className="w-full p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="flex-shrink-0 pt-1 sm:pt-0">
                     {showHeightsSection ? (
                       <ChevronUp className="w-5 h-5 text-[#307C31]" />
                     ) : (
                       <ChevronDown className="w-5 h-5 text-slate-600" />
                     )}
                   </div>
-                  <div className="text-left">
-                    <h5 className="text-base font-semibold text-[#01312D] flex items-center gap-2">
-                      Optional: Heights & Anchor Points for Custom Fit
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                        Optional
+                  <div className="text-left flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <h5 className="text-base font-semibold text-[#01312D]">
+                        Height Information (optional)
+                      </h5>
+                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium w-fit">
+                        Not required - standard manufacturing process will be used
                       </span>
-                    </h5>
-                    <p className="text-sm text-slate-600 mt-1">
+                    </div>
+                    <p className="text-sm text-slate-600 mt-2">
                       {showHeightsSection
                         ? 'Providing this information allows for more customized manufacturing'
                         : 'Click to add height and attachment information for a more customized fit'}
