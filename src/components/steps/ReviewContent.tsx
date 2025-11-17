@@ -49,6 +49,13 @@ interface ReviewContentProps {
   setShowLoadingOverlay: (loading: boolean) => void;
   quoteReference?: string | null;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    isGuidanceActive: boolean;
+    currentHighlightTarget: string | null;
+    scrollToElement: (elementId: string, delay?: number, offset?: number, alignToTop?: boolean) => void;
+    setHighlightTarget: (targetId: string | null, duration?: number) => void;
+    clearHighlight: () => void;
+  };
 }
 
 export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
@@ -77,7 +84,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   loading,
   setLoading,
   setShowLoadingOverlay,
-  onSaveQuote
+  onSaveQuote,
+  mobileGuidance
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
@@ -89,34 +97,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
-
-  console.log({
-    config,
-    updateConfig,
-    calculations,
-    nextStepTitle,
-    showBackButton,
-    onPrev,
-    isGeneratingPDF,
-    handleGeneratePDF,
-    showEmailInput,
-    email,
-    setEmail,
-    handleEmailSummary,
-    acknowledgments,
-    handleAcknowledgmentChange,
-    handleAddToCart,
-    allDiagonalsEntered,
-    allAcknowledgmentsChecked,
-    canAddToCart,
-    hasAllEdgeMeasurements,
-    isMobile,
-    handleCancelEmailInput,
-    canvasRef,
-    loading,
-    setLoading,
-    setShowLoadingOverlay
-  });
 
 
 
@@ -347,18 +327,28 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         }
 
         if (targetElement) {
-          // Calculate scroll position
-          const isMobileView = window.innerWidth < 1024;
-          const headerOffset = isMobileView ? 100 : 120;
-          const viewportOffset = window.innerHeight * 0.15;
-          const elementPosition = targetElement.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
+          // Use mobile guidance for consistent scroll behavior on mobile
+          if (isMobile && mobileGuidance) {
+            // Add a temporary ID for scrolling if element doesn't have one
+            const tempId = targetElement.id || `temp-scroll-target-${Date.now()}`;
+            if (!targetElement.id) {
+              targetElement.id = tempId;
+            }
 
-          // Scroll to the incomplete section
-          window.scrollTo({
-            top: Math.max(0, offsetPosition),
-            behavior: 'smooth'
-          });
+            // Use mobile guidance scroll with proper mobile offset
+            mobileGuidance.scrollToElement(tempId, 100, 100, false);
+          } else {
+            // Desktop scroll behavior
+            const headerOffset = 120;
+            const viewportOffset = window.innerHeight * 0.15;
+            const elementPosition = targetElement.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
+
+            window.scrollTo({
+              top: Math.max(0, offsetPosition),
+              behavior: 'smooth'
+            });
+          }
 
           // For acknowledgments, apply pulse animation after scroll completes
           if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {

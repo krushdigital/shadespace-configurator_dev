@@ -1627,7 +1627,7 @@ export function ShadeConfigurator() {
       <MobilePricingBar
         totalPrice={calculations.totalPrice}
         currency={config.currency}
-        isVisible={hasQuote && openStep === 4}
+        isVisible={hasQuote && (openStep === 4 || openStep === 6)}
         quoteReference={quoteReference || undefined}
         onContinue={handleMobileContinue}
         onSaveQuote={handleSaveQuote}
