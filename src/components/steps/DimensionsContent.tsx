@@ -360,7 +360,7 @@ export function DimensionsContent({
                        min="100"
                       step={config.unit === 'imperial' ? '0.1' : '10'}
                       autoComplete="off"
-                       className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                       className={`text-base ${isSuccess ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
                        isSuccess={isSuccess}
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
@@ -370,7 +370,7 @@ export function DimensionsContent({
                         : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
                       secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
                      />
-                     <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
+                     <div className={`absolute ${isSuccess ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
                      </div>
                    </div>
@@ -501,7 +501,7 @@ export function DimensionsContent({
                               min="100"
                              step={config.unit === 'imperial' ? '0.1' : '10'}
                              autoComplete="off"
-                              className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                              className={`text-base ${isSuccess ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
                               error={validationErrors[key]}
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
@@ -509,7 +509,7 @@ export function DimensionsContent({
                               label={label}
                               secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
                             />
-                            <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
+                            <div className={`absolute ${isSuccess ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
                               {config.unit === 'metric' ? 'mm' : 'in'}
                             </div>
                           </div>
@@ -661,7 +661,7 @@ export function DimensionsContent({
                                   onBlur={() => setHighlightedCorner(null)}
                                   placeholder={config.unit === 'imperial' ? '100' : '2500'}
                                   autoComplete="off"
-                                  className={`flex-1 py-2 ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'pr-16' : 'pr-12'}`}
+                                  className={`flex-1 py-2 ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
                                   step={config.unit === 'imperial' ? '0.1' : '10'}
                                   isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
                                   label={
@@ -689,7 +689,7 @@ export function DimensionsContent({
                                   }
                                   secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
                                 />
-                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50 transition-all duration-200 pointer-events-none`}>
+                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50 transition-all duration-200 pointer-events-none`}>
                                   {config.unit === 'metric' ? 'mm' : 'in'}
                                 </span>
                               </div>
