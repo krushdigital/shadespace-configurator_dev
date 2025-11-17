@@ -1088,26 +1088,29 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   disabled
                 />
                 <div className="flex-1">
-                  <div className="flex items-start gap-2">
-                    <span className="text-slate-700 flex-1">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-slate-700">
                       I understand height information was not provided and manufacturing will use standard process.
                     </span>
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <Tooltip content="Providing anchor point heights allows for more precise manufacturing customized to your installation. Standard manufacturing will be used if heights are not provided.">
-                        <button className="text-blue-600 hover:text-blue-800">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                          </svg>
-                        </button>
-                      </Tooltip>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPrev({ navigateToHeights: true })}
-                        className="text-xs py-0.5 px-2 border-blue-300 text-blue-700 hover:bg-blue-50"
-                      >
-                        Add Heights →
-                      </Button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-slate-600">Not required - standard manufacturing process will be used</span>
+                      <div className="flex items-center gap-1">
+                        <Tooltip content="Providing anchor point heights allows for more precise manufacturing customized to your installation. Standard manufacturing will be used if heights are not provided.">
+                          <button className="text-blue-600 hover:text-blue-800">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onPrev({ navigateToHeights: true })}
+                          className="text-xs py-1 px-3 border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap"
+                        >
+                          Add Heights →
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -267,11 +267,14 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
               </svg>
             </div>
             <div className="flex-1">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2">
                 <p className="text-sm font-medium text-amber-900">
                   Height information (optional)
                 </p>
-                <div className="flex items-center gap-2">
+                <p className="text-xs text-amber-700">
+                  Not required - standard manufacturing process will be used
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
                   <Tooltip content="Providing anchor point heights allows for more precise manufacturing customized to your installation. Standard manufacturing will be used if heights are not provided.">
                     <button className="text-amber-600 hover:text-amber-800">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -284,16 +287,13 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                       variant="outline"
                       size="sm"
                       onClick={onNavigateToDimensions}
-                      className="text-xs py-1 px-3 border-amber-300 text-amber-700 hover:bg-amber-100"
+                      className="text-xs py-1 px-3 border-amber-300 text-amber-700 hover:bg-amber-100 whitespace-nowrap"
                     >
                       Add Heights →
                     </Button>
                   )}
                 </div>
               </div>
-              <p className="text-xs text-amber-700 mt-1">
-                Not required - standard manufacturing process will be used
-              </p>
             </div>
           </div>
         )}
