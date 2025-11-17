@@ -27,11 +27,6 @@ import { SaveProgressButton } from './SaveProgressButton';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
-import { useMobileGuidance } from '../hooks/useMobileGuidance';
-import { GuidanceSettingsModal } from './GuidanceSettingsModal';
-import { GuidanceAriaLiveRegion } from './GuidanceAriaLiveRegion';
-import { GuidanceOnboardingBanner } from './GuidanceOnboardingBanner';
-import { resetPreferences } from '../utils/guidancePreferences';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -101,48 +96,21 @@ export function ShadeConfigurator() {
 
   // Mobile pricing bar state
   const [isBarLocked, setIsBarLocked] = useState(false);
-
   const [isNewQuote, setIsNewQuote] = useState(false);
   const [previousTotalPrice, setPreviousTotalPrice] = useState(0);
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
 
-  // Mobile guidance state
-  const { state: guidanceState, actions: guidanceActions } = useMobileGuidance(isMobile, openStep);
-  const [showGuidanceSettings, setShowGuidanceSettings] = useState(false);
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
-
-  // Log guidance state changes
-  useEffect(() => {
-    console.log('🎯 Guidance state updated:', {
-      isGuidanceEnabled: guidanceState.isGuidanceEnabled,
-      shouldShowButtonPulse: guidanceState.shouldShowButtonPulse,
-      shouldShowHint: guidanceState.shouldShowHint,
-      hasSeenOnboarding: guidanceState.hasSeenOnboarding,
-      preferences: guidanceState.preferences
-    });
-  }, [guidanceState]);
-
-  // Check if user has seen onboarding
-  useEffect(() => {
-    if (isMobile && !guidanceState.hasSeenOnboarding && guidanceState.isGuidanceEnabled) {
-      setShowOnboardingBanner(true);
-    }
-  }, [isMobile, guidanceState.hasSeenOnboarding, guidanceState.isGuidanceEnabled]);
-
   const calculations = useShadeCalculations(config);
 
   // Mobile detection effect
   useEffect(() => {
     const checkIsMobile = () => {
-      const mobile = window.innerWidth < 1024;
-      console.log('📱 Mobile detection:', { width: window.innerWidth, isMobile: mobile });
-      setIsMobile(mobile);
+      setIsMobile(window.innerWidth < 1024);
     };
 
     // Initial check
-    console.log('🚀 ShadeConfigurator mounted, checking mobile state...');
     checkIsMobile();
 
     // Add event listener for window resize
@@ -1324,11 +1292,6 @@ export function ShadeConfigurator() {
       const newOpenStep = openStep === stepIndex ? -1 : stepIndex;
       setOpenStep(newOpenStep);
 
-      // Detect backward navigation
-      if (newOpenStep < openStep && isMobile) {
-        guidanceActions.handleBackwardNavigation();
-      }
-
       if (newOpenStep !== -1) {
         setTimeout(() => {
           smoothScrollToStep(newOpenStep);
@@ -1453,21 +1416,6 @@ export function ShadeConfigurator() {
     setShowSaveQuoteModal(true);
   };
 
-  const handleDismissOnboarding = async () => {
-    setShowOnboardingBanner(false);
-    await guidanceActions.updateGuidancePreferences({ hasSeenOnboarding: true });
-  };
-
-  const handleOpenGuidanceSettings = () => {
-    setShowOnboardingBanner(false);
-    setShowGuidanceSettings(true);
-  };
-
-  const handleResetGuidancePreferences = () => {
-    resetPreferences();
-    guidanceActions.resetGuidance();
-  };
-
   // Handle mobile continue button
   const handleMobileContinue = () => {
     if (openStep === 4 && hasQuote) {
@@ -1590,13 +1538,6 @@ export function ShadeConfigurator() {
                     quoteReference={quoteReference}
                     navigateToHeights={index === 4 ? navigateToHeights : undefined}
                     setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
-                    // Mobile guidance props
-                    onFabricTypeSelected={index === 0 ? guidanceActions.handleFabricTypeSelected : undefined}
-                    onColorSelected={index === 0 ? guidanceActions.handleColorSelected : undefined}
-                    onStepValidated={index === 0 ? guidanceActions.handleStepValidated : undefined}
-                    shouldShowButtonPulse={guidanceState.shouldShowButtonPulse}
-                    shouldShowHint={guidanceState.shouldShowHint}
-                    onContinueClick={guidanceActions.handleContinueClick}
                   />
                 </AccordionStep>
               );
@@ -1681,49 +1622,6 @@ export function ShadeConfigurator() {
         currentStep={openStep}
         totalSteps={7}
       />
-
-      {/* Mobile Guidance Components */}
-      {isMobile && (
-        <>
-          <GuidanceAriaLiveRegion />
-
-          {showOnboardingBanner && (
-            <GuidanceOnboardingBanner
-              onDismiss={handleDismissOnboarding}
-              onOpenSettings={handleOpenGuidanceSettings}
-            />
-          )}
-
-          {guidanceState.isBackwardNavigating && (
-            <div className="fixed top-20 left-0 right-0 z-30 mx-4">
-              <div className="bg-amber-50 border border-amber-500 rounded-lg p-3 shadow-lg animate-slide-in-left">
-                <p className="text-sm text-amber-900 font-medium text-center">
-                  Guidance paused while editing previous step
-                </p>
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={() => setShowGuidanceSettings(true)}
-            className="fixed top-4 right-4 z-30 p-2 bg-white border-2 border-[#307C31] rounded-full shadow-lg hover:bg-[#307C31] hover:text-white transition-colors"
-            aria-label="Open guidance settings"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-
-          <GuidanceSettingsModal
-            isOpen={showGuidanceSettings}
-            onClose={() => setShowGuidanceSettings(false)}
-            preferences={guidanceState.preferences}
-            onUpdatePreferences={guidanceActions.updateGuidancePreferences}
-            onReset={handleResetGuidancePreferences}
-          />
-        </>
-      )}
     </>
   );
 }

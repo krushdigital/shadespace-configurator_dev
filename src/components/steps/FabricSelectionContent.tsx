@@ -18,58 +18,15 @@ interface FabricSelectionContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
-  isMobile?: boolean;
-  onFabricTypeSelected?: (fabricType: string) => void;
-  onColorSelected?: (color: string) => void;
-  onStepValidated?: () => void;
-  shouldShowButtonPulse?: boolean;
-  shouldShowHint?: boolean;
-  onContinueClick?: () => void;
 }
 
-export function FabricSelectionContent({
-  config,
-  updateConfig,
-  onNext,
-  onPrev,
-  nextStepTitle = '',
-  showBackButton = false,
-  validationErrors = {},
-  isMobile = false,
-  onFabricTypeSelected,
-  onColorSelected,
-  onStepValidated,
-  shouldShowButtonPulse = false,
-  shouldShowHint = false,
-  onContinueClick,
-}: FabricSelectionContentProps) {
+export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: FabricSelectionContentProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
-  const hasCalledValidated = useRef(false);
 
   useEffect(() => {
     analytics.stepViewed(1, 'fabric_and_color');
   }, []);
-
-  useEffect(() => {
-    const isComplete = config.fabricType && config.fabricColor;
-    console.log('📋 FabricSelectionContent validation check:', {
-      fabricType: config.fabricType,
-      fabricColor: config.fabricColor,
-      isComplete,
-      hasCalledValidated: hasCalledValidated.current,
-      isMobile
-    });
-
-    if (isComplete && isMobile && onStepValidated && !hasCalledValidated.current) {
-      console.log('✅ Step is now complete, calling onStepValidated');
-      hasCalledValidated.current = true;
-      onStepValidated();
-    } else if (!isComplete && hasCalledValidated.current) {
-      console.log('⚠️ Step became incomplete again, resetting validation flag');
-      hasCalledValidated.current = false;
-    }
-  }, [config.fabricType, config.fabricColor, isMobile, onStepValidated]);
   
   return (
     <div className="p-6">
@@ -101,18 +58,11 @@ export function FabricSelectionContent({
                     : 'hover:border-[#307C31] hover:shadow-lg'
                 }`}
                 onClick={() => {
-                  console.log('👆 Fabric card clicked:', fabric.id, { isMobile, hasCallback: !!onFabricTypeSelected });
                   analytics.fabricTypeSelected(fabric.id, fabric.label);
                   updateConfig({
                     fabricType: fabric.id,
                     fabricColor: ''
                   });
-                  if (isMobile && onFabricTypeSelected) {
-                    console.log('✅ Calling onFabricTypeSelected');
-                    onFabricTypeSelected(fabric.id);
-                  } else {
-                    console.log('❌ Not calling onFabricTypeSelected:', { isMobile, hasCallback: !!onFabricTypeSelected });
-                  }
                 }}
               >
                 <div className="text-center">
@@ -283,7 +233,7 @@ export function FabricSelectionContent({
 
       {/* Color Selection */}
       {selectedFabric && (
-        <div id="color-selection-section" className="mb-8">
+        <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-lg font-semibold text-[#01312D]">
               Choose Color
@@ -341,15 +291,8 @@ export function FabricSelectionContent({
                 >
                   <button
                     onClick={() => {
-                      console.log('👆 Color button clicked:', color.name, { isMobile, hasCallback: !!onColorSelected });
                       analytics.fabricColorSelected(config.fabricType, color.name, color.shadeFactor);
                       updateConfig({ fabricColor: color.name });
-                      if (isMobile && onColorSelected) {
-                        console.log('✅ Calling onColorSelected');
-                        onColorSelected(color.name);
-                      } else {
-                        console.log('❌ Not calling onColorSelected:', { isMobile, hasCallback: !!onColorSelected });
-                      }
                     }}
                     className={`group p-2 rounded-lg transition-all duration-300 w-full ${
                       isSelected
@@ -446,23 +389,13 @@ export function FabricSelectionContent({
                         fabric_type: config.fabricType,
                         fabric_color: config.fabricColor,
                       });
-                      if (onContinueClick) {
-                        onContinueClick();
-                      }
                       onNext();
                     }}
                     size="md"
-                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''} ${
-                      isMobile && shouldShowButtonPulse && !incomplete ? 'animate-button-pulsate animate-button-glow' : ''
-                    }`}
+                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     Continue to {nextStepTitle}
                   </Button>
-                  {isMobile && shouldShowHint && !incomplete && (
-                    <p className="guidance-hint text-center">
-                      Tap to continue to the next step
-                    </p>
-                  )}
                 </>
               );
             })()}
