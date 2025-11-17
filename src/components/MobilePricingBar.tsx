@@ -78,8 +78,8 @@ export function MobilePricingBar({
               <div className="text-lg font-bold text-[#01312D]">
                 {formatCurrency(totalPrice, currency)}
               </div>
-              <div className="text-xs text-slate-600 font-medium">
-                Pricing Available
+              <div className="text-xs text-[#307C31] font-medium">
+                Includes express freight, taxes & duties
               </div>
             </div>
 

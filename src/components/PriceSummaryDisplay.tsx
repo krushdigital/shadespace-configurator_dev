@@ -47,7 +47,7 @@ export function PriceSummaryDisplay({
         <>
           <div className="mb-6">
             <h3 className="text-xl font-bold text-[#01312D] mb-3">
-              Your Shade Sail Price
+              All-Inclusive Price to Your Door
             </h3>
             <div className="text-3xl font-bold text-[#01312D] mb-2 whitespace-nowrap">
               {formatCurrency(calculations.totalPrice, config.currency)}
@@ -60,7 +60,7 @@ export function PriceSummaryDisplay({
                   rel="noopener noreferrer"
                   className="text-[#307C31] hover:underline"
                 >
-                  ✓ Free worldwide shipping included
+                  ✓ Express freight to your door included
                 </a>
               </p>
               <p className="text-sm text-[#307C31] font-medium">
@@ -70,7 +70,17 @@ export function PriceSummaryDisplay({
                   rel="noopener noreferrer"
                   className="text-[#307C31] hover:underline"
                 >
-                  ✓ No hidden costs, taxes or duties
+                  ✓ All taxes & duties included
+                </a>
+              </p>
+              <p className="text-sm text-[#307C31] font-medium">
+                <a
+                  href="https://shadespace.com/pages/shipping"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#307C31] hover:underline"
+                >
+                  ✓ No hidden costs or tariffs
                 </a>
               </p>
             </div>

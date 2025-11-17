@@ -632,12 +632,12 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
         
         <!-- Pricing -->
         <div class="price-section">
-            <div class="price-title">Shade Sail Price</div>
-            <div class="price-amount">All Inclusive Price: ${formatCurrency(calculations.totalPrice, config.currency)}</div>
+            <div class="price-title">All-Inclusive Price to Your Door</div>
+            <div class="price-amount">${formatCurrency(calculations.totalPrice, config.currency)}</div>
             <ul class="price-features">
-                <li>Includes Fast Express Shipping Worldwide To Your Door</li>
-                <li>Includes Taxes & Duties</li>
-                <li>No Hidden Costs</li>
+                <li>Express freight to your door included</li>
+                <li>All taxes & duties included</li>
+                <li>No hidden costs or tariffs</li>
             </ul>
         </div>
         

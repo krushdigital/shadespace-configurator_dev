@@ -130,14 +130,14 @@ function generateEmailHTML(data: any): string {
     <tr>
       <td style="padding: 0 20px 30px 20px;">
         <div style="background-color: #01312D; border-radius: 10px; padding: 25px; text-align: center;">
-          <p style="color: #ffffff; margin: 0 0 10px 0; font-size: 16px;">All Inclusive Price</p>
+          <p style="color: #ffffff; margin: 0 0 10px 0; font-size: 16px;">All-Inclusive Price to Your Door</p>
           <p style="background-color: #BFF102; color: #01312D; margin: 0; padding: 15px; border-radius: 8px; font-size: 28px; font-weight: bold;">
             ${formattedPrice}
           </p>
           <ul style="color: #ffffff; margin: 15px 0 0 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.8;">
-            <li>✓ Fast Express Shipping Worldwide</li>
-            <li>✓ Includes Taxes & Duties</li>
-            <li>✓ No Hidden Costs</li>
+            <li>✓ Express freight to your door included</li>
+            <li>✓ All taxes & duties included</li>
+            <li>✓ No hidden costs or tariffs</li>
           </ul>
         </div>
       </td>
