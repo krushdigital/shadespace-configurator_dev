@@ -42,11 +42,17 @@ const EDGE_OPTIONS = [
 
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
   React.useEffect(() => {
+    console.log('[EdgeType] Effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      edgeType: config.edgeType
+    });
+
     if (mobileGuidance?.isGuidanceActive && config.edgeType) {
-      mobileGuidance.scrollToElement('continue-button-edge', 400);
+      console.log('[EdgeType] Auto-scrolling to continue button');
+      mobileGuidance.scrollToElement('continue-button-edge', 400, 100);
       mobileGuidance.setHighlightTarget('continue-button-edge', 5000);
     }
-  }, [config.edgeType, mobileGuidance]);
+  }, [config.edgeType, mobileGuidance?.isGuidanceActive]);
 
   return (
     <div className="p-6">

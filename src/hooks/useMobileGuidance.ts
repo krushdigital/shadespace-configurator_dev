@@ -2,8 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface GuidanceState {
   currentHighlightTarget: string | null;
-  highestReachedStep: number;
-  isPaused: boolean;
   lastScrollTime: number;
 }
 
@@ -15,8 +13,6 @@ interface UseMobileGuidanceOptions {
 export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOptions) {
   const [guidanceState, setGuidanceState] = useState<GuidanceState>({
     currentHighlightTarget: null,
-    highestReachedStep: 0,
-    isPaused: false,
     lastScrollTime: 0,
   });
 
@@ -28,31 +24,17 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
       setGuidanceState(prev => ({
         ...prev,
         currentHighlightTarget: null,
-        isPaused: false,
       }));
       return;
     }
-
-    if (currentStep > guidanceState.highestReachedStep) {
-      setGuidanceState(prev => ({
-        ...prev,
-        highestReachedStep: currentStep,
-        isPaused: false,
-      }));
-    } else if (currentStep < guidanceState.highestReachedStep) {
-      setGuidanceState(prev => ({
-        ...prev,
-        isPaused: true,
-      }));
-    }
-  }, [currentStep, isMobile, guidanceState.highestReachedStep]);
+  }, [isMobile]);
 
   const scrollToElement = useCallback((
     elementId: string,
     delay: number = 300,
     offset: number = 120
   ) => {
-    if (!isMobile || guidanceState.isPaused) return;
+    if (!isMobile) return;
 
     if (scrollTimeoutRef.current) {
       clearTimeout(scrollTimeoutRef.current);
@@ -66,10 +48,15 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
     scrollTimeoutRef.current = setTimeout(() => {
       const element = document.getElementById(elementId) || document.querySelector(`[data-guidance-id="${elementId}"]`);
 
-      if (!element) return;
+      if (!element) {
+        console.log(`[Mobile Guidance] Element not found: ${elementId}`);
+        return;
+      }
 
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      console.log(`[Mobile Guidance] Scrolling to ${elementId}, offset: ${offsetPosition}px`);
 
       window.scrollTo({
         top: Math.max(0, offsetPosition),
@@ -81,17 +68,19 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
         lastScrollTime: Date.now(),
       }));
     }, delay);
-  }, [isMobile, guidanceState.isPaused, guidanceState.lastScrollTime]);
+  }, [isMobile, guidanceState.lastScrollTime]);
 
   const setHighlightTarget = useCallback((
     targetId: string | null,
     duration: number = 5000
   ) => {
-    if (!isMobile || guidanceState.isPaused) return;
+    if (!isMobile) return;
 
     if (highlightTimeoutRef.current) {
       clearTimeout(highlightTimeoutRef.current);
     }
+
+    console.log(`[Mobile Guidance] Setting highlight target: ${targetId}`);
 
     setGuidanceState(prev => ({
       ...prev,
@@ -106,16 +95,7 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
         }));
       }, duration);
     }
-  }, [isMobile, guidanceState.isPaused]);
-
-  const resumeGuidance = useCallback(() => {
-    if (currentStep >= guidanceState.highestReachedStep) {
-      setGuidanceState(prev => ({
-        ...prev,
-        isPaused: false,
-      }));
-    }
-  }, [currentStep, guidanceState.highestReachedStep]);
+  }, [isMobile]);
 
   const clearHighlight = useCallback(() => {
     if (highlightTimeoutRef.current) {
@@ -139,12 +119,10 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
   }, []);
 
   return {
-    isGuidanceActive: isMobile && !guidanceState.isPaused,
+    isGuidanceActive: isMobile,
     currentHighlightTarget: guidanceState.currentHighlightTarget,
-    isPaused: guidanceState.isPaused,
     scrollToElement,
     setHighlightTarget,
-    resumeGuidance,
     clearHighlight,
   };
 }

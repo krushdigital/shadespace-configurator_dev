@@ -36,18 +36,32 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
   }, []);
 
   useEffect(() => {
+    console.log('[FabricSelection] Fabric type effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      fabricType: config.fabricType,
+      fabricColor: config.fabricColor
+    });
+
     if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
-      mobileGuidance.scrollToElement('color-selection', 400);
+      console.log('[FabricSelection] Auto-scrolling to color section');
+      mobileGuidance.scrollToElement('color-selection', 400, 100);
       mobileGuidance.setHighlightTarget('color-selection', 5000);
     }
-  }, [config.fabricType, config.fabricColor, mobileGuidance]);
+  }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
   useEffect(() => {
+    console.log('[FabricSelection] Color effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      fabricType: config.fabricType,
+      fabricColor: config.fabricColor
+    });
+
     if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
-      mobileGuidance.scrollToElement('continue-button-fabric', 400);
+      console.log('[FabricSelection] Auto-scrolling to continue button');
+      mobileGuidance.scrollToElement('continue-button-fabric', 400, 100);
       mobileGuidance.setHighlightTarget('continue-button-fabric', 5000);
     }
-  }, [config.fabricColor, mobileGuidance]);
+  }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
   return (
     <div className="p-6">

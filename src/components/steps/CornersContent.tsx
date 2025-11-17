@@ -32,11 +32,17 @@ const SHAPE_OPTIONS = [
 
 export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: CornersContentProps) {
   React.useEffect(() => {
+    console.log('[Corners] Effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      corners: config.corners
+    });
+
     if (mobileGuidance?.isGuidanceActive && config.corners >= 3) {
-      mobileGuidance.scrollToElement('continue-button-corners', 400);
+      console.log('[Corners] Auto-scrolling to continue button');
+      mobileGuidance.scrollToElement('continue-button-corners', 400, 100);
       mobileGuidance.setHighlightTarget('continue-button-corners', 5000);
     }
-  }, [config.corners, mobileGuidance]);
+  }, [config.corners, mobileGuidance?.isGuidanceActive]);
   const generateRegularPoints = (corners: number) => {
     const centerX = 300;
     const centerY = 300;

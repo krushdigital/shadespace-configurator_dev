@@ -38,18 +38,32 @@ interface CombinedMeasurementContentProps {
 
 export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote, mobileGuidance }: CombinedMeasurementContentProps) {
   React.useEffect(() => {
+    console.log('[CombinedMeasurement] Unit effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      unit: config.unit,
+      measurementOption: config.measurementOption
+    });
+
     if (mobileGuidance?.isGuidanceActive && config.unit && !config.measurementOption) {
-      mobileGuidance.scrollToElement('measurement-option-section', 400);
+      console.log('[CombinedMeasurement] Auto-scrolling to measurement option section');
+      mobileGuidance.scrollToElement('measurement-option-section', 400, 100);
       mobileGuidance.setHighlightTarget('measurement-option-section', 5000);
     }
-  }, [config.unit, config.measurementOption, mobileGuidance]);
+  }, [config.unit, config.measurementOption, mobileGuidance?.isGuidanceActive]);
 
   React.useEffect(() => {
+    console.log('[CombinedMeasurement] Measurement option effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      unit: config.unit,
+      measurementOption: config.measurementOption
+    });
+
     if (mobileGuidance?.isGuidanceActive && config.unit && config.measurementOption) {
-      mobileGuidance.scrollToElement('continue-button-measurement', 400);
+      console.log('[CombinedMeasurement] Auto-scrolling to continue button');
+      mobileGuidance.scrollToElement('continue-button-measurement', 400, 100);
       mobileGuidance.setHighlightTarget('continue-button-measurement', 5000);
     }
-  }, [config.measurementOption, mobileGuidance]);
+  }, [config.unit, config.measurementOption, mobileGuidance?.isGuidanceActive]);
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
     const updates: Partial<ConfiguratorState> = { measurementOption: option };
 
