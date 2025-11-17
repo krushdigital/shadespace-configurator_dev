@@ -21,6 +21,7 @@ interface FabricSelectionContentProps {
   isMobile?: boolean;
   onFabricTypeSelected?: (fabricType: string) => void;
   onColorSelected?: (color: string) => void;
+  onStepValidated?: () => void;
   shouldShowButtonPulse?: boolean;
   shouldShowHint?: boolean;
   onContinueClick?: () => void;
@@ -37,16 +38,38 @@ export function FabricSelectionContent({
   isMobile = false,
   onFabricTypeSelected,
   onColorSelected,
+  onStepValidated,
   shouldShowButtonPulse = false,
   shouldShowHint = false,
   onContinueClick,
 }: FabricSelectionContentProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
+  const hasCalledValidated = useRef(false);
 
   useEffect(() => {
     analytics.stepViewed(1, 'fabric_and_color');
   }, []);
+
+  useEffect(() => {
+    const isComplete = config.fabricType && config.fabricColor;
+    console.log('📋 FabricSelectionContent validation check:', {
+      fabricType: config.fabricType,
+      fabricColor: config.fabricColor,
+      isComplete,
+      hasCalledValidated: hasCalledValidated.current,
+      isMobile
+    });
+
+    if (isComplete && isMobile && onStepValidated && !hasCalledValidated.current) {
+      console.log('✅ Step is now complete, calling onStepValidated');
+      hasCalledValidated.current = true;
+      onStepValidated();
+    } else if (!isComplete && hasCalledValidated.current) {
+      console.log('⚠️ Step became incomplete again, resetting validation flag');
+      hasCalledValidated.current = false;
+    }
+  }, [config.fabricType, config.fabricColor, isMobile, onStepValidated]);
   
   return (
     <div className="p-6">

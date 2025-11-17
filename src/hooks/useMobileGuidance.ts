@@ -29,12 +29,14 @@ export interface MobileGuidanceState {
   shouldShowButtonPulse: boolean;
   shouldShowHint: boolean;
   hasSeenOnboarding: boolean;
+  isStepValidated: boolean;
 }
 
 export interface MobileGuidanceActions {
   handleFabricTypeSelected: (fabricType: string) => void;
   handleColorSelected: (color: string) => void;
   handleStepComplete: (stepNumber: number) => void;
+  handleStepValidated: () => void;
   handleBackwardNavigation: () => void;
   handleContinueClick: () => void;
   handleUserManualScroll: () => void;
@@ -58,6 +60,7 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
     shouldShowButtonPulse: false,
     shouldShowHint: false,
     hasSeenOnboarding: false,
+    isStepValidated: false,
   });
 
   const colorBrowsingTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -101,23 +104,22 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
   }, [isMobile]);
 
   const shouldAutoScroll = useCallback((): boolean => {
+    const actualIsMobile = window.innerWidth < 1024;
+    const now = Date.now();
+
     console.log('🔍 shouldAutoScroll called with:', {
-      isMobile,
+      isMobileState: isMobile,
+      actualWindowWidth: window.innerWidth,
+      actualIsMobile,
       isGuidanceEnabled: state.isGuidanceEnabled,
       preferencesGuidanceEnabled: state.preferences.guidanceEnabled,
       isBackwardNavigating: state.isBackwardNavigating,
-      timeSinceManualScroll: Date.now() - state.lastManualScrollTimestamp,
-      timeSinceAutoScroll: Date.now() - state.lastAutoScrollTimestamp,
-      isInitialized: isInitializedRef.current
+      timeSinceManualScroll: now - state.lastManualScrollTimestamp,
+      timeSinceAutoScroll: now - state.lastAutoScrollTimestamp
     });
 
-    if (!isMobile) {
-      console.log('❌ Auto-scroll blocked: not mobile');
-      return false;
-    }
-
-    if (!state.isGuidanceEnabled) {
-      console.log('❌ Auto-scroll blocked: guidance not enabled in state');
+    if (!actualIsMobile) {
+      console.log('❌ Auto-scroll blocked: not mobile (actual window width:', window.innerWidth, ')');
       return false;
     }
 
@@ -131,20 +133,19 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
       return false;
     }
 
-    const now = Date.now();
     if (now - state.lastManualScrollTimestamp < BACKWARD_SCROLL_THRESHOLD) {
-      console.log('❌ Auto-scroll blocked: recent manual scroll');
+      console.log('❌ Auto-scroll blocked: recent manual scroll (', now - state.lastManualScrollTimestamp, 'ms ago)');
       return false;
     }
 
     if (now - state.lastAutoScrollTimestamp < AUTO_SCROLL_DEBOUNCE) {
-      console.log('❌ Auto-scroll blocked: debounce period');
+      console.log('❌ Auto-scroll blocked: debounce period (', now - state.lastAutoScrollTimestamp, 'ms ago)');
       return false;
     }
 
-    console.log('✅ Auto-scroll allowed');
+    console.log('✅ Auto-scroll ALLOWED');
     return true;
-  }, [isMobile, state.isGuidanceEnabled, state.preferences.guidanceEnabled, state.isBackwardNavigating, state.lastManualScrollTimestamp, state.lastAutoScrollTimestamp]);
+  }, [isMobile, state.preferences.guidanceEnabled, state.isBackwardNavigating, state.lastManualScrollTimestamp, state.lastAutoScrollTimestamp]);
 
   const smoothScrollToElement = useCallback((
     elementId: string,
@@ -231,7 +232,8 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
       console.log('🔍 Color browsing state:', {
         isWithinBrowsingWindow,
         newCount,
-        timeSinceLastSelection: prev.colorSelectionTimestamp ? now - prev.colorSelectionTimestamp : 'N/A'
+        timeSinceLastSelection: prev.colorSelectionTimestamp ? now - prev.colorSelectionTimestamp : 'N/A',
+        isStepValidated: prev.isStepValidated
       });
 
       return {
@@ -243,18 +245,26 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
       };
     });
 
-    console.log('⏱️ Setting up 2500ms timer for button pulse');
+    console.log('⏱️ Setting up 2500ms timer for button pulse (will only show if step is validated)');
     colorBrowsingTimerRef.current = setTimeout(() => {
-      console.log('✅ Color pause detected, showing button pulse and hint');
-      setState(prev => ({
-        ...prev,
-        shouldShowButtonPulse: true,
-        shouldShowHint: true,
-      }));
+      setState(prev => {
+        if (prev.isStepValidated) {
+          console.log('✅ Color pause detected + step validated, showing button pulse and hint');
+          return {
+            ...prev,
+            shouldShowButtonPulse: true,
+            shouldShowHint: true,
+          };
+        } else {
+          console.log('⚠️ Color pause detected but step NOT validated yet, skipping pulse');
+          return prev;
+        }
+      });
     }, COLOR_PAUSE_DETECTION);
   }, []);
 
   const handleStepComplete = useCallback((stepNumber: number) => {
+    console.log('✅ handleStepComplete called for step:', stepNumber);
     setState(prev => ({
       ...prev,
       shouldShowButtonPulse: true,
@@ -265,6 +275,14 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
     if (announceElement) {
       announceElement.textContent = `Step ${stepNumber} complete. Continue button is now active.`;
     }
+  }, []);
+
+  const handleStepValidated = useCallback(() => {
+    console.log('✅ handleStepValidated called - step is now complete');
+    setState(prev => ({
+      ...prev,
+      isStepValidated: true,
+    }));
   }, []);
 
   const handleBackwardNavigation = useCallback(() => {
@@ -293,12 +311,14 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
   }, []);
 
   const handleContinueClick = useCallback(() => {
+    console.log('➡️ handleContinueClick called, resetting guidance state for next step');
     setState(prev => ({
       ...prev,
       shouldShowButtonPulse: false,
       shouldShowHint: false,
       colorSelectionTimestamp: null,
       colorSelectionCount: 0,
+      isStepValidated: false,
     }));
   }, []);
 
@@ -321,6 +341,7 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
   }, []);
 
   const resetGuidance = useCallback(() => {
+    console.log('🔄 resetGuidance called');
     setState(prev => ({
       ...prev,
       isBackwardNavigating: false,
@@ -328,6 +349,7 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
       shouldShowHint: false,
       colorSelectionTimestamp: null,
       colorSelectionCount: 0,
+      isStepValidated: false,
     }));
   }, []);
 
@@ -368,6 +390,7 @@ export function useMobileGuidance(isMobile: boolean, currentStep: number) {
       handleFabricTypeSelected,
       handleColorSelected,
       handleStepComplete,
+      handleStepValidated,
       handleBackwardNavigation,
       handleContinueClick,
       handleUserManualScroll,

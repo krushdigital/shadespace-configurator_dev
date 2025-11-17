@@ -1593,6 +1593,7 @@ export function ShadeConfigurator() {
                     // Mobile guidance props
                     onFabricTypeSelected={index === 0 ? guidanceActions.handleFabricTypeSelected : undefined}
                     onColorSelected={index === 0 ? guidanceActions.handleColorSelected : undefined}
+                    onStepValidated={index === 0 ? guidanceActions.handleStepValidated : undefined}
                     shouldShowButtonPulse={guidanceState.shouldShowButtonPulse}
                     shouldShowHint={guidanceState.shouldShowHint}
                     onContinueClick={guidanceActions.handleContinueClick}
