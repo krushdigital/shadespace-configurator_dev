@@ -25,6 +25,7 @@ interface PriceSummaryDisplayProps {
   setEmail?: (email: string) => void;
   onEmailSummary?: () => void;
   onCancelEmailInput?: () => void;
+  isMobile?: boolean;
 }
 
 export function PriceSummaryDisplay({
@@ -38,47 +39,62 @@ export function PriceSummaryDisplay({
   setEmail,
   onEmailSummary,
   onCancelEmailInput,
+  isMobile = false,
 }: PriceSummaryDisplayProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-6">
+    <div className={`bg-white border border-slate-200 rounded-xl shadow-lg p-6 ${
+      isMobile ? 'lg:bg-white bg-gradient-to-br from-[#307C31]/5 to-[#BFF102]/5' : ''
+    }`}>
       {calculations.totalPrice > 0 ? (
         <>
-          <div className="mb-6">
-            <h3 className="text-xl font-bold text-[#01312D] mb-3">
+          <div className={`mb-6 ${
+            isMobile ? 'bg-[#01312D] -mx-6 -mt-6 px-6 pt-6 pb-5 rounded-t-xl' : ''
+          }`}>
+            <h3 className={`text-xl font-bold mb-3 ${
+              isMobile ? 'text-white' : 'text-[#01312D]'
+            }`}>
               All-Inclusive Price to Your Door
             </h3>
-            <div className="text-3xl font-bold text-[#01312D] mb-2 whitespace-nowrap">
+            <div className={`text-4xl font-extrabold mb-3 whitespace-nowrap ${
+              isMobile ? 'text-white' : 'text-[#01312D]'
+            }`}>
               {formatCurrency(calculations.totalPrice, config.currency)}
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-[#307C31] font-medium">
+              <p className={`text-sm font-semibold ${
+                isMobile ? 'text-[#BFF102]' : 'text-[#307C31] font-medium'
+              }`}>
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#307C31] hover:underline"
+                  className={isMobile ? 'text-[#BFF102] hover:underline' : 'text-[#307C31] hover:underline'}
                 >
                   ✓ Express freight to your door included
                 </a>
               </p>
-              <p className="text-sm text-[#307C31] font-medium">
+              <p className={`text-sm font-semibold ${
+                isMobile ? 'text-[#BFF102]' : 'text-[#307C31] font-medium'
+              }`}>
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#307C31] hover:underline"
+                  className={isMobile ? 'text-[#BFF102] hover:underline' : 'text-[#307C31] hover:underline'}
                 >
                   ✓ All taxes & duties included
                 </a>
               </p>
-              <p className="text-sm text-[#307C31] font-medium">
+              <p className={`text-sm font-semibold ${
+                isMobile ? 'text-[#BFF102]' : 'text-[#307C31] font-medium'
+              }`}>
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#307C31] hover:underline"
+                  className={isMobile ? 'text-[#BFF102] hover:underline' : 'text-[#307C31] hover:underline'}
                 >
                   ✓ No hidden costs or tariffs
                 </a>
@@ -133,25 +149,27 @@ export function PriceSummaryDisplay({
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-4 mt-6">
-              <div className="text-sm font-bold text-[#01312D] mb-2">
-                Premium Quality Guarantee
+            {!isMobile && (
+              <div className="bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-4 mt-6">
+                <div className="text-sm font-bold text-[#01312D] mb-2">
+                  Premium Quality Guarantee
+                </div>
+                <ul className="text-xs text-[#01312D]/80 space-y-1">
+                  <li>
+                    ✓ <a
+                      href="https://shadespace.com/pages/warranty"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#01312D]/80 hover:underline"
+                    >
+                      {selectedFabric?.warrantyYears || 10}-year Fabric & Workmanship Warranty
+                    </a>
+                  </li>
+                  <li>✓ Weather-resistant materials</li>
+                  <li>✓ Professional installation guide</li>
+                </ul>
               </div>
-              <ul className="text-xs text-[#01312D]/80 space-y-1">
-                <li>
-                  ✓ <a
-                    href="https://shadespace.com/pages/warranty"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#01312D]/80 hover:underline"
-                  >
-                    {selectedFabric?.warrantyYears || 10}-year Fabric & Workmanship Warranty
-                  </a>
-                </li>
-                <li>✓ Weather-resistant materials</li>
-                <li>✓ Professional installation guide</li>
-              </ul>
-            </div>
+            )}
           </div>
 
           {/* Quote Actions - Desktop Only */}

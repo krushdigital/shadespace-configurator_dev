@@ -983,6 +983,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           <PriceSummaryDisplay
             config={config}
             calculations={calculations}
+            isMobile={isMobile}
           />
         )}
 
