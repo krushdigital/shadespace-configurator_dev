@@ -102,12 +102,6 @@ export function ShadeConfigurator() {
   // Mobile pricing bar state
   const [isBarLocked, setIsBarLocked] = useState(false);
 
-  // Check if user has seen onboarding
-  useEffect(() => {
-    if (isMobile && !guidanceState.hasSeenOnboarding && guidanceState.isGuidanceEnabled) {
-      setShowOnboardingBanner(true);
-    }
-  }, [isMobile, guidanceState.hasSeenOnboarding, guidanceState.isGuidanceEnabled]);
   const [isNewQuote, setIsNewQuote] = useState(false);
   const [previousTotalPrice, setPreviousTotalPrice] = useState(0);
 
@@ -118,6 +112,13 @@ export function ShadeConfigurator() {
   const { state: guidanceState, actions: guidanceActions } = useMobileGuidance(isMobile, openStep);
   const [showGuidanceSettings, setShowGuidanceSettings] = useState(false);
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(false);
+
+  // Check if user has seen onboarding
+  useEffect(() => {
+    if (isMobile && !guidanceState.hasSeenOnboarding && guidanceState.isGuidanceEnabled) {
+      setShowOnboardingBanner(true);
+    }
+  }, [isMobile, guidanceState.hasSeenOnboarding, guidanceState.isGuidanceEnabled]);
 
   const calculations = useShadeCalculations(config);
 
