@@ -28,6 +28,7 @@ import { SaveProgressButton } from './SaveProgressButton';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
+import { detectDeviceWithHysteresis, debounce, logDeviceInfo } from '../utils/deviceDetection';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -111,21 +112,34 @@ export function ShadeConfigurator() {
     currentStep: openStep,
   });
 
-  // Mobile detection effect
+  // Mobile detection effect with enhanced device detection
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+      const deviceInfo = detectDeviceWithHysteresis();
+      setIsMobile(deviceInfo.isMobile);
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Device check:', {
+          isMobile: deviceInfo.isMobile,
+          viewportWidth: deviceInfo.viewportWidth,
+          osName: deviceInfo.osName,
+          browserName: deviceInfo.browserName,
+          confidence: deviceInfo.confidence
+        });
+      }
     };
 
-    // Initial check
     checkIsMobile();
+    logDeviceInfo();
 
-    // Add event listener for window resize
-    window.addEventListener('resize', checkIsMobile);
+    const debouncedCheck = debounce(checkIsMobile, 150);
 
-    // Cleanup function to remove event listener
+    window.addEventListener('resize', debouncedCheck);
+    window.addEventListener('orientationchange', checkIsMobile);
+
     return () => {
-      window.removeEventListener('resize', checkIsMobile);
+      window.removeEventListener('resize', debouncedCheck);
+      window.removeEventListener('orientationchange', checkIsMobile);
     };
   }, []);
 
