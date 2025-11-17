@@ -1147,27 +1147,27 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               />
             )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGeneratePDFWithSVG}
-              disabled={isGeneratingPDF}
-              fullWidth
-              className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
-            >
-              {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
-            </Button>
-
             {!showEmailInput ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEmailSummary}
-                fullWidth
-                className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
-              >
-                Email Summary
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGeneratePDFWithSVG}
+                  disabled={isGeneratingPDF}
+                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white text-xs px-2 py-2"
+                >
+                  {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEmailSummary}
+                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white text-xs px-2 py-2"
+                >
+                  Email Summary
+                </Button>
+              </div>
             ) : (
               <div className="space-y-2">
                 <Input
