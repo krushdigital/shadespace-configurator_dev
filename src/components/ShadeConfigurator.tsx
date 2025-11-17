@@ -27,8 +27,6 @@ import { SaveProgressButton } from './SaveProgressButton';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
-import { useMobileGuidance } from '../hooks/useMobileGuidance';
-import { StepCompletionIndicator } from './StepCompletionIndicator';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -104,25 +102,7 @@ export function ShadeConfigurator() {
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
 
-  // Step completion indicator
-  const [showStepComplete, setShowStepComplete] = useState(false);
-
   const calculations = useShadeCalculations(config);
-
-  // Mobile guidance hook
-  const mobileGuidance = useMobileGuidance({
-    isMobile,
-    currentStep: openStep,
-    isStepComplete: isStepComplete(openStep),
-    onAutoScroll: () => {
-      if (isMobile && openStep < 6) {
-        const nextStepIndex = getActualNextStep(openStep);
-        setTimeout(() => {
-          smoothScrollToStep(nextStepIndex);
-        }, 100);
-      }
-    }
-  });
 
   // Mobile detection effect
   useEffect(() => {
@@ -1161,14 +1141,6 @@ export function ShadeConfigurator() {
   };
 
   const nextStep = () => {
-    // Show step completion indicator on mobile
-    if (isMobile) {
-      setShowStepComplete(true);
-      setTimeout(() => {
-        setShowStepComplete(false);
-      }, 2000);
-    }
-
     // Clear previous validation errors and dismissed typo tracking
     setValidationErrors({});
     setTypoSuggestions({});
@@ -1313,11 +1285,6 @@ export function ShadeConfigurator() {
 
   const toggleStep = (stepIndex: number) => {
     if (stepIndex <= config.step) {
-      // Notify mobile guidance that user manually navigated back
-      if (isMobile && stepIndex < openStep) {
-        mobileGuidance.handleManualNavigation();
-      }
-
       // Auto-center shape when switching steps
       const centeredPoints = centerShape(config.points);
       updateConfig({ points: centeredPoints });
@@ -1470,9 +1437,6 @@ export function ShadeConfigurator() {
 
   return (
     <>
-      {/* Step Completion Indicator (Mobile Only) */}
-      {isMobile && <StepCompletionIndicator show={showStepComplete} />}
-
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
         {/* Header */}
         <div className="text-center mb-6">
@@ -1561,11 +1525,6 @@ export function ShadeConfigurator() {
                     nextStepTitle={getNextStepTitle(index)}
                     showBackButton={shouldShowBackButton(index)}
                     isMobile={isMobile}
-                    mobileGuidance={isMobile ? {
-                      shouldShowPulse: mobileGuidance.shouldShowPulse,
-                      recordSelection: mobileGuidance.recordSelection,
-                      handleButtonInteraction: mobileGuidance.handleButtonInteraction
-                    } : undefined}
                     setHighlightedMeasurement={setHighlightedMeasurement}
                     highlightedMeasurement={highlightedMeasurement}
                     highlightedCorner={highlightedCorner}

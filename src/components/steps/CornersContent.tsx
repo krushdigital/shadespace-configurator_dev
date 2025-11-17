@@ -14,12 +14,6 @@ interface CornersContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
-  isMobile?: boolean;
-  mobileGuidance?: {
-    shouldShowPulse: boolean;
-    recordSelection: () => void;
-    handleButtonInteraction: () => void;
-  };
 }
 
 const SHAPE_OPTIONS = [
@@ -29,7 +23,7 @@ const SHAPE_OPTIONS = [
   { corners: 6, label: '6 Fixing Points', icon: Hexagon, description: 'Modern hexagonal shape' }
 ];
 
-export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, isMobile = false, mobileGuidance }: CornersContentProps) {
+export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote }: CornersContentProps) {
   const generateRegularPoints = (corners: number) => {
     const centerX = 300;
     const centerY = 300;
@@ -89,12 +83,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
                    ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
                    : 'hover:border-slate-300'
                 }`}
-                onClick={() => {
-                  handleShapeChange(shape.corners);
-                  if (isMobile && mobileGuidance) {
-                    mobileGuidance.recordSelection();
-                  }
-                }}
+                onClick={() => handleShapeChange(shape.corners)}
               >
                 <div className="text-center">
                   <Icon className="w-10 h-10 mx-auto mb-2 text-[#0e302d]" />
@@ -133,28 +122,9 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
             )}
           </div>
           <Button
-            onClick={() => {
-              if (isMobile && mobileGuidance) {
-                mobileGuidance.handleButtonInteraction();
-              }
-              onNext();
-            }}
+            onClick={onNext}
             size="md"
-            className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''} ${
-              isMobile && config.corners && mobileGuidance?.shouldShowPulse
-                ? 'mobile-guidance-pulse mobile-guidance-bounce'
-                : ''
-            }`}
-            onMouseEnter={() => {
-              if (isMobile && mobileGuidance) {
-                mobileGuidance.handleButtonInteraction();
-              }
-            }}
-            onFocus={() => {
-              if (isMobile && mobileGuidance) {
-                mobileGuidance.handleButtonInteraction();
-              }
-            }}
+            className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''}`}
           >
             Continue to {nextStepTitle}
           </Button>
@@ -179,12 +149,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
             />
           )}
           <Button
-            onClick={() => {
-              if (isMobile && mobileGuidance) {
-                mobileGuidance.handleButtonInteraction();
-              }
-              onNext();
-            }}
+            onClick={onNext}
             size="md"
             className={`flex-1 ${!config.corners ? 'opacity-50' : ''}`}
           >
