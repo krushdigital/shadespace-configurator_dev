@@ -14,6 +14,13 @@ interface CornersContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    isGuidanceActive: boolean;
+    currentHighlightTarget: string | null;
+    scrollToElement: (elementId: string, delay?: number, offset?: number) => void;
+    setHighlightTarget: (targetId: string | null, duration?: number) => void;
+    clearHighlight: () => void;
+  };
 }
 
 const SHAPE_OPTIONS = [
@@ -23,7 +30,13 @@ const SHAPE_OPTIONS = [
   { corners: 6, label: '6 Fixing Points', icon: Hexagon, description: 'Modern hexagonal shape' }
 ];
 
-export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote }: CornersContentProps) {
+export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: CornersContentProps) {
+  React.useEffect(() => {
+    if (mobileGuidance?.isGuidanceActive && config.corners >= 3) {
+      mobileGuidance.scrollToElement('continue-button-corners', 400);
+      mobileGuidance.setHighlightTarget('continue-button-corners', 5000);
+    }
+  }, [config.corners, mobileGuidance]);
   const generateRegularPoints = (corners: number) => {
     const centerX = 300;
     const centerY = 300;
@@ -122,9 +135,16 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
             )}
           </div>
           <Button
-            onClick={onNext}
+            onClick={() => {
+              mobileGuidance?.clearHighlight();
+              onNext();
+            }}
             size="md"
-            className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''}`}
+            id="continue-button-corners"
+            data-guidance-id="continue-button-corners"
+            className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''} ${
+              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'pulsate-guidance' : ''
+            }`}
           >
             Continue to {nextStepTitle}
           </Button>
@@ -149,7 +169,10 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
             />
           )}
           <Button
-            onClick={onNext}
+            onClick={() => {
+              mobileGuidance?.clearHighlight();
+              onNext();
+            }}
             size="md"
             className={`flex-1 ${!config.corners ? 'opacity-50' : ''}`}
           >

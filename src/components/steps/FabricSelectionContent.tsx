@@ -18,16 +18,37 @@ interface FabricSelectionContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    isGuidanceActive: boolean;
+    currentHighlightTarget: string | null;
+    scrollToElement: (elementId: string, delay?: number, offset?: number) => void;
+    setHighlightTarget: (targetId: string | null, duration?: number) => void;
+    clearHighlight: () => void;
+  };
 }
 
-export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: FabricSelectionContentProps) {
+export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, mobileGuidance }: FabricSelectionContentProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
 
   useEffect(() => {
     analytics.stepViewed(1, 'fabric_and_color');
   }, []);
-  
+
+  useEffect(() => {
+    if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
+      mobileGuidance.scrollToElement('color-selection', 400);
+      mobileGuidance.setHighlightTarget('color-selection', 5000);
+    }
+  }, [config.fabricType, config.fabricColor, mobileGuidance]);
+
+  useEffect(() => {
+    if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
+      mobileGuidance.scrollToElement('continue-button-fabric', 400);
+      mobileGuidance.setHighlightTarget('continue-button-fabric', 5000);
+    }
+  }, [config.fabricColor, mobileGuidance]);
+
   return (
     <div className="p-6">
       {/* Fabric Type Selection */}
@@ -233,7 +254,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
 
       {/* Color Selection */}
       {selectedFabric && (
-        <div className="mb-8">
+        <div className="mb-8" id="color-selection" data-guidance-id="color-selection">
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-lg font-semibold text-[#01312D]">
               Choose Color
@@ -389,10 +410,15 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         fabric_type: config.fabricType,
                         fabric_color: config.fabricColor,
                       });
+                      mobileGuidance?.clearHighlight();
                       onNext();
                     }}
                     size="md"
-                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    id="continue-button-fabric"
+                    data-guidance-id="continue-button-fabric"
+                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''} ${
+                      mobileGuidance?.currentHighlightTarget === 'continue-button-fabric' ? 'pulsate-guidance' : ''
+                    }`}
                   >
                     Continue to {nextStepTitle}
                   </Button>

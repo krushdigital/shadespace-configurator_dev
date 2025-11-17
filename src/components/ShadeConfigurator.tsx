@@ -11,6 +11,7 @@ import { DimensionsContent } from './steps/DimensionsContent';
 import { FixingPointsContent } from './steps/FixingPointsContent';
 import { ReviewContent } from './steps/ReviewContent';
 import { useShadeCalculations } from '../hooks/useShadeCalculations';
+import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
@@ -103,6 +104,12 @@ export function ShadeConfigurator() {
   const canvasRef = useRef<any>(null);
 
   const calculations = useShadeCalculations(config);
+
+  // Mobile guidance hook
+  const mobileGuidance = useMobileGuidance({
+    isMobile,
+    currentStep: openStep,
+  });
 
   // Mobile detection effect
   useEffect(() => {
@@ -1507,6 +1514,7 @@ export function ShadeConfigurator() {
                     dismissTypoSuggestion={dismissTypoSuggestion}
                     setConfig={setConfig}
                     setOpenStep={setOpenStep}
+                    mobileGuidance={mobileGuidance}
                     // Pricing and order props for ReviewContent
                     isGeneratingPDF={isGeneratingPDF}
                     handleGeneratePDF={handleGeneratePDF}

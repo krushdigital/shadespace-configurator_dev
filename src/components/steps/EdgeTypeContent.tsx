@@ -14,6 +14,13 @@ interface EdgeTypeContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    isGuidanceActive: boolean;
+    currentHighlightTarget: string | null;
+    scrollToElement: (elementId: string, delay?: number, offset?: number) => void;
+    setHighlightTarget: (targetId: string | null, duration?: number) => void;
+    clearHighlight: () => void;
+  };
 }
 
 const EDGE_OPTIONS = [
@@ -33,7 +40,14 @@ const EDGE_OPTIONS = [
   }
 ];
 
-export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote }: EdgeTypeContentProps) {
+export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
+  React.useEffect(() => {
+    if (mobileGuidance?.isGuidanceActive && config.edgeType) {
+      mobileGuidance.scrollToElement('continue-button-edge', 400);
+      mobileGuidance.setHighlightTarget('continue-button-edge', 5000);
+    }
+  }, [config.edgeType, mobileGuidance]);
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -125,9 +139,16 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             )}
           </div>
           <Button
-            onClick={onNext}
+            onClick={() => {
+              mobileGuidance?.clearHighlight();
+              onNext();
+            }}
             size="md"
-            className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
+            id="continue-button-edge"
+            data-guidance-id="continue-button-edge"
+            className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''} ${
+              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'pulsate-guidance' : ''
+            }`}
           >
             Continue to {nextStepTitle}
           </Button>
@@ -152,8 +173,12 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             />
           )}
           <Button
-            onClick={onNext}
+            onClick={() => {
+              mobileGuidance?.clearHighlight();
+              onNext();
+            }}
             size="md"
+            id="continue-button-edge-desktop"
             className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''}`}
           >
             Continue to {nextStepTitle}
