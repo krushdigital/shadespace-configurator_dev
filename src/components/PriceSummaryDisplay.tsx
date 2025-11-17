@@ -45,40 +45,40 @@ export function PriceSummaryDisplay({
     <div className="bg-white border border-slate-200 rounded-xl shadow-lg p-6">
       {calculations.totalPrice > 0 ? (
         <>
-          <div className="mb-6">
-            <h3 className="text-xl font-bold text-[#01312D] mb-3">
+          <div className="mb-6 lg:mb-6 bg-gradient-to-br lg:bg-none from-[#307C31] to-[#1a4a1d] lg:from-transparent lg:to-transparent rounded-xl lg:rounded-none p-5 lg:p-0 shadow-lg lg:shadow-none">
+            <h3 className="text-xl font-bold text-white lg:text-[#01312D] mb-3">
               All-Inclusive Price to Your Door
             </h3>
-            <div className="text-3xl font-bold text-[#01312D] mb-2 whitespace-nowrap">
+            <div className="text-3xl font-bold text-white lg:text-[#01312D] mb-4 whitespace-nowrap">
               {formatCurrency(calculations.totalPrice, config.currency)}
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-[#307C31] font-medium">
+            <div className="space-y-2">
+              <p className="text-sm text-white lg:text-[#307C31] font-medium">
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#307C31] hover:underline"
+                  className="text-white lg:text-[#307C31] hover:underline"
                 >
                   ✓ Express freight to your door included
                 </a>
               </p>
-              <p className="text-sm text-[#307C31] font-medium">
+              <p className="text-sm text-white lg:text-[#307C31] font-medium">
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#307C31] hover:underline"
+                  className="text-white lg:text-[#307C31] hover:underline"
                 >
                   ✓ All taxes & duties included
                 </a>
               </p>
-              <p className="text-sm text-[#307C31] font-medium">
+              <p className="text-sm text-white lg:text-[#307C31] font-medium">
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#307C31] hover:underline"
+                  className="text-white lg:text-[#307C31] hover:underline"
                 >
                   ✓ No hidden costs or tariffs
                 </a>
@@ -97,8 +97,8 @@ export function PriceSummaryDisplay({
                         <div>
                           <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Pack Included</h4>
                           {config.corners > 0 && HARDWARE_PACK_IMAGES[config.corners] && (
-                            <img 
-                              src={HARDWARE_PACK_IMAGES[config.corners]} 
+                            <img
+                              src={HARDWARE_PACK_IMAGES[config.corners]}
                               alt={`${config.corners} Corner Hardware Pack`}
                               className="w-full h-auto object-cover rounded-lg mb-3"
                             />
@@ -107,9 +107,9 @@ export function PriceSummaryDisplay({
                             Included stainless steel hardware kit included with your sail.
                           </p>
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
-                            <a 
-                              href="https://shadespace.com/pages/hardware" 
-                              target="_blank" 
+                            <a
+                              href="https://shadespace.com/pages/hardware"
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
                             >
@@ -133,7 +133,7 @@ export function PriceSummaryDisplay({
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-4 mt-6">
+            <div className="hidden lg:block bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-4 mt-6">
               <div className="text-sm font-bold text-[#01312D] mb-2">
                 Premium Quality Guarantee
               </div>
