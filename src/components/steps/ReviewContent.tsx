@@ -11,6 +11,7 @@ import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { SaveProgressButton } from '../SaveProgressButton';
+import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
 
 interface ReviewContentProps {
   config: ConfiguratorState;
@@ -18,7 +19,7 @@ interface ReviewContentProps {
   calculations: ShadeCalculations;
   validationErrors?: { [key: string]: string };
   onNext?: () => void;
-  onPrev: () => void;
+  onPrev: (options?: { navigateToHeights?: boolean }) => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
   // Pricing and order props (lifted from local state)
@@ -81,7 +82,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
   const [buttonShake, setButtonShake] = useState(false);
-  const diagonalCardRef = useRef<HTMLDivElement>(null);
+  const checklistRef = useRef<ConfigurationChecklistRef>(null);
   const acknowledgementsCardRef = useRef<HTMLDivElement>(null);
   const addToCartButtonRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
@@ -338,7 +339,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
         // Identify which section needs attention
         if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-          targetElement = diagonalCardRef.current;
+          // Expand the diagonal section programmatically
+          checklistRef.current?.expandDiagonals();
+          targetElement = checklistRef.current?.getDiagonalSectionElement() || null;
         } else if (!allAcknowledgmentsChecked) {
           targetElement = acknowledgementsCardRef.current;
         }
@@ -357,13 +360,17 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             behavior: 'smooth'
           });
 
-          // Apply pulse animation after scroll completes
-          setTimeout(() => {
-            targetElement?.classList.add('pulse-error');
+          // For acknowledgments, apply pulse animation after scroll completes
+          if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
+            // Diagonal section handles its own highlighting via the ref
+          } else if (!allAcknowledgmentsChecked) {
             setTimeout(() => {
-              targetElement?.classList.remove('pulse-error');
-            }, 2400);
-          }, 600);
+              targetElement?.classList.add('pulse-error');
+              setTimeout(() => {
+                targetElement?.classList.remove('pulse-error');
+              }, 2400);
+            }, 600);
+          }
         }
       }, 50);
 
@@ -542,6 +549,23 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   return (
     <div className="p-6">
       <div className="space-y-6">
+        {/* Configuration Checklist */}
+        <ConfigurationChecklist
+          ref={checklistRef}
+          config={config}
+          updateConfig={updateConfig}
+          hasAllEdgeMeasurements={hasAllEdgeMeasurements}
+          allDiagonalsEntered={allDiagonalsEntered}
+          shouldShowDiagonalInputSection={shouldShowDiagonalInputSection}
+          diagonalMeasurements={diagonalMeasurements}
+          onNavigateToDimensions={() => onPrev({ navigateToHeights: true })}
+          highlightedMeasurement={highlightedMeasurement}
+          setHighlightedMeasurement={setHighlightedMeasurement}
+          updateMeasurement={updateMeasurement}
+          geometryValidation={geometryValidation}
+          friendlyErrors={friendlyErrors}
+          isMobile={isMobile}
+        />
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
@@ -743,59 +767,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </Card>
             )}
 
-            {/* Geometric Validation Warning - Only show for significant issues */}
-            {!geometryValidation.isValid && calculations.area === 0 && hasAllEdgeMeasurements && allDiagonalsEntered && geometryValidation.errors.length > 0 && config.corners > 3 && (
-              <Card className="p-4 mb-4 border-2 border-blue-300 bg-blue-50">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 mt-1">
-                    <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-lg font-semibold text-blue-900 mb-2">
-                      Measurement Review
-                    </h4>
-                    <p className="text-sm text-blue-800 mb-3">
-                      We've detected some measurements that may need a quick review. This could be due to measurement precision or a simple typo:
-                    </p>
-                    <div className="space-y-2 mb-4">
-                      {friendlyErrors.slice(0, 3).map((error, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <span className="text-blue-600 font-bold">•</span>
-                          <p className="text-sm text-blue-800">{error}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-3 p-3 bg-blue-100 border border-blue-200 rounded">
-                      <p className="text-sm text-blue-900">
-                        <strong>Tip:</strong> Double-check your measurements, especially diagonals. Small differences in measurement can trigger this notice.
-                      </p>
-                    </div>
-
-                    {/* Reassurance Section */}
-                    <div className="mt-4 p-4 bg-emerald-50 border-2 border-emerald-300 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-emerald-900 font-semibold mb-1">
-                            You can still complete your order!
-                          </p>
-                          <p className="text-sm text-emerald-800">
-                            Our team will verify all measurements before manufacturing. We'll contact you if any adjustments are needed to ensure your shade sail fits perfectly.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
 
             {/* Precise Measurements Summary */}
             <div>
@@ -979,26 +950,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </div>
             )}
 
-            {/* Note when heights are not provided - only show for 'adjust' measurement option */}
-            {config.corners !== 3 && config.measurementOption === 'adjust' && !config.heightsProvidedByUser && (
-              <Card className="p-4 mb-4 bg-blue-50 border-blue-200">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 mt-0.5">
-                    <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-900`}>
-                      <strong>Height and Anchor Point Information Not Provided</strong>
-                    </p>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-800 mt-1`}>
-                      Your shade sail will be manufactured using our standard process. For a more customized fit based on your specific installation heights, you can go back to the Dimensions step and add this information.
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            )}
           </div>
 
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
@@ -1024,81 +975,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </div>
             </div>
 
-            {/* Diagonal Measurements */}
-            {shouldShowDiagonalInputSection && (
-              <Card
-                ref={diagonalCardRef}
-                className={`p-6 border-2 transition-all duration-300 ${allDiagonalsEntered
-                  ? 'border-emerald-500 bg-emerald-50'
-                  : showValidationFeedback && !allDiagonalsEntered
-                    ? 'border-blue-600 bg-blue-50 ring-4 ring-blue-300 shadow-xl'
-                    : 'border-blue-400 bg-blue-50/50 shadow-md'
-                  }`}>
-                <div className="mb-4">
-                  <h4 className={`text-lg font-semibold mb-2 ${allDiagonalsEntered ? 'text-emerald-700' : 'text-blue-900'
-                    }`}>
-                    {allDiagonalsEntered
-                      ? 'Diagonal Measurements Complete ✓'
-                      : 'Almost There! Add Diagonal Measurements to Complete Order'
-                    }
-                  </h4>
-                  <p className={`text-sm font-medium ${allDiagonalsEntered ? 'text-emerald-700' : 'text-blue-800'
-                    }`}>
-                    {allDiagonalsEntered
-                      ? 'All diagonal measurements have been entered. You can modify them below if needed.'
-                      : 'To ensure manufacturing accuracy, we need diagonal measurements. Enter all measurements below to unlock checkout.'
-                    }
-                  </p>
-                  {!allDiagonalsEntered && (
-                    <div className="mt-3 p-3 bg-blue-100 border border-blue-300 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <svg className="w-5 h-5 text-blue-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p className="text-sm text-blue-900">
-                          {showValidationFeedback
-                            ? '⚠ Please fill in all diagonal measurements above before adding to cart.'
-                            : 'Why diagonals? They help our team create your exact shape with precision. This final step ensures your shade sail fits perfectly.'}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {diagonalMeasurements.map((diagonal) => (
-                    <div key={diagonal.key}>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        {diagonal.label}
-                      </label>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          value={config.measurements[diagonal.key]
-                            ? Math.round(convertMmToUnit(config.measurements[diagonal.key], config.unit))
-                            : ''}
-                          onChange={(e) => updateMeasurement(diagonal.key, e.target.value)}
-                          onFocus={() => setHighlightedMeasurement(diagonal.key)}
-                          onBlur={() => setHighlightedMeasurement(null)}
-                          placeholder={config.unit === 'imperial' ? '240' : '6000'}
-                          min="100"
-                          step={config.unit === 'imperial' ? '1' : '10'}
-                          className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
-                            ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
-                            : 'border-blue-300 bg-blue-50/30 focus:border-blue-500 focus:ring-blue-500'
-                            }`}
-                          isSuccess={diagonal.hasValue}
-                        />
-                        <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-slate-500 transition-all duration-200`}>
-                          {config.unit === 'metric' ? 'mm' : 'in'}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-              </Card>
-            )}
           </div>
         </div>
 
@@ -1200,22 +1076,46 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 I understand structural adequacy of fixing points is my responsibility.
               </span>
             </div>
-          </div>
 
-          {/* Quality Assurance Note */}
-          <div className={`${isMobile ? 'mt-4 p-3' : 'mt-6 p-4'} bg-blue-50 border border-blue-200 rounded-lg`}>
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-0.5">
-                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
+            {/* Conditional Height Disclaimer - Only show if heights not provided AND measurementOption is 'adjust' */}
+            {config.corners !== 3 && config.measurementOption === 'adjust' && !config.heightsProvidedByUser && (
+              <div className={`flex items-start gap-3 ${isMobile ? 'p-1' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
+                <input
+                  type="checkbox"
+                  className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
+                  checked={true}
+                  readOnly
+                  disabled
+                />
+                <div className="flex-1">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-slate-700">
+                      I understand height information was not provided and manufacturing will use standard process.
+                    </span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-slate-600">Not required - standard manufacturing process will be used</span>
+                      <div className="flex items-center gap-1">
+                        <Tooltip content="Providing anchor point heights allows for more precise manufacturing customized to your installation. Standard manufacturing will be used if heights are not provided.">
+                          <button className="text-blue-600 hover:text-blue-800">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </Tooltip>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onPrev({ navigateToHeights: true })}
+                          className="text-xs py-1 px-3 border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap"
+                        >
+                          Add Heights →
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-blue-900 font-medium`}>
-                  <strong>Note:</strong> We will check all measurements thoroughly. If we have any concerns with your order measurements, one of our team members will be in touch to confirm, if needed.
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
           {showValidationFeedback && !allAcknowledgmentsChecked && (
@@ -1227,6 +1127,16 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           )}
         </Card>
 
+        {/* Quality Assurance Note - Moved outside acknowledgments card */}
+        <div className={`${isMobile ? 'mt-2 px-1' : 'mt-3 px-2'}`}>
+          <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-slate-600`}>
+            <svg className="w-4 h-4 inline-block mr-1 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            Our team will verify all measurements before manufacturing and contact you if adjustments are needed.
+          </p>
+        </div>
+
         {/* Mobile Action Buttons - Save Quote, PDF and Email (positioned after acknowledgments) */}
         {isMobile && allDiagonalsEntered && (
           <div className="space-y-3 lg:hidden">
@@ -1237,27 +1147,27 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               />
             )}
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGeneratePDFWithSVG}
-              disabled={isGeneratingPDF}
-              fullWidth
-              className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
-            >
-              {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
-            </Button>
-
             {!showEmailInput ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleEmailSummary}
-                fullWidth
-                className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
-              >
-                Email Summary
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGeneratePDFWithSVG}
+                  disabled={isGeneratingPDF}
+                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white text-xs px-2 py-2"
+                >
+                  {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEmailSummary}
+                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white text-xs px-2 py-2"
+                >
+                  Email Summary
+                </Button>
+              </div>
             ) : (
               <div className="space-y-2">
                 <Input

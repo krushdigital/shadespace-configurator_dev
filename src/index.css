@@ -70,8 +70,23 @@ html {
   }
 }
 
+@keyframes pulse-highlight {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(48, 124, 49, 0);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(48, 124, 49, 0.3);
+    transform: scale(1.005);
+  }
+}
+
 .pulse-error {
   animation: pulse-error 0.8s ease-in-out 3;
+}
+
+.pulse-highlight {
+  animation: pulse-highlight 0.8s ease-in-out 2.5;
 }
 
 .pulse-error.border-amber-500,
@@ -262,6 +277,24 @@ html {
   animation: pulsate-ring 2s ease-in-out infinite;
 }
 
+/* Mobile guidance pulsating highlight animation */
+@keyframes pulsate-guidance {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(191, 241, 2, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(191, 241, 2, 0);
+    transform: scale(1.02);
+  }
+}
+
+.pulsate-guidance {
+  animation: pulsate-guidance 1.5s ease-in-out infinite;
+  position: relative;
+  z-index: 10;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .corner-pulse,
@@ -283,6 +316,14 @@ html {
   .animate-slide-in-left,
   .animate-pulsate-point,
   .animate-pulsate-ring {
+    animation: none;
+  }
+
+  .pulse-highlight {
+    animation: none;
+  }
+
+  .pulsate-guidance {
     animation: none;
   }
 }

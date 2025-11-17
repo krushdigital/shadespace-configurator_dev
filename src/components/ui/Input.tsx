@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Check, AlertCircle } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -10,7 +10,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   secondaryValue?: string;
 }
 
-export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTypo = false, secondaryValue, className = '', ...props }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, errorKey, isSuccess = false, isSuggestedTypo = false, secondaryValue, className = '', ...props }, ref) => {
   // Prevent scroll wheel from changing number input values
   const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
     if (props.type === 'number') {
@@ -28,11 +28,6 @@ export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTy
               ({secondaryValue})
             </span>
           )}
-          {isSuccess && (
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-500 text-white">
-              <Check className="w-3 h-3" strokeWidth={3} />
-            </span>
-          )}
           {error && (
             <span className="inline-flex items-center justify-center w-4 h-4 text-red-500">
               <AlertCircle className="w-4 h-4" strokeWidth={2} />
@@ -47,6 +42,7 @@ export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTy
       )}
       <div className="relative">
         <input
+          ref={ref}
           className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 transition-all duration-200 text-[#01312D] shadow-sm hover:shadow-md ${
             props.type === 'number' ? 'no-spin-arrows ' : ''
           }${
@@ -75,4 +71,4 @@ export function Input({ label, error, errorKey, isSuccess = false, isSuggestedTy
       )}
     </div>
   );
-}
+});

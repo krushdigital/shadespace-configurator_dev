@@ -27,9 +27,43 @@ interface CombinedMeasurementContentProps {
   showBackButton?: boolean;
   isMobile?: boolean;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    isGuidanceActive: boolean;
+    currentHighlightTarget: string | null;
+    scrollToElement: (elementId: string, delay?: number, offset?: number) => void;
+    setHighlightTarget: (targetId: string | null, duration?: number) => void;
+    clearHighlight: () => void;
+  };
 }
 
-export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote }: CombinedMeasurementContentProps) {
+export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote, mobileGuidance }: CombinedMeasurementContentProps) {
+  React.useEffect(() => {
+    console.log('[CombinedMeasurement] Unit effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      unit: config.unit,
+      measurementOption: config.measurementOption
+    });
+
+    if (mobileGuidance?.isGuidanceActive && config.unit && !config.measurementOption) {
+      console.log('[CombinedMeasurement] Auto-scrolling to measurement option section');
+      mobileGuidance.scrollToElement('measurement-option-section', 400, 100);
+      mobileGuidance.setHighlightTarget('measurement-option-section', 5000);
+    }
+  }, [config.unit, config.measurementOption, mobileGuidance?.isGuidanceActive]);
+
+  React.useEffect(() => {
+    console.log('[CombinedMeasurement] Measurement option effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      unit: config.unit,
+      measurementOption: config.measurementOption
+    });
+
+    if (mobileGuidance?.isGuidanceActive && config.unit && config.measurementOption) {
+      console.log('[CombinedMeasurement] Auto-scrolling to continue button');
+      mobileGuidance.scrollToElement('continue-button-measurement', 400, 100);
+      mobileGuidance.setHighlightTarget('continue-button-measurement', 5000);
+    }
+  }, [config.unit, config.measurementOption, mobileGuidance?.isGuidanceActive]);
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
     const updates: Partial<ConfiguratorState> = { measurementOption: option };
 
@@ -96,7 +130,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
       </div>
 
       {/* Measurement Option Selection with Interactive Visualizer */}
-      <div className="mb-6 sm:mb-8">
+      <div className="mb-6 sm:mb-8" id="measurement-option-section" data-guidance-id="measurement-option-section">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How would you like your shade sail to be manufactured?
         </h4>
@@ -396,9 +430,16 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             )}
           </div>
           <Button
-            onClick={onNext}
+            onClick={() => {
+              mobileGuidance?.clearHighlight();
+              onNext();
+            }}
             size="md"
-            className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+            id="continue-button-measurement"
+            data-guidance-id="continue-button-measurement"
+            className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''} ${
+              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'pulsate-guidance' : ''
+            }`}
           >
             Continue to {nextStepTitle}
           </Button>
@@ -423,7 +464,10 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             />
           )}
           <Button
-            onClick={onNext}
+            onClick={() => {
+              mobileGuidance?.clearHighlight();
+              onNext();
+            }}
             size="md"
             className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
           >

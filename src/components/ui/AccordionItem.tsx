@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 
 interface AccordionItemProps {
@@ -10,17 +10,8 @@ interface AccordionItemProps {
 
 export function AccordionItem({ trigger, children, defaultOpen = false, onOpenChange }: AccordionItemProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const [previewText, setPreviewText] = useState('');
   const contentRef = useRef<HTMLDivElement>(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-
-  useEffect(() => {
-    if (contentRef.current && !isOpen && isMobile) {
-      const textContent = contentRef.current.textContent || '';
-      const preview = textContent.slice(0, 120).trim() + (textContent.length > 120 ? '...' : '');
-      setPreviewText(preview);
-    }
-  }, [isOpen, isMobile]);
 
   const handleToggle = () => {
     const newState = !isOpen;
@@ -43,20 +34,6 @@ export function AccordionItem({ trigger, children, defaultOpen = false, onOpenCh
           }`}
         />
       </button>
-
-      {isMobile && !isOpen && previewText && (
-        <div className="px-2 py-2 relative">
-          <p className="text-xs text-slate-500 leading-relaxed">
-            {previewText}
-          </p>
-          <div
-            className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none"
-            style={{
-              background: 'linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.9) 60%, rgba(255, 255, 255, 1) 100%)'
-            }}
-          />
-        </div>
-      )}
 
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden ${

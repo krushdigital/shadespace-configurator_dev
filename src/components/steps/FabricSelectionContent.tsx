@@ -18,16 +18,51 @@ interface FabricSelectionContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    isGuidanceActive: boolean;
+    currentHighlightTarget: string | null;
+    scrollToElement: (elementId: string, delay?: number, offset?: number) => void;
+    setHighlightTarget: (targetId: string | null, duration?: number) => void;
+    clearHighlight: () => void;
+  };
 }
 
-export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {} }: FabricSelectionContentProps) {
+export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, mobileGuidance }: FabricSelectionContentProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
 
   useEffect(() => {
     analytics.stepViewed(1, 'fabric_and_color');
   }, []);
-  
+
+  useEffect(() => {
+    console.log('[FabricSelection] Fabric type effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      fabricType: config.fabricType,
+      fabricColor: config.fabricColor
+    });
+
+    if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
+      console.log('[FabricSelection] Auto-scrolling to color section');
+      mobileGuidance.scrollToElement('color-selection', 400, 100);
+      mobileGuidance.setHighlightTarget('color-selection', 5000);
+    }
+  }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
+
+  useEffect(() => {
+    console.log('[FabricSelection] Color effect triggered', {
+      isGuidanceActive: mobileGuidance?.isGuidanceActive,
+      fabricType: config.fabricType,
+      fabricColor: config.fabricColor
+    });
+
+    if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
+      console.log('[FabricSelection] Auto-scrolling to continue button');
+      mobileGuidance.scrollToElement('continue-button-fabric', 400, 100);
+      mobileGuidance.setHighlightTarget('continue-button-fabric', 5000);
+    }
+  }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
+
   return (
     <div className="p-6">
       {/* Fabric Type Selection */}
@@ -50,7 +85,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
             return (
               <Card
                 key={fabric.id}
-                className={`relative p-4 cursor-pointer transition-all duration-300 ${
+                className={`relative p-3 md:p-4 cursor-pointer transition-all duration-300 ${
                   isSelected
                     ? '!border-2 !border-[#01312D] !ring-2 !ring-[#01312D] shadow-xl transform scale-105'
                     : hasError
@@ -97,6 +132,25 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                             <h4 className="font-bold text-[#01312D] mb-2">
                               {fabric.label}
                             </h4>
+                            <div className="grid grid-cols-2 gap-3 mb-3 p-3 bg-[#F3FFE3] rounded-lg">
+                              <div>
+                                <div className="text-xs text-[#01312D]/60 mb-1">Weight</div>
+                                <div className="font-semibold text-[#01312D]">{fabric.weightPerSqm} g/m²</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-[#01312D]/60 mb-1">Warranty</div>
+                                <div className="font-semibold text-[#01312D]">
+                                  <a
+                                    href="https://shadespace.com/pages/warranty"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline"
+                                  >
+                                    {fabric.warrantyYears} Years
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
                             <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
                               {fabric.detailedDescription}
                             </p>
@@ -152,7 +206,6 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       </span>
                     </Tooltip>
                   </div>
-                  {/* Price tier badge - moved under title */}
                   <div className="mb-2">
                     {fabric.id === 'monotec370' && (
                       <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
@@ -170,10 +223,10 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-[#01312D]/70 mb-3">
+                  <p className="text-sm md:text-sm text-[#01312D]/70 mb-2 md:mb-3 line-clamp-2 md:line-clamp-none">
                     {fabric.description}
                   </p>
-                  <div className={`rounded-lg p-3 transition-all duration-300 ${
+                  <div className={`hidden md:block rounded-lg p-3 transition-all duration-300 ${
                     isSelected
                      ? 'bg-gradient-to-r from-[#01312D] to-[#307C31]'
                      : 'bg-[#F3FFE3]'
@@ -215,7 +268,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
 
       {/* Color Selection */}
       {selectedFabric && (
-        <div className="mb-8">
+        <div className="mb-8" id="color-selection" data-guidance-id="color-selection">
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-lg font-semibold text-[#01312D]">
               Choose Color
@@ -371,10 +424,15 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         fabric_type: config.fabricType,
                         fabric_color: config.fabricColor,
                       });
+                      mobileGuidance?.clearHighlight();
                       onNext();
                     }}
                     size="md"
-                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    id="continue-button-fabric"
+                    data-guidance-id="continue-button-fabric"
+                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''} ${
+                      mobileGuidance?.currentHighlightTarget === 'continue-button-fabric' ? 'pulsate-guidance' : ''
+                    }`}
                   >
                     Continue to {nextStepTitle}
                   </Button>

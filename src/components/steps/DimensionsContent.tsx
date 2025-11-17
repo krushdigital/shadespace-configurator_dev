@@ -38,6 +38,8 @@ interface DimensionsContentProps {
   onSaveQuote?: () => void;
   highlightedCorner?: number | null;
   setHighlightedCorner?: (corner: number | null) => void;
+  navigateToHeights?: boolean;
+  setNavigateToHeights?: (value: boolean) => void;
 }
 
 export function DimensionsContent({
@@ -66,9 +68,12 @@ export function DimensionsContent({
   highlightedMeasurement = null,
   onSaveQuote = () => {},
   highlightedCorner = null,
-  setHighlightedCorner = () => {}
+  setHighlightedCorner = () => {},
+  navigateToHeights = false,
+  setNavigateToHeights = () => {}
 }: DimensionsContentProps) {
   const [showHeightsSection, setShowHeightsSection] = useState(false);
+  const heightsSectionRef = React.useRef<HTMLDivElement>(null);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -173,6 +178,41 @@ export function DimensionsContent({
   };
 
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
+
+  // Handle navigation to heights section
+  React.useEffect(() => {
+    if (navigateToHeights && heightsSectionRef.current) {
+      // Expand the heights section
+      setShowHeightsSection(true);
+
+      // Wait for accordion expansion animation to complete
+      setTimeout(() => {
+        if (heightsSectionRef.current) {
+          const isMobileView = window.innerWidth < 1024;
+          const headerOffset = isMobileView ? 120 : 140;
+          const viewportOffset = window.innerHeight * 0.1; // 10% from top
+
+          const elementPosition = heightsSectionRef.current.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
+
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+          });
+
+          // Add pulse animation
+          setTimeout(() => {
+            heightsSectionRef.current?.classList.add('pulse-highlight');
+            setTimeout(() => {
+              heightsSectionRef.current?.classList.remove('pulse-highlight');
+              // Clear the navigation flag
+              setNavigateToHeights(false);
+            }, 2000);
+          }, 600);
+        }
+      }, 350); // Match accordion animation duration
+    }
+  }, [navigateToHeights, setNavigateToHeights]);
 
   return (
     <div className="px-6 pt-6 pb-6">
@@ -320,7 +360,7 @@ export function DimensionsContent({
                        min="100"
                       step={config.unit === 'imperial' ? '0.1' : '10'}
                       autoComplete="off"
-                       className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                       className={`text-base ${isSuccess ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
                        isSuccess={isSuccess}
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
@@ -330,7 +370,7 @@ export function DimensionsContent({
                         : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
                       secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
                      />
-                     <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
+                     <div className={`absolute ${isSuccess ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-[calc(50%+16px)] sm:top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
                      </div>
                    </div>
@@ -461,7 +501,7 @@ export function DimensionsContent({
                               min="100"
                              step={config.unit === 'imperial' ? '0.1' : '10'}
                              autoComplete="off"
-                              className={`text-base ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                              className={`text-base ${isSuccess ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
                               error={validationErrors[key]}
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
@@ -469,7 +509,7 @@ export function DimensionsContent({
                               label={label}
                               secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
                             />
-                            <div className={`absolute ${isSuccess ? 'right-11' : 'right-3'} top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200`}>
+                            <div className={`absolute ${isSuccess ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-[calc(50%+16px)] sm:top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
                               {config.unit === 'metric' ? 'mm' : 'in'}
                             </div>
                           </div>
@@ -540,7 +580,7 @@ export function DimensionsContent({
 
         {/* Optional Heights and Anchor Points Section - Only shown for "adjust" measurement option */}
         {config.corners !== 3 && config.measurementOption === 'adjust' && (
-          <div className="mt-6">
+          <div className="mt-6" ref={heightsSectionRef}>
             <Card
               className={`overflow-hidden transition-all duration-300 ${
                 showHeightsSection ? 'border-2 border-[#307C31]' : 'border border-slate-300'
@@ -548,24 +588,26 @@ export function DimensionsContent({
             >
               <button
                 onClick={() => setShowHeightsSection(!showHeightsSection)}
-                className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                className="w-full p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="flex-shrink-0 pt-1 sm:pt-0">
                     {showHeightsSection ? (
                       <ChevronUp className="w-5 h-5 text-[#307C31]" />
                     ) : (
                       <ChevronDown className="w-5 h-5 text-slate-600" />
                     )}
                   </div>
-                  <div className="text-left">
-                    <h5 className="text-base font-semibold text-[#01312D] flex items-center gap-2">
-                      Optional: Heights & Anchor Points for Custom Fit
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                        Optional
+                  <div className="text-left flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <h5 className="text-base font-semibold text-[#01312D]">
+                        Height Information (optional)
+                      </h5>
+                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium w-fit">
+                        Not required - standard manufacturing process will be used
                       </span>
-                    </h5>
-                    <p className="text-sm text-slate-600 mt-1">
+                    </div>
+                    <p className="text-sm text-slate-600 mt-2">
                       {showHeightsSection
                         ? 'Providing this information allows for more customized manufacturing'
                         : 'Click to add height and attachment information for a more customized fit'}
@@ -619,8 +661,9 @@ export function DimensionsContent({
                                   onBlur={() => setHighlightedCorner(null)}
                                   placeholder={config.unit === 'imperial' ? '100' : '2500'}
                                   autoComplete="off"
-                                  className="flex-1 py-2 pr-12"
+                                  className={`flex-1 py-2 ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
                                   step={config.unit === 'imperial' ? '0.1' : '10'}
+                                  isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
                                   label={
                                     <div className="flex items-center gap-2">
                                       <span className="text-xs font-medium text-[#01312D]">
@@ -646,7 +689,7 @@ export function DimensionsContent({
                                   }
                                   secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
                                 />
-                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50">
+                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-[calc(50%+16px)] sm:top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50 transition-all duration-200 pointer-events-none`}>
                                   {config.unit === 'metric' ? 'mm' : 'in'}
                                 </span>
                               </div>
