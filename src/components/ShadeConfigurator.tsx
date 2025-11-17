@@ -28,7 +28,6 @@ import { SaveProgressButton } from './SaveProgressButton';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
-import { detectDeviceWithHysteresis, debounce, logDeviceInfo } from '../utils/deviceDetection';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -112,34 +111,21 @@ export function ShadeConfigurator() {
     currentStep: openStep,
   });
 
-  // Mobile detection effect with enhanced device detection
+  // Mobile detection effect
   useEffect(() => {
     const checkIsMobile = () => {
-      const deviceInfo = detectDeviceWithHysteresis();
-      setIsMobile(deviceInfo.isMobile);
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Device check:', {
-          isMobile: deviceInfo.isMobile,
-          viewportWidth: deviceInfo.viewportWidth,
-          osName: deviceInfo.osName,
-          browserName: deviceInfo.browserName,
-          confidence: deviceInfo.confidence
-        });
-      }
+      setIsMobile(window.innerWidth < 1024);
     };
 
+    // Initial check
     checkIsMobile();
-    logDeviceInfo();
 
-    const debouncedCheck = debounce(checkIsMobile, 150);
+    // Add event listener for window resize
+    window.addEventListener('resize', checkIsMobile);
 
-    window.addEventListener('resize', debouncedCheck);
-    window.addEventListener('orientationchange', checkIsMobile);
-
+    // Cleanup function to remove event listener
     return () => {
-      window.removeEventListener('resize', debouncedCheck);
-      window.removeEventListener('orientationchange', checkIsMobile);
+      window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
 
@@ -1627,7 +1613,7 @@ export function ShadeConfigurator() {
       <MobilePricingBar
         totalPrice={calculations.totalPrice}
         currency={config.currency}
-        isVisible={hasQuote && (openStep === 4 || openStep === 6)}
+        isVisible={hasQuote && openStep === 4}
         quoteReference={quoteReference || undefined}
         onContinue={handleMobileContinue}
         onSaveQuote={handleSaveQuote}
