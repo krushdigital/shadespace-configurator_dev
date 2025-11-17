@@ -39,7 +39,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
 
     if (mobileGuidance?.isGuidanceActive && config.corners >= 3) {
       console.log('[Corners] Auto-scrolling to continue button');
-      mobileGuidance.scrollToElement('continue-button-corners', 400, 100);
+      mobileGuidance.scrollToElement('continue-button-corners', 400);
       mobileGuidance.setHighlightTarget('continue-button-corners', 5000);
     }
   }, [config.corners, mobileGuidance?.isGuidanceActive]);

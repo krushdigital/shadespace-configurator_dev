@@ -49,7 +49,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
 
     if (mobileGuidance?.isGuidanceActive && config.edgeType) {
       console.log('[EdgeType] Auto-scrolling to continue button');
-      mobileGuidance.scrollToElement('continue-button-edge', 400, 100);
+      mobileGuidance.scrollToElement('continue-button-edge', 400);
       mobileGuidance.setHighlightTarget('continue-button-edge', 5000);
     }
   }, [config.edgeType, mobileGuidance?.isGuidanceActive]);
