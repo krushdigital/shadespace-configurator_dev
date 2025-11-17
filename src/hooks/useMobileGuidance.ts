@@ -10,6 +10,12 @@ interface UseMobileGuidanceOptions {
   currentStep: number;
 }
 
+interface ScrollOptions {
+  delay?: number;
+  offset?: number;
+  alignToTop?: boolean;
+}
+
 export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOptions) {
   const [guidanceState, setGuidanceState] = useState<GuidanceState>({
     currentHighlightTarget: null,
@@ -29,10 +35,28 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
     }
   }, [isMobile]);
 
+  const isElementVisible = useCallback((element: HTMLElement, threshold: number = 0.7): boolean => {
+    const rect = element.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    const elementHeight = rect.height;
+    const visibleTop = Math.max(0, rect.top);
+    const visibleBottom = Math.min(viewportHeight, rect.bottom);
+    const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+
+    const visibilityRatio = visibleHeight / elementHeight;
+
+    const isInViewport = rect.top >= 0 && rect.bottom <= viewportHeight;
+    const isSufficientlyVisible = visibilityRatio >= threshold;
+
+    return isInViewport || isSufficientlyVisible;
+  }, []);
+
   const scrollToElement = useCallback((
     elementId: string,
     delay: number = 300,
-    offset: number = 120
+    offset: number = 120,
+    alignToTop: boolean = false
   ) => {
     if (!isMobile) return;
 
@@ -53,13 +77,29 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
         return;
       }
 
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      if (isElementVisible(element as HTMLElement)) {
+        console.log(`[Mobile Guidance] Element ${elementId} already visible, skipping scroll`);
+        return;
+      }
 
-      console.log(`[Mobile Guidance] Scrolling to ${elementId}, offset: ${offsetPosition}px`);
+      const rect = element.getBoundingClientRect();
+      const elementTop = rect.top + window.pageYOffset;
+      const elementHeight = rect.height;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+
+      let targetPosition;
+
+      if (alignToTop) {
+        targetPosition = elementTop - offset;
+        console.log(`[Mobile Guidance] Scrolling to top of ${elementId}, position: ${targetPosition}px`);
+      } else {
+        const centerOffset = (viewportHeight / 2) - (elementHeight / 2);
+        targetPosition = elementTop - centerOffset;
+        console.log(`[Mobile Guidance] Scrolling to center ${elementId}, position: ${targetPosition}px`);
+      }
 
       window.scrollTo({
-        top: Math.max(0, offsetPosition),
+        top: Math.max(0, targetPosition),
         behavior: 'smooth'
       });
 
@@ -68,7 +108,7 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
         lastScrollTime: Date.now(),
       }));
     }, delay);
-  }, [isMobile, guidanceState.lastScrollTime]);
+  }, [isMobile, guidanceState.lastScrollTime, isElementVisible]);
 
   const setHighlightTarget = useCallback((
     targetId: string | null,

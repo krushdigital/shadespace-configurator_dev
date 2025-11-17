@@ -21,7 +21,7 @@ interface FabricSelectionContentProps {
   mobileGuidance?: {
     isGuidanceActive: boolean;
     currentHighlightTarget: string | null;
-    scrollToElement: (elementId: string, delay?: number, offset?: number) => void;
+    scrollToElement: (elementId: string, delay?: number, offset?: number, alignToTop?: boolean) => void;
     setHighlightTarget: (targetId: string | null, duration?: number) => void;
     clearHighlight: () => void;
   };
@@ -44,7 +44,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
 
     if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
       console.log('[FabricSelection] Auto-scrolling to color section');
-      mobileGuidance.scrollToElement('color-selection', 400, 100);
+      mobileGuidance.scrollToElement('color-selection', 400, 80, true);
       mobileGuidance.setHighlightTarget('color-selection', 5000);
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
@@ -58,7 +58,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
 
     if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
       console.log('[FabricSelection] Auto-scrolling to continue button');
-      mobileGuidance.scrollToElement('continue-button-fabric', 400, 100);
+      mobileGuidance.scrollToElement('continue-button-fabric', 400);
       mobileGuidance.setHighlightTarget('continue-button-fabric', 5000);
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
