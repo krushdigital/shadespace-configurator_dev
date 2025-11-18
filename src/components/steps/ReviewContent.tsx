@@ -129,7 +129,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     }
 
     // Only validate if all required measurements are present
-    if (!hasAllEdgeMeasurements || !allDiagonalsEntered) {
+    // For 3-corner shapes: only need edge measurements
+    // For 4+ corner shapes: need both edge AND diagonal measurements
+    if (!hasAllEdgeMeasurements) {
+      return { isValid: true, errors: [] };
+    }
+
+    // For shapes with 4+ corners, skip validation until diagonals are entered
+    if (config.corners >= 4 && !allDiagonalsEntered) {
       return { isValid: true, errors: [] };
     }
 
@@ -797,8 +804,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </Card>
             )}
 
-            {/* Invalid Measurement Warning - Show prominently when area is 0 with all measurements */}
-            {calculations.area === 0 && hasAllEdgeMeasurements && (
+            {/* Invalid Measurement Warning - Show prominently when area is 0 with all measurements AND diagonals are entered (or not required) */}
+            {calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered) && (
               <Card className="p-4 mb-4 border-2 border-red-500 bg-red-50">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 mt-1">

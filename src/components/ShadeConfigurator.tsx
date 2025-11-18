@@ -1644,7 +1644,7 @@ export function ShadeConfigurator() {
         onSaveQuote={handleSaveQuote}
         isLocked={isBarLocked}
         isNewQuote={isNewQuote}
-        hasInvalidMeasurements={calculations.area === 0 && hasAllEdgeMeasurements}
+        hasInvalidMeasurements={calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered)}
         area={calculations.area}
       />
 
