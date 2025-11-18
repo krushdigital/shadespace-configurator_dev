@@ -11,6 +11,8 @@ interface MobilePricingBarProps {
   onSaveQuote?: () => void;
   isLocked?: boolean;
   isNewQuote?: boolean;
+  hasInvalidMeasurements?: boolean;
+  area?: number;
 }
 
 export function MobilePricingBar({
@@ -22,6 +24,8 @@ export function MobilePricingBar({
   onSaveQuote,
   isLocked = false,
   isNewQuote = false,
+  hasInvalidMeasurements = false,
+  area = 0,
 }: MobilePricingBarProps) {
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -75,11 +79,11 @@ export function MobilePricingBar({
                   </span>
                 )}
               </div>
-              <div className="text-lg font-bold text-[#01312D]">
-                {formatCurrency(totalPrice, currency)}
+              <div className={`text-lg font-bold ${hasInvalidMeasurements ? 'text-red-600' : 'text-[#01312D]'}`}>
+                {hasInvalidMeasurements ? 'Cannot Calculate' : formatCurrency(totalPrice, currency)}
               </div>
-              <div className="text-xs text-[#307C31] font-medium">
-                Includes express freight, taxes & duties
+              <div className={`text-xs font-medium ${hasInvalidMeasurements ? 'text-red-600' : 'text-[#307C31]'}`}>
+                {hasInvalidMeasurements ? 'Invalid measurements - see error above' : 'Includes express freight, taxes & duties'}
               </div>
             </div>
 

@@ -645,8 +645,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Area:</span>
-                      <span className="font-medium text-slate-900">
-                        {formatArea(calculations.area * 1000000, config.unit)}
+                      <span className={`font-medium ${
+                        calculations.area === 0 && hasAllEdgeMeasurements
+                          ? 'text-red-600 font-bold'
+                          : 'text-slate-900'
+                      }`}>
+                        {calculations.area === 0 && hasAllEdgeMeasurements
+                          ? 'Error in measurements'
+                          : formatArea(calculations.area * 1000000, config.unit)
+                        }
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -736,8 +743,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Area:</span>
-                  <span className="font-medium text-slate-900">
-                    {formatArea(calculations.area * 1000000, config.unit)}
+                  <span className={`font-medium ${
+                    calculations.area === 0 && hasAllEdgeMeasurements
+                      ? 'text-red-600 font-bold'
+                      : 'text-slate-900'
+                  }`}>
+                    {calculations.area === 0 && hasAllEdgeMeasurements
+                      ? 'Error - See Below'
+                      : formatArea(calculations.area * 1000000, config.unit)
+                    }
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -783,8 +797,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </Card>
             )}
 
-            {/* Invalid Triangle Warning - Show prominently when area is 0 for 3-corner shade */}
-            {config.corners === 3 && calculations.area === 0 && hasAllEdgeMeasurements && (
+            {/* Invalid Measurement Warning - Show prominently when area is 0 with all measurements */}
+            {calculations.area === 0 && hasAllEdgeMeasurements && (
               <Card className="p-4 mb-4 border-2 border-red-500 bg-red-50">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 mt-1">
@@ -794,16 +808,17 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </div>
                   <div className="flex-1">
                     <h4 className="text-lg font-semibold text-red-900 mb-2">
-                      Invalid Triangle Measurements
+                      {config.corners === 3 ? 'Invalid Triangle Measurements' : 'Invalid Shape Measurements'}
                     </h4>
                     <p className="text-sm text-red-800 mb-3">
-                      The measurements you've entered cannot form a valid triangle. This is why the area shows 0.00 m².
+                      The measurements you've entered cannot form a valid {config.corners === 3 ? 'triangle' : 'shape'}. This is why the area cannot be calculated.
                     </p>
-                    <div className="p-3 bg-red-100 border border-red-300 rounded mb-3">
-                      <p className="text-sm text-red-900 font-medium mb-2">
-                        <strong>Triangle Rule:</strong> The sum of any two sides must be greater than the third side.
-                      </p>
-                      <div className="text-xs text-red-800 space-y-1 mt-2">
+                    {config.corners === 3 ? (
+                      <div className="p-3 bg-red-100 border border-red-300 rounded mb-3">
+                        <p className="text-sm text-red-900 font-medium mb-2">
+                          <strong>Triangle Rule:</strong> The sum of any two sides must be greater than the third side.
+                        </p>
+                        <div className="text-xs text-red-800 space-y-1 mt-2">
                         {(() => {
                           const AB = config.measurements['AB'] || 0;
                           const BC = config.measurements['BC'] || 0;
@@ -825,8 +840,18 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                             </div>
                           ));
                         })()}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="p-3 bg-red-100 border border-red-300 rounded mb-3">
+                        <p className="text-sm text-red-900 font-medium mb-2">
+                          <strong>Geometry Issue:</strong> {config.corners === 4 ? 'Your diagonal measurements don\'t match your edge measurements.' : 'Your diagonal measurements are incompatible with your edge measurements.'}
+                        </p>
+                        <p className="text-xs text-red-800 mt-2">
+                          For a {config.corners}-corner shape, the diagonals must form valid triangles with the edges. The measurements you've entered create an impossible geometry.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded">
                       <p className="text-sm text-yellow-900 mb-2">
@@ -837,6 +862,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                         <li>Mixed units (e.g., entering some measurements in cm instead of mm)</li>
                         <li>Swapped or transposed numbers</li>
                         <li>Incorrect tape measure reading</li>
+                        {config.corners >= 4 && <li>Diagonals measured incorrectly or swapped</li>}
                       </ul>
                     </div>
 
@@ -852,7 +878,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                             What to do:
                           </p>
                           <p className="text-sm text-blue-800">
-                            Please go back and re-check your edge measurements. Make sure all measurements are in the same unit ({config.unit === 'metric' ? 'millimeters' : 'inches'}) and verify each measurement on-site before proceeding.
+                            Please go back and re-check your {config.corners === 3 ? 'edge' : 'edge and diagonal'} measurements. Make sure all measurements are in the same unit ({config.unit === 'metric' ? 'millimeters' : 'inches'}) and verify each measurement on-site before proceeding.
                           </p>
                         </div>
                       </div>
