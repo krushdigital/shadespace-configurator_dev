@@ -37,7 +37,7 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir: "dist",
+    outDir: "../public/shadespace/",
     emptyOutDir: true,
     sourcemap: false,
     minify: "terser",
@@ -49,11 +49,12 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          pdf: ['html2canvas', 'jspdf']
-        }
-      }
+        inlineDynamicImports: true,
+        manualChunks: undefined,
+        entryFileNames: "bundle.js",
+        chunkFileNames: "bundle.js",
+        assetFileNames: "bundle.[ext]",
+      },
     },
   },
   optimizeDeps: {
