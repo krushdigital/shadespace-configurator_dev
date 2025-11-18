@@ -85,6 +85,28 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
     (!shouldShowDiagonalInputSection || allDiagonalsEntered);
 
   if (allRequirementsMet && !showHeightOptional && !hasValidationIssues && !isEditingDiagonals) {
+    // Mobile: Slim success indicator
+    if (isMobile) {
+      return (
+        <div className="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <div>
+              <p className="text-sm font-semibold text-emerald-900">
+                Configuration Complete
+              </p>
+              <p className="text-xs text-emerald-700">
+                Review below and add to cart
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Desktop: Full card
     return (
       <Card className="p-4 mb-6 bg-emerald-50 border-2 border-emerald-500">
         <div className="flex items-center gap-3">
@@ -111,6 +133,108 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
     shouldShowDiagonalInputSection && !allDiagonalsEntered,
   ].filter(Boolean).length;
 
+  const completionPercentage = (() => {
+    const total = shouldShowDiagonalInputSection ? 2 : 1;
+    const completed = [hasAllEdgeMeasurements, !shouldShowDiagonalInputSection || allDiagonalsEntered].filter(Boolean).length;
+    return Math.round((completed / total) * 100);
+  })();
+
+  // Mobile: Compact progress bar design
+  if (isMobile) {
+    return (
+      <div className="mb-4 bg-white border-2 border-blue-300 rounded-lg overflow-hidden">
+        {/* Progress Bar */}
+        <div className="bg-blue-50 p-3 border-b border-blue-200">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-blue-900">
+              {remainingCount > 0 ? `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} remaining` : 'Complete'}
+            </p>
+            <span className="text-xs font-medium text-blue-700">{completionPercentage}%</span>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${completionPercentage}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Compact Checklist Items */}
+        <div className="p-3 space-y-2">
+          {/* Edge Measurements */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {hasAllEdgeMeasurements ? (
+                <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+              )}
+              <span className={`text-xs font-medium ${hasAllEdgeMeasurements ? 'text-emerald-900' : 'text-slate-900'}`}>
+                Edge measurements
+              </span>
+            </div>
+          </div>
+
+          {/* Diagonal Measurements - Mobile: No inline editing */}
+          {shouldShowDiagonalInputSection && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1">
+                {allDiagonalsEntered ? (
+                  <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                )}
+                <span className={`text-xs font-medium ${allDiagonalsEntered ? 'text-emerald-900' : 'text-slate-900'}`}>
+                  Diagonal measurements
+                </span>
+              </div>
+              {!allDiagonalsEntered && onNavigateToDimensions && (
+                <button
+                  onClick={onNavigateToDimensions}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                >
+                  Enter →
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Optional: Height Information */}
+          {showHeightOptional && (
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+              <div className="flex items-center gap-2 flex-1">
+                <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <span className="text-xs font-medium text-amber-900">Heights (optional)</span>
+                  <p className="text-xs text-amber-700">Standard process if not provided</p>
+                </div>
+              </div>
+              {onNavigateToDimensions && (
+                <button
+                  onClick={onNavigateToDimensions}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                >
+                  Add →
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop: Full card with inline editing
   return (
     <Card className="p-4 sm:p-6 mb-6 bg-blue-50 border-2 border-blue-300">
       <div className="flex items-start gap-3 mb-4">
@@ -153,7 +277,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
           </div>
         </div>
 
-        {/* Diagonal Measurements */}
+        {/* Diagonal Measurements - Desktop only inline editing */}
         {shouldShowDiagonalInputSection && (
           <div
             ref={diagonalSectionRef}
