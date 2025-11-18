@@ -19,7 +19,7 @@ interface ReviewContentProps {
   calculations: ShadeCalculations;
   validationErrors?: { [key: string]: string };
   onNext?: () => void;
-  onPrev: (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => void;
+  onPrev: (options?: { navigateToHeights?: boolean }) => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
   // Pricing and order props (lifted from local state)
@@ -336,35 +336,19 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       // Use setTimeout to ensure state updates are processed
       setTimeout(() => {
         let targetElement: HTMLElement | null = null;
-        let shouldExpandDiagonals = false;
 
         // Identify which section needs attention - prioritize in order of workflow
         // 1. Check edge measurements first (these are in a previous step, so redirect there)
         if (!hasAllEdgeMeasurements) {
-          // For edge measurements, scroll to the checklist card which shows the issue
-          const checklistElement = checklistRef.current?.getDiagonalSectionElement();
-          // Get the parent card container
-          targetElement = checklistElement?.closest('.bg-white, .bg-blue-50, [class*="border"]') as HTMLElement || checklistElement?.parentElement || null;
+          // For edge measurements, we should redirect to the dimensions step
+          // But since we're on review, we'll scroll to the checklist which shows the issue
+          targetElement = checklistRef.current?.getDiagonalSectionElement()?.parentElement || null;
         }
         // 2. Check diagonal measurements
         else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-          const isMobileView = window.innerWidth < 1024;
-
-          if (!isMobileView) {
-            // Desktop: Expand the diagonal section programmatically
-            shouldExpandDiagonals = true;
-            checklistRef.current?.expandDiagonals();
-          }
-
-          // Get the diagonal section element (mobile row or desktop expandable section)
-          const diagonalElement = checklistRef.current?.getDiagonalSectionElement();
-
-          if (isMobileView && diagonalElement) {
-            // On mobile, scroll to the checklist card that contains the diagonal row
-            targetElement = diagonalElement.closest('.bg-white, .bg-blue-50, [class*="border"]') as HTMLElement || diagonalElement.parentElement || null;
-          } else {
-            targetElement = diagonalElement;
-          }
+          // Expand the diagonal section programmatically
+          checklistRef.current?.expandDiagonals();
+          targetElement = checklistRef.current?.getDiagonalSectionElement() || null;
         }
         // 3. Check acknowledgments
         else if (!allAcknowledgmentsChecked) {
@@ -387,8 +371,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
           // Apply pulse animation after scroll completes
           setTimeout(() => {
-            const isMobileView = window.innerWidth < 1024;
-
             // For edge measurements (redirect case) or diagonals, the checklist handles highlighting
             if (!hasAllEdgeMeasurements) {
               // Highlight the entire checklist card
@@ -400,16 +382,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 }, 2400);
               }
             } else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-              if (isMobileView) {
-                // On mobile, highlight the entire checklist card
-                targetElement?.classList.add('pulse-error');
-                setTimeout(() => {
-                  targetElement?.classList.remove('pulse-error');
-                }, 2400);
-              } else {
-                // On desktop, diagonal section handles its own highlighting via the ref
-                // (already triggered by expandDiagonals call above)
-              }
+              // Diagonal section handles its own highlighting via the ref
             } else if (!allAcknowledgmentsChecked) {
               // Highlight acknowledgments section
               targetElement?.classList.add('pulse-error');
@@ -605,9 +578,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           allDiagonalsEntered={allDiagonalsEntered}
           shouldShowDiagonalInputSection={shouldShowDiagonalInputSection}
           diagonalMeasurements={diagonalMeasurements}
-          onNavigateToDimensions={() => onPrev()}
-          onNavigateToDiagonals={() => onPrev({ navigateToDiagonals: true })}
-          onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
+          onNavigateToDimensions={() => onPrev({ navigateToHeights: true })}
           highlightedMeasurement={highlightedMeasurement}
           setHighlightedMeasurement={setHighlightedMeasurement}
           updateMeasurement={updateMeasurement}

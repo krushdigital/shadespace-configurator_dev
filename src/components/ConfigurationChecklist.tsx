@@ -14,8 +14,6 @@ interface ConfigurationChecklistProps {
   shouldShowDiagonalInputSection: boolean;
   diagonalMeasurements: Array<{ key: string; label: string; hasValue: boolean }>;
   onNavigateToDimensions?: () => void;
-  onNavigateToDiagonals?: () => void;
-  onNavigateToHeights?: () => void;
   highlightedMeasurement: string | null;
   setHighlightedMeasurement: (key: string | null) => void;
   updateMeasurement: (edgeKey: string, value: string) => void;
@@ -37,8 +35,6 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
     shouldShowDiagonalInputSection,
     diagonalMeasurements,
     onNavigateToDimensions,
-    onNavigateToDiagonals,
-    onNavigateToHeights,
     highlightedMeasurement,
     setHighlightedMeasurement,
     updateMeasurement,
@@ -53,7 +49,6 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   const [isEditingDiagonals, setIsEditingDiagonals] = useState(false);
   const [isHighlighted, setIsHighlighted] = useState(false);
   const diagonalSectionRef = useRef<HTMLDivElement>(null);
-  const mobileDiagonalRowRef = useRef<HTMLDivElement>(null);
   const firstEmptyInputRef = useRef<HTMLInputElement>(null);
 
   useImperativeHandle(ref, () => ({
@@ -69,11 +64,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
         }
       }, 800);
     },
-    getDiagonalSectionElement: () => {
-      // Return mobile ref if on mobile, desktop ref otherwise
-      const isMobileView = window.innerWidth < 1024;
-      return isMobileView ? mobileDiagonalRowRef.current : diagonalSectionRef.current;
-    },
+    getDiagonalSectionElement: () => diagonalSectionRef.current,
   }));
 
   const hasHeightInformation = config.corners !== 3 &&
@@ -198,7 +189,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
           {/* Diagonal Measurements - Mobile: No inline editing */}
           {shouldShowDiagonalInputSection && (
-            <div ref={mobileDiagonalRowRef} className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 flex-1">
                 {allDiagonalsEntered ? (
                   <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -213,9 +204,9 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   Diagonal measurements
                 </span>
               </div>
-              {!allDiagonalsEntered && onNavigateToDiagonals && (
+              {!allDiagonalsEntered && onNavigateToDimensions && (
                 <button
-                  onClick={onNavigateToDiagonals}
+                  onClick={onNavigateToDimensions}
                   className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
                 >
                   Enter →
@@ -236,9 +227,9 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   <p className="text-xs text-amber-700">Standard process if not provided</p>
                 </div>
               </div>
-              {onNavigateToHeights && (
+              {onNavigateToDimensions && (
                 <button
-                  onClick={onNavigateToHeights}
+                  onClick={onNavigateToDimensions}
                   className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
                 >
                   Add →
@@ -435,11 +426,11 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                       </svg>
                     </button>
                   </Tooltip>
-                  {onNavigateToHeights && (
+                  {onNavigateToDimensions && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={onNavigateToHeights}
+                      onClick={onNavigateToDimensions}
                       className="text-xs py-1 px-3 border-amber-300 text-amber-700 hover:bg-amber-100 whitespace-nowrap"
                     >
                       Add Heights →
