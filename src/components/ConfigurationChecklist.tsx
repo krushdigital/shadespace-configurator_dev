@@ -163,7 +163,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
         <div className="p-3 space-y-2">
           {/* Edge Measurements */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-1">
               {hasAllEdgeMeasurements ? (
                 <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -177,6 +177,14 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                 Edge measurements
               </span>
             </div>
+            {!hasAllEdgeMeasurements && onNavigateToDimensions && (
+              <button
+                onClick={onNavigateToDimensions}
+                className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+              >
+                Enter →
+              </button>
+            )}
           </div>
 
           {/* Diagonal Measurements - Mobile: No inline editing */}
@@ -236,7 +244,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
   // Desktop: Full card with inline editing
   return (
-    <Card className="p-4 sm:p-6 mb-6 bg-blue-50 border-2 border-blue-300">
+    <Card className="p-4 sm:p-6 mb-6 bg-blue-50 border-2 border-blue-300 transition-all duration-300">
       <div className="flex items-start gap-3 mb-4">
         <div className="flex-shrink-0 mt-0.5">
           <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -258,7 +266,11 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
       <div className="space-y-3">
         {/* Edge Measurements */}
-        <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-200">
+        <div className={`flex items-start gap-3 p-3 bg-white rounded-lg border transition-all duration-300 ${
+          !hasAllEdgeMeasurements
+            ? 'border-red-300 bg-red-50'
+            : 'border-blue-200'
+        }`}>
           <div className="flex-shrink-0 mt-0.5">
             {hasAllEdgeMeasurements ? (
               <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
@@ -272,8 +284,16 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
           </div>
           <div className="flex-1">
             <p className={`text-sm font-medium ${hasAllEdgeMeasurements ? 'text-emerald-900' : 'text-slate-900'}`}>
-              Edge measurements entered
+              Edge measurements {hasAllEdgeMeasurements ? 'entered' : 'required'}
             </p>
+            {!hasAllEdgeMeasurements && onNavigateToDimensions && (
+              <button
+                onClick={onNavigateToDimensions}
+                className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
+              >
+                Go Back to Enter Measurements →
+              </button>
+            )}
           </div>
         </div>
 

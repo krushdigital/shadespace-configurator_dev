@@ -337,17 +337,26 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       setTimeout(() => {
         let targetElement: HTMLElement | null = null;
 
-        // Identify which section needs attention
-        if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
+        // Identify which section needs attention - prioritize in order of workflow
+        // 1. Check edge measurements first (these are in a previous step, so redirect there)
+        if (!hasAllEdgeMeasurements) {
+          // For edge measurements, we should redirect to the dimensions step
+          // But since we're on review, we'll scroll to the checklist which shows the issue
+          targetElement = checklistRef.current?.getDiagonalSectionElement()?.parentElement || null;
+        }
+        // 2. Check diagonal measurements
+        else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
           // Expand the diagonal section programmatically
           checklistRef.current?.expandDiagonals();
           targetElement = checklistRef.current?.getDiagonalSectionElement() || null;
-        } else if (!allAcknowledgmentsChecked) {
+        }
+        // 3. Check acknowledgments
+        else if (!allAcknowledgmentsChecked) {
           targetElement = acknowledgementsCardRef.current;
         }
 
         if (targetElement) {
-          // Calculate scroll position
+          // Calculate scroll position with proper offsets for mobile and desktop
           const isMobileView = window.innerWidth < 1024;
           const headerOffset = isMobileView ? 100 : 120;
           const viewportOffset = window.innerHeight * 0.15;
@@ -360,17 +369,28 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             behavior: 'smooth'
           });
 
-          // For acknowledgments, apply pulse animation after scroll completes
-          if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-            // Diagonal section handles its own highlighting via the ref
-          } else if (!allAcknowledgmentsChecked) {
-            setTimeout(() => {
+          // Apply pulse animation after scroll completes
+          setTimeout(() => {
+            // For edge measurements (redirect case) or diagonals, the checklist handles highlighting
+            if (!hasAllEdgeMeasurements) {
+              // Highlight the entire checklist card
+              const checklistCard = targetElement;
+              if (checklistCard) {
+                checklistCard.classList.add('pulse-error');
+                setTimeout(() => {
+                  checklistCard.classList.remove('pulse-error');
+                }, 2400);
+              }
+            } else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
+              // Diagonal section handles its own highlighting via the ref
+            } else if (!allAcknowledgmentsChecked) {
+              // Highlight acknowledgments section
               targetElement?.classList.add('pulse-error');
               setTimeout(() => {
                 targetElement?.classList.remove('pulse-error');
               }, 2400);
-            }, 600);
-          }
+            }
+          }, 600);
         }
       }, 50);
 
