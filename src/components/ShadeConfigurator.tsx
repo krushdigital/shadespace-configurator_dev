@@ -92,9 +92,8 @@ export function ShadeConfigurator() {
   // Highlighted corner state for height input fields
   const [highlightedCorner, setHighlightedCorner] = useState<number | null>(null);
 
-  // State to track if user wants to navigate to specific sections
+  // State to track if user wants to navigate to heights section specifically
   const [navigateToHeights, setNavigateToHeights] = useState(false);
-  const [navigateToDiagonals, setNavigateToDiagonals] = useState(false);
 
   // Mobile pricing bar state
   const [isBarLocked, setIsBarLocked] = useState(false);
@@ -695,7 +694,7 @@ export function ShadeConfigurator() {
   }, [config.diagonalsInitiallyProvided, config.corners, config.measurements]);
 
   const allAcknowledgmentsChecked = Object.values(acknowledgments).every(checked => checked);
-  const canAddToCart = hasAllEdgeMeasurements && allDiagonalsEntered && allAcknowledgmentsChecked;
+  const canAddToCart = allDiagonalsEntered && allAcknowledgmentsChecked;
 
   // Calculate if all edge measurements are complete
   const hasAllEdgeMeasurements = useMemo(() => {
@@ -1271,32 +1270,23 @@ export function ShadeConfigurator() {
     }, 350);
   };
 
-  const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
-    // Determine which step to navigate to based on options
-    let targetStepIndex;
-
-    if (options?.navigateToHeights) {
-      // Navigate to Heights & Anchor Points step (index 5)
-      targetStepIndex = 5;
-      setNavigateToHeights(true);
-    } else if (options?.navigateToDiagonals) {
-      // Navigate to Dimensions step (index 4) for diagonals
-      targetStepIndex = 4;
-      setNavigateToDiagonals(true);
-    } else {
-      // Default: go to actual previous step
-      targetStepIndex = getActualPrevStep(openStep);
-    }
+  const prevStep = (options?: { navigateToHeights?: boolean }) => {
+    const prevStepIndex = getActualPrevStep(openStep);
 
     // Auto-center shape when moving to previous step
     const centeredPoints = centerShape(config.points);
 
-    setConfig(prev => ({ ...prev, step: targetStepIndex }));
+    // Set the heights navigation flag if specified
+    if (options?.navigateToHeights) {
+      setNavigateToHeights(true);
+    }
+
+    setConfig(prev => ({ ...prev, step: prevStepIndex }));
     updateConfig({ points: centeredPoints });
-    setOpenStep(targetStepIndex);
+    setOpenStep(prevStepIndex);
 
     setTimeout(() => {
-      smoothScrollToStep(targetStepIndex);
+      smoothScrollToStep(prevStepIndex);
     }, 350);
   };
 
@@ -1554,10 +1544,8 @@ export function ShadeConfigurator() {
                     setShowLoadingOverlay={setShowLoadingOverlay}
                     onSaveQuote={handleSaveQuote}
                     quoteReference={quoteReference}
-                    navigateToHeights={index === 5 ? navigateToHeights : undefined}
-                    setNavigateToHeights={index === 5 ? setNavigateToHeights : undefined}
-                    navigateToDiagonals={index === 4 ? navigateToDiagonals : undefined}
-                    setNavigateToDiagonals={index === 4 ? setNavigateToDiagonals : undefined}
+                    navigateToHeights={index === 4 ? navigateToHeights : undefined}
+                    setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
                   />
                 </AccordionStep>
               );
