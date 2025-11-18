@@ -43,7 +43,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
     });
 
     if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
-      console.log('[FabricSelection] Auto-scrolling to color section');
+      console.log('[FabricSelection] Guiding to color section');
       mobileGuidance.scrollToElement('color-selection', 400, 80, true);
       mobileGuidance.setHighlightTarget('color-selection', 5000);
     }
@@ -57,7 +57,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
     });
 
     if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
-      console.log('[FabricSelection] Auto-scrolling to continue button');
+      console.log('[FabricSelection] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-fabric', 400);
       mobileGuidance.setHighlightTarget('continue-button-fabric', 5000);
     }

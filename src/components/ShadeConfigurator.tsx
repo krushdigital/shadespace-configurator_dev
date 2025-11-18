@@ -95,6 +95,9 @@ export function ShadeConfigurator() {
   // State to track if user wants to navigate to heights section specifically
   const [navigateToHeights, setNavigateToHeights] = useState(false);
 
+  // State to track if user wants to navigate to diagonals section specifically
+  const [navigateToDiagonals, setNavigateToDiagonals] = useState(false);
+
   // Mobile pricing bar state
   const [isBarLocked, setIsBarLocked] = useState(false);
   const [isNewQuote, setIsNewQuote] = useState(false);
@@ -127,6 +130,17 @@ export function ShadeConfigurator() {
     return () => {
       window.removeEventListener('resize', checkIsMobile);
     };
+  }, []);
+
+  // Default fabric selection for desktop only
+  useEffect(() => {
+    const isDesktop = window.innerWidth >= 1024;
+    const hasNoFabricSelected = !config.fabricType || config.fabricType === '';
+    const isInitialLoad = config.step === 0 && !quoteReference;
+
+    if (isDesktop && hasNoFabricSelected && isInitialLoad) {
+      updateConfig({ fabricType: 'monotec370' });
+    }
   }, []);
 
   // Load saved quote from URL if present
@@ -1270,7 +1284,7 @@ export function ShadeConfigurator() {
     }, 350);
   };
 
-  const prevStep = (options?: { navigateToHeights?: boolean }) => {
+  const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
     const prevStepIndex = getActualPrevStep(openStep);
 
     // Auto-center shape when moving to previous step
@@ -1279,6 +1293,11 @@ export function ShadeConfigurator() {
     // Set the heights navigation flag if specified
     if (options?.navigateToHeights) {
       setNavigateToHeights(true);
+    }
+
+    // Set the diagonals navigation flag if specified
+    if (options?.navigateToDiagonals) {
+      setNavigateToDiagonals(true);
     }
 
     setConfig(prev => ({ ...prev, step: prevStepIndex }));
@@ -1546,6 +1565,8 @@ export function ShadeConfigurator() {
                     quoteReference={quoteReference}
                     navigateToHeights={index === 4 ? navigateToHeights : undefined}
                     setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
+                    navigateToDiagonals={index === 4 ? navigateToDiagonals : undefined}
+                    setNavigateToDiagonals={index === 4 ? setNavigateToDiagonals : undefined}
                   />
                 </AccordionStep>
               );
@@ -1619,6 +1640,8 @@ export function ShadeConfigurator() {
         onSaveQuote={handleSaveQuote}
         isLocked={isBarLocked}
         isNewQuote={isNewQuote}
+        hasInvalidMeasurements={calculations.area === 0 && hasAllEdgeMeasurements}
+        area={calculations.area}
       />
 
       {/* Save Quote Modal */}

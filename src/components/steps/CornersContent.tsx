@@ -38,7 +38,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     });
 
     if (mobileGuidance?.isGuidanceActive && config.corners >= 3) {
-      console.log('[Corners] Auto-scrolling to continue button');
+      console.log('[Corners] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-corners', 400);
       mobileGuidance.setHighlightTarget('continue-button-corners', 5000);
     }
@@ -180,7 +180,11 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
               onNext();
             }}
             size="md"
-            className={`flex-1 ${!config.corners ? 'opacity-50' : ''}`}
+            id="continue-button-corners"
+            data-guidance-id="continue-button-corners"
+            className={`flex-1 ${!config.corners ? 'opacity-50' : ''} ${
+              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'pulsate-guidance' : ''
+            }`}
           >
             Continue to {nextStepTitle}
           </Button>

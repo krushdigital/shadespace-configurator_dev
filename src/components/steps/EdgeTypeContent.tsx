@@ -48,7 +48,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
     });
 
     if (mobileGuidance?.isGuidanceActive && config.edgeType) {
-      console.log('[EdgeType] Auto-scrolling to continue button');
+      console.log('[EdgeType] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-edge', 400);
       mobileGuidance.setHighlightTarget('continue-button-edge', 5000);
     }
@@ -184,8 +184,11 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
               onNext();
             }}
             size="md"
-            id="continue-button-edge-desktop"
-            className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''}`}
+            id="continue-button-edge"
+            data-guidance-id="continue-button-edge"
+            className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''} ${
+              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'pulsate-guidance' : ''
+            }`}
           >
             Continue to {nextStepTitle}
           </Button>

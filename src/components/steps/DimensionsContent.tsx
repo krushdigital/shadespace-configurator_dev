@@ -40,6 +40,8 @@ interface DimensionsContentProps {
   setHighlightedCorner?: (corner: number | null) => void;
   navigateToHeights?: boolean;
   setNavigateToHeights?: (value: boolean) => void;
+  navigateToDiagonals?: boolean;
+  setNavigateToDiagonals?: (value: boolean) => void;
 }
 
 export function DimensionsContent({
@@ -70,10 +72,13 @@ export function DimensionsContent({
   highlightedCorner = null,
   setHighlightedCorner = () => {},
   navigateToHeights = false,
-  setNavigateToHeights = () => {}
+  setNavigateToHeights = () => {},
+  navigateToDiagonals = false,
+  setNavigateToDiagonals = () => {}
 }: DimensionsContentProps) {
   const [showHeightsSection, setShowHeightsSection] = useState(false);
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
+  const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -213,6 +218,38 @@ export function DimensionsContent({
       }, 350); // Match accordion animation duration
     }
   }, [navigateToHeights, setNavigateToHeights]);
+
+  // Handle navigation to diagonals section
+  React.useEffect(() => {
+    if (navigateToDiagonals && diagonalsSectionRef.current) {
+      // Wait for any initial rendering to complete
+      setTimeout(() => {
+        if (diagonalsSectionRef.current) {
+          const isMobileView = window.innerWidth < 1024;
+          const headerOffset = isMobileView ? 120 : 140;
+          const viewportOffset = window.innerHeight * 0.15; // 15% from top for better visibility
+
+          const elementPosition = diagonalsSectionRef.current.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
+
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+          });
+
+          // Add pulse animation
+          setTimeout(() => {
+            diagonalsSectionRef.current?.classList.add('pulse-highlight');
+            setTimeout(() => {
+              diagonalsSectionRef.current?.classList.remove('pulse-highlight');
+              // Clear the navigation flag
+              setNavigateToDiagonals(false);
+            }, 2000);
+          }, 600);
+        }
+      }, 350);
+    }
+  }, [navigateToDiagonals, setNavigateToDiagonals]);
 
   return (
     <div className="px-6 pt-6 pb-6">
@@ -360,7 +397,7 @@ export function DimensionsContent({
                        min="100"
                       step={config.unit === 'imperial' ? '0.1' : '10'}
                       autoComplete="off"
-                       className={`text-base ${isSuccess ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
+                       className={`text-base ${isSuccess ? '!pr-16 sm:!pr-[72px]' : '!pr-12 sm:!pr-14'}`}
                        isSuccess={isSuccess}
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
@@ -370,7 +407,7 @@ export function DimensionsContent({
                         : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
                       secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
                      />
-                     <div className={`absolute ${isSuccess ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-[calc(50%+16px)] sm:top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
+                     <div className={`absolute ${isSuccess ? 'right-11 sm:right-14' : 'right-3 sm:right-4'} top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
                      </div>
                    </div>
@@ -406,7 +443,7 @@ export function DimensionsContent({
               {/* Diagonal measurements for 4+ corners */}
               {config.corners >= 4 && config.corners <= 6 && (
                 <>
-                <div className="pt-3 border-t border-[#307C31]/30">
+                <div ref={diagonalsSectionRef} className="pt-3 border-t border-[#307C31]/30">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="flex flex-col">
                       <h5 className="text-sm md:text-base font-medium text-[#01312D]">
@@ -501,7 +538,7 @@ export function DimensionsContent({
                               min="100"
                              step={config.unit === 'imperial' ? '0.1' : '10'}
                              autoComplete="off"
-                              className={`text-base ${isSuccess ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
+                              className={`text-base ${isSuccess ? '!pr-16 sm:!pr-[72px]' : '!pr-12 sm:!pr-14'}`}
                               error={validationErrors[key]}
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
@@ -509,7 +546,7 @@ export function DimensionsContent({
                               label={label}
                               secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
                             />
-                            <div className={`absolute ${isSuccess ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-[calc(50%+16px)] sm:top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/70 transition-all duration-200 pointer-events-none`}>
+                            <div className={`absolute ${isSuccess ? 'right-11 sm:right-14' : 'right-3 sm:right-4'} top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
                               {config.unit === 'metric' ? 'mm' : 'in'}
                             </div>
                           </div>
@@ -542,35 +579,6 @@ export function DimensionsContent({
                       );
                     })}
                   </div>
-
-                  {/* Success Message when all diagonals are entered */}
-                  {config.corners >= 4 && (() => {
-                    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-                    const allDiagonalsEntered = diagonalKeys.every(key =>
-                      config.measurements[key] && config.measurements[key] > 0
-                    );
-
-                    if (allDiagonalsEntered) {
-                      return (
-                        <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                          <div className="flex items-start gap-2">
-                            <svg className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <div className="flex-1">
-                              <p className="text-sm text-emerald-900 font-medium">
-                                Perfect! All measurements complete
-                              </p>
-                              <p className="text-xs text-emerald-800 mt-0.5">
-                                You've entered all diagonals and can proceed directly to checkout after reviewing your order.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  })()}
                 </div>
                 </>
               )}
@@ -661,7 +669,7 @@ export function DimensionsContent({
                                   onBlur={() => setHighlightedCorner(null)}
                                   placeholder={config.unit === 'imperial' ? '100' : '2500'}
                                   autoComplete="off"
-                                  className={`flex-1 py-2 ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'pr-14 sm:pr-16' : 'pr-11 sm:pr-12'}`}
+                                  className={`flex-1 py-2 ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? '!pr-16 sm:!pr-[72px]' : '!pr-12 sm:!pr-14'}`}
                                   step={config.unit === 'imperial' ? '0.1' : '10'}
                                   isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
                                   label={
@@ -689,7 +697,7 @@ export function DimensionsContent({
                                   }
                                   secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
                                 />
-                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-10 sm:right-11' : 'right-2 sm:right-3'} top-[calc(50%+16px)] sm:top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50 transition-all duration-200 pointer-events-none`}>
+                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-11 sm:right-14' : 'right-3 sm:right-4'} top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
                                   {config.unit === 'metric' ? 'mm' : 'in'}
                                 </span>
                               </div>
