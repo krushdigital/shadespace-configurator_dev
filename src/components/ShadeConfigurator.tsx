@@ -132,16 +132,20 @@ export function ShadeConfigurator() {
     };
   }, []);
 
-  // Default fabric selection for desktop only
+  // Default fabric selection for desktop only (monotec370), mobile has no preselection
   useEffect(() => {
-    const isDesktop = window.innerWidth >= 1024;
     const hasNoFabricSelected = !config.fabricType || config.fabricType === '';
     const isInitialLoad = config.step === 0 && !quoteReference;
 
-    if (isDesktop && hasNoFabricSelected && isInitialLoad) {
-      updateConfig({ fabricType: 'monotec370' });
+    // Only preselect on initial load, when no quote is being loaded, and no fabric is selected
+    if (hasNoFabricSelected && isInitialLoad && !isLoadingQuote) {
+      if (!isMobile) {
+        // Desktop: preselect Monotec 370
+        updateConfig({ fabricType: 'monotec370' });
+      }
+      // Mobile: explicitly ensure no fabric is preselected (already empty, but being explicit)
     }
-  }, []);
+  }, [isMobile, quoteReference, isLoadingQuote]);
 
   // Load saved quote from URL if present
   useEffect(() => {
@@ -1640,7 +1644,7 @@ export function ShadeConfigurator() {
         onSaveQuote={handleSaveQuote}
         isLocked={isBarLocked}
         isNewQuote={isNewQuote}
-        hasInvalidMeasurements={calculations.area === 0 && hasAllEdgeMeasurements}
+        hasInvalidMeasurements={calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered)}
         area={calculations.area}
       />
 

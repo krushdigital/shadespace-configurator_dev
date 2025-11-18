@@ -53,7 +53,10 @@ export function MobilePricingBar({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY, isLocked]);
 
-  if (!isVisible || totalPrice <= 0) return null;
+  if (!isVisible) return null;
+
+  // Don't show if no price and no error to display
+  if (totalPrice <= 0 && !hasInvalidMeasurements) return null;
 
   return (
     <div
