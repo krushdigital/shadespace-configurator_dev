@@ -40,6 +40,8 @@ interface DimensionsContentProps {
   setHighlightedCorner?: (corner: number | null) => void;
   navigateToHeights?: boolean;
   setNavigateToHeights?: (value: boolean) => void;
+  navigateToDiagonals?: boolean;
+  setNavigateToDiagonals?: (value: boolean) => void;
 }
 
 export function DimensionsContent({
@@ -70,10 +72,13 @@ export function DimensionsContent({
   highlightedCorner = null,
   setHighlightedCorner = () => {},
   navigateToHeights = false,
-  setNavigateToHeights = () => {}
+  setNavigateToHeights = () => {},
+  navigateToDiagonals = false,
+  setNavigateToDiagonals = () => {}
 }: DimensionsContentProps) {
   const [showHeightsSection, setShowHeightsSection] = useState(false);
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
+  const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -213,6 +218,38 @@ export function DimensionsContent({
       }, 350); // Match accordion animation duration
     }
   }, [navigateToHeights, setNavigateToHeights]);
+
+  // Handle navigation to diagonals section
+  React.useEffect(() => {
+    if (navigateToDiagonals && diagonalsSectionRef.current) {
+      // Wait for any initial rendering to complete
+      setTimeout(() => {
+        if (diagonalsSectionRef.current) {
+          const isMobileView = window.innerWidth < 1024;
+          const headerOffset = isMobileView ? 120 : 140;
+          const viewportOffset = window.innerHeight * 0.15; // 15% from top for better visibility
+
+          const elementPosition = diagonalsSectionRef.current.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
+
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth'
+          });
+
+          // Add pulse animation
+          setTimeout(() => {
+            diagonalsSectionRef.current?.classList.add('pulse-highlight');
+            setTimeout(() => {
+              diagonalsSectionRef.current?.classList.remove('pulse-highlight');
+              // Clear the navigation flag
+              setNavigateToDiagonals(false);
+            }, 2000);
+          }, 600);
+        }
+      }, 350);
+    }
+  }, [navigateToDiagonals, setNavigateToDiagonals]);
 
   return (
     <div className="px-6 pt-6 pb-6">
@@ -406,7 +443,7 @@ export function DimensionsContent({
               {/* Diagonal measurements for 4+ corners */}
               {config.corners >= 4 && config.corners <= 6 && (
                 <>
-                <div className="pt-3 border-t border-[#307C31]/30">
+                <div ref={diagonalsSectionRef} className="pt-3 border-t border-[#307C31]/30">
                   <div className="flex items-center gap-2 mb-2">
                     <div className="flex flex-col">
                       <h5 className="text-sm md:text-base font-medium text-[#01312D]">

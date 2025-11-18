@@ -19,7 +19,7 @@ interface ReviewContentProps {
   calculations: ShadeCalculations;
   validationErrors?: { [key: string]: string };
   onNext?: () => void;
-  onPrev: (options?: { navigateToHeights?: boolean }) => void;
+  onPrev: (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
   // Pricing and order props (lifted from local state)
@@ -578,7 +578,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           allDiagonalsEntered={allDiagonalsEntered}
           shouldShowDiagonalInputSection={shouldShowDiagonalInputSection}
           diagonalMeasurements={diagonalMeasurements}
-          onNavigateToDimensions={() => onPrev()}
+          onNavigateToDimensions={() => onPrev({ navigateToDiagonals: true })}
           onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
           highlightedMeasurement={highlightedMeasurement}
           setHighlightedMeasurement={setHighlightedMeasurement}
