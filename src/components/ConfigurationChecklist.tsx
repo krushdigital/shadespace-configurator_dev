@@ -51,22 +51,32 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   const [isEditingDiagonals, setIsEditingDiagonals] = useState(false);
   const [isHighlighted, setIsHighlighted] = useState(false);
   const diagonalSectionRef = useRef<HTMLDivElement>(null);
+  const mobileDiagonalSectionRef = useRef<HTMLDivElement>(null);
   const firstEmptyInputRef = useRef<HTMLInputElement>(null);
 
   useImperativeHandle(ref, () => ({
     expandDiagonals: () => {
-      setDiagonalsExpanded(true);
-      setIsHighlighted(true);
-      setTimeout(() => {
-        setIsHighlighted(false);
-      }, 2400);
-      setTimeout(() => {
-        if (firstEmptyInputRef.current) {
-          firstEmptyInputRef.current.focus();
-        }
-      }, 800);
+      if (isMobile) {
+        // On mobile, just highlight the section since there's no expansion
+        setIsHighlighted(true);
+        setTimeout(() => {
+          setIsHighlighted(false);
+        }, 2400);
+      } else {
+        // On desktop, expand and focus
+        setDiagonalsExpanded(true);
+        setIsHighlighted(true);
+        setTimeout(() => {
+          setIsHighlighted(false);
+        }, 2400);
+        setTimeout(() => {
+          if (firstEmptyInputRef.current) {
+            firstEmptyInputRef.current.focus();
+          }
+        }, 800);
+      }
     },
-    getDiagonalSectionElement: () => diagonalSectionRef.current,
+    getDiagonalSectionElement: () => isMobile ? mobileDiagonalSectionRef.current : diagonalSectionRef.current,
   }));
 
   const hasHeightInformation = config.corners !== 3 &&
@@ -205,7 +215,10 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
           {/* Diagonal Measurements - Mobile: No inline editing */}
           {shouldShowDiagonalInputSection && (
-            <div className="flex items-center justify-between">
+            <div
+              ref={mobileDiagonalSectionRef}
+              className={`flex items-center justify-between p-2 rounded transition-all duration-300 ${isHighlighted ? 'bg-red-100 ring-2 ring-red-400' : ''}`}
+            >
               <div className="flex items-center gap-2 flex-1">
                 {allDiagonalsEntered ? (
                   <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

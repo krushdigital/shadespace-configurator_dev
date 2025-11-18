@@ -333,7 +333,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       setButtonShake(true);
       setTimeout(() => setButtonShake(false), 500);
 
-      // Use setTimeout to ensure state updates are processed
+      // Use setTimeout to ensure state updates are processed and shake animation starts
       setTimeout(() => {
         let targetElement: HTMLElement | null = null;
 
@@ -346,7 +346,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         }
         // 2. Check diagonal measurements
         else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-          // Expand the diagonal section programmatically
+          // On desktop: Expand the diagonal section programmatically
+          // On mobile: Just highlight it (no expansion available)
           checklistRef.current?.expandDiagonals();
           targetElement = checklistRef.current?.getDiagonalSectionElement() || null;
         }
@@ -383,6 +384,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               }
             } else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
               // Diagonal section handles its own highlighting via the ref
+              // Additional pulse for emphasis on mobile
+              if (isMobile && targetElement) {
+                targetElement.classList.add('pulse-error');
+                setTimeout(() => {
+                  targetElement.classList.remove('pulse-error');
+                }, 2400);
+              }
             } else if (!allAcknowledgmentsChecked) {
               // Highlight acknowledgments section
               targetElement?.classList.add('pulse-error');
@@ -392,7 +400,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             }
           }, 600);
         }
-      }, 50);
+      }, 100);
 
       // Do not proceed with cart addition
       return;
