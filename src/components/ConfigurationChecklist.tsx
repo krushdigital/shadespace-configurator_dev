@@ -14,6 +14,7 @@ interface ConfigurationChecklistProps {
   shouldShowDiagonalInputSection: boolean;
   diagonalMeasurements: Array<{ key: string; label: string; hasValue: boolean }>;
   onNavigateToDimensions?: () => void;
+  onNavigateToHeights?: () => void;
   highlightedMeasurement: string | null;
   setHighlightedMeasurement: (key: string | null) => void;
   updateMeasurement: (edgeKey: string, value: string) => void;
@@ -35,6 +36,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
     shouldShowDiagonalInputSection,
     diagonalMeasurements,
     onNavigateToDimensions,
+    onNavigateToHeights,
     highlightedMeasurement,
     setHighlightedMeasurement,
     updateMeasurement,
@@ -227,9 +229,9 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   <p className="text-xs text-amber-700">Standard process if not provided</p>
                 </div>
               </div>
-              {onNavigateToDimensions && (
+              {onNavigateToHeights && (
                 <button
-                  onClick={onNavigateToDimensions}
+                  onClick={onNavigateToHeights}
                   className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
                 >
                   Add →
@@ -426,11 +428,11 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                       </svg>
                     </button>
                   </Tooltip>
-                  {onNavigateToDimensions && (
+                  {onNavigateToHeights && (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={onNavigateToDimensions}
+                      onClick={onNavigateToHeights}
                       className="text-xs py-1 px-3 border-amber-300 text-amber-700 hover:bg-amber-100 whitespace-nowrap"
                     >
                       Add Heights →

@@ -578,7 +578,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           allDiagonalsEntered={allDiagonalsEntered}
           shouldShowDiagonalInputSection={shouldShowDiagonalInputSection}
           diagonalMeasurements={diagonalMeasurements}
-          onNavigateToDimensions={() => onPrev({ navigateToHeights: true })}
+          onNavigateToDimensions={() => onPrev()}
+          onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
           highlightedMeasurement={highlightedMeasurement}
           setHighlightedMeasurement={setHighlightedMeasurement}
           updateMeasurement={updateMeasurement}
