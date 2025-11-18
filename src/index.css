@@ -277,7 +277,7 @@ html {
   animation: pulsate-ring 2s ease-in-out infinite;
 }
 
-/* Mobile guidance pulsating highlight animation */
+/* Guidance pulsating highlight animation for continue buttons */
 @keyframes pulsate-guidance {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(191, 241, 2, 0.7);
@@ -293,6 +293,20 @@ html {
   animation: pulsate-guidance 1.5s ease-in-out infinite;
   position: relative;
   z-index: 10;
+}
+
+/* Desktop-specific refinement: slightly more subtle animation on larger screens */
+@media (min-width: 640px) {
+  @keyframes pulsate-guidance {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(191, 241, 2, 0.6);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(191, 241, 2, 0);
+      transform: scale(1.015);
+    }
+  }
 }
 
 /* Respect reduced motion preference */

@@ -45,7 +45,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
     });
 
     if (mobileGuidance?.isGuidanceActive && config.unit && !config.measurementOption) {
-      console.log('[CombinedMeasurement] Auto-scrolling to measurement option section');
+      console.log('[CombinedMeasurement] Guiding to measurement option section');
       mobileGuidance.scrollToElement('measurement-option-section', 400);
       mobileGuidance.setHighlightTarget('measurement-option-section', 5000);
     }
@@ -59,7 +59,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
     });
 
     if (mobileGuidance?.isGuidanceActive && config.unit && config.measurementOption) {
-      console.log('[CombinedMeasurement] Auto-scrolling to continue button');
+      console.log('[CombinedMeasurement] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-measurement', 400);
       mobileGuidance.setHighlightTarget('continue-button-measurement', 5000);
     }

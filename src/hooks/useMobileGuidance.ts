@@ -25,16 +25,6 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  useEffect(() => {
-    if (!isMobile) {
-      setGuidanceState(prev => ({
-        ...prev,
-        currentHighlightTarget: null,
-      }));
-      return;
-    }
-  }, [isMobile]);
-
   const isElementVisible = useCallback((element: HTMLElement, threshold: number = 0.7): boolean => {
     const rect = element.getBoundingClientRect();
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -73,12 +63,12 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
       const element = document.getElementById(elementId) || document.querySelector(`[data-guidance-id="${elementId}"]`);
 
       if (!element) {
-        console.log(`[Mobile Guidance] Element not found: ${elementId}`);
+        console.log(`[Guidance] Element not found: ${elementId}`);
         return;
       }
 
       if (isElementVisible(element as HTMLElement)) {
-        console.log(`[Mobile Guidance] Element ${elementId} already visible, skipping scroll`);
+        console.log(`[Guidance] Element ${elementId} already visible, skipping scroll`);
         return;
       }
 
@@ -91,11 +81,11 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
 
       if (alignToTop) {
         targetPosition = elementTop - offset;
-        console.log(`[Mobile Guidance] Scrolling to top of ${elementId}, position: ${targetPosition}px`);
+        console.log(`[Guidance] Scrolling to top of ${elementId}, position: ${targetPosition}px`);
       } else {
         const centerOffset = (viewportHeight / 2) - (elementHeight / 2);
         targetPosition = elementTop - centerOffset;
-        console.log(`[Mobile Guidance] Scrolling to center ${elementId}, position: ${targetPosition}px`);
+        console.log(`[Guidance] Scrolling to center ${elementId}, position: ${targetPosition}px`);
       }
 
       window.scrollTo({
@@ -114,13 +104,11 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
     targetId: string | null,
     duration: number = 5000
   ) => {
-    if (!isMobile) return;
-
     if (highlightTimeoutRef.current) {
       clearTimeout(highlightTimeoutRef.current);
     }
 
-    console.log(`[Mobile Guidance] Setting highlight target: ${targetId}`);
+    console.log(`[Guidance] Setting highlight target: ${targetId} (isMobile: ${isMobile})`);
 
     setGuidanceState(prev => ({
       ...prev,
@@ -159,7 +147,7 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
   }, []);
 
   return {
-    isGuidanceActive: isMobile,
+    isGuidanceActive: true,
     currentHighlightTarget: guidanceState.currentHighlightTarget,
     scrollToElement,
     setHighlightTarget,
