@@ -132,6 +132,17 @@ export function ShadeConfigurator() {
     };
   }, []);
 
+  // Default fabric selection for desktop only
+  useEffect(() => {
+    const isDesktop = window.innerWidth >= 1024;
+    const hasNoFabricSelected = !config.fabricType || config.fabricType === '';
+    const isInitialLoad = config.step === 0 && !quoteReference;
+
+    if (isDesktop && hasNoFabricSelected && isInitialLoad) {
+      updateConfig({ fabricType: 'monotec370' });
+    }
+  }, []);
+
   // Load saved quote from URL if present
   useEffect(() => {
     const loadQuoteFromUrl = async () => {
