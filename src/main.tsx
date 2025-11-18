@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ToastProvider } from "./components/ui/ToastProvider";
-import App from "./App.js";
+import App from "./App";
 import "./index.css";
 
 const container = document.getElementById("SHADE_SPACE");
