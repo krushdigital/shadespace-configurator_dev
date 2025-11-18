@@ -136,8 +136,22 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   ].filter(Boolean).length;
 
   const completionPercentage = (() => {
+    // Calculate total required items
     const total = shouldShowDiagonalInputSection ? 2 : 1;
-    const completed = [hasAllEdgeMeasurements, !shouldShowDiagonalInputSection || allDiagonalsEntered].filter(Boolean).length;
+
+    // Calculate completed items
+    let completed = 0;
+
+    // Count edge measurements if complete
+    if (hasAllEdgeMeasurements) {
+      completed++;
+    }
+
+    // Count diagonal measurements only if they're required AND complete
+    if (shouldShowDiagonalInputSection && allDiagonalsEntered) {
+      completed++;
+    }
+
     return Math.round((completed / total) * 100);
   })();
 
