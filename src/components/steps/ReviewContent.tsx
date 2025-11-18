@@ -1086,9 +1086,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           ref={acknowledgementsCardRef}
           className={`${isMobile ? 'p-3 mt-4' : 'p-6 mt-6'} border-2 transition-all duration-300 ${allAcknowledgmentsChecked
             ? 'bg-emerald-50 border-emerald-200'
-            : showValidationFeedback && !allAcknowledgmentsChecked
+            : showValidationFeedback && !allAcknowledgmentsChecked && allDiagonalsEntered
               ? 'bg-red-100 border-red-600 ring-4 ring-red-300 shadow-xl'
-              : !allAcknowledgmentsChecked
+              : !allAcknowledgmentsChecked && allDiagonalsEntered
                 ? '!border-red-500 bg-red-50 hover:!border-red-600 shadow-md'
                 : 'bg-slate-50 border-slate-200'
             } `}>
@@ -1108,7 +1108,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 required
               />
               <span className={
-                showValidationFeedback && !acknowledgments.customManufactured
+                showValidationFeedback && !acknowledgments.customManufactured && allDiagonalsEntered
                   ? 'text-red-700'
                   : allAcknowledgmentsChecked
                     ? 'text-emerald-700'
@@ -1126,7 +1126,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 required
               />
               <span className={
-                showValidationFeedback && !acknowledgments.measurementsAccurate
+                showValidationFeedback && !acknowledgments.measurementsAccurate && allDiagonalsEntered
                   ? 'text-red-700'
                   : allAcknowledgmentsChecked
                     ? 'text-emerald-700'
@@ -1144,7 +1144,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 required
               />
               <span className={
-                showValidationFeedback && !acknowledgments.installationNotIncluded
+                showValidationFeedback && !acknowledgments.installationNotIncluded && allDiagonalsEntered
                   ? 'text-red-700'
                   : allAcknowledgmentsChecked
                     ? 'text-emerald-700'
@@ -1162,7 +1162,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 required
               />
               <span className={
-                showValidationFeedback && !acknowledgments.structuralResponsibility
+                showValidationFeedback && !acknowledgments.structuralResponsibility && allDiagonalsEntered
                   ? 'text-red-700'
                   : allAcknowledgmentsChecked
                     ? 'text-emerald-700'
@@ -1215,7 +1215,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             )}
           </div>
 
-          {showValidationFeedback && !allAcknowledgmentsChecked && (
+          {showValidationFeedback && !allAcknowledgmentsChecked && allDiagonalsEntered && (
             <div className={`${isMobile ? 'mt-2 p-2' : 'mt-4 p-3'} bg-red-100 border border-red-300 rounded-lg`}>
               <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-red-800`}>
                 <strong>Required:</strong> {isMobile ? 'Check all items' : 'Please check all acknowledgments to proceed.'}
