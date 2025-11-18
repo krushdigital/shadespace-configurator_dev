@@ -180,7 +180,11 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
               onNext();
             }}
             size="md"
-            className={`flex-1 ${!config.corners ? 'opacity-50' : ''}`}
+            id="continue-button-corners"
+            data-guidance-id="continue-button-corners"
+            className={`flex-1 ${!config.corners ? 'opacity-50' : ''} ${
+              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'pulsate-guidance' : ''
+            }`}
           >
             Continue to {nextStepTitle}
           </Button>

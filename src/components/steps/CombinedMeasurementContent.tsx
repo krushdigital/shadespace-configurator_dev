@@ -469,7 +469,11 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               onNext();
             }}
             size="md"
-            className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+            id="continue-button-measurement"
+            data-guidance-id="continue-button-measurement"
+            className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''} ${
+              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'pulsate-guidance' : ''
+            }`}
           >
             Continue to {nextStepTitle}
           </Button>
