@@ -1634,13 +1634,12 @@ export function ShadeConfigurator() {
         />
       </div>
 
-      {/* Mobile Pricing Bar - Hidden on Review step (step 6) as pricing is shown inline */}
+      {/* Mobile Pricing Bar - Only shown on Review step (step 6) */}
       <MobilePricingBar
         totalPrice={calculations.totalPrice}
         currency={config.currency}
-        isVisible={hasQuote && openStep !== 6}
+        isVisible={hasQuote && openStep === 6}
         quoteReference={quoteReference || undefined}
-        onContinue={handleMobileContinue}
         onSaveQuote={handleSaveQuote}
         isLocked={isBarLocked}
         isNewQuote={isNewQuote}
