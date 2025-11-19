@@ -1106,23 +1106,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
         </div>
 
-        {/* Pricing Summary - Compact on mobile */}
-        {isMobile && (
-          <Card className="p-3 mb-4 bg-gradient-to-br from-[#01312D] to-[#024f3a] text-white">
-            <div className="flex items-center justify-between mb-2">
-              <div>
-                <p className="text-xs text-white/80 mb-0.5">Order Total</p>
-                <p className="text-2xl font-bold">{formatCurrency(calculations.totalPrice, config.currency)}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-white/80">{formatArea(calculations.area * 1000000, config.unit)}</p>
-                <p className="text-xs text-white/80">{config.corners} corners</p>
-              </div>
-            </div>
-            <p className="text-xs text-white/90 font-medium">Includes express freight, taxes & duties (to your door)</p>
-          </Card>
-        )}
-
         {/* Important Acknowledgments - Full width on desktop */}
         <Card
           ref={acknowledgementsCardRef}
