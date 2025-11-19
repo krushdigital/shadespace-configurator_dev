@@ -309,6 +309,35 @@ html {
   }
 }
 
+/* Remove default focus outlines on buttons for mouse users, preserve for keyboard users */
+button:focus {
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Ensure border styles are preserved on focus for buttons with explicit borders */
+button:focus:not(:focus-visible) {
+  border-color: inherit;
+}
+
+/* Icon button reset - no focus rings on icon buttons */
+.icon-button-reset {
+  outline: none !important;
+}
+
+.icon-button-reset:focus {
+  outline: none !important;
+}
+
+.icon-button-reset:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .corner-pulse,

@@ -150,18 +150,18 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   // Mobile: Compact progress bar design
   if (isMobile) {
     return (
-      <div className="mb-4 bg-white border-2 border-blue-300 rounded-lg overflow-hidden">
+      <div className="mb-4 bg-white border-2 border-emerald-700 rounded-lg overflow-hidden">
         {/* Progress Bar */}
-        <div className="bg-blue-50 p-3 border-b border-blue-200">
+        <div className="bg-emerald-50 p-3 border-b border-emerald-600">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-sm font-semibold text-blue-900">
+            <p className="text-sm font-semibold text-emerald-900">
               {remainingCount > 0 ? `${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} remaining` : 'Complete'}
             </p>
-            <span className="text-xs font-medium text-blue-700">{completionPercentage}%</span>
+            <span className="text-xs font-medium text-emerald-800">{completionPercentage}%</span>
           </div>
-          <div className="w-full bg-blue-200 rounded-full h-2">
+          <div className="w-full bg-emerald-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-emerald-700 h-2 rounded-full transition-all duration-300"
               style={{ width: `${completionPercentage}%` }}
             />
           </div>
@@ -188,7 +188,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
             {!hasAllEdgeMeasurements && onNavigateToDimensions && (
               <button
                 onClick={onNavigateToDimensions}
-                className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                className="text-xs font-medium text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded hover:bg-emerald-50 transition-colors"
               >
                 Enter →
               </button>
@@ -230,12 +230,12 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
           {showHeightOptional && (
             <div className="flex items-center justify-between pt-2 border-t border-slate-200">
               <div className="flex items-center gap-2 flex-1">
-                <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
                 <div className="flex-1">
-                  <span className="text-xs font-medium text-amber-900">Heights (optional)</span>
-                  <p className="text-xs text-amber-700">Standard process if not provided</p>
+                  <span className="text-xs font-medium text-blue-900">Heights (optional)</span>
+                  <p className="text-xs text-blue-700">Standard process if not provided</p>
                 </div>
               </div>
               {onNavigateToHeights && (
@@ -255,21 +255,21 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
   // Desktop: Full card with inline editing
   return (
-    <Card className="p-4 sm:p-6 mb-6 bg-blue-50 border-2 border-blue-300 transition-all duration-300">
+    <Card className="p-4 sm:p-6 mb-6 bg-emerald-50 border-2 border-emerald-700 transition-all duration-300">
       <div className="flex items-start gap-3 mb-4">
         <div className="flex-shrink-0 mt-0.5">
-          <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-6 h-6 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
         </div>
         <div className="flex-1">
-          <h4 className="text-lg font-semibold text-blue-900">
+          <h4 className="text-lg font-semibold text-emerald-900">
             {remainingCount > 0
               ? `Complete Your Configuration (${remainingCount} ${remainingCount === 1 ? 'item' : 'items'} remaining)`
               : 'Configuration Checklist'
             }
           </h4>
-          <p className="text-sm text-blue-700 mt-1">
+          <p className="text-sm text-emerald-800 mt-1">
             Complete the following requirements to proceed with your order
           </p>
         </div>
@@ -300,7 +300,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
             {!hasAllEdgeMeasurements && onNavigateToDimensions && (
               <button
                 onClick={onNavigateToDimensions}
-                className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded bg-blue-100 hover:bg-blue-200 transition-colors"
+                className="mt-2 text-xs font-medium text-emerald-700 hover:text-emerald-900 px-3 py-1.5 rounded bg-emerald-100 hover:bg-emerald-200 transition-colors"
               >
                 Go Back to Enter Measurements →
               </button>
@@ -315,7 +315,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
             className={`bg-white rounded-lg border-2 transition-all duration-300 ${
               isHighlighted
                 ? 'border-red-500 ring-4 ring-red-300 shadow-xl pulse-error'
-                : 'border-blue-300'
+                : 'border-emerald-700'
             }`}
           >
             <div className="flex items-start gap-3 p-3">
@@ -337,7 +337,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   </p>
                   <div className="flex items-center gap-2">
                     <Tooltip content="Diagonal measurements ensure manufacturing accuracy and help our team create your exact shade shape with precision.">
-                      <button className="text-blue-600 hover:text-blue-800">
+                      <button className="text-emerald-700 hover:text-emerald-900 icon-button-reset">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                         </svg>
@@ -345,7 +345,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                     </Tooltip>
                     <button
                       onClick={() => setDiagonalsExpanded(!diagonalsExpanded)}
-                      className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                      className="text-emerald-700 hover:text-emerald-900 font-medium text-sm icon-button-reset"
                     >
                       {diagonalsExpanded ? 'Collapse ▲' : 'Enter Diagonals ▼'}
                     </button>
@@ -355,12 +355,12 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
             </div>
 
             {diagonalsExpanded && (
-              <div className="px-3 pb-3 pt-0 border-t border-blue-200 mt-2">
+              <div className="px-3 pb-3 pt-0 border-t border-emerald-200 mt-2">
                 <div className={`rounded-lg p-3 mb-3 mt-3 transition-colors duration-300 ${
-                  isHighlighted ? 'bg-red-100 border-2 border-red-400' : 'bg-blue-50'
+                  isHighlighted ? 'bg-red-100 border-2 border-red-400' : 'bg-emerald-50'
                 }`}>
                   <p className={`text-xs font-semibold ${
-                    isHighlighted ? 'text-red-900' : 'text-blue-800'
+                    isHighlighted ? 'text-red-900' : 'text-emerald-800'
                   }`}>
                     {isHighlighted ? '⚠️ Please enter all diagonal measurements below to proceed:' : 'Measure the straight-line distance between non-adjacent corners. Enter all measurements below.'}
                   </p>
@@ -415,23 +415,23 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
         {/* Optional: Height Information */}
         {showHeightOptional && (
-          <div className="flex items-start gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <div className="flex-shrink-0 mt-0.5">
-              <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
             </div>
             <div className="flex-1">
               <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium text-amber-900">
+                <p className="text-sm font-medium text-blue-900">
                   Height information (optional)
                 </p>
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-blue-700">
                   Not required - standard manufacturing process will be used
                 </p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Tooltip content="Providing anchor point heights allows for more precise manufacturing customized to your installation. Standard manufacturing will be used if heights are not provided.">
-                    <button className="text-amber-600 hover:text-amber-800">
+                    <button className="text-blue-600 hover:text-blue-800 icon-button-reset">
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
@@ -442,7 +442,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                       variant="outline"
                       size="sm"
                       onClick={onNavigateToHeights}
-                      className="text-xs py-1 px-3 border-amber-300 text-amber-700 hover:bg-amber-100 whitespace-nowrap"
+                      className="text-xs py-1 px-3 border-blue-300 text-blue-700 hover:bg-blue-100 whitespace-nowrap"
                     >
                       Add Heights →
                     </Button>
@@ -469,7 +469,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   </p>
                   <button
                     onClick={() => setValidationExpanded(!validationExpanded)}
-                    className="text-yellow-700 hover:text-yellow-900 font-medium text-sm"
+                    className="text-yellow-700 hover:text-yellow-900 font-medium text-sm icon-button-reset"
                   >
                     {validationExpanded ? 'Hide Details ▲' : 'Review Details ▼'}
                   </button>

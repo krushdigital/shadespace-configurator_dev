@@ -262,7 +262,7 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
         ref={triggerRef}
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
-        className={fullWidth ? "block cursor-help" : "inline-block cursor-help"}
+        className={fullWidth ? "block cursor-help icon-button-reset" : "inline-block cursor-help icon-button-reset"}
       >
         {children}
       </div>
