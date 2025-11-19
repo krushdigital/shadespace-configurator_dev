@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, e
   return (
     <div>
       {label && (
-        <label className="block text-sm font-medium text-[#01312D] mb-2 flex items-center gap-2">
+        <label className="block text-xs sm:text-sm font-medium text-[#01312D] mb-1.5 sm:mb-2 flex items-center gap-2">
           {label}
           {secondaryValue && (
             <span className="text-xs font-normal text-[#01312D]/60">
@@ -43,7 +43,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, e
       <div className="relative">
         <input
           ref={ref}
-          className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 transition-all duration-200 text-[#01312D] shadow-sm hover:shadow-md ${
+          className={`w-full px-3 py-2 sm:px-4 sm:py-3 border-2 rounded-lg focus:ring-2 transition-all duration-200 text-[#01312D] shadow-sm hover:shadow-md ${
             props.type === 'number' ? 'no-spin-arrows ' : ''
           }${
             error ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' :
@@ -57,8 +57,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, e
         />
         {isSuccess && !error && !isSuggestedTypo && (
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500 text-white">
-              <Check className="w-3 h-3" strokeWidth={3} />
+            <span className="inline-flex items-center justify-center w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-emerald-500 text-white">
+              <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" strokeWidth={3} />
             </span>
           </div>
         )}

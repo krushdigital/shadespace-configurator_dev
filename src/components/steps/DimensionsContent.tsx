@@ -252,10 +252,10 @@ export function DimensionsContent({
   }, [navigateToDiagonals, setNavigateToDiagonals]);
 
   return (
-    <div className="px-6 pt-6 pb-6">
+    <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
       {/* Measurement Context Banner */}
       {config.measurementOption === 'adjust' && (
-        <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+        <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
           <div className="flex items-start gap-3">
             <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -273,7 +273,7 @@ export function DimensionsContent({
       )}
 
       {config.measurementOption === 'exact' && (
-        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+        <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
           <div className="flex items-start gap-3">
             <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -292,7 +292,7 @@ export function DimensionsContent({
 
       {/* Mobile Diagram - Only show on mobile */}
       {isMobile && (
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <h4 className="text-lg font-semibold text-slate-900 mb-4">
             Interactive Measurement Guide
           </h4>
@@ -321,7 +321,7 @@ export function DimensionsContent({
 
       {/* Perimeter Too Large Warning */}
       {validationErrors.perimeterTooLarge && (
-        <div className="mb-6 p-4 bg-red-100 border-2 border-red-500 rounded-lg">
+        <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-red-100 border-2 border-red-500 rounded-lg">
           <div className="flex items-center gap-3">
             <div className="flex-shrink-0">
               <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -340,16 +340,16 @@ export function DimensionsContent({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-y-4">
+      <div className="grid grid-cols-1 gap-y-3 sm:gap-y-4">
         {/* Measurement Inputs */}
         <div>
-          <h4 className="text-base md:text-lg font-semibold text-[#01312D] mt-4 mb-3">
+          <h4 className="text-sm md:text-base lg:text-lg font-semibold text-[#01312D] mt-3 mb-2 sm:mt-4 sm:mb-3">
             {config.measurementOption === 'adjust'
               ? `Space Measurements - Distance Between Fixing Points`
               : `Finished Shade Dimensions`}
             {' '}({config.unit === 'metric' ? 'mm' : 'inches'})
           </h4>
-          <Card className={`p-3 md:p-4 ${
+          <Card className={`p-2 sm:p-3 md:p-4 ${
             Object.keys(validationErrors).some(key => 
               key !== 'typoSuggestions' && key !== 'perimeterTooLarge' && 
               (key.includes('AB') || key.includes('BC') || key.includes('CD') || key.includes('DA') || 
@@ -358,7 +358,7 @@ export function DimensionsContent({
                key.includes('DF'))
             ) ? 'border-2 !border-red-500 bg-red-50' : ''
           }`}>
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {/* Edge measurements */}
               {Array.from({ length: config.corners }, (_, index) => {
                 const nextIndex = (index + 1) % config.corners;
@@ -397,7 +397,7 @@ export function DimensionsContent({
                        min="100"
                       step={config.unit === 'imperial' ? '0.1' : '10'}
                       autoComplete="off"
-                       className={`text-base ${isSuccess ? '!pr-16 sm:!pr-[72px]' : '!pr-12 sm:!pr-14'}`}
+                       className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
                        isSuccess={isSuccess}
                        isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
@@ -407,14 +407,14 @@ export function DimensionsContent({
                         : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
                       secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
                      />
-                     <div className={`absolute ${isSuccess ? 'right-11 sm:right-14' : 'right-3 sm:right-4'} top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
+                     <div className={`absolute ${isSuccess ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
                        {config.unit === 'metric' ? 'mm' : 'in'}
                      </div>
                    </div>
-                   
+
                    {/* Typo Warning */}
                    {typoSuggestions[edgeKey] && (
-                     <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                     <div className="mt-1.5 p-2 sm:mt-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
                        <div className="flex flex-col gap-2">
                          <p className="text-sm text-amber-800 w-full">
                           <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[edgeKey], config.unit, true)}?
@@ -443,13 +443,13 @@ export function DimensionsContent({
               {/* Diagonal measurements for 4+ corners */}
               {config.corners >= 4 && config.corners <= 6 && (
                 <>
-                <div ref={diagonalsSectionRef} className="pt-3 border-t border-[#307C31]/30">
-                  <div className="flex items-center gap-2 mb-2">
+                <div ref={diagonalsSectionRef} className="pt-2 sm:pt-3 border-t border-[#307C31]/30">
+                  <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
                     <div className="flex flex-col">
-                      <h5 className="text-sm md:text-base font-medium text-[#01312D]">
+                      <h5 className="text-xs sm:text-sm md:text-base font-medium text-[#01312D]">
                         Diagonal Measurements
                       </h5>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
+                      <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
                         Optional Now • Required at Checkout
                       </span>
                     </div>
@@ -538,7 +538,7 @@ export function DimensionsContent({
                               min="100"
                              step={config.unit === 'imperial' ? '0.1' : '10'}
                              autoComplete="off"
-                              className={`text-base ${isSuccess ? '!pr-16 sm:!pr-[72px]' : '!pr-12 sm:!pr-14'}`}
+                              className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
                               error={validationErrors[key]}
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
@@ -546,14 +546,14 @@ export function DimensionsContent({
                               label={label}
                               secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
                             />
-                            <div className={`absolute ${isSuccess ? 'right-11 sm:right-14' : 'right-3 sm:right-4'} top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
+                            <div className={`absolute ${isSuccess ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
                               {config.unit === 'metric' ? 'mm' : 'in'}
                             </div>
                           </div>
-                          
+
                           {/* Typo Warning */}
                           {typoSuggestions[key] && (
-                            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                            <div className="mt-1.5 p-2 sm:mt-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
                               <div className="flex flex-col gap-2">
                                 <p className="text-sm text-amber-800 w-full">
                                   <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[key], config.unit)}?
@@ -588,7 +588,7 @@ export function DimensionsContent({
 
         {/* Optional Heights and Anchor Points Section - Only shown for "adjust" measurement option */}
         {config.corners !== 3 && config.measurementOption === 'adjust' && (
-          <div className="mt-6" ref={heightsSectionRef}>
+          <div className="mt-4 sm:mt-6" ref={heightsSectionRef}>
             <Card
               className={`overflow-hidden transition-all duration-300 ${
                 showHeightsSection ? 'border-2 border-[#307C31]' : 'border border-slate-300'
@@ -596,7 +596,7 @@ export function DimensionsContent({
             >
               <button
                 onClick={() => setShowHeightsSection(!showHeightsSection)}
-                className="w-full p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-3"
+                className="w-full p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-2 sm:gap-3"
               >
                 <div className="flex items-start sm:items-center gap-3">
                   <div className="flex-shrink-0 pt-1 sm:pt-0">
@@ -607,11 +607,11 @@ export function DimensionsContent({
                     )}
                   </div>
                   <div className="text-left flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <h5 className="text-base font-semibold text-[#01312D]">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                      <h5 className="text-sm sm:text-base font-semibold text-[#01312D]">
                         Height Information (optional)
                       </h5>
-                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium w-fit">
+                      <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium w-fit">
                         Not required - standard manufacturing process will be used
                       </span>
                     </div>
@@ -625,23 +625,23 @@ export function DimensionsContent({
               </button>
 
               {showHeightsSection && (
-                <div className="p-4 pt-0 border-t border-slate-200 space-y-4">
-                  <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg">
+                <div className="p-3 pt-0 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
+                  <div className="p-2 sm:p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg">
                     <p className="text-sm text-[#01312D]">
                       <strong>Note:</strong> Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.
                     </p>
                   </div>
 
                   {/* Height inputs for each corner */}
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {Array.from({ length: config.corners }, (_, index) => (
-                      <Card key={index} className="p-3 border-l-4 border-l-[#01312D]">
-                        <div className="space-y-2">
-                          <h6 className="font-semibold text-[#01312D] text-sm">
+                      <Card key={index} className="p-2 sm:p-3 border-l-4 border-l-[#01312D]">
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <h6 className="font-semibold text-[#01312D] text-xs sm:text-sm">
                             Anchor Point {getCornerLabel(index)} Configuration
                           </h6>
 
-                          <div className="grid grid-cols-1 gap-3 md:gap-4 md:grid-cols-2">
+                          <div className="grid grid-cols-1 gap-2 sm:gap-3 md:gap-4 md:grid-cols-2">
                             {/* Height Input */}
                             <div>
                               <div className="relative">
@@ -669,7 +669,7 @@ export function DimensionsContent({
                                   onBlur={() => setHighlightedCorner(null)}
                                   placeholder={config.unit === 'imperial' ? '100' : '2500'}
                                   autoComplete="off"
-                                  className={`flex-1 py-2 ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? '!pr-16 sm:!pr-[72px]' : '!pr-12 sm:!pr-14'}`}
+                                  className={`flex-1 text-sm sm:text-base ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
                                   step={config.unit === 'imperial' ? '0.1' : '10'}
                                   isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
                                   label={
@@ -697,7 +697,7 @@ export function DimensionsContent({
                                   }
                                   secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
                                 />
-                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-11 sm:right-14' : 'right-3 sm:right-4'} top-1/2 -translate-y-1/2 text-xs sm:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
+                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
                                   {config.unit === 'metric' ? 'mm' : 'in'}
                                 </span>
                               </div>
@@ -729,7 +729,7 @@ export function DimensionsContent({
                               <div className="flex gap-1">
                                 <button
                                   onClick={() => updateFixingType(index, 'post')}
-                                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                                  className={`flex-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300 border-2 ${
                                     config.fixingTypes?.[index] === 'post'
                                       ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
                                       : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
@@ -739,7 +739,7 @@ export function DimensionsContent({
                                 </button>
                                 <button
                                   onClick={() => updateFixingType(index, 'building')}
-                                  className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                                  className={`flex-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300 border-2 ${
                                     config.fixingTypes?.[index] === 'building'
                                       ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
                                       : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
@@ -756,7 +756,7 @@ export function DimensionsContent({
                   </div>
 
                   {/* Installation Guidelines */}
-                  <Card className="p-3 bg-slate-50 border-slate-200">
+                  <Card className="p-2 sm:p-3 bg-slate-50 border-slate-200">
                     <h6 className="text-xs md:text-sm font-semibold text-[#01312D] mb-2">
                       Installation Guidelines
                     </h6>
@@ -782,7 +782,7 @@ export function DimensionsContent({
         )}
       </div>
 
-      <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
+      <div className="flex flex-col gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-slate-200 mt-4 sm:mt-6">
         {(() => {
           if (config.corners === 0) {
             return null;
