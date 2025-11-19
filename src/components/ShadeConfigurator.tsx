@@ -23,7 +23,6 @@ import { formatMeasurement, formatArea } from '../utils/geometry';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
-import { MobilePricingBar } from './MobilePricingBar';
 import { SaveProgressButton } from './SaveProgressButton';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
@@ -98,10 +97,6 @@ export function ShadeConfigurator() {
   // State to track if user wants to navigate to diagonals section specifically
   const [navigateToDiagonals, setNavigateToDiagonals] = useState(false);
 
-  // Mobile pricing bar state
-  const [isBarLocked, setIsBarLocked] = useState(false);
-  const [isNewQuote, setIsNewQuote] = useState(false);
-  const [previousTotalPrice, setPreviousTotalPrice] = useState(0);
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
@@ -222,31 +217,6 @@ export function ShadeConfigurator() {
     loadQuoteFromUrl();
   }, []);
 
-  // Manage mobile pricing bar lock and new quote detection
-  useEffect(() => {
-    if (isMobile && openStep === 4 && calculations.totalPrice > 0 && previousTotalPrice === 0) {
-      // Quote just became available for the first time
-      setIsNewQuote(true);
-      setIsBarLocked(true);
-
-      // Set a timer to unlock after 15 seconds
-      const unlockTimer = setTimeout(() => {
-        setIsBarLocked(false);
-        setIsNewQuote(false);
-      }, 15000);
-
-      return () => clearTimeout(unlockTimer);
-    } else if (calculations.totalPrice === 0) {
-      // Reset when price goes back to 0
-      setIsNewQuote(false);
-      setIsBarLocked(false);
-    }
-
-    // Update previous price for next comparison
-    if (calculations.totalPrice !== previousTotalPrice) {
-      setPreviousTotalPrice(calculations.totalPrice);
-    }
-  }, [calculations.totalPrice, openStep, isMobile, previousTotalPrice]);
 
   /*
   // IP-based currency detection effect
@@ -1440,20 +1410,7 @@ export function ShadeConfigurator() {
 
   // Handle save quote
   const handleSaveQuote = () => {
-    // Exit lock mode when user interacts
-    setIsBarLocked(false);
-    setIsNewQuote(false);
     setShowSaveQuoteModal(true);
-  };
-
-  // Handle mobile continue button
-  const handleMobileContinue = () => {
-    if (openStep === 4 && hasQuote) {
-      // Exit lock mode when user interacts
-      setIsBarLocked(false);
-      setIsNewQuote(false);
-      nextStep(); // Move to next step
-    }
   };
 
   if (isLoadingQuote) {
@@ -1633,20 +1590,6 @@ export function ShadeConfigurator() {
           progress={loadingStep.progress}
         />
       </div>
-
-      {/* Mobile Pricing Bar */}
-      <MobilePricingBar
-        totalPrice={calculations.totalPrice}
-        currency={config.currency}
-        isVisible={hasQuote && openStep === 4}
-        quoteReference={quoteReference || undefined}
-        onContinue={handleMobileContinue}
-        onSaveQuote={handleSaveQuote}
-        isLocked={isBarLocked}
-        isNewQuote={isNewQuote}
-        hasInvalidMeasurements={calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered)}
-        area={calculations.area}
-      />
 
       {/* Save Quote Modal */}
       <SaveQuoteModal
