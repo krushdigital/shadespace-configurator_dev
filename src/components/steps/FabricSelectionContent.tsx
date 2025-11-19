@@ -77,20 +77,20 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
             Fabric Material
           </a>
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          {FABRICS.map((fabric, index) => {
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {FABRICS.map((fabric) => {
             const isSelected = config.fabricType === fabric.id;
             const hasError = validationErrors.fabricType && !config.fabricType;
-
+            
             return (
               <Card
                 key={fabric.id}
-                className={`fabric-card-intro relative p-4 md:p-5 cursor-pointer transition-all duration-300 ${
+                className={`relative p-3 md:p-4 cursor-pointer transition-all duration-300 ${
                   isSelected
-                    ? '!border-[3px] !border-[#01312D] !ring-4 !ring-[#307C31]/30 shadow-2xl transform md:scale-105 bg-gradient-to-br from-[#01312D] to-[#307C31]'
+                    ? '!border-2 !border-[#01312D] !ring-2 !ring-[#01312D] shadow-xl transform scale-105'
                     : hasError
                     ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600 hover:shadow-lg'
-                    : 'bg-gradient-to-b from-[#F3FFE3]/40 to-white md:from-white md:to-white border-2 border-[#307C31]/20 hover:border-[#307C31] hover:shadow-xl hover:scale-[1.02] hover:-translate-y-1 active:scale-[0.98]'
+                    : 'hover:border-[#307C31] hover:shadow-lg'
                 }`}
                 onClick={() => {
                   analytics.fabricTypeSelected(fabric.id, fabric.label);
@@ -102,13 +102,11 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
               >
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
-                    <h5 className={`font-bold text-lg transition-colors duration-300 ${
-                      isSelected ? 'text-white' : 'text-[#01312D]'
-                    }`}>
+                    <h5 className="font-semibold text-[#01312D]">
                       {fabric.label}
                     </h5>
                     {fabric.id === 'extrablock330' && (
-                      <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded shadow-md">
+                      <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded shadow-md">
                         FR
                       </span>
                     )}
@@ -203,55 +201,51 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         </div>
                       }
                     >
-                      <span className={`w-5 h-5 inline-flex items-center justify-center text-xs font-bold rounded-full cursor-help transition-colors duration-300 ${
-                        isSelected ? 'bg-white text-[#01312D] hover:bg-[#F3FFE3]' : 'bg-[#01312D] text-white hover:bg-[#307C31]'
-                      }`}>
+                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
                         ?
                       </span>
                     </Tooltip>
                   </div>
-                  <div className="mb-3">
+                  <div className="mb-2">
                     {fabric.id === 'monotec370' && (
-                      <span className="bg-[#BFF102] text-[#01312D] text-sm font-bold px-3 py-1.5 rounded-full shadow-md">
+                      <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
                         Premium
                       </span>
                     )}
                     {fabric.id === 'extrablock330' && (
-                      <span className="bg-[#BFF102] text-[#01312D] text-sm font-bold px-3 py-1.5 rounded-full shadow-md">
+                      <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
                         Good Value
                       </span>
                     )}
                     {fabric.id === 'shadetec320' && (
-                      <span className="bg-[#BFF102] text-[#01312D] text-sm font-bold px-3 py-1.5 rounded-full shadow-md">
+                      <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
                         Best Value
                       </span>
                     )}
                   </div>
-                  <p className={`text-sm md:text-base mb-3 md:mb-4 line-clamp-2 md:line-clamp-none leading-relaxed transition-colors duration-300 ${
-                    isSelected ? 'text-white/95' : 'text-[#01312D]/80'
-                  }`}>
+                  <p className="text-sm md:text-sm text-[#01312D]/70 mb-2 md:mb-3 line-clamp-2 md:line-clamp-none">
                     {fabric.description}
                   </p>
-                  <div className={`rounded-xl p-4 transition-all duration-300 shadow-sm ${
+                  <div className={`hidden md:block rounded-lg p-3 transition-all duration-300 ${
                     isSelected
-                     ? 'bg-[#01312D]/90'
-                     : 'bg-[#F3FFE3]/60'
+                     ? 'bg-gradient-to-r from-[#01312D] to-[#307C31]'
+                     : 'bg-[#F3FFE3]'
                   }`}>
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className={`text-xs font-medium mb-1 transition-colors duration-300 ${
-                          isSelected ? 'text-white/80' : 'text-[#01312D]/70'
+                        <div className={`text-xs mb-1 ${
+                          isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'
                         }`}>Weight</div>
-                        <div className={`font-bold text-base transition-colors duration-300 ${
-                          isSelected ? 'text-white' : 'text-[#01312D]'
+                        <div className={`font-semibold ${
+                          isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'
                         }`}>{fabric.weightPerSqm} g/m²</div>
                       </div>
                       <div>
-                        <div className={`text-xs font-medium mb-1 transition-colors duration-300 ${
-                          isSelected ? 'text-white/80' : 'text-[#01312D]/70'
+                        <div className={`text-xs mb-1 ${
+                          isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'
                         }`}>Warranty</div>
-                        <div className={`font-bold text-base transition-colors duration-300 ${
-                          isSelected ? 'text-white' : 'text-[#01312D]'
+                        <div className={`font-semibold ${
+                          isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'
                         }`}>
                           <a
                             href="https://shadespace.com/pages/warranty"
