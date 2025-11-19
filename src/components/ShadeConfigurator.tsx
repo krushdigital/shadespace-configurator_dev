@@ -1634,13 +1634,14 @@ export function ShadeConfigurator() {
         />
       </div>
 
-      {/* Mobile Pricing Bar - Only shown on Review step (step 6) */}
+      {/* Mobile Pricing Bar - Only shown on Dimensions step (step 4), NOT on Review step */}
       <MobilePricingBar
         totalPrice={calculations.totalPrice}
         currency={config.currency}
-        isVisible={hasQuote && openStep === 6}
+        isVisible={hasQuote && openStep === 4}
         quoteReference={quoteReference || undefined}
         onSaveQuote={handleSaveQuote}
+        onContinue={handleMobileContinue}
         isLocked={isBarLocked}
         isNewQuote={isNewQuote}
         hasInvalidMeasurements={calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered)}
