@@ -319,6 +319,11 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/* Ensure border styles are preserved on focus for buttons with explicit borders */
+button:focus:not(:focus-visible) {
+  border-color: inherit;
+}
+
 /* Icon button reset - no focus rings on icon buttons */
 .icon-button-reset {
   outline: none !important;

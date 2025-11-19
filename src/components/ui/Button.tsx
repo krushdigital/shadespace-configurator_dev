@@ -21,8 +21,8 @@ export function Button({
   
   const variantClasses = {
     primary: 'bg-gradient-to-r from-[#01312D] to-[#307C31] text-white hover:from-[#012a26] hover:to-[#2a6b2b] focus:ring-[#BFF102] shadow-lg hover:shadow-xl transform hover:-translate-y-0.5',
-    secondary: 'bg-white text-[#01312D] border-2 border-[#307C31] hover:bg-[#BFF102]/20 hover:border-[#01312D] focus:ring-[#BFF102] shadow-md hover:shadow-lg',
-    outline: 'border-2 border-[#307C31] text-[#307C31] bg-white hover:bg-[#307C31] hover:text-white focus:ring-[#BFF102] shadow-md hover:shadow-lg'
+    secondary: 'bg-white text-[#01312D] border-2 border-[#307C31] hover:bg-[#BFF102]/20 hover:border-[#01312D] focus:ring-[#BFF102] focus:border-[#01312D] shadow-md hover:shadow-lg',
+    outline: 'border-2 border-[#307C31] text-[#307C31] bg-white hover:bg-[#307C31] hover:text-white focus:ring-[#BFF102] focus:border-[#307C31] active:border-[#307C31] shadow-md hover:shadow-lg'
   };
   
   const sizeClasses = {
