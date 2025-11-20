@@ -318,7 +318,22 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                 : 'border-emerald-700'
             }`}
           >
-            <div className="flex items-start gap-3 p-3">
+            <div
+              className={`flex items-start gap-3 p-3 cursor-pointer transition-colors ${
+                !diagonalsExpanded ? 'hover:bg-emerald-50/50' : ''
+              }`}
+              onClick={() => setDiagonalsExpanded(!diagonalsExpanded)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setDiagonalsExpanded(!diagonalsExpanded);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-expanded={diagonalsExpanded}
+              aria-label={diagonalsExpanded ? 'Collapse diagonal measurements section' : 'Expand diagonal measurements section'}
+            >
               <div className="flex-shrink-0 mt-0.5">
                 {allDiagonalsEntered ? (
                   <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
@@ -336,15 +351,20 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                     Diagonal measurements {allDiagonalsEntered ? 'complete' : 'required'}
                   </p>
                   <div className="flex items-center gap-2">
-                    <Tooltip content="Diagonal measurements ensure manufacturing accuracy and help our team create your exact shade shape with precision.">
-                      <span className="text-emerald-700 hover:text-emerald-900 inline-flex items-center justify-center" role="button" tabIndex={0}>
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </Tooltip>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Tooltip content="Diagonal measurements ensure manufacturing accuracy and help our team create your exact shade shape with precision.">
+                        <span className="text-emerald-700 hover:text-emerald-900 inline-flex items-center justify-center" role="button" tabIndex={0}>
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      </Tooltip>
+                    </div>
                     <button
-                      onClick={() => setDiagonalsExpanded(!diagonalsExpanded)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDiagonalsExpanded(!diagonalsExpanded);
+                      }}
                       className="text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-transparent border-0 p-0 cursor-pointer"
                     >
                       {diagonalsExpanded ? 'Collapse ▲' : 'Enter Diagonals ▼'}
