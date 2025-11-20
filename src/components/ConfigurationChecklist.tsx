@@ -337,15 +337,15 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   </p>
                   <div className="flex items-center gap-2">
                     <Tooltip content="Diagonal measurements ensure manufacturing accuracy and help our team create your exact shade shape with precision.">
-                      <button className="text-emerald-700 hover:text-emerald-900 icon-button-reset">
+                      <span className="text-emerald-700 hover:text-emerald-900 inline-flex items-center justify-center" role="button" tabIndex={0}>
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                         </svg>
-                      </button>
+                      </span>
                     </Tooltip>
                     <button
                       onClick={() => setDiagonalsExpanded(!diagonalsExpanded)}
-                      className="text-emerald-700 hover:text-emerald-900 font-medium text-sm icon-button-reset"
+                      className="text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-transparent border-0 p-0 cursor-pointer"
                     >
                       {diagonalsExpanded ? 'Collapse ▲' : 'Enter Diagonals ▼'}
                     </button>
@@ -431,11 +431,11 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                 </p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Tooltip content="Providing anchor point heights allows for more precise manufacturing customized to your installation. Standard manufacturing will be used if heights are not provided.">
-                    <button className="text-blue-600 hover:text-blue-800 icon-button-reset">
+                    <span className="text-blue-600 hover:text-blue-800 inline-flex items-center justify-center" role="button" tabIndex={0}>
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
                       </svg>
-                    </button>
+                    </span>
                   </Tooltip>
                   {onNavigateToHeights && (
                     <Button
@@ -469,7 +469,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   </p>
                   <button
                     onClick={() => setValidationExpanded(!validationExpanded)}
-                    className="text-yellow-700 hover:text-yellow-900 font-medium text-sm icon-button-reset"
+                    className="text-yellow-700 hover:text-yellow-900 font-medium text-sm bg-transparent border-0 p-0 cursor-pointer"
                   >
                     {validationExpanded ? 'Hide Details ▲' : 'Review Details ▼'}
                   </button>
