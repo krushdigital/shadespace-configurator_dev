@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '../utils/currencyFormatter';
-import { formatArea } from '../utils/geometry';
 import { Tooltip } from './ui/Tooltip';
 
 interface MobilePricingBarProps {
@@ -14,9 +13,6 @@ interface MobilePricingBarProps {
   isNewQuote?: boolean;
   hasInvalidMeasurements?: boolean;
   area?: number;
-  corners?: number;
-  allDiagonalsEntered?: boolean;
-  unit?: 'metric' | 'imperial';
 }
 
 export function MobilePricingBar({
@@ -30,18 +26,9 @@ export function MobilePricingBar({
   isNewQuote = false,
   hasInvalidMeasurements = false,
   area = 0,
-  corners = 0,
-  allDiagonalsEntered = true,
-  unit = 'metric',
 }: MobilePricingBarProps) {
   const [isHidden, setIsHidden] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
-
-  // Determine if area should be displayed
-  // Show area when:
-  // - Shape has less than 4 corners (triangles don't need diagonals), OR
-  // - Shape has 4+ corners AND all diagonals are entered AND area is greater than 0
-  const shouldShowArea = corners < 4 || (corners >= 4 && allDiagonalsEntered && area > 0);
 
   useEffect(() => {
     if (isLocked) {
@@ -85,34 +72,25 @@ export function MobilePricingBar({
         <div className="px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <div>
-                  <div className="text-xs font-medium text-slate-600 mb-0.5">
-                    Order Total
-                  </div>
-                  <div className={`text-2xl font-bold ${hasInvalidMeasurements ? 'text-red-600' : 'text-[#01312D]'}`}>
-                    {hasInvalidMeasurements ? 'Cannot Calculate' : formatCurrency(totalPrice, currency)}
-                  </div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <div className="text-xs font-medium text-slate-600">
+                  {quoteReference ? `Configuration ${quoteReference}` : 'Your Configuration'}
                 </div>
-                <div className="text-right">
-                  {shouldShowArea && (
-                    <div className="text-sm text-slate-600 mb-0.5">
-                      {formatArea(area * 1000000, unit)}
-                    </div>
-                  )}
-                  {corners > 0 && (
-                    <div className="text-sm text-slate-600">
-                      {corners} corners
-                    </div>
-                  )}
-                </div>
+                {isNewQuote && (
+                  <span className="px-1.5 py-0.5 bg-[#BFF102] text-[#01312D] text-[10px] font-bold rounded-full animate-pulse">
+                    PRICING
+                  </span>
+                )}
+              </div>
+              <div className={`text-lg font-bold ${hasInvalidMeasurements ? 'text-red-600' : 'text-[#01312D]'}`}>
+                {hasInvalidMeasurements ? 'Cannot Calculate' : formatCurrency(totalPrice, currency)}
               </div>
               <div className={`text-xs font-medium ${hasInvalidMeasurements ? 'text-red-600' : 'text-[#307C31]'}`}>
-                {hasInvalidMeasurements ? 'Invalid measurements - see error above' : 'Includes express freight, taxes & duties (to your door)'}
+                {hasInvalidMeasurements ? 'Invalid measurements - see error above' : 'Includes express freight, taxes & duties'}
               </div>
             </div>
 
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
               {onSaveQuote && (
                 <Tooltip
                   content={
