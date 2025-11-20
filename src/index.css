@@ -338,6 +338,24 @@ button:focus:not(:focus-visible) {
   box-shadow: none !important;
 }
 
+/* Additional safeguards for buttons within tooltip contexts and dropdown toggles */
+button.bg-transparent {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+}
+
+button.bg-transparent:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+button.bg-transparent:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .corner-pulse,
