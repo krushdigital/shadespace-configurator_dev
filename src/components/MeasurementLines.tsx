@@ -51,13 +51,6 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
     const midX = (start.x + end.x) / 2;
     const midY = (start.y + end.y) / 2;
 
-    const angle = Math.atan2(end.y - start.y, end.x - start.x) * (180 / Math.PI);
-    const labelAngle = angle > 90 || angle < -90 ? angle + 180 : angle;
-
-    const edgeLabel = measurementType === 'space'
-      ? String.fromCharCode(65 + index) + String.fromCharCode(65 + ((index + 1) % corners))
-      : String.fromCharCode(65 + index) + String.fromCharCode(65 + ((index + 1) % corners));
-
     return (
       <g key={`line-${index}`} className={isActive ? 'animate-fade-in' : ''}>
         <line
@@ -89,33 +82,19 @@ export function MeasurementLines({ measurementType, corners, isActive }: Measure
           }}
         />
 
-        <g
-          transform={`translate(${midX}, ${midY})`}
+        {/* Point on measurement line */}
+        <circle
+          cx={midX}
+          cy={midY}
+          r="4"
+          fill="#ef4444"
+          stroke="white"
+          strokeWidth="1.5"
           style={{
             transition: 'opacity 0.4s ease-in-out',
             opacity: isActive ? 1 : 0
           }}
-        >
-          <rect
-            x="-16"
-            y="-10"
-            width="32"
-            height="20"
-            fill="white"
-            stroke="#ef4444"
-            strokeWidth="1.5"
-            rx="3"
-          />
-          <text
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="#ef4444"
-            fontSize="10"
-            fontWeight="bold"
-          >
-            {edgeLabel}
-          </text>
-        </g>
+        />
       </g>
     );
   };

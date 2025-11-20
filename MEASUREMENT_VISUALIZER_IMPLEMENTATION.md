@@ -2,42 +2,40 @@
 
 ## Overview
 
-Successfully enhanced the interactive measurement option visualizer with a centralized, hover-responsive 3D visualization that dynamically updates based on user interaction. The implementation creates an intuitive interface that clearly demonstrates the difference between "space measurements" and "sail measurements" through real-time visual feedback.
+Successfully implemented an interactive visual interface that helps users understand the two distinct shade sail ordering options through real-time 3D visualization and animated measurement displays.
 
-## Components Enhanced
+## Components Created
 
 ### 1. MeasurementOptionVisualizer.tsx
-**Purpose:** Main component that orchestrates the interactive visualization experience
+**Purpose:** Main component that orchestrates the interactive two-column layout
 **Features:**
-- Centralized 3D visualization above option cards
-- Real-time hover state tracking that updates the visualization
-- Dynamic measurement line switching based on selected/hovered option
+- Two-column responsive grid layout (options on left, 3D model on right)
+- Hover state management for interactive visualization
 - Seamless integration with existing Card and Tooltip components
 - Hardware pack image display with contextual information
 - Validation error handling
-- Mobile-responsive layout with touch support
-- Hover feedback with visual border highlights
+- Mobile-responsive single column stacking
 
 ### 2. ShadeSail3DModel.tsx
-**Purpose:** 3D architectural scene rendering with shade sail (existing component)
+**Purpose:** 3D architectural scene rendering with shade sail
 **Features:**
 - SVG-based pseudo-3D rendering with perspective effects
 - Dynamic corner count support (3-6 corners)
-- Realistic sail rendering with curved edges
+- Realistic material textures and gradients
 - Shadow and lighting effects for depth perception
-- Displays fixing points with hardware for "space" measurement type
-- Shows corner hardware for "sail" measurement type
-- Contextual label that updates based on measurement type
+- Fixing posts and building wall visualization
+- Animated measurement point indicators
+- Contextual labels that slide in based on measurement type
 
-### 3. MeasurementLines.tsx (Enhanced)
-**Purpose:** Animated measurement lines with edge labels
+### 3. MeasurementLines.tsx
+**Purpose:** Animated red dotted measurement lines with labels
 **Features:**
 - Dynamic line positioning based on measurement type (space vs sail)
-- Red dashed lines with white glow/shadow effect
-- Animated edge labels (e.g., "AB", "BC", "CD") in white boxes
-- Smooth transitions between measurement types
-- Diagonal lines for reference (lighter opacity)
-- Red dot indicators at each corner
+- Red dashed lines with white glow effect
+- Animated measurement labels showing distance values
+- Smooth transitions between states
+- Pulsing endpoint indicators
+- Arrow heads for directional clarity
 - Automatic calculation of measurement positions
 
 ## Visual Design Elements
@@ -49,87 +47,56 @@ Successfully enhanced the interactive measurement option visualizer with a centr
 - Neutral: Slate color palette
 
 ### Animation System
-Added two new CSS animations in `index.css`:
-1. **fade-in** - Smooth opacity transitions for measurement lines (0.4s ease-in-out)
-2. **slide-in-left** - Label entrance animation for contextual labels (0.4s ease-out)
+Added four new CSS animations in `index.css`:
+1. **dash** - Animates measurement line dashes
+2. **fade-in** - Smooth opacity transitions
+3. **pulse-subtle** - Gentle pulsing for measurement points
+4. **slide-in-left** - Label entrance animation
 
-All animations use smooth transitions and provide instant visual feedback.
+All animations respect `prefers-reduced-motion` accessibility preferences.
 
 ## Integration Points
 
 ### Modified Files
-1. **src/components/MeasurementOptionVisualizer.tsx**
-   - Added hover state management with React.useState
-   - Implemented centralized visualization section
-   - Added onMouseEnter/onMouseLeave handlers to cards
-   - Created getMeasurementType() function for dynamic visualization
-   - Enhanced hover feedback with border color changes
+1. **src/components/steps/CombinedMeasurementContent.tsx**
+   - Added import for MeasurementOptionVisualizer
+   - Integrated visualizer component while maintaining backward compatibility
+   - Original layout preserved as hidden fallback
 
-2. **src/components/MeasurementLines.tsx**
-   - Added edge label rendering with white background boxes
-   - Enhanced measurement line visualization with labels
-   - Maintained smooth transitions between states
-
-3. **src/index.css**
-   - Added fade-in animation keyframes
-   - Added slide-in-left animation keyframes
-   - Maintained consistency with existing animation styles
+2. **src/index.css**
+   - Added measurement visualization animations
+   - Maintained accessibility standards
 
 ## User Experience Flow
 
-### Option A: "Manufactured to Fit my Space" (Recommended)
+### Option A: "Adjust Size of Sail to Fit the Space"
 **On Hover/Select:**
-- Central 3D visualization updates to show fixing points (red dots with letters)
-- Red dashed measurement lines appear **between fixing points** (space measurements)
-- Turnbuckle hardware visible connecting sail corners to fixing points
-- Footer legend updates: "Fixing Points" indicator
-- Card border highlights in green (#307C31) on hover
-- Contextual message: "Hover or select an option below to see the difference"
+- 3D model displays with posts/walls in fixed positions
+- Red dotted lines appear **between fixing points** (space measurements)
+- Labels show "Space Measurements" and "Between fixing points"
+- Hardware pack information is highlighted
+- Visual explanation: "We calculate deductions for hardware, material stretch, and perfect fit"
 
-**Visual Communication:**
-- Clearly shows the gap between sail corners and fixing points
-- Demonstrates where measurements should be taken (fixing point to fixing point)
-- Illustrates included tensioning hardware
-
-### Option B: "Manufactured to the Dimensions I Provide"
+### Option B: "Fabricate Sail to the Dimensions You Provide"
 **On Hover/Select:**
-- Central 3D visualization updates to show sail corners only
-- Red dashed measurement lines appear **along sail fabric edges** (finished dimensions)
-- Corner D-rings visible at sail corners
-- Footer legend updates: "Sail Corners" indicator
-- Card border highlights in green (#307C31) on hover
-- Contextual message: "Hover or select an option below to see the difference"
-
-**Visual Communication:**
-- Shows measurements along the actual sail edges
-- Demonstrates that these are the finished sail dimensions
-- Indicates hardware is not included (no turnbuckles shown)
+- 3D model displays with same scene
+- Red dotted lines appear **along sail fabric edges** (finished dimensions)
+- Labels show "Sail Dimensions" and "Finished sail edges"
+- Hardware warning is highlighted
+- Visual explanation: "You provide exact sail measurements - no deductions applied"
 
 ## Technical Implementation Details
 
 ### State Management
-```typescript
-const [hoveredOption, setHoveredOption] = useState<'adjust' | 'exact' | null>(null);
-
-const getMeasurementType = () => {
-  if (selectedOption === 'adjust') return 'space';
-  if (selectedOption === 'exact') return 'sail';
-  if (hoveredOption === 'adjust') return 'space';
-  if (hoveredOption === 'exact') return 'sail';
-  return null;
-};
-```
-- Priority: Selected option takes precedence over hover state
-- Hover provides preview before selection
+- Uses React hooks for hover state management
 - Integrates with existing ConfiguratorState
 - Maintains compatibility with validation system
 
 ### Responsive Behavior
-- Desktop: Visualization above two-column option cards
-- Tablet: Same layout with adjusted spacing
-- Mobile: Single column with full-width visualization
+- Desktop: Two-column layout with sticky 3D model
+- Mobile: Single column with 3D model below options
 - Smooth transitions at all breakpoints
-- Touch-friendly interaction zones (onMouseEnter works on mobile tap)
+- Touch-friendly interaction zones
 
 ### Performance Optimizations
 - SVG-based rendering (no heavy WebGL libraries needed)
@@ -167,32 +134,13 @@ const getMeasurementType = () => {
 - Progressive enhancement approach
 - No external dependencies required
 
-## Key Implementation Features
-
-### Centralized Visualization
-- Single 3D model at the top that all users focus on
-- Eliminates cognitive load of comparing two separate visualizations
-- Clear visual feedback system that responds to user interaction
-
-### Smart Hover Detection
-- Hover over any option card to preview its measurement type
-- Selected option always displayed (doesn't change on hover)
-- Smooth transitions between states
-
-### Visual Clarity
-- Edge labels (AB, BC, CD, etc.) clearly identify which measurements
-- Red dashed lines with white shadow for visibility
-- Red dots mark measurement endpoints
-- Contrasting colors for different measurement types
-
 ## Future Enhancement Opportunities
 
-1. Add actual measurement values to edge labels (e.g., "AB: 3.5m")
-2. Implement animation showing fabric stretch for "space" option
-3. Add interactive rotation controls for 3D model
-4. Include side-by-side comparison mode
+1. Add rotation controls for 3D model
+2. Implement actual measurements from user's configuration
+3. Add animation for fabric tension visualization
+4. Include comparison slider between options
 5. Add print/save functionality for the visualization
-6. Animate transition when switching between measurement types
 
 ## Testing Recommendations
 
