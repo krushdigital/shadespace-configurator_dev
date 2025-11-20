@@ -1115,7 +1115,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 <p className="text-2xl font-bold">{formatCurrency(calculations.totalPrice, config.currency)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-white/80">{formatArea(calculations.area * 1000000, config.unit)}</p>
+                {(config.corners < 4 || (config.corners >= 4 && allDiagonalsEntered && calculations.area > 0)) && (
+                  <p className="text-xs text-white/80">{formatArea(calculations.area * 1000000, config.unit)}</p>
+                )}
                 <p className="text-xs text-white/80">{config.corners} corners</p>
               </div>
             </div>
