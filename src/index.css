@@ -47,6 +47,36 @@ html {
   }
 }
 
+/* Fade-in animation for measurement lines */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-in-out;
+}
+
+/* Slide-in animation from left */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.4s ease-out;
+}
+
 @keyframes pulse-warning {
   0%, 100% {
     box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);

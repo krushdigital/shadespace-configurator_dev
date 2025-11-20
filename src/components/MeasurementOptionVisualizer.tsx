@@ -20,6 +20,7 @@ export function MeasurementOptionVisualizer({
   onOptionChange,
   validationErrors = {}
 }: MeasurementOptionVisualizerProps) {
+  const [hoveredOption, setHoveredOption] = React.useState<'adjust' | 'exact' | null>(null);
 
   const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
     3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
@@ -30,17 +31,78 @@ export function MeasurementOptionVisualizer({
 
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[corners];
 
+  const getMeasurementType = () => {
+    if (selectedOption === 'adjust') return 'space';
+    if (selectedOption === 'exact') return 'sail';
+    if (hoveredOption === 'adjust') return 'space';
+    if (hoveredOption === 'exact') return 'sail';
+    return null;
+  };
+
+  const currentMeasurementType = getMeasurementType();
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Card
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg border-2 border-slate-200 overflow-hidden shadow-sm">
+        <div className="relative" style={{ height: '320px' }}>
+          <div className="absolute inset-0">
+            <ShadeSail3DModel
+              corners={corners > 0 ? corners : 4}
+              measurementType={currentMeasurementType}
+              fabricColor={fabricColor}
+            />
+            {corners > 0 && currentMeasurementType && (
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                viewBox="0 0 400 400"
+                style={{ zIndex: 10 }}
+              >
+                <MeasurementLines
+                  measurementType={currentMeasurementType}
+                  corners={corners}
+                  isActive={true}
+                />
+              </svg>
+            )}
+          </div>
+        </div>
+        <div className="bg-slate-50 px-4 py-3 border-t border-slate-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6 text-xs text-slate-600">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-0 border-t-2 border-dashed border-red-500"></div>
+                <span className="font-medium">Measurements</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+                <span className="font-medium">
+                  {currentMeasurementType === 'space' ? 'Fixing Points' : currentMeasurementType === 'sail' ? 'Sail Corners' : 'Points'}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 italic">
+              {currentMeasurementType === 'space' && 'Hover or select an option below to see the difference'}
+              {currentMeasurementType === 'sail' && 'Hover or select an option below to see the difference'}
+              {!currentMeasurementType && 'Hover over an option below to see the visualization'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card
         className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
           selectedOption === 'adjust'
             ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
+            : hoveredOption === 'adjust'
+            ? 'border-2 border-[#307C31] shadow-lg'
             : validationErrors.measurementOption && !selectedOption
             ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
             : 'hover:border-[#307C31] hover:shadow-md'
         }`}
         onClick={() => onOptionChange('adjust')}
+        onMouseEnter={() => setHoveredOption('adjust')}
+        onMouseLeave={() => setHoveredOption(null)}
       >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
@@ -216,11 +278,15 @@ export function MeasurementOptionVisualizer({
         className={`p-3.5 cursor-pointer transition-all duration-300 hover:shadow-xl ${
           selectedOption === 'exact'
             ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D] bg-[#BFF102]/5'
+            : hoveredOption === 'exact'
+            ? 'border-2 border-[#307C31] shadow-lg'
             : validationErrors.measurementOption && !selectedOption
             ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
             : 'hover:border-[#307C31] hover:shadow-md'
         }`}
         onClick={() => onOptionChange('exact')}
+        onMouseEnter={() => setHoveredOption('exact')}
+        onMouseLeave={() => setHoveredOption(null)}
       >
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0 mt-0.5">
@@ -373,6 +439,7 @@ export function MeasurementOptionVisualizer({
             </div>
           </div>
         </Card>
+      </div>
     </div>
   );
 }
