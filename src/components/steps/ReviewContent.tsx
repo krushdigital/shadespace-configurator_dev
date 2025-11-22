@@ -650,19 +650,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       <span className="text-slate-600">Corners:</span>
                       <span className="font-medium text-slate-900">{config.corners}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Area:</span>
-                      <span className={`font-medium ${
-                        calculations.area === 0 && hasAllEdgeMeasurements
-                          ? 'text-red-600 font-bold'
-                          : 'text-slate-900'
-                      }`}>
-                        {calculations.area === 0 && hasAllEdgeMeasurements
-                          ? 'Error in measurements'
-                          : formatArea(calculations.area * 1000000, config.unit)
-                        }
-                      </span>
-                    </div>
+                    {(config.corners < 4 || allDiagonalsEntered) && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Area:</span>
+                        <span className="font-medium text-slate-900">
+                          {formatArea(calculations.area * 1000000, config.unit)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-slate-600">Weight:</span>
                       <span className="font-medium text-slate-900">
@@ -748,19 +743,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   <span className="text-slate-600">Corners:</span>
                   <span className="font-medium text-slate-900">{config.corners}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Area:</span>
-                  <span className={`font-medium ${
-                    calculations.area === 0 && hasAllEdgeMeasurements
-                      ? 'text-red-600 font-bold'
-                      : 'text-slate-900'
-                  }`}>
-                    {calculations.area === 0 && hasAllEdgeMeasurements
-                      ? 'Error - See Below'
-                      : formatArea(calculations.area * 1000000, config.unit)
-                    }
-                  </span>
-                </div>
+                {(config.corners < 4 || allDiagonalsEntered) && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Area:</span>
+                    <span className="font-medium text-slate-900">
+                      {formatArea(calculations.area * 1000000, config.unit)}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-slate-600">Perimeter:</span>
                   <span className="font-medium text-slate-900">
