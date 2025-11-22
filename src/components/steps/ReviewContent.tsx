@@ -584,24 +584,26 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   return (
     <div className="p-6">
       <div className="space-y-6">
-        {/* Configuration Checklist */}
-        <ConfigurationChecklist
-          ref={checklistRef}
-          config={config}
-          updateConfig={updateConfig}
-          hasAllEdgeMeasurements={hasAllEdgeMeasurements}
-          allDiagonalsEntered={allDiagonalsEntered}
-          shouldShowDiagonalInputSection={shouldShowDiagonalInputSection}
-          diagonalMeasurements={diagonalMeasurements}
-          onNavigateToDimensions={() => onPrev({ navigateToDiagonals: true })}
-          onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
-          highlightedMeasurement={highlightedMeasurement}
-          setHighlightedMeasurement={setHighlightedMeasurement}
-          updateMeasurement={updateMeasurement}
-          geometryValidation={geometryValidation}
-          friendlyErrors={friendlyErrors}
-          isMobile={isMobile}
-        />
+        {/* Configuration Checklist - Desktop only at top */}
+        {!isMobile && (
+          <ConfigurationChecklist
+            ref={checklistRef}
+            config={config}
+            updateConfig={updateConfig}
+            hasAllEdgeMeasurements={hasAllEdgeMeasurements}
+            allDiagonalsEntered={allDiagonalsEntered}
+            shouldShowDiagonalInputSection={shouldShowDiagonalInputSection}
+            diagonalMeasurements={diagonalMeasurements}
+            onNavigateToDimensions={() => onPrev({ navigateToDiagonals: true })}
+            onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
+            highlightedMeasurement={highlightedMeasurement}
+            setHighlightedMeasurement={setHighlightedMeasurement}
+            updateMeasurement={updateMeasurement}
+            geometryValidation={geometryValidation}
+            friendlyErrors={friendlyErrors}
+            isMobile={isMobile}
+          />
+        )}
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
@@ -1113,6 +1115,27 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </div>
             <p className="text-xs text-white/90 font-medium">Includes express freight, taxes & duties (to your door)</p>
           </Card>
+        )}
+
+        {/* Configuration Checklist - Mobile only after price */}
+        {isMobile && (
+          <ConfigurationChecklist
+            ref={checklistRef}
+            config={config}
+            updateConfig={updateConfig}
+            hasAllEdgeMeasurements={hasAllEdgeMeasurements}
+            allDiagonalsEntered={allDiagonalsEntered}
+            shouldShowDiagonalInputSection={shouldShowDiagonalInputSection}
+            diagonalMeasurements={diagonalMeasurements}
+            onNavigateToDimensions={() => onPrev({ navigateToDiagonals: true })}
+            onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
+            highlightedMeasurement={highlightedMeasurement}
+            setHighlightedMeasurement={setHighlightedMeasurement}
+            updateMeasurement={updateMeasurement}
+            geometryValidation={geometryValidation}
+            friendlyErrors={friendlyErrors}
+            isMobile={isMobile}
+          />
         )}
 
         {/* Important Acknowledgments - Full width on desktop */}
