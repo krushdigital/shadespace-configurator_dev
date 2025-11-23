@@ -97,28 +97,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
     (!shouldShowDiagonalInputSection || allDiagonalsEntered);
 
   if (allRequirementsMet && !showHeightOptional && !hasValidationIssues && !isEditingDiagonals) {
-    // Mobile: Slim success indicator
-    if (isMobile) {
-      return (
-        <div className="mb-4 bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <div>
-              <p className="text-sm font-semibold text-emerald-900">
-                Configuration Complete
-              </p>
-              <p className="text-xs text-emerald-700">
-                Review below and add to cart
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Desktop: No notice shown
+    // Hide entirely if configuration is complete (including optional heights if provided)
     return null;
   }
 
