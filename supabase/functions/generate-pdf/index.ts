@@ -732,6 +732,37 @@ serve(async (req) => {
 
     console.log('PDF generated successfully, size:', pdfBuffer.length, 'bytes')
 
+    // Track PDF generation event
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
+
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        await supabase.from('user_events').insert({
+          event_type: 'pdf_download',
+          event_data: {
+            totalPrice: calculations.totalPrice,
+            currency: config.currency,
+            area: calculations.area,
+            corners: config.corners,
+            fabricType: config.fabricType,
+            generated_by: 'edge_function'
+          },
+          customer_email: null,
+          device_type: 'server',
+          customer_ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+          user_agent: req.headers.get('user-agent'),
+          success: true
+        })
+
+        console.log('PDF download event tracked successfully')
+      }
+    } catch (trackError) {
+      console.error('Failed to track PDF event:', trackError)
+    }
+
     const sanitizeFilename = (name: string): string => {
       if (!name) return '';
       return name
