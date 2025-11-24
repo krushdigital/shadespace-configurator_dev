@@ -125,7 +125,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="p-6">
         <div className="animate-pulse space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-16 bg-gray-200 rounded"></div>
@@ -136,7 +136,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
   }
 
   return (
-    <Card>
+    <Card className="p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex-1 flex gap-4">
           <Input
@@ -166,30 +166,30 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 text-left">
-              <th className="pb-3 text-sm font-semibold text-gray-700">Event Type</th>
-              <th className="pb-3 text-sm font-semibold text-gray-700">Customer Email</th>
-              <th className="pb-3 text-sm font-semibold text-gray-700">Device</th>
-              <th className="pb-3 text-sm font-semibold text-gray-700">Status</th>
-              <th className="pb-3 text-sm font-semibold text-gray-700">Created</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Event Type</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer Email</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Device</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Status</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Created</th>
             </tr>
           </thead>
           <tbody>
             {filteredEvents.length === 0 ? (
               <tr>
-                <td colSpan={5} className="py-8 text-center text-gray-500">
+                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
                   No events found
                 </td>
               </tr>
             ) : (
               filteredEvents.map((event) => (
                 <tr key={event.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4">{getEventTypeBadge(event.event_type)}</td>
-                  <td className="py-4 text-sm text-gray-600">
+                  <td className="px-4 py-4">{getEventTypeBadge(event.event_type)}</td>
+                  <td className="px-4 py-4 text-sm text-gray-600">
                     {event.customer_email || <span className="text-gray-400">Anonymous</span>}
                   </td>
-                  <td className="py-4 text-sm text-gray-900 capitalize">{event.device_type}</td>
-                  <td className="py-4">{getSuccessBadge(event.success)}</td>
-                  <td className="py-4 text-sm text-gray-600">{formatDate(event.created_at)}</td>
+                  <td className="px-4 py-4 text-sm text-gray-900 capitalize">{event.device_type}</td>
+                  <td className="px-4 py-4">{getSuccessBadge(event.success)}</td>
+                  <td className="px-4 py-4 text-sm text-gray-600">{formatDate(event.created_at)}</td>
                 </tr>
               ))
             )}

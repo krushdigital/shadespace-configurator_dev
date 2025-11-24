@@ -64,7 +64,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange })
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {[...Array(8)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+          <Card key={i} className="animate-pulse p-6">
             <div className="h-24 bg-gray-200 rounded"></div>
           </Card>
         ))}
@@ -74,7 +74,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange })
 
   if (!analytics) {
     return (
-      <Card>
+      <Card className="p-6">
         <p className="text-gray-500 text-center py-8">Failed to load analytics data</p>
       </Card>
     );
@@ -182,7 +182,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange })
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {metrics.map((metric, index) => (
-        <Card key={index} className="hover:shadow-lg transition-all duration-200 border border-gray-200">
+        <Card key={index} className="hover:shadow-lg transition-all duration-200 border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div className="flex-1">
               <p className="text-sm font-medium text-gray-600 mb-2">{metric.label}</p>

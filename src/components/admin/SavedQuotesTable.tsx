@@ -15,6 +15,7 @@ interface Quote {
   customer_reference: string | null;
   status: string;
   created_at: string;
+  access_token: string;
   calculations_data: {
     totalPrice: number;
   };
@@ -51,7 +52,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
         return;
       }
 
-      let query = `${supabaseUrl}/rest/v1/saved_quotes?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
+      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,status,created_at,access_token,calculations_data,config_data&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
 
       if (statusFilter !== 'all') {
         query += `&status=eq.${statusFilter}`;
@@ -164,13 +165,13 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
     }
   };
 
-  const getQuoteUrl = (quoteReference: string) => {
+  const getQuoteUrl = (quote: Quote) => {
     const baseUrl = window.location.origin;
-    return `${baseUrl}/pages/shade-sail-configurator/?quote=${quoteReference}`;
+    return `${baseUrl}/pages/shade-sail-configurator?quote=${quote.id}&token=${encodeURIComponent(quote.access_token)}`;
   };
 
-  const copyQuoteUrl = (quoteReference: string) => {
-    const url = getQuoteUrl(quoteReference);
+  const copyQuoteUrl = (quote: Quote) => {
+    const url = getQuoteUrl(quote);
     navigator.clipboard.writeText(url);
     alert('Quote link copied to clipboard!');
   };
@@ -199,7 +200,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
 
   if (loading) {
     return (
-      <Card>
+      <Card className="p-6">
         <div className="animate-pulse space-y-4">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="h-16 bg-gray-200 rounded"></div>
@@ -211,7 +212,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
 
   return (
     <>
-      <Card>
+      <Card className="p-6">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="flex-1 flex gap-4">
             <Input
@@ -241,27 +242,27 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 text-left">
-                <th className="pb-3 text-sm font-semibold text-gray-700">Quote Reference</th>
-                <th className="pb-3 text-sm font-semibold text-gray-700">Quote Name</th>
-                <th className="pb-3 text-sm font-semibold text-gray-700">Customer</th>
-                <th className="pb-3 text-sm font-semibold text-gray-700">Status</th>
-                <th className="pb-3 text-sm font-semibold text-gray-700">Total Price</th>
-                <th className="pb-3 text-sm font-semibold text-gray-700">Created</th>
-                <th className="pb-3 text-sm font-semibold text-gray-700">Quote Link</th>
-                <th className="pb-3 text-sm font-semibold text-gray-700">Actions</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Reference</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Name</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Status</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Total Price</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Created</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Link</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredQuotes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
                     No quotes found
                   </td>
                 </tr>
               ) : (
                 filteredQuotes.map((quote) => (
                   <tr key={quote.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-4">
+                    <td className="px-4 py-4">
                       <button
                         onClick={() => setSelectedQuote(quote)}
                         className="text-lime-600 hover:text-lime-700 font-medium"
@@ -269,18 +270,18 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                         {quote.quote_reference}
                       </button>
                     </td>
-                    <td className="py-4 text-sm text-gray-900">{quote.quote_name}</td>
-                    <td className="py-4 text-sm text-gray-600">
+                    <td className="px-4 py-4 text-sm text-gray-900">{quote.quote_name}</td>
+                    <td className="px-4 py-4 text-sm text-gray-600">
                       {quote.customer_email || <span className="text-gray-400">No email</span>}
                     </td>
-                    <td className="py-4">{getStatusBadge(quote.status)}</td>
-                    <td className="py-4 text-sm font-medium text-gray-900">
+                    <td className="px-4 py-4">{getStatusBadge(quote.status)}</td>
+                    <td className="px-4 py-4 text-sm font-medium text-gray-900">
                       {formatCurrency(quote.calculations_data.totalPrice, quote.config_data.currency)}
                     </td>
-                    <td className="py-4 text-sm text-gray-600">{formatDate(quote.created_at)}</td>
-                    <td className="py-4">
+                    <td className="px-4 py-4 text-sm text-gray-600">{formatDate(quote.created_at)}</td>
+                    <td className="px-4 py-4">
                       <Button
-                        onClick={() => copyQuoteUrl(quote.quote_reference)}
+                        onClick={() => copyQuoteUrl(quote)}
                         size="sm"
                         variant="outline"
                         className="text-xs"
@@ -288,7 +289,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                         Copy Link
                       </Button>
                     </td>
-                    <td className="py-4">
+                    <td className="px-4 py-4">
                       <div className="flex gap-2">
                         <Button onClick={() => setSelectedQuote(quote)} size="sm" variant="outline">
                           View
@@ -318,7 +319,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
       {/* Quote Detail Modal */}
       {selectedQuote && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{selectedQuote.quote_name}</h2>
@@ -380,17 +381,17 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                 <h4 className="text-sm font-semibold text-blue-900 mb-2">Quote Resume Link</h4>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 text-xs bg-white p-2 rounded border border-blue-200 text-blue-900 overflow-x-auto">
-                    {getQuoteUrl(selectedQuote.quote_reference)}
+                    {getQuoteUrl(selectedQuote)}
                   </code>
                   <Button
-                    onClick={() => copyQuoteUrl(selectedQuote.quote_reference)}
+                    onClick={() => copyQuoteUrl(selectedQuote)}
                     size="sm"
                     variant="outline"
                   >
                     Copy Link
                   </Button>
                   <Button
-                    onClick={() => window.open(getQuoteUrl(selectedQuote.quote_reference), '_blank')}
+                    onClick={() => window.open(getQuoteUrl(selectedQuote), '_blank')}
                     size="sm"
                   >
                     Open Quote
@@ -419,7 +420,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
       {/* Delete Confirmation Modal */}
       {quoteToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="max-w-md w-full">
+          <Card className="max-w-md w-full p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Confirm Delete</h2>
             <p className="text-gray-700 mb-6">
               Are you sure you want to delete quote <strong>{quoteToDelete.quote_reference}</strong>?
