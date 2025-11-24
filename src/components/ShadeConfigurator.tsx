@@ -27,6 +27,7 @@ import { SaveProgressButton } from './SaveProgressButton';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
+import { eventTrackers } from '../utils/eventTracker';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -274,6 +275,18 @@ export function ShadeConfigurator() {
     setIsGeneratingPDF(true);
     try {
       const pdf = await generatePDF(config, calculations, svgElement, isEmailSummary);
+
+      // Track PDF download event for admin dashboard
+      if (!isEmailSummary) {
+        const quoteParams = getQuoteFromUrl();
+        eventTrackers.pdfDownload(
+          quoteReference || (quoteParams?.id || null),
+          email || null,
+          calculations.totalPrice,
+          config.currency
+        );
+      }
+
       return pdf
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -573,6 +586,16 @@ export function ShadeConfigurator() {
           shopify_customer_created: data.shopifyCustomerCreated || false,
           shopify_customer_id: data.shopifyCustomerId,
         });
+
+        // Track email summary event for admin dashboard
+        const quoteParams = getQuoteFromUrl();
+        eventTrackers.emailSummary(
+          quoteReference || (quoteParams?.id || null),
+          email,
+          calculations.totalPrice,
+          config.currency,
+          true
+        );
 
         // Track Shopify customer creation if it happened
         if (data.shopifyCustomerCreated && data.shopifyCustomerId) {
@@ -931,6 +954,15 @@ export function ShadeConfigurator() {
 
           if (cartResponse.ok) {
             console.log('Added to cart');
+
+            // Track add to cart event for admin dashboard
+            eventTrackers.addToCart(
+              quoteReference || (quoteParams?.id || null),
+              email || null,
+              calculations.totalPrice,
+              config.currency,
+              true
+            );
 
             // Track quote conversion if applicable
             if (quoteData && quoteParams) {
