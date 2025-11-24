@@ -42,19 +42,22 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
           <p className="text-gray-600">Analytics Dashboard</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
+          <input type="text" name="username" autoComplete="username" style={{ display: 'none' }} value="admin" readOnly />
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
               Admin Password
             </label>
             <Input
               id="password"
+              name="admin-auth-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter admin password"
               required
               autoFocus
+              autoComplete="new-password"
             />
           </div>
 
