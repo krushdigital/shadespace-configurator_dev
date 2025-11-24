@@ -65,7 +65,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange }) => {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="p-6">
         <div className="animate-pulse h-64 bg-gray-200 rounded"></div>
       </Card>
     );
@@ -99,7 +99,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange }) => {
   const maxCount = Math.max(...chartData.map(d => d.event_count), 1);
 
   return (
-    <Card>
+    <Card className="p-6">
       <div className="mb-6">
         <h2 className="text-xl font-bold text-gray-900 mb-4">Event Timeline</h2>
         <div className="flex gap-2 flex-wrap">

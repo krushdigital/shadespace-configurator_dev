@@ -12,6 +12,55 @@ interface TrackEventParams {
   errorMessage?: string | null;
 }
 
+const detectDeviceType = (): string => {
+  const ua = navigator.userAgent;
+  if (/mobile|android|iphone|ipod/i.test(ua)) {
+    return 'mobile';
+  }
+  if (/ipad|tablet/i.test(ua)) {
+    return 'tablet';
+  }
+  return 'desktop';
+};
+
+const trackEventDirectly = async (params: TrackEventParams): Promise<void> => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/user_events`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        'apikey': supabaseKey,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        event_type: params.eventType,
+        event_data: params.eventData || {},
+        quote_id: params.quoteId || null,
+        customer_email: params.customerEmail || null,
+        success: params.success ?? true,
+        error_message: params.errorMessage || null,
+        device_type: detectDeviceType(),
+        customer_ip: 'unknown',
+        user_agent: navigator.userAgent,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error('Direct event tracking failed:', await response.text());
+    }
+  } catch (error) {
+    console.error('Direct event tracking error:', error);
+  }
+};
+
 export const trackEvent = async (params: TrackEventParams): Promise<void> => {
   const {
     eventType,
@@ -23,12 +72,11 @@ export const trackEvent = async (params: TrackEventParams): Promise<void> => {
   } = params;
 
   try {
-    // Send to Supabase for admin dashboard
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     if (supabaseUrl && supabaseKey) {
-      await fetch(`${supabaseUrl}/functions/v1/track-event`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/track-event`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${supabaseKey}`,
@@ -43,10 +91,15 @@ export const trackEvent = async (params: TrackEventParams): Promise<void> => {
           errorMessage,
         }),
       });
+
+      if (!response.ok) {
+        console.warn('Edge function tracking failed, using fallback');
+        await trackEventDirectly(params);
+      }
     }
   } catch (error) {
-    console.warn('Failed to track event:', error);
-    // Don't throw - tracking failures shouldn't break app functionality
+    console.warn('Edge function tracking error, using fallback:', error);
+    await trackEventDirectly(params);
   }
 };
 
