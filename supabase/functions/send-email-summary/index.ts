@@ -322,6 +322,39 @@ serve(async (req: Request) => {
 
     // TODO: Implement actual email sending using nodemailer or similar
     // For now, return success
+
+    // Track email summary event
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+      const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+      if (supabaseUrl && supabaseKey) {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        await supabase.from('user_events').insert({
+          event_type: 'email_summary',
+          event_data: {
+            totalPrice: totalPrice,
+            currency: currency,
+            corners: data.corners || null,
+            fabricType: data.Fabric_Type || null,
+            sent_by: 'edge_function',
+            shopifyCustomerCreated: shopifyCustomerCreated
+          },
+          customer_email: email,
+          device_type: 'server',
+          customer_ip: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || null,
+          user_agent: req.headers.get('user-agent') || null,
+          success: true
+        });
+
+        console.log('Email summary event tracked successfully');
+      }
+    } catch (trackError) {
+      console.error('Failed to track email event:', trackError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
