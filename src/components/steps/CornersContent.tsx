@@ -48,11 +48,42 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     const centerY = 300;
     const radius = 200;
     const points = [];
-    
+
+    // Custom realistic shade sail shapes for 5 and 6 points
+    if (corners === 5) {
+      // 5-point concave shade sail shape
+      // Top edge: A (left), B (center-top), C (right)
+      // Bottom edge: E (bottom-left), D (bottom-right)
+      points.push(
+        { x: 120, y: 150 },  // A - top-left
+        { x: 300, y: 100 },  // B - top-center (highest point)
+        { x: 480, y: 150 },  // C - top-right
+        { x: 450, y: 450 },  // D - bottom-right
+        { x: 150, y: 450 }   // E - bottom-left
+      );
+      return points;
+    }
+
+    if (corners === 6) {
+      // 6-point concave shade sail shape
+      // Top edge: A (left), B (center), C (right)
+      // Bottom edge: F (left), E (center), D (right)
+      points.push(
+        { x: 120, y: 120 },  // A - top-left
+        { x: 300, y: 100 },  // B - top-center
+        { x: 480, y: 120 },  // C - top-right
+        { x: 480, y: 480 },  // D - bottom-right
+        { x: 300, y: 500 },  // E - bottom-center
+        { x: 120, y: 480 }   // F - bottom-left
+      );
+      return points;
+    }
+
+    // Default circular layout for 3 and 4 point shapes
     // Start with A in top-left, work clockwise
     // For all shapes, start at top-left (-135 degrees)
     const startAngle = -3 * Math.PI / 4; // -135 degrees = top-left
-    
+
     for (let i = 0; i < corners; i++) {
       // Go clockwise (positive angle increment)
       const angle = startAngle + (i * 2 * Math.PI) / corners;
@@ -61,7 +92,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
         y: centerY + radius * Math.sin(angle)
       });
     }
-    
+
     return points;
   };
 
