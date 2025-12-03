@@ -48,7 +48,8 @@ const INITIAL_STATE: ConfiguratorState = {
   fixingTypes: undefined,
   eyeOrientations: undefined,
   fixingPointsInstalled: undefined,
-  currency: 'NZD'
+  currency: 'NZD',
+  hasManuallyAdjustedShape: false
 };
 
 console.log('🚀 ShadeConfigurator component is loading - this should appear in console');
@@ -174,8 +175,11 @@ export function ShadeConfigurator() {
         const createdAt = new Date(quote.created_at);
         const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
 
-        // Restore configuration
-        setConfig(quote.config_data);
+        // Restore configuration with default values for new fields
+        setConfig({
+          ...quote.config_data,
+          hasManuallyAdjustedShape: quote.config_data.hasManuallyAdjustedShape ?? false
+        });
         setQuoteReference(quote.quote_reference);
 
         // Jump to the saved step, or step 4 if no step was saved (legacy quotes)

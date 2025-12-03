@@ -1027,14 +1027,20 @@ export function reconstructPolygonFromMeasurements(
   canvasWidth: number = 600,
   canvasHeight: number = 600
 ): Point[] | null {
+  console.log('[Reconstruct] Called with:', { measurements, corners, canvasWidth, canvasHeight });
+
   // Check if we have required measurements
-  if (!hasRequiredMeasurements(measurements, corners)) {
+  const hasRequired = hasRequiredMeasurements(measurements, corners);
+  console.log('[Reconstruct] Has required measurements:', hasRequired);
+  if (!hasRequired) {
     return null;
   }
 
   // Validate geometry first
   const validation = validatePolygonGeometry(measurements, corners);
+  console.log('[Reconstruct] Validation result:', validation);
   if (!validation.isValid) {
+    console.log('[Reconstruct] FAILED: Invalid geometry:', validation.errors);
     return null;
   }
 
@@ -1167,6 +1173,11 @@ export function reconstructPolygonFromMeasurements(
     points = [A, B, C, D, E, F];
   }
 
+  console.log('[Reconstruct] Raw points before scaling:', points);
+
   // Scale and center the polygon to fit canvas
-  return scalePolygonToCanvas(points, canvasWidth, canvasHeight);
+  const scaledPoints = scalePolygonToCanvas(points, canvasWidth, canvasHeight);
+  console.log('[Reconstruct] Scaled points:', scaledPoints);
+
+  return scaledPoints;
 }
