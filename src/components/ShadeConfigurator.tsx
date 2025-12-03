@@ -48,7 +48,8 @@ const INITIAL_STATE: ConfiguratorState = {
   fixingTypes: undefined,
   eyeOrientations: undefined,
   fixingPointsInstalled: undefined,
-  currency: 'NZD'
+  currency: 'NZD',
+  hasManuallyAdjustedShape: false
 };
 
 console.log('🚀 ShadeConfigurator component is loading - this should appear in console');

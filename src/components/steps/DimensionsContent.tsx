@@ -272,13 +272,25 @@ export function DimensionsContent({
 
         // If reconstruction succeeded, update the points
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+          console.log('Auto-reconstructing shape from measurements:', {
+            corners: config.corners,
+            measurementKeys: Object.keys(config.measurements),
+            pointsCount: reconstructedPoints.length
+          });
           updateConfig({ points: reconstructedPoints });
+        } else {
+          console.log('Reconstruction failed or returned null:', {
+            corners: config.corners,
+            requiredMeasurements: hasRequiredMeasurements(config.measurements, config.corners),
+            reconstructedPoints
+          });
         }
       }
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
-  }, [config.measurements, config.corners, config.hasManuallyAdjustedShape, updateConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.measurements, config.corners, config.hasManuallyAdjustedShape]);
 
   // Handler to reset shape to measurements
   const handleResetToMeasurements = useCallback(() => {

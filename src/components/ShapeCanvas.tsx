@@ -113,8 +113,13 @@ export function ShapeCanvas({
 
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
+
+    // Only log once when flag changes
+    if (!config.hasManuallyAdjustedShape) {
+      console.log('User manually adjusted shape - disabling auto-reconstruction');
+    }
     updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
-  }, [dragIndex, readonly, snapToGrid, config.points, updateConfig]);
+  }, [dragIndex, readonly, snapToGrid, config.points, config.hasManuallyAdjustedShape, updateConfig]);
 
   const handleMouseUp = useCallback(() => {
     setDragIndex(null);
@@ -165,8 +170,13 @@ export function ShapeCanvas({
 
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
+
+    // Only log once when flag changes
+    if (!config.hasManuallyAdjustedShape) {
+      console.log('User manually adjusted shape - disabling auto-reconstruction');
+    }
     updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
-  }, [dragIndex, readonly, snapToGrid, config.points, updateConfig]);
+  }, [dragIndex, readonly, snapToGrid, config.points, config.hasManuallyAdjustedShape, updateConfig]);
 
   const handleTouchEnd = useCallback(() => {
     setDragIndex(null);

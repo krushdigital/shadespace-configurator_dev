@@ -1029,12 +1029,21 @@ export function reconstructPolygonFromMeasurements(
 ): Point[] | null {
   // Check if we have required measurements
   if (!hasRequiredMeasurements(measurements, corners)) {
+    console.log('Reconstruction skipped: missing required measurements', {
+      corners,
+      measurements: Object.keys(measurements),
+      hasRequired: hasRequiredMeasurements(measurements, corners)
+    });
     return null;
   }
 
   // Validate geometry first
   const validation = validatePolygonGeometry(measurements, corners);
   if (!validation.isValid) {
+    console.warn('Reconstruction failed: geometry validation errors', {
+      corners,
+      errors: validation.errors
+    });
     return null;
   }
 
