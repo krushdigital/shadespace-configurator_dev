@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -251,35 +251,18 @@ export function DimensionsContent({
     }
   }, [navigateToDiagonals, setNavigateToDiagonals]);
 
-  // Use ref to avoid updateConfig in dependency array
-  const updateConfigRef = useRef(updateConfig);
-  updateConfigRef.current = updateConfig;
-
   // Auto-reconstruct polygon from measurements with debouncing
   useEffect(() => {
-    console.log('[Auto-Reconstruct] Effect triggered', {
-      hasManuallyAdjustedShape: config.hasManuallyAdjustedShape,
-      corners: config.corners,
-      measurements: config.measurements
-    });
-
     // Only auto-reconstruct if shape hasn't been manually adjusted
     if (config.hasManuallyAdjustedShape) {
-      console.log('[Auto-Reconstruct] Skipping: shape manually adjusted');
       return;
     }
 
     // Debounce the reconstruction to avoid excessive calculations
     const timer = setTimeout(() => {
-      console.log('[Auto-Reconstruct] Checking requirements...');
-
       // Check if we have all required measurements
-      const hasRequired = hasRequiredMeasurements(config.measurements, config.corners);
-      console.log('[Auto-Reconstruct] Has required measurements:', hasRequired);
-
-      if (hasRequired) {
+      if (hasRequiredMeasurements(config.measurements, config.corners)) {
         // Attempt to reconstruct the polygon
-        console.log('[Auto-Reconstruct] Attempting reconstruction...');
         const reconstructedPoints = reconstructPolygonFromMeasurements(
           config.measurements,
           config.corners,
@@ -287,20 +270,15 @@ export function DimensionsContent({
           600
         );
 
-        console.log('[Auto-Reconstruct] Reconstructed points:', reconstructedPoints);
-
         // If reconstruction succeeded, update the points
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {
-          console.log('[Auto-Reconstruct] SUCCESS: Updating points');
-          updateConfigRef.current({ points: reconstructedPoints });
-        } else {
-          console.log('[Auto-Reconstruct] FAILED: Invalid points');
+          updateConfig({ points: reconstructedPoints });
         }
       }
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
-  }, [config.measurements, config.corners, config.hasManuallyAdjustedShape]);
+  }, [config.measurements, config.corners, config.hasManuallyAdjustedShape, updateConfig]);
 
   // Handler to reset shape to measurements
   const handleResetToMeasurements = useCallback(() => {
