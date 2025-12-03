@@ -84,13 +84,13 @@ export function ShapeCanvas({
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (dragIndex === null || readonly) return;
-    
+
     const svg = svgRef.current;
     if (!svg) return;
-    
+
     const rect = svg.getBoundingClientRect();
     const { clientX, clientY } = e;
-    
+
     // Simple 1:1 coordinate mapping - no complex transformations
     let svgX = clientX - rect.left;
     let svgY = clientY - rect.top;
@@ -99,21 +99,21 @@ export function ShapeCanvas({
     const viewBox = svg.viewBox.baseVal;
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
-    
+
     // Constrain to canvas bounds
     svgX = Math.max(5, Math.min(viewBox.width - 5, svgX));
     svgY = Math.max(5, Math.min(viewBox.height - 5, svgY));
-    
+
     // Snap to grid
     if (snapToGrid) {
       const gridSize = 10;
       svgX = Math.round(svgX / gridSize) * gridSize;
       svgY = Math.round(svgY / gridSize) * gridSize;
     }
-    
+
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
-    updateConfig({ points: newPoints });
+    updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
   }, [dragIndex, readonly, snapToGrid, config.points, updateConfig]);
 
   const handleMouseUp = useCallback(() => {
@@ -132,40 +132,40 @@ export function ShapeCanvas({
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (dragIndex === null || readonly) return;
-    
+
     const svg = svgRef.current;
     if (!svg) return;
-    
+
     const rect = svg.getBoundingClientRect();
     const touch = e.touches[0];
     if (!touch) return;
-    
+
     const { clientX, clientY } = touch;
-    
+
     // Simple 1:1 coordinate mapping - no complex transformations
     let svgX = clientX - rect.left;
     let svgY = clientY - rect.top;
     e.preventDefault();
-    
+
     // Convert to SVG coordinate space
     const viewBox = svg.viewBox.baseVal;
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
-    
+
     // Constrain to canvas bounds
     svgX = Math.max(5, Math.min(viewBox.width - 5, svgX));
     svgY = Math.max(5, Math.min(viewBox.height - 5, svgY));
-    
+
     // Snap to grid
     if (snapToGrid) {
       const gridSize = 10;
       svgX = Math.round(svgX / gridSize) * gridSize;
       svgY = Math.round(svgY / gridSize) * gridSize;
     }
-    
+
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
-    updateConfig({ points: newPoints });
+    updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
   }, [dragIndex, readonly, snapToGrid, config.points, updateConfig]);
 
   const handleTouchEnd = useCallback(() => {

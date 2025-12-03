@@ -1,14 +1,14 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 
 interface DimensionsContentProps {
@@ -251,6 +251,54 @@ export function DimensionsContent({
     }
   }, [navigateToDiagonals, setNavigateToDiagonals]);
 
+  // Auto-reconstruct polygon from measurements with debouncing
+  useEffect(() => {
+    // Only auto-reconstruct if shape hasn't been manually adjusted
+    if (config.hasManuallyAdjustedShape) {
+      return;
+    }
+
+    // Debounce the reconstruction to avoid excessive calculations
+    const timer = setTimeout(() => {
+      // Check if we have all required measurements
+      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        // Attempt to reconstruct the polygon
+        const reconstructedPoints = reconstructPolygonFromMeasurements(
+          config.measurements,
+          config.corners,
+          600,
+          600
+        );
+
+        // If reconstruction succeeded, update the points
+        if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+          updateConfig({ points: reconstructedPoints });
+        }
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+  }, [config.measurements, config.corners, config.hasManuallyAdjustedShape, updateConfig]);
+
+  // Handler to reset shape to measurements
+  const handleResetToMeasurements = useCallback(() => {
+    if (hasRequiredMeasurements(config.measurements, config.corners)) {
+      const reconstructedPoints = reconstructPolygonFromMeasurements(
+        config.measurements,
+        config.corners,
+        600,
+        600
+      );
+
+      if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+        updateConfig({
+          points: reconstructedPoints,
+          hasManuallyAdjustedShape: false
+        });
+      }
+    }
+  }, [config.measurements, config.corners, updateConfig]);
+
   return (
     <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
       {/* Measurement Context Banner */}
@@ -307,15 +355,52 @@ export function DimensionsContent({
               {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
             </p>
           </div>
-          
-          <ShapeCanvas 
-            config={config} 
-            updateConfig={updateConfig}
-            readonly={false}
-            snapToGrid={true}
-            highlightedMeasurement={highlightedMeasurement}
-            isMobile={isMobile}
-          />
+
+          <div className="relative">
+            {/* Shape Mode Indicator and Reset Button */}
+            <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+              {/* Shape mode indicator badge */}
+              {hasRequiredMeasurements(config.measurements, config.corners) && (
+                <div className={`px-3 py-1.5 rounded-full text-xs font-medium shadow-lg ${
+                  config.hasManuallyAdjustedShape
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-green-500 text-white'
+                }`}>
+                  <Tooltip content={
+                    config.hasManuallyAdjustedShape
+                      ? 'Shape has been manually adjusted. Click "Reset to Measurements" to auto-fit based on your entered measurements.'
+                      : 'Shape is automatically fitted to your measurements. Drag any corner to customize.'
+                  }>
+                    <span>
+                      {config.hasManuallyAdjustedShape ? 'Custom Shape' : 'Auto-Fitted'}
+                    </span>
+                  </Tooltip>
+                </div>
+              )}
+
+              {/* Reset button - only show when manually adjusted */}
+              {config.hasManuallyAdjustedShape && hasRequiredMeasurements(config.measurements, config.corners) && (
+                <Tooltip content="Reset shape to match your entered measurements">
+                  <button
+                    onClick={handleResetToMeasurements}
+                    className="p-2 bg-white text-slate-700 rounded-lg shadow-lg hover:bg-slate-50 transition-colors border border-slate-200"
+                    aria-label="Reset to measurements"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </Tooltip>
+              )}
+            </div>
+
+            <ShapeCanvas
+              config={config}
+              updateConfig={updateConfig}
+              readonly={false}
+              snapToGrid={true}
+              highlightedMeasurement={highlightedMeasurement}
+              isMobile={isMobile}
+            />
+          </div>
         </div>
       )}
 
