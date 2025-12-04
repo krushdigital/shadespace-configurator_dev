@@ -88,16 +88,19 @@ export function DimensionsContent({
       const mmValue = convertUnitToMm(numericValue, config.unit);
       const newMeasurements = { ...config.measurements, [edgeKey]: mmValue };
       updateConfig({ measurements: newMeasurements });
-      
+
+      // Clear geometry warnings immediately when user updates measurements
+      setGeometryWarnings({});
+
       // Clear any existing errors/suggestions for this field while typing
       if (setValidationErrors && setTypoSuggestions) {
         const newErrors = { ...validationErrors };
         const newSuggestions = { ...typoSuggestions };
-        
+
         // Clear errors and suggestions for this field while user is typing
         delete newErrors[edgeKey];
         delete newSuggestions[edgeKey];
-        
+
         setValidationErrors(newErrors);
         setTypoSuggestions(newSuggestions);
       }
@@ -106,7 +109,10 @@ export function DimensionsContent({
       const newMeasurements = { ...config.measurements };
       delete newMeasurements[edgeKey];
       updateConfig({ measurements: newMeasurements });
-      
+
+      // Clear geometry warnings when user clears a field
+      setGeometryWarnings({});
+
       if (setValidationErrors && setTypoSuggestions) {
         const newErrors = { ...validationErrors };
         const newSuggestions = { ...typoSuggestions };
@@ -267,15 +273,23 @@ export function DimensionsContent({
         // Validate geometry first
         const validation = validatePolygonGeometry(config.measurements, config.corners);
 
+        console.log('Running geometry validation:', {
+          corners: config.corners,
+          measurements: config.measurements,
+          isValid: validation.isValid,
+          errors: validation.errors
+        });
+
         if (!validation.isValid) {
           // Geometry is invalid - preserve last valid shape and show warnings
-          console.log('Geometry validation failed:', validation.errors);
+          console.log('Geometry validation failed - setting warning:', validation.errors[0]);
           setGeometryWarnings({ general: validation.errors[0] || 'Invalid measurements' });
           // Keep the last valid points - don't update
           return;
         }
 
         // Clear any previous geometry warnings
+        console.log('Geometry validation passed - clearing warnings');
         setGeometryWarnings({});
 
         // Attempt to reconstruct the polygon
