@@ -1076,20 +1076,29 @@ export function reconstructPolygonFromMeasurements(
     const AC = measurements['AC'];
     const BD = measurements['BD'];
 
+    console.log('4-corner reconstruction:', {
+      hasAC: !!AC,
+      hasBD: !!BD,
+      edges: { AB, BC, CD, DA }
+    });
+
     // Place A at origin
     const A: Point = { x: 0, y: 0 };
 
     // Place B along x-axis
     const B: Point = { x: AB, y: 0 };
 
-    // Calculate C using diagonal AC or edge BC
+    // Calculate C using diagonal AC or approximate with edge BC
     let C: Point | null = null;
     if (AC) {
+      // Precise placement using diagonal
+      console.log('Using diagonal AC for precise C placement');
       C = trilateratePoint(A, B, AC, BC);
     } else {
-      // Without diagonal, create a reasonable quadrilateral
-      // Use angle approximation
-      const angle = Math.PI / 3; // 60 degrees default
+      // Approximate placement: Use 90-degree angle for reasonable shape
+      // This creates a roughly rectangular quadrilateral
+      console.log('Using approximate C placement (no diagonal AC)');
+      const angle = Math.PI / 2; // 90 degrees
       C = {
         x: B.x + BC * Math.cos(angle),
         y: B.y + BC * Math.sin(angle)
@@ -1097,10 +1106,41 @@ export function reconstructPolygonFromMeasurements(
     }
     if (!C) return null;
 
-    // Calculate D using edges and diagonals
+    // Calculate D using diagonals if available, otherwise approximate
     let D: Point | null = null;
-    if (AC && C) {
+    if (AC) {
+      // Precise placement using diagonal AC
+      console.log('Using diagonal AC for precise D placement');
       D = trilateratePoint(A, C, DA, CD);
+    } else if (BD) {
+      // Use diagonal BD for better accuracy
+      console.log('Using diagonal BD for D placement');
+      D = trilateratePoint(A, B, DA, BD);
+    } else {
+      // Approximate: Calculate D to close the quadrilateral
+      // D must be DA from A and CD from C
+      // Use trilateration from A and C
+      console.log('Attempting trilateration from A and C for D');
+      D = trilateratePoint(A, C, DA, CD);
+
+      // If that fails, use a geometric approximation
+      if (!D) {
+        console.log('Trilateration failed, using parallelogram approximation for D');
+        // Place D to form a rough parallelogram-like shape
+        const angle = Math.PI; // 180 degrees from C-to-B direction
+        const directionX = C.x - B.x;
+        const directionY = C.y - B.y;
+        const len = Math.sqrt(directionX * directionX + directionY * directionY);
+        const normalizedX = directionX / len;
+        const normalizedY = directionY / len;
+
+        D = {
+          x: A.x + DA * normalizedX,
+          y: A.y + DA * normalizedY
+        };
+      } else {
+        console.log('Trilateration succeeded for D!');
+      }
     }
     if (!D) return null;
 
