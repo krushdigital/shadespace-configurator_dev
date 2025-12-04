@@ -6,7 +6,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -79,6 +79,8 @@ export function DimensionsContent({
   const [showHeightsSection, setShowHeightsSection] = useState(false);
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
+  const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
+  const lastValidPointsRef = React.useRef(config.points);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -262,6 +264,20 @@ export function DimensionsContent({
     const timer = setTimeout(() => {
       // Check if we have all required measurements
       if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        // Validate geometry first
+        const validation = validatePolygonGeometry(config.measurements, config.corners);
+
+        if (!validation.isValid) {
+          // Geometry is invalid - preserve last valid shape and show warnings
+          console.log('Geometry validation failed:', validation.errors);
+          setGeometryWarnings({ general: validation.errors[0] || 'Invalid measurements' });
+          // Keep the last valid points - don't update
+          return;
+        }
+
+        // Clear any previous geometry warnings
+        setGeometryWarnings({});
+
         // Attempt to reconstruct the polygon
         const reconstructedPoints = reconstructPolygonFromMeasurements(
           config.measurements,
@@ -270,20 +286,22 @@ export function DimensionsContent({
           600
         );
 
-        // If reconstruction succeeded, update the points
+        // If reconstruction succeeded, update the points and store as last valid
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {
           console.log('Auto-reconstructing shape from measurements:', {
             corners: config.corners,
             measurementKeys: Object.keys(config.measurements),
             pointsCount: reconstructedPoints.length
           });
+          lastValidPointsRef.current = reconstructedPoints;
           updateConfig({ points: reconstructedPoints });
         } else {
-          console.log('Reconstruction failed or returned null:', {
+          console.log('Reconstruction failed or returned null - preserving last valid shape:', {
             corners: config.corners,
             requiredMeasurements: hasRequiredMeasurements(config.measurements, config.corners),
             reconstructedPoints
           });
+          // Keep the last valid points
         }
       }
     }, 500); // 500ms debounce
@@ -432,6 +450,55 @@ export function DimensionsContent({
               <p className="text-red-700">
                 {validationErrors.perimeterTooLarge}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Geometry Warning */}
+      {Object.keys(geometryWarnings).length > 0 && (
+        <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-amber-100 border-2 border-amber-500 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <AlertCircle className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-amber-900 mb-1">
+                Invalid Measurements
+              </h4>
+              <p className="text-amber-800 mb-2">
+                {geometryWarnings.general}
+              </p>
+              {config.corners === 3 && (() => {
+                const AB = config.measurements['AB'];
+                const BC = config.measurements['BC'];
+                const CA = config.measurements['CA'];
+                if (AB && BC) {
+                  const range = calculateTriangleSideRange(AB, BC);
+                  return (
+                    <p className="text-sm text-amber-700 mt-2">
+                      <strong>Suggested range for CA:</strong> {convertMmToUnit(range.min, config.unit).toFixed(0)} - {convertMmToUnit(range.max, config.unit).toFixed(0)} {config.unit === 'metric' ? 'mm' : 'inches'}
+                    </p>
+                  );
+                }
+                if (AB && CA) {
+                  const range = calculateTriangleSideRange(AB, CA);
+                  return (
+                    <p className="text-sm text-amber-700 mt-2">
+                      <strong>Suggested range for BC:</strong> {convertMmToUnit(range.min, config.unit).toFixed(0)} - {convertMmToUnit(range.max, config.unit).toFixed(0)} {config.unit === 'metric' ? 'mm' : 'inches'}
+                    </p>
+                  );
+                }
+                if (BC && CA) {
+                  const range = calculateTriangleSideRange(BC, CA);
+                  return (
+                    <p className="text-sm text-amber-700 mt-2">
+                      <strong>Suggested range for AB:</strong> {convertMmToUnit(range.min, config.unit).toFixed(0)} - {convertMmToUnit(range.max, config.unit).toFixed(0)} {config.unit === 'metric' ? 'mm' : 'inches'}
+                    </p>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         </div>
