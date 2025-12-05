@@ -3,6 +3,7 @@ import { ConfiguratorState, Point } from '../types';
 import { ShadeSVGCore } from './ShadeSVGCore';
 import { convertMmToUnit, convertUnitToMm } from '../utils/geometry';
 import { getOutwardPosition, getSelectedColor } from '../utils/svgHelpers';
+import { toast } from 'react-toastify';
 
 interface ShapeCanvasProps {
   config: ConfiguratorState;
@@ -114,9 +115,13 @@ export function ShapeCanvas({
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
 
-    // Only log once when flag changes
+    // Only log and notify once when flag changes
     if (!config.hasManuallyAdjustedShape) {
       console.log('User manually adjusted shape - disabling auto-reconstruction');
+      toast.info('Switched to Manual mode - you can now customize the shape', {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
     }
     updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
   }, [dragIndex, readonly, snapToGrid, config.points, config.hasManuallyAdjustedShape, updateConfig]);
@@ -171,9 +176,13 @@ export function ShapeCanvas({
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
 
-    // Only log once when flag changes
+    // Only log and notify once when flag changes
     if (!config.hasManuallyAdjustedShape) {
       console.log('User manually adjusted shape - disabling auto-reconstruction');
+      toast.info('Switched to Manual mode - you can now customize the shape', {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
     }
     updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
   }, [dragIndex, readonly, snapToGrid, config.points, config.hasManuallyAdjustedShape, updateConfig]);
@@ -267,8 +276,9 @@ export function ShapeCanvas({
   const cornerPoints = useMemo(() => {
     return config.points.map((point, index) => {
       const labelPosition = getOutwardPosition(point, centroid, isMobile ? 40 : 25);
-      const cornerColor = getSelectedColor(config.fabricType, config.fabricColor);
-      
+      const fabricColor = getSelectedColor(config.fabricType, config.fabricColor);
+      const cornerColor = config.hasManuallyAdjustedShape ? '#3B82F6' : fabricColor;
+
       return {
         point,
         index,
@@ -277,7 +287,7 @@ export function ShapeCanvas({
         label: String.fromCharCode(65 + index)
       };
     });
-  }, [config.points, config.fabricType, config.fabricColor, centroid, isMobile]);
+  }, [config.points, config.fabricType, config.fabricColor, config.hasManuallyAdjustedShape, centroid, isMobile]);
 
   return (
     <div>

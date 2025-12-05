@@ -8,8 +8,10 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, Zap, PenTool } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
+import { ToggleSwitch } from '../ui/ToggleSwitch';
+import { toast } from 'react-toastify';
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -343,6 +345,35 @@ export function DimensionsContent({
     }
   }, [config.measurements, config.corners, updateConfig]);
 
+  // Handler for toggle switch
+  const handleToggleMode = useCallback((isAutomatic: boolean) => {
+    if (isAutomatic) {
+      // Switching to Automatic mode - reconstruct from measurements
+      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        const reconstructedPoints = reconstructPolygonFromMeasurements(
+          config.measurements,
+          config.corners,
+          600,
+          600
+        );
+
+        if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+          updateConfig({
+            points: reconstructedPoints,
+            hasManuallyAdjustedShape: false
+          });
+          toast.success('Switched to Automatic mode - shape fitted to measurements');
+        }
+      } else {
+        toast.warning('Cannot switch to Automatic mode - please enter all required measurements first');
+      }
+    } else {
+      // Switching to Manual mode
+      updateConfig({ hasManuallyAdjustedShape: true });
+      toast.info('Switched to Manual mode - drag corners to customize shape');
+    }
+  }, [config.measurements, config.corners, updateConfig]);
+
   return (
     <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
       {/* Measurement Context Banner */}
@@ -401,40 +432,47 @@ export function DimensionsContent({
           </div>
 
           <div className="relative">
-            {/* Shape Mode Indicator and Reset Button */}
-            <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
-              {/* Shape mode indicator badge */}
-              {hasRequiredMeasurements(config.measurements, config.corners) && (
-                <div className={`px-3 py-1.5 rounded-full text-xs font-medium shadow-lg ${
-                  config.hasManuallyAdjustedShape
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-green-500 text-white'
-                }`}>
-                  <Tooltip content={
-                    config.hasManuallyAdjustedShape
-                      ? 'Shape has been manually adjusted. Click "Reset to Measurements" to auto-fit based on your entered measurements.'
-                      : 'Shape is automatically fitted to your measurements. Drag any corner to customize.'
-                  }>
-                    <span>
-                      {config.hasManuallyAdjustedShape ? 'Custom Shape' : 'Auto-Fitted'}
-                    </span>
-                  </Tooltip>
-                </div>
-              )}
+            {/* Shape Mode Toggle Control Panel */}
+            {hasRequiredMeasurements(config.measurements, config.corners) && (
+              <div className="absolute top-3 right-3 z-10">
+                <div className="bg-white rounded-lg shadow-lg border border-slate-200 p-3">
+                  <div className="flex items-center gap-3">
+                    <Tooltip content="Automatic mode fits the shape to your measurements. Manual mode lets you customize by dragging corners.">
+                      <div className="flex items-center gap-2">
+                        <Zap className={`w-4 h-4 ${!config.hasManuallyAdjustedShape ? 'text-green-600' : 'text-slate-400'}`} />
+                        <span className={`text-xs font-medium ${!config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
+                          Auto
+                        </span>
+                      </div>
+                    </Tooltip>
 
-              {/* Reset button - only show when manually adjusted */}
-              {config.hasManuallyAdjustedShape && hasRequiredMeasurements(config.measurements, config.corners) && (
-                <Tooltip content="Reset shape to match your entered measurements">
-                  <button
-                    onClick={handleResetToMeasurements}
-                    className="p-2 bg-white text-slate-700 rounded-lg shadow-lg hover:bg-slate-50 transition-colors border border-slate-200"
-                    aria-label="Reset to measurements"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
-                </Tooltip>
-              )}
-            </div>
+                    <ToggleSwitch
+                      enabled={!config.hasManuallyAdjustedShape}
+                      onChange={(isAuto) => handleToggleMode(isAuto)}
+                      onLabel="Automatic"
+                      offLabel="Manual"
+                    />
+
+                    <Tooltip content="Manual mode preserves your custom shape. Toggle back to Auto to fit measurements again.">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs font-medium ${config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
+                          Manual
+                        </span>
+                        <PenTool className={`w-4 h-4 ${config.hasManuallyAdjustedShape ? 'text-blue-600' : 'text-slate-400'}`} />
+                      </div>
+                    </Tooltip>
+                  </div>
+
+                  <div className="mt-2 pt-2 border-t border-slate-100">
+                    <p className="text-xs text-slate-600">
+                      {config.hasManuallyAdjustedShape
+                        ? 'Custom shape - drag corners to adjust'
+                        : 'Auto-fitted to measurements'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <ShapeCanvas
               config={config}
