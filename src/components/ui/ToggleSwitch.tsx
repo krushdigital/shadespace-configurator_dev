@@ -30,7 +30,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
     >
       <span
         className={`inline-block w-5 h-5 transform transition-transform bg-white rounded-full shadow-lg ${
-          enabled ? 'translate-x-8' : 'translate-x-1'
+          enabled ? 'translate-x-1' : 'translate-x-8'
         }`}
       />
       <span className="sr-only">
