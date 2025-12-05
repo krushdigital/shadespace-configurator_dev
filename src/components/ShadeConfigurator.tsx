@@ -1627,10 +1627,20 @@ export function ShadeConfigurator() {
                 </p>
               </div>
 
-              <div className="relative">
+              <div>
+                <ShapeCanvas
+                  config={config}
+                  updateConfig={updateConfig}
+                  readonly={false}
+                  snapToGrid={true}
+                  highlightedMeasurement={highlightedMeasurement}
+                  highlightedCorner={highlightedCorner}
+                  isMobile={isMobile}
+                />
+
                 {/* Shape Mode Toggle Control Panel */}
                 {hasRequiredMeasurements(config.measurements, config.corners) && (
-                  <div className="absolute top-3 right-3 z-10">
+                  <div className="mt-4 flex justify-center">
                     <div className="bg-white rounded-lg shadow-lg border border-slate-200 p-3">
                       <div className="flex items-center gap-3">
                         <Tooltip content="Automatic mode fits the shape to your measurements. Manual mode lets you customize by dragging corners.">
@@ -1669,16 +1679,6 @@ export function ShadeConfigurator() {
                     </div>
                   </div>
                 )}
-
-                <ShapeCanvas
-                  config={config}
-                  updateConfig={updateConfig}
-                  readonly={false}
-                  snapToGrid={true}
-                  highlightedMeasurement={highlightedMeasurement}
-                  highlightedCorner={highlightedCorner}
-                  isMobile={isMobile}
-                />
               </div>
             </div>
           )}
