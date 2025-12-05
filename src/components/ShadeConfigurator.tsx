@@ -15,7 +15,7 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements } from '../utils/geometry';
 import { generatePDF } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
@@ -24,10 +24,14 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { SaveProgressButton } from './SaveProgressButton';
+import { ToggleSwitch } from './ui/ToggleSwitch';
+import { Tooltip } from './ui/Tooltip';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
 import { eventTrackers } from '../utils/eventTracker';
+import { Zap, PenTool } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -1446,6 +1450,44 @@ export function ShadeConfigurator() {
     setShowSaveQuoteModal(true);
   };
 
+  // Handle toggle between Auto and Manual mode
+  const handleToggleMode = (isAutomatic: boolean) => {
+    if (isAutomatic) {
+      // Switching to Automatic mode - reconstruct from measurements
+      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        const reconstructedPoints = reconstructPolygonFromMeasurements(
+          config.measurements,
+          config.corners,
+          600,
+          600
+        );
+
+        if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+          updateConfig({
+            points: reconstructedPoints,
+            hasManuallyAdjustedShape: false
+          });
+          toast.success('Switched to Automatic mode - shape fitted to measurements', {
+            autoClose: 3000,
+            hideProgressBar: false,
+          });
+        }
+      } else {
+        toast.warning('Cannot switch to Automatic mode - measurements incomplete', {
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+      }
+    } else {
+      // Switching to Manual mode
+      updateConfig({ hasManuallyAdjustedShape: true });
+      toast.info('Switched to Manual mode - you can now customize the shape', {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    }
+  };
+
   if (isLoadingQuote) {
     return (
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-16 text-center">
@@ -1585,15 +1627,59 @@ export function ShadeConfigurator() {
                 </p>
               </div>
 
-              <ShapeCanvas
-                config={config}
-                updateConfig={updateConfig}
-                readonly={false}
-                snapToGrid={true}
-                highlightedMeasurement={highlightedMeasurement}
-                highlightedCorner={highlightedCorner}
-                isMobile={isMobile}
-              />
+              <div className="relative">
+                {/* Shape Mode Toggle Control Panel */}
+                {hasRequiredMeasurements(config.measurements, config.corners) && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <div className="bg-white rounded-lg shadow-lg border border-slate-200 p-3">
+                      <div className="flex items-center gap-3">
+                        <Tooltip content="Automatic mode fits the shape to your measurements. Manual mode lets you customize by dragging corners.">
+                          <div className="flex items-center gap-2">
+                            <Zap className={`w-4 h-4 ${!config.hasManuallyAdjustedShape ? 'text-green-600' : 'text-slate-400'}`} />
+                            <span className={`text-xs font-medium ${!config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
+                              Auto
+                            </span>
+                          </div>
+                        </Tooltip>
+
+                        <ToggleSwitch
+                          enabled={!config.hasManuallyAdjustedShape}
+                          onChange={(isAuto) => handleToggleMode(isAuto)}
+                          onLabel="Automatic"
+                          offLabel="Manual"
+                        />
+
+                        <Tooltip content="Manual mode preserves your custom shape. Toggle back to Auto to fit measurements again.">
+                          <div className="flex items-center gap-2">
+                            <span className={`text-xs font-medium ${config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
+                              Manual
+                            </span>
+                            <PenTool className={`w-4 h-4 ${config.hasManuallyAdjustedShape ? 'text-blue-600' : 'text-slate-400'}`} />
+                          </div>
+                        </Tooltip>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-slate-100">
+                        <p className="text-xs text-slate-600">
+                          {config.hasManuallyAdjustedShape
+                            ? 'Custom shape - drag corners to adjust'
+                            : 'Auto-fitted to measurements'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <ShapeCanvas
+                  config={config}
+                  updateConfig={updateConfig}
+                  readonly={false}
+                  snapToGrid={true}
+                  highlightedMeasurement={highlightedMeasurement}
+                  highlightedCorner={highlightedCorner}
+                  isMobile={isMobile}
+                />
+              </div>
             </div>
           )}
 
