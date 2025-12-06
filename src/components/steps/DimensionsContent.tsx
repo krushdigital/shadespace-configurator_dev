@@ -632,25 +632,25 @@ export function DimensionsContent({
                     <Tooltip
                       content={
                         <div>
-                          <p className="text-sm text-[#01312D] font-medium mb-2">
+                          <p className="text-sm text-slate-900 font-medium mb-2">
                             Two-Step Process:
                           </p>
                           <div className="space-y-2 mb-3">
                             <div className="flex items-start gap-2">
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">1</span>
-                              <p className="text-sm text-[#01312D]/70">
+                              <p className="text-sm text-slate-700">
                                 Enter edge measurements → Get instant pricing
                               </p>
                             </div>
                             <div className="flex items-start gap-2">
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">2</span>
-                              <p className="text-sm text-[#01312D]/70">
+                              <p className="text-sm text-slate-700">
                                 Add diagonals at checkout → Complete your order
                               </p>
                             </div>
                           </div>
                           <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-2">
-                            <p className="text-sm text-[#01312D]">
+                            <p className="text-sm text-slate-800">
                               <strong>Why are diagonals needed?</strong> They ensure our manufacturing team can create your exact shape with precision accuracy.
                               {config.measurementOption === 'adjust' && (
                                 <span className="block mt-1">
