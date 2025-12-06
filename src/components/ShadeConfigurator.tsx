@@ -62,7 +62,7 @@ export function ShadeConfigurator() {
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 1024);
   console.log('isMobile: ', isMobile);
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
