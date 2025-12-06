@@ -433,15 +433,13 @@ export function DimensionsContent({
             />
 
             {/* Shape Mode Toggle Control - Below Canvas */}
-            {hasRequiredMeasurements(config.measurements, config.corners) && (
-              <div className="mt-4 flex justify-center">
-                <CollapsibleToggleControl
-                  isAutoMode={!config.hasManuallyAdjustedShape}
-                  onToggle={(isAuto) => handleToggleMode(isAuto)}
-                  isMobile={true}
-                />
-              </div>
-            )}
+            <div className="mt-4 flex justify-center">
+              <CollapsibleToggleControl
+                isAutoMode={!config.hasManuallyAdjustedShape}
+                onToggle={(isAuto) => handleToggleMode(isAuto)}
+                isMobile={true}
+              />
+            </div>
           </div>
         </div>
       )}

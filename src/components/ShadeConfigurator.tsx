@@ -1628,15 +1628,13 @@ export function ShadeConfigurator() {
                 />
 
                 {/* Shape Mode Toggle Control Panel */}
-                {hasRequiredMeasurements(config.measurements, config.corners) && (
-                  <div className="mt-4 flex justify-center">
-                    <CollapsibleToggleControl
-                      isAutoMode={!config.hasManuallyAdjustedShape}
-                      onToggle={(isAuto) => handleToggleMode(isAuto)}
-                      isMobile={false}
-                    />
-                  </div>
-                )}
+                <div className="mt-4 flex justify-center">
+                  <CollapsibleToggleControl
+                    isAutoMode={!config.hasManuallyAdjustedShape}
+                    onToggle={(isAuto) => handleToggleMode(isAuto)}
+                    isMobile={false}
+                  />
+                </div>
               </div>
             </div>
           )}
