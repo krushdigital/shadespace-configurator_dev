@@ -298,10 +298,10 @@ export function ShapeCanvas({
   // Generate tooltip content based on props
   const tooltipContent = (
     <div className="max-w-xs">
-      <p className="text-sm text-white font-semibold mb-2">
+      <p className="text-sm text-[#01312D] font-semibold mb-2">
         Interactive Canvas Guide
       </p>
-      <div className="space-y-2 text-sm text-white/90">
+      <div className="space-y-2 text-sm text-[#01312D]/80">
         <p>
           <strong>Auto Mode:</strong> The shape automatically fits your measurements. Perfect for accurate sizing.
         </p>
@@ -311,7 +311,7 @@ export function ShapeCanvas({
         <p>
           Enter your {measurementOption === 'adjust' ? 'space measurements (distance between fixing points)' : 'desired shade dimensions'} in the fields {isMobile ? 'below' : 'to the right'} to calculate pricing.
         </p>
-        <p className="text-xs text-white/75 mt-2">
+        <p className="text-xs text-[#01312D]/70 mt-2">
           All measurements are in {unit === 'imperial' ? 'inches' : 'millimeters'}.
         </p>
       </div>
