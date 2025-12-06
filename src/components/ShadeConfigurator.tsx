@@ -24,13 +24,11 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { SaveProgressButton } from './SaveProgressButton';
-import { ToggleSwitch } from './ui/ToggleSwitch';
-import { Tooltip } from './ui/Tooltip';
+import { CollapsibleToggleControl } from './ui/CollapsibleToggleControl';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
 import { eventTrackers } from '../utils/eventTracker';
-import { Zap, PenTool } from 'lucide-react';
 import { toast } from 'react-toastify';
 
 const INITIAL_STATE: ConfiguratorState = {
@@ -1641,42 +1639,11 @@ export function ShadeConfigurator() {
                 {/* Shape Mode Toggle Control Panel */}
                 {hasRequiredMeasurements(config.measurements, config.corners) && (
                   <div className="mt-4 flex justify-center">
-                    <div className="bg-white rounded-lg shadow-lg border border-slate-200 p-3">
-                      <div className="flex items-center gap-3">
-                        <Tooltip content="Automatic mode fits the shape to your measurements. Manual mode lets you customize by dragging corners.">
-                          <div className="flex items-center gap-2">
-                            <Zap className={`w-4 h-4 ${!config.hasManuallyAdjustedShape ? 'text-green-600' : 'text-slate-400'}`} />
-                            <span className={`text-xs font-medium ${!config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
-                              Auto
-                            </span>
-                          </div>
-                        </Tooltip>
-
-                        <ToggleSwitch
-                          enabled={!config.hasManuallyAdjustedShape}
-                          onChange={(isAuto) => handleToggleMode(isAuto)}
-                          onLabel="Automatic"
-                          offLabel="Manual"
-                        />
-
-                        <Tooltip content="Manual mode preserves your custom shape. Toggle back to Auto to fit measurements again.">
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-medium ${config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
-                              Manual
-                            </span>
-                            <PenTool className={`w-4 h-4 ${config.hasManuallyAdjustedShape ? 'text-blue-600' : 'text-slate-400'}`} />
-                          </div>
-                        </Tooltip>
-                      </div>
-
-                      <div className="mt-2 pt-2 border-t border-slate-100">
-                        <p className="text-xs text-slate-600">
-                          {config.hasManuallyAdjustedShape
-                            ? 'Custom shape - drag corners to adjust'
-                            : 'Auto-fitted to measurements'}
-                        </p>
-                      </div>
-                    </div>
+                    <CollapsibleToggleControl
+                      isAutoMode={!config.hasManuallyAdjustedShape}
+                      onToggle={(isAuto) => handleToggleMode(isAuto)}
+                      isMobile={false}
+                    />
                   </div>
                 )}
               </div>

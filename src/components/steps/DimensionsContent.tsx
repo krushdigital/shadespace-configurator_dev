@@ -8,9 +8,9 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, Zap, PenTool } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { ToggleSwitch } from '../ui/ToggleSwitch';
+import { CollapsibleToggleControl } from '../ui/CollapsibleToggleControl';
 import { toast } from 'react-toastify';
 
 interface DimensionsContentProps {
@@ -425,55 +425,13 @@ export function DimensionsContent({
             <p className="text-sm text-[#01312D]">
               <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
               {config.measurementOption === 'adjust'
-                ? 'Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
-                : 'Enter your desired shade dimensions in the fields below to calculate pricing.'}
+                ? ' Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
+                : ' Enter your desired shade dimensions in the fields below to calculate pricing.'}
               {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
             </p>
           </div>
 
-          <div className="relative">
-            {/* Shape Mode Toggle Control Panel */}
-            {hasRequiredMeasurements(config.measurements, config.corners) && (
-              <div className="absolute top-3 right-3 z-10">
-                <div className="bg-white rounded-lg shadow-lg border border-slate-200 p-3">
-                  <div className="flex items-center gap-3">
-                    <Tooltip content="Automatic mode fits the shape to your measurements. Manual mode lets you customize by dragging corners.">
-                      <div className="flex items-center gap-2">
-                        <Zap className={`w-4 h-4 ${!config.hasManuallyAdjustedShape ? 'text-green-600' : 'text-slate-400'}`} />
-                        <span className={`text-xs font-medium ${!config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
-                          Auto
-                        </span>
-                      </div>
-                    </Tooltip>
-
-                    <ToggleSwitch
-                      enabled={!config.hasManuallyAdjustedShape}
-                      onChange={(isAuto) => handleToggleMode(isAuto)}
-                      onLabel="Automatic"
-                      offLabel="Manual"
-                    />
-
-                    <Tooltip content="Manual mode preserves your custom shape. Toggle back to Auto to fit measurements again.">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs font-medium ${config.hasManuallyAdjustedShape ? 'text-slate-900' : 'text-slate-500'}`}>
-                          Manual
-                        </span>
-                        <PenTool className={`w-4 h-4 ${config.hasManuallyAdjustedShape ? 'text-blue-600' : 'text-slate-400'}`} />
-                      </div>
-                    </Tooltip>
-                  </div>
-
-                  <div className="mt-2 pt-2 border-t border-slate-100">
-                    <p className="text-xs text-slate-600">
-                      {config.hasManuallyAdjustedShape
-                        ? 'Custom shape - drag corners to adjust'
-                        : 'Auto-fitted to measurements'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
+          <div>
             <ShapeCanvas
               config={config}
               updateConfig={updateConfig}
@@ -482,6 +440,17 @@ export function DimensionsContent({
               highlightedMeasurement={highlightedMeasurement}
               isMobile={isMobile}
             />
+
+            {/* Shape Mode Toggle Control - Below Canvas */}
+            {hasRequiredMeasurements(config.measurements, config.corners) && (
+              <div className="mt-4 flex justify-center">
+                <CollapsibleToggleControl
+                  isAutoMode={!config.hasManuallyAdjustedShape}
+                  onToggle={(isAuto) => handleToggleMode(isAuto)}
+                  isMobile={true}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
