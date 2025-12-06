@@ -4,6 +4,8 @@ import { ShadeSVGCore } from './ShadeSVGCore';
 import { convertMmToUnit, convertUnitToMm } from '../utils/geometry';
 import { getOutwardPosition, getSelectedColor } from '../utils/svgHelpers';
 import { toast } from 'react-toastify';
+import { Tooltip } from './ui/Tooltip';
+import { HelpCircle } from 'lucide-react';
 
 interface ShapeCanvasProps {
   config: ConfiguratorState;
@@ -13,6 +15,8 @@ interface ShapeCanvasProps {
   highlightedMeasurement?: string | null;
   highlightedCorner?: number | null;
   isMobile?: boolean;
+  measurementOption?: 'adjust' | 'exact';
+  unit?: 'metric' | 'imperial';
 }
 
 export function ShapeCanvas({
@@ -22,7 +26,9 @@ export function ShapeCanvas({
   snapToGrid = true,
   highlightedMeasurement = null,
   highlightedCorner = null,
-  isMobile = false
+  isMobile = false,
+  measurementOption = 'adjust',
+  unit = 'metric'
 }: ShapeCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -289,9 +295,44 @@ export function ShapeCanvas({
     });
   }, [config.points, config.fabricType, config.fabricColor, config.hasManuallyAdjustedShape, centroid, isMobile]);
 
+  // Generate tooltip content based on props
+  const tooltipContent = (
+    <div className="max-w-xs">
+      <p className="text-sm text-white font-semibold mb-2">
+        Interactive Canvas Guide
+      </p>
+      <div className="space-y-2 text-sm text-white/90">
+        <p>
+          <strong>Auto Mode:</strong> The shape automatically fits your measurements. Perfect for accurate sizing.
+        </p>
+        <p>
+          <strong>Manual Mode:</strong> Drag the corners to customize the shape. Use the toggle button below the canvas to switch modes.
+        </p>
+        <p>
+          Enter your {measurementOption === 'adjust' ? 'space measurements (distance between fixing points)' : 'desired shade dimensions'} in the fields {isMobile ? 'below' : 'to the right'} to calculate pricing.
+        </p>
+        <p className="text-xs text-white/75 mt-2">
+          All measurements are in {unit === 'imperial' ? 'inches' : 'millimeters'}.
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <div className="relative w-full pb-[100%] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+        {/* Help Icon Tooltip in Top-Left Corner */}
+        <div className="absolute top-3 left-3 z-20">
+          <Tooltip content={tooltipContent}>
+            <button
+              className="w-7 h-7 flex items-center justify-center bg-[#01312D] text-white rounded-full shadow-lg hover:bg-[#307C31] transition-colors duration-200 cursor-help"
+              aria-label="Canvas help and instructions"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        </div>
+
         <svg
           ref={svgRef}
           width="100%"
