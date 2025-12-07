@@ -22,6 +22,7 @@ export interface ConfiguratorState {
   currency: string;
   diagonalsInitiallyProvided?: boolean;
   heightsProvidedByUser?: boolean;
+  hasManuallyAdjustedShape?: boolean;
 }
 
 export interface ShadeCalculations {

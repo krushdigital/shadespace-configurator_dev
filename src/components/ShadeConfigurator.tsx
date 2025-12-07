@@ -15,7 +15,7 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements } from '../utils/geometry';
 import { generatePDF } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
@@ -24,10 +24,12 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { SaveQuoteModal } from './SaveQuoteModal';
 import { SaveProgressButton } from './SaveProgressButton';
+import { CollapsibleToggleControl } from './ui/CollapsibleToggleControl';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
 import { eventTrackers } from '../utils/eventTracker';
+import { toast } from 'react-toastify';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -48,7 +50,8 @@ const INITIAL_STATE: ConfiguratorState = {
   fixingTypes: undefined,
   eyeOrientations: undefined,
   fixingPointsInstalled: undefined,
-  currency: 'NZD'
+  currency: 'NZD',
+  hasManuallyAdjustedShape: false
 };
 
 console.log('🚀 ShadeConfigurator component is loading - this should appear in console');
@@ -59,7 +62,7 @@ export function ShadeConfigurator() {
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 1024);
   console.log('isMobile: ', isMobile);
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
@@ -1460,6 +1463,44 @@ export function ShadeConfigurator() {
     setShowSaveQuoteModal(true);
   };
 
+  // Handle toggle between Auto and Manual mode
+  const handleToggleMode = (isAutomatic: boolean) => {
+    if (isAutomatic) {
+      // Switching to Automatic mode - reconstruct from measurements
+      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        const reconstructedPoints = reconstructPolygonFromMeasurements(
+          config.measurements,
+          config.corners,
+          600,
+          600
+        );
+
+        if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+          updateConfig({
+            points: reconstructedPoints,
+            hasManuallyAdjustedShape: false
+          });
+          toast.success('Switched to Automatic mode - shape fitted to measurements', {
+            autoClose: 3000,
+            hideProgressBar: false,
+          });
+        }
+      } else {
+        toast.warning('Cannot switch to Automatic mode - measurements incomplete', {
+          autoClose: 3000,
+          hideProgressBar: false,
+        });
+      }
+    } else {
+      // Switching to Manual mode
+      updateConfig({ hasManuallyAdjustedShape: true });
+      toast.info('Switched to Manual mode - you can now customize the shape', {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    }
+  };
+
   if (isLoadingQuote) {
     return (
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-16 text-center">
@@ -1588,26 +1629,28 @@ export function ShadeConfigurator() {
                 Interactive Measurement Guide
               </h4>
 
-              {/* Canvas Tip */}
-              <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
-                <p className="text-sm text-[#01312D]">
-                  <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
-                  {config.measurementOption === 'adjust'
-                    ? ' Enter your space measurements (distance between fixing points) in the fields to the right to calculate pricing.'
-                    : ' Enter your desired shade dimensions in the fields to the right to calculate pricing.'}
-                  {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
-                </p>
-              </div>
+              <div>
+                <ShapeCanvas
+                  config={config}
+                  updateConfig={updateConfig}
+                  readonly={false}
+                  snapToGrid={true}
+                  highlightedMeasurement={highlightedMeasurement}
+                  highlightedCorner={highlightedCorner}
+                  isMobile={isMobile}
+                  measurementOption={config.measurementOption}
+                  unit={config.unit}
+                />
 
-              <ShapeCanvas
-                config={config}
-                updateConfig={updateConfig}
-                readonly={false}
-                snapToGrid={true}
-                highlightedMeasurement={highlightedMeasurement}
-                highlightedCorner={highlightedCorner}
-                isMobile={isMobile}
-              />
+                {/* Shape Mode Toggle Control Panel */}
+                <div className="mt-4 flex justify-center">
+                  <CollapsibleToggleControl
+                    isAutoMode={!config.hasManuallyAdjustedShape}
+                    onToggle={(isAuto) => handleToggleMode(isAuto)}
+                    isMobile={false}
+                  />
+                </div>
+              </div>
             </div>
           )}
 

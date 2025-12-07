@@ -406,21 +406,39 @@ export function validateTriangle(a: number, b: number, c: number): { isValid: bo
     return { isValid: false, error: 'All sides must be positive' };
   }
 
-  // Add 3% tolerance to account for real-world measurement imprecision
-  const tolerance = 0.03;
-  const toleranceMultiplier = 1 - tolerance;
+  // Check for degenerate triangles (where points would be collinear)
+  // Require at least 1% separation from degenerate state
+  const degenerateThreshold = 1.01;
 
-  // Only flag if the violation is significant (beyond measurement error)
-  if (a + b <= c * toleranceMultiplier) {
-    return { isValid: false, error: `Triangle inequality violated: ${a.toFixed(0)} + ${b.toFixed(0)} = ${(a+b).toFixed(0)} ≤ ${c.toFixed(0)}` };
+  if (a + b < c * degenerateThreshold) {
+    return { isValid: false, error: `These measurements create a flat or impossible triangle. Try increasing the sum of two shorter sides.` };
   }
-  if (a + c <= b * toleranceMultiplier) {
-    return { isValid: false, error: `Triangle inequality violated: ${a.toFixed(0)} + ${c.toFixed(0)} = ${(a+c).toFixed(0)} ≤ ${b.toFixed(0)}` };
+  if (a + c < b * degenerateThreshold) {
+    return { isValid: false, error: `These measurements create a flat or impossible triangle. Try increasing the sum of two shorter sides.` };
   }
-  if (b + c <= a * toleranceMultiplier) {
-    return { isValid: false, error: `Triangle inequality violated: ${b.toFixed(0)} + ${c.toFixed(0)} = ${(b+c).toFixed(0)} ≤ ${a.toFixed(0)}` };
+  if (b + c < a * degenerateThreshold) {
+    return { isValid: false, error: `These measurements create a flat or impossible triangle. Try increasing the sum of two shorter sides.` };
   }
+
   return { isValid: true };
+}
+
+/**
+ * Calculate valid range for a triangle side given the other two sides
+ * @param side1 First known side
+ * @param side2 Second known side
+ * @returns Object with min and max valid values for the third side
+ */
+export function calculateTriangleSideRange(side1: number, side2: number): { min: number; max: number } {
+  // For a valid non-degenerate triangle, the third side must satisfy:
+  // |side1 - side2| < side3 < side1 + side2
+  // With 1% buffer to avoid degenerate triangles
+  const degenerateThreshold = 1.01;
+
+  const min = Math.abs(side1 - side2) * degenerateThreshold;
+  const max = (side1 + side2) / degenerateThreshold;
+
+  return { min: Math.ceil(min), max: Math.floor(max) };
 }
 
 /**
@@ -884,4 +902,342 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
   
   // Convert from mm² to m²
   return totalAreaMm2 / 1000000;
+}
+
+/**
+ * Calculate Euclidean distance between two points
+ */
+export function calculateDistance(p1: Point, p2: Point): number {
+  return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+}
+
+/**
+ * Calculate the centroid (center point) of a polygon
+ */
+export function calculateCentroid(points: Point[]): Point {
+  const sum = points.reduce((acc, point) => ({
+    x: acc.x + point.x,
+    y: acc.y + point.y
+  }), { x: 0, y: 0 });
+
+  return {
+    x: sum.x / points.length,
+    y: sum.y / points.length
+  };
+}
+
+/**
+ * Calculate position of third point using trilateration
+ * Given two points A and B, and distances from A and C, find position of C
+ */
+function trilateratePoint(
+  A: Point,
+  B: Point,
+  distAC: number,
+  distBC: number
+): Point | null {
+  const distAB = calculateDistance(A, B);
+
+  // Check triangle inequality
+  if (distAC + distBC < distAB || distAC + distAB < distBC || distBC + distAB < distAC) {
+    return null;
+  }
+
+  // Position C relative to A and B
+  // Place A at origin, B on x-axis
+  const dx = B.x - A.x;
+  const dy = B.y - A.y;
+
+  // Calculate angle of AB
+  const angle = Math.atan2(dy, dx);
+
+  // Calculate x coordinate of C in rotated coordinate system
+  const x = (distAC * distAC - distBC * distBC + distAB * distAB) / (2 * distAB);
+
+  // Calculate y coordinate of C
+  const ySquared = distAC * distAC - x * x;
+  if (ySquared < 0) return null;
+
+  const y = Math.sqrt(ySquared);
+
+  // Rotate back to original coordinate system
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  return {
+    x: A.x + x * cos - y * sin,
+    y: A.y + x * sin + y * cos
+  };
+}
+
+/**
+ * Scale polygon to fit within canvas bounds
+ */
+export function scalePolygonToCanvas(
+  points: Point[],
+  canvasWidth: number,
+  canvasHeight: number,
+  margin: number = 50
+): Point[] {
+  if (points.length === 0) return points;
+
+  // Find bounding box
+  const minX = Math.min(...points.map(p => p.x));
+  const maxX = Math.max(...points.map(p => p.x));
+  const minY = Math.min(...points.map(p => p.y));
+  const maxY = Math.max(...points.map(p => p.y));
+
+  let width = maxX - minX;
+  let height = maxY - minY;
+
+  // Handle degenerate shapes (collinear points) by adding minimum dimension
+  // This prevents division by zero and off-screen rendering
+  const minDimension = 10; // Minimum dimension in coordinate space
+  if (width < minDimension) width = minDimension;
+  if (height < minDimension) height = minDimension;
+
+  // Calculate scale to fit within canvas with margin
+  const availableWidth = canvasWidth - 2 * margin;
+  const availableHeight = canvasHeight - 2 * margin;
+  const scale = Math.min(availableWidth / width, availableHeight / height);
+
+  // Calculate center offset
+  const centerX = canvasWidth / 2;
+  const centerY = canvasHeight / 2;
+  const polygonCenterX = (minX + maxX) / 2;
+  const polygonCenterY = (minY + maxY) / 2;
+
+  // Scale and center
+  return points.map(p => ({
+    x: centerX + (p.x - polygonCenterX) * scale,
+    y: centerY + (p.y - polygonCenterY) * scale
+  }));
+}
+
+/**
+ * Check if all required measurements are present for reconstruction
+ */
+export function hasRequiredMeasurements(
+  measurements: { [key: string]: number },
+  corners: number
+): boolean {
+  if (corners === 3) {
+    return !!(measurements['AB'] && measurements['BC'] && measurements['CA']);
+  } else if (corners === 4) {
+    // For 4 corners, we need all edges
+    return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA']);
+  } else if (corners === 5) {
+    // For 5 corners, we need all edges AND all diagonals
+    const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
+    const diagonals = !!(measurements['AC'] && measurements['AD'] && measurements['CE'] && measurements['BD'] && measurements['BE']);
+    return edges && diagonals;
+  } else if (corners === 6) {
+    // For 6 corners, we need all edges AND all diagonals
+    const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
+    const diagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['BD'] && measurements['BE'] && measurements['BF'] && measurements['CE'] && measurements['CF'] && measurements['DF']);
+    return edges && diagonals;
+  }
+  return false;
+}
+
+/**
+ * Reconstruct polygon from edge and diagonal measurements
+ */
+export function reconstructPolygonFromMeasurements(
+  measurements: { [key: string]: number },
+  corners: number,
+  canvasWidth: number = 600,
+  canvasHeight: number = 600
+): Point[] | null {
+  // Check if we have required measurements
+  if (!hasRequiredMeasurements(measurements, corners)) {
+    console.log('Reconstruction skipped: missing required measurements', {
+      corners,
+      measurements: Object.keys(measurements),
+      hasRequired: hasRequiredMeasurements(measurements, corners)
+    });
+    return null;
+  }
+
+  // Validate geometry first
+  const validation = validatePolygonGeometry(measurements, corners);
+  if (!validation.isValid) {
+    console.warn('Reconstruction failed: geometry validation errors', {
+      corners,
+      errors: validation.errors
+    });
+    return null;
+  }
+
+  let points: Point[] = [];
+
+  if (corners === 3) {
+    // Reconstruct triangle
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CA = measurements['CA'];
+
+    // Place A at origin
+    const A: Point = { x: 0, y: 0 };
+
+    // Place B along x-axis
+    const B: Point = { x: AB, y: 0 };
+
+    // Calculate C using trilateration
+    const C = trilateratePoint(A, B, CA, BC);
+    if (!C) return null;
+
+    points = [A, B, C];
+
+  } else if (corners === 4) {
+    // Reconstruct quadrilateral
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DA = measurements['DA'];
+    const AC = measurements['AC'];
+    const BD = measurements['BD'];
+
+    console.log('4-corner reconstruction:', {
+      hasAC: !!AC,
+      hasBD: !!BD,
+      edges: { AB, BC, CD, DA }
+    });
+
+    // Place A at origin
+    const A: Point = { x: 0, y: 0 };
+
+    // Place B along x-axis
+    const B: Point = { x: AB, y: 0 };
+
+    // Calculate C using diagonal AC or approximate with edge BC
+    let C: Point | null = null;
+    if (AC) {
+      // Precise placement using diagonal
+      console.log('Using diagonal AC for precise C placement');
+      C = trilateratePoint(A, B, AC, BC);
+    } else {
+      // Approximate placement: Use 90-degree angle for reasonable shape
+      // This creates a roughly rectangular quadrilateral
+      console.log('Using approximate C placement (no diagonal AC)');
+      const angle = Math.PI / 2; // 90 degrees
+      C = {
+        x: B.x + BC * Math.cos(angle),
+        y: B.y + BC * Math.sin(angle)
+      };
+    }
+    if (!C) return null;
+
+    // Calculate D using diagonals if available, otherwise approximate
+    let D: Point | null = null;
+    if (AC) {
+      // Precise placement using diagonal AC
+      console.log('Using diagonal AC for precise D placement');
+      D = trilateratePoint(A, C, DA, CD);
+    } else if (BD) {
+      // Use diagonal BD for better accuracy
+      console.log('Using diagonal BD for D placement');
+      D = trilateratePoint(A, B, DA, BD);
+    } else {
+      // Approximate: Calculate D to close the quadrilateral
+      // D must be DA from A and CD from C
+      // Use trilateration from A and C
+      console.log('Attempting trilateration from A and C for D');
+      D = trilateratePoint(A, C, DA, CD);
+
+      // If that fails, use a geometric approximation
+      if (!D) {
+        console.log('Trilateration failed, using parallelogram approximation for D');
+        // Place D to form a rough parallelogram-like shape
+        const angle = Math.PI; // 180 degrees from C-to-B direction
+        const directionX = C.x - B.x;
+        const directionY = C.y - B.y;
+        const len = Math.sqrt(directionX * directionX + directionY * directionY);
+        const normalizedX = directionX / len;
+        const normalizedY = directionY / len;
+
+        D = {
+          x: A.x + DA * normalizedX,
+          y: A.y + DA * normalizedY
+        };
+      } else {
+        console.log('Trilateration succeeded for D!');
+      }
+    }
+    if (!D) return null;
+
+    points = [A, B, C, D];
+
+  } else if (corners === 5) {
+    // Reconstruct pentagon (requires all diagonals)
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EA = measurements['EA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const BD = measurements['BD'];
+    const BE = measurements['BE'];
+    const CE = measurements['CE'];
+
+    // Place A at origin
+    const A: Point = { x: 0, y: 0 };
+
+    // Place B along x-axis
+    const B: Point = { x: AB, y: 0 };
+
+    // Calculate C using AC and BC
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+
+    // Calculate D using AD and CD
+    const D = trilateratePoint(A, C, AD, CD);
+    if (!D) return null;
+
+    // Calculate E using AE and DE
+    const E = trilateratePoint(A, D, EA, DE);
+    if (!E) return null;
+
+    points = [A, B, C, D, E];
+
+  } else if (corners === 6) {
+    // Reconstruct hexagon (requires all diagonals)
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EF = measurements['EF'];
+    const FA = measurements['FA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const AE = measurements['AE'];
+
+    // Place A at origin
+    const A: Point = { x: 0, y: 0 };
+
+    // Place B along x-axis
+    const B: Point = { x: AB, y: 0 };
+
+    // Calculate C using AC and BC
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+
+    // Calculate D using AD and CD
+    const D = trilateratePoint(A, C, AD, CD);
+    if (!D) return null;
+
+    // Calculate E using AE and DE
+    const E = trilateratePoint(A, D, AE, DE);
+    if (!E) return null;
+
+    // Calculate F using FA and EF
+    const F = trilateratePoint(A, E, FA, EF);
+    if (!F) return null;
+
+    points = [A, B, C, D, E, F];
+  }
+
+  // Scale and center the polygon to fit canvas
+  return scalePolygonToCanvas(points, canvasWidth, canvasHeight);
 }

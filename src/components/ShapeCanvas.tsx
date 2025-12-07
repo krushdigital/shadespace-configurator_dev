@@ -3,6 +3,9 @@ import { ConfiguratorState, Point } from '../types';
 import { ShadeSVGCore } from './ShadeSVGCore';
 import { convertMmToUnit, convertUnitToMm } from '../utils/geometry';
 import { getOutwardPosition, getSelectedColor } from '../utils/svgHelpers';
+import { toast } from 'react-toastify';
+import { Tooltip } from './ui/Tooltip';
+import { HelpCircle } from 'lucide-react';
 
 interface ShapeCanvasProps {
   config: ConfiguratorState;
@@ -12,6 +15,8 @@ interface ShapeCanvasProps {
   highlightedMeasurement?: string | null;
   highlightedCorner?: number | null;
   isMobile?: boolean;
+  measurementOption?: 'adjust' | 'exact';
+  unit?: 'metric' | 'imperial';
 }
 
 export function ShapeCanvas({
@@ -21,7 +26,9 @@ export function ShapeCanvas({
   snapToGrid = true,
   highlightedMeasurement = null,
   highlightedCorner = null,
-  isMobile = false
+  isMobile = false,
+  measurementOption = 'adjust',
+  unit = 'metric'
 }: ShapeCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -84,13 +91,13 @@ export function ShapeCanvas({
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (dragIndex === null || readonly) return;
-    
+
     const svg = svgRef.current;
     if (!svg) return;
-    
+
     const rect = svg.getBoundingClientRect();
     const { clientX, clientY } = e;
-    
+
     // Simple 1:1 coordinate mapping - no complex transformations
     let svgX = clientX - rect.left;
     let svgY = clientY - rect.top;
@@ -99,22 +106,31 @@ export function ShapeCanvas({
     const viewBox = svg.viewBox.baseVal;
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
-    
+
     // Constrain to canvas bounds
     svgX = Math.max(5, Math.min(viewBox.width - 5, svgX));
     svgY = Math.max(5, Math.min(viewBox.height - 5, svgY));
-    
+
     // Snap to grid
     if (snapToGrid) {
       const gridSize = 10;
       svgX = Math.round(svgX / gridSize) * gridSize;
       svgY = Math.round(svgY / gridSize) * gridSize;
     }
-    
+
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
-    updateConfig({ points: newPoints });
-  }, [dragIndex, readonly, snapToGrid, config.points, updateConfig]);
+
+    // Only log and notify once when flag changes
+    if (!config.hasManuallyAdjustedShape) {
+      console.log('User manually adjusted shape - disabling auto-reconstruction');
+      toast.info('Switched to Manual mode - you can now customize the shape', {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    }
+    updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
+  }, [dragIndex, readonly, snapToGrid, config.points, config.hasManuallyAdjustedShape, updateConfig]);
 
   const handleMouseUp = useCallback(() => {
     setDragIndex(null);
@@ -132,41 +148,50 @@ export function ShapeCanvas({
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (dragIndex === null || readonly) return;
-    
+
     const svg = svgRef.current;
     if (!svg) return;
-    
+
     const rect = svg.getBoundingClientRect();
     const touch = e.touches[0];
     if (!touch) return;
-    
+
     const { clientX, clientY } = touch;
-    
+
     // Simple 1:1 coordinate mapping - no complex transformations
     let svgX = clientX - rect.left;
     let svgY = clientY - rect.top;
     e.preventDefault();
-    
+
     // Convert to SVG coordinate space
     const viewBox = svg.viewBox.baseVal;
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
-    
+
     // Constrain to canvas bounds
     svgX = Math.max(5, Math.min(viewBox.width - 5, svgX));
     svgY = Math.max(5, Math.min(viewBox.height - 5, svgY));
-    
+
     // Snap to grid
     if (snapToGrid) {
       const gridSize = 10;
       svgX = Math.round(svgX / gridSize) * gridSize;
       svgY = Math.round(svgY / gridSize) * gridSize;
     }
-    
+
     const newPoints = [...config.points];
     newPoints[dragIndex] = { x: svgX, y: svgY };
-    updateConfig({ points: newPoints });
-  }, [dragIndex, readonly, snapToGrid, config.points, updateConfig]);
+
+    // Only log and notify once when flag changes
+    if (!config.hasManuallyAdjustedShape) {
+      console.log('User manually adjusted shape - disabling auto-reconstruction');
+      toast.info('Switched to Manual mode - you can now customize the shape', {
+        autoClose: 3000,
+        hideProgressBar: false,
+      });
+    }
+    updateConfig({ points: newPoints, hasManuallyAdjustedShape: true });
+  }, [dragIndex, readonly, snapToGrid, config.points, config.hasManuallyAdjustedShape, updateConfig]);
 
   const handleTouchEnd = useCallback(() => {
     setDragIndex(null);
@@ -257,8 +282,9 @@ export function ShapeCanvas({
   const cornerPoints = useMemo(() => {
     return config.points.map((point, index) => {
       const labelPosition = getOutwardPosition(point, centroid, isMobile ? 40 : 25);
-      const cornerColor = getSelectedColor(config.fabricType, config.fabricColor);
-      
+      const fabricColor = getSelectedColor(config.fabricType, config.fabricColor);
+      const cornerColor = config.hasManuallyAdjustedShape ? '#3B82F6' : fabricColor;
+
       return {
         point,
         index,
@@ -267,11 +293,46 @@ export function ShapeCanvas({
         label: String.fromCharCode(65 + index)
       };
     });
-  }, [config.points, config.fabricType, config.fabricColor, centroid, isMobile]);
+  }, [config.points, config.fabricType, config.fabricColor, config.hasManuallyAdjustedShape, centroid, isMobile]);
+
+  // Generate tooltip content based on props
+  const tooltipContent = (
+    <div className="max-w-xs">
+      <p className="text-sm text-[#01312D] font-semibold mb-2">
+        Interactive Canvas Guide
+      </p>
+      <div className="space-y-2 text-sm text-[#01312D]/80">
+        <p>
+          <strong>Auto Mode:</strong> The shape automatically fits your measurements. Perfect for accurate sizing.
+        </p>
+        <p>
+          <strong>Manual Mode:</strong> Drag the corners to customize the shape. Use the toggle button below the canvas to switch modes.
+        </p>
+        <p>
+          Enter your {measurementOption === 'adjust' ? 'space measurements (distance between fixing points)' : 'desired shade dimensions'} in the fields {isMobile ? 'below' : 'to the right'} to calculate pricing.
+        </p>
+        <p className="text-xs text-[#01312D]/70 mt-2">
+          All measurements are in {unit === 'imperial' ? 'inches' : 'millimeters'}.
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <div>
       <div className="relative w-full pb-[100%] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+        {/* Help Icon Tooltip in Top-Left Corner */}
+        <div className="absolute top-3 left-3 z-20">
+          <Tooltip content={tooltipContent}>
+            <button
+              className="w-7 h-7 flex items-center justify-center bg-[#01312D] text-white rounded-full shadow-lg hover:bg-[#307C31] transition-colors duration-200 cursor-help"
+              aria-label="Canvas help and instructions"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        </div>
+
         <svg
           ref={svgRef}
           width="100%"

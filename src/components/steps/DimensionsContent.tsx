@@ -1,15 +1,17 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
+import { CollapsibleToggleControl } from '../ui/CollapsibleToggleControl';
+import { toast } from 'react-toastify';
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -79,6 +81,8 @@ export function DimensionsContent({
   const [showHeightsSection, setShowHeightsSection] = useState(false);
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
+  const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
+  const lastValidPointsRef = React.useRef(config.points);
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -86,16 +90,19 @@ export function DimensionsContent({
       const mmValue = convertUnitToMm(numericValue, config.unit);
       const newMeasurements = { ...config.measurements, [edgeKey]: mmValue };
       updateConfig({ measurements: newMeasurements });
-      
+
+      // Clear geometry warnings immediately when user updates measurements
+      setGeometryWarnings({});
+
       // Clear any existing errors/suggestions for this field while typing
       if (setValidationErrors && setTypoSuggestions) {
         const newErrors = { ...validationErrors };
         const newSuggestions = { ...typoSuggestions };
-        
+
         // Clear errors and suggestions for this field while user is typing
         delete newErrors[edgeKey];
         delete newSuggestions[edgeKey];
-        
+
         setValidationErrors(newErrors);
         setTypoSuggestions(newSuggestions);
       }
@@ -104,7 +111,10 @@ export function DimensionsContent({
       const newMeasurements = { ...config.measurements };
       delete newMeasurements[edgeKey];
       updateConfig({ measurements: newMeasurements });
-      
+
+      // Clear geometry warnings when user clears a field
+      setGeometryWarnings({});
+
       if (setValidationErrors && setTypoSuggestions) {
         const newErrors = { ...validationErrors };
         const newSuggestions = { ...typoSuggestions };
@@ -251,6 +261,119 @@ export function DimensionsContent({
     }
   }, [navigateToDiagonals, setNavigateToDiagonals]);
 
+  // Auto-reconstruct polygon from measurements with debouncing
+  useEffect(() => {
+    // Only auto-reconstruct if shape hasn't been manually adjusted
+    if (config.hasManuallyAdjustedShape) {
+      return;
+    }
+
+    // Debounce the reconstruction to avoid excessive calculations
+    const timer = setTimeout(() => {
+      // Check if we have all required measurements
+      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        // Validate geometry first
+        const validation = validatePolygonGeometry(config.measurements, config.corners);
+
+        console.log('Running geometry validation:', {
+          corners: config.corners,
+          measurements: config.measurements,
+          isValid: validation.isValid,
+          errors: validation.errors
+        });
+
+        if (!validation.isValid) {
+          // Geometry is invalid - preserve last valid shape and show warnings
+          console.log('Geometry validation failed - setting warning:', validation.errors[0]);
+          setGeometryWarnings({ general: validation.errors[0] || 'Invalid measurements' });
+          // Keep the last valid points - don't update
+          return;
+        }
+
+        // Clear any previous geometry warnings
+        console.log('Geometry validation passed - clearing warnings');
+        setGeometryWarnings({});
+
+        // Attempt to reconstruct the polygon
+        const reconstructedPoints = reconstructPolygonFromMeasurements(
+          config.measurements,
+          config.corners,
+          600,
+          600
+        );
+
+        // If reconstruction succeeded, update the points and store as last valid
+        if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+          console.log('Auto-reconstructing shape from measurements:', {
+            corners: config.corners,
+            measurementKeys: Object.keys(config.measurements),
+            pointsCount: reconstructedPoints.length
+          });
+          lastValidPointsRef.current = reconstructedPoints;
+          updateConfig({ points: reconstructedPoints });
+        } else {
+          console.log('Reconstruction failed or returned null - preserving last valid shape:', {
+            corners: config.corners,
+            requiredMeasurements: hasRequiredMeasurements(config.measurements, config.corners),
+            reconstructedPoints
+          });
+          // Keep the last valid points
+        }
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.measurements, config.corners, config.hasManuallyAdjustedShape]);
+
+  // Handler to reset shape to measurements
+  const handleResetToMeasurements = useCallback(() => {
+    if (hasRequiredMeasurements(config.measurements, config.corners)) {
+      const reconstructedPoints = reconstructPolygonFromMeasurements(
+        config.measurements,
+        config.corners,
+        600,
+        600
+      );
+
+      if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+        updateConfig({
+          points: reconstructedPoints,
+          hasManuallyAdjustedShape: false
+        });
+      }
+    }
+  }, [config.measurements, config.corners, updateConfig]);
+
+  // Handler for toggle switch
+  const handleToggleMode = useCallback((isAutomatic: boolean) => {
+    if (isAutomatic) {
+      // Switching to Automatic mode - reconstruct from measurements
+      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        const reconstructedPoints = reconstructPolygonFromMeasurements(
+          config.measurements,
+          config.corners,
+          600,
+          600
+        );
+
+        if (reconstructedPoints && reconstructedPoints.length === config.corners) {
+          updateConfig({
+            points: reconstructedPoints,
+            hasManuallyAdjustedShape: false
+          });
+          toast.success('Switched to Automatic mode - shape fitted to measurements');
+        }
+      } else {
+        toast.warning('Cannot switch to Automatic mode - please enter all required measurements first');
+      }
+    } else {
+      // Switching to Manual mode
+      updateConfig({ hasManuallyAdjustedShape: true });
+      toast.info('Switched to Manual mode - drag corners to customize shape');
+    }
+  }, [config.measurements, config.corners, updateConfig]);
+
   return (
     <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
       {/* Measurement Context Banner */}
@@ -297,25 +420,27 @@ export function DimensionsContent({
             Interactive Measurement Guide
           </h4>
 
-          {/* Canvas Tip */}
-          <div className="p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg mb-4">
-            <p className="text-sm text-[#01312D]">
-              <strong>Tip:</strong> Drag the corners on the canvas to visualize your shape.
-              {config.measurementOption === 'adjust'
-                ? 'Enter your space measurements (distance between fixing points) in the fields below to calculate pricing.'
-                : 'Enter your desired shade dimensions in the fields below to calculate pricing.'}
-              {' '}All measurements are in {config.unit === 'imperial' ? 'inches' : 'millimeters'}.
-            </p>
+          <div>
+            <ShapeCanvas
+              config={config}
+              updateConfig={updateConfig}
+              readonly={false}
+              snapToGrid={true}
+              highlightedMeasurement={highlightedMeasurement}
+              isMobile={isMobile}
+              measurementOption={config.measurementOption}
+              unit={config.unit}
+            />
+
+            {/* Shape Mode Toggle Control - Below Canvas */}
+            <div className="mt-4 flex justify-center">
+              <CollapsibleToggleControl
+                isAutoMode={!config.hasManuallyAdjustedShape}
+                onToggle={(isAuto) => handleToggleMode(isAuto)}
+                isMobile={true}
+              />
+            </div>
           </div>
-          
-          <ShapeCanvas 
-            config={config} 
-            updateConfig={updateConfig}
-            readonly={false}
-            snapToGrid={true}
-            highlightedMeasurement={highlightedMeasurement}
-            isMobile={isMobile}
-          />
         </div>
       )}
 
@@ -335,6 +460,55 @@ export function DimensionsContent({
               <p className="text-red-700">
                 {validationErrors.perimeterTooLarge}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Geometry Warning */}
+      {Object.keys(geometryWarnings).length > 0 && (
+        <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-amber-100 border-2 border-amber-500 rounded-lg">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <AlertCircle className="w-6 h-6 text-amber-600" />
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold text-amber-900 mb-1">
+                Invalid Measurements
+              </h4>
+              <p className="text-amber-800 mb-2">
+                {geometryWarnings.general}
+              </p>
+              {config.corners === 3 && (() => {
+                const AB = config.measurements['AB'];
+                const BC = config.measurements['BC'];
+                const CA = config.measurements['CA'];
+                if (AB && BC) {
+                  const range = calculateTriangleSideRange(AB, BC);
+                  return (
+                    <p className="text-sm text-amber-700 mt-2">
+                      <strong>Suggested range for CA:</strong> {convertMmToUnit(range.min, config.unit).toFixed(0)} - {convertMmToUnit(range.max, config.unit).toFixed(0)} {config.unit === 'metric' ? 'mm' : 'inches'}
+                    </p>
+                  );
+                }
+                if (AB && CA) {
+                  const range = calculateTriangleSideRange(AB, CA);
+                  return (
+                    <p className="text-sm text-amber-700 mt-2">
+                      <strong>Suggested range for BC:</strong> {convertMmToUnit(range.min, config.unit).toFixed(0)} - {convertMmToUnit(range.max, config.unit).toFixed(0)} {config.unit === 'metric' ? 'mm' : 'inches'}
+                    </p>
+                  );
+                }
+                if (BC && CA) {
+                  const range = calculateTriangleSideRange(BC, CA);
+                  return (
+                    <p className="text-sm text-amber-700 mt-2">
+                      <strong>Suggested range for AB:</strong> {convertMmToUnit(range.min, config.unit).toFixed(0)} - {convertMmToUnit(range.max, config.unit).toFixed(0)} {config.unit === 'metric' ? 'mm' : 'inches'}
+                    </p>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         </div>
@@ -462,13 +636,13 @@ export function DimensionsContent({
                           <div className="space-y-2 mb-3">
                             <div className="flex items-start gap-2">
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">1</span>
-                              <p className="text-sm text-[#01312D]/70">
+                              <p className="text-sm text-[#01312D]/80">
                                 Enter edge measurements → Get instant pricing
                               </p>
                             </div>
                             <div className="flex items-start gap-2">
                               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">2</span>
-                              <p className="text-sm text-[#01312D]/70">
+                              <p className="text-sm text-[#01312D]/80">
                                 Add diagonals at checkout → Complete your order
                               </p>
                             </div>
