@@ -10,6 +10,8 @@ const App = () => {
   console.log('currency: ', currency);
   console.log('🚀 App component is rendering - this should appear in console');
 
+  console.log(`8th December, 2025 11:53:07`);
+
 
   useEffect(() => {
     // Check if current URL is the admin route
