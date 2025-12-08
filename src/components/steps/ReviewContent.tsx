@@ -332,6 +332,18 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   };
 
   const handleAttemptAddToCart = async () => {
+
+    console.log('=== DEBUG measurementOption ===');
+    console.log('config.measurementOption:', config.measurementOption);
+    console.log('Type of config.measurementOption:', typeof config.measurementOption);
+    console.log('=== END DEBUG ===');
+
+    const manufactureOptionText = config.measurementOption === 'adjust'
+      ? 'Manufactured To Fit Space'
+      : 'Manufactured to Dimensions Provided';
+
+    console.log('manufactureOptionText:', manufactureOptionText);
+
     if (!canAddToCart) {
       // Immediately trigger validation feedback
       setShowValidationFeedback(true);
@@ -521,6 +533,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       const hardwareIncluded = config.measurementOption === 'adjust';
       const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
 
+      const manufactureOptionText = config.measurementOption === 'adjust'
+        ? 'Manufactured To Fit Space'
+        : 'Manufactured to Dimensions Provided';
+
       if (canvasImageUrl) {
         const orderData = {
           fabricType: config.fabricType,
@@ -539,6 +555,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           selectedFabric: selectedFabric,
           selectedColor: selectedColor,
           canvasImageUrl: canvasImageUrl,
+          manufacture_option: manufactureOptionText,
           warranty: selectedFabric?.warrantyYears || "",
           // Only include fixing heights data if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
           ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
@@ -581,7 +598,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
 
 
-  return (
+  return (<>
     <div className="p-6">
       <div className="space-y-6">
         {/* Configuration Checklist - Desktop only at top */}
@@ -1362,5 +1379,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         </div>
       </div>
     </div>
+    </>
   );
 });
