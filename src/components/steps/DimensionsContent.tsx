@@ -348,8 +348,11 @@ export function DimensionsContent({
   // Handler for toggle switch
   const handleToggleMode = useCallback((isAutomatic: boolean) => {
     if (isAutomatic) {
-      // Switching to Automatic mode - reconstruct from measurements
+      // Switching to Automatic mode - always allow the switch
+      updateConfig({ hasManuallyAdjustedShape: false });
+
       if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        // If all measurements are present, reconstruct the shape
         const reconstructedPoints = reconstructPolygonFromMeasurements(
           config.measurements,
           config.corners,
@@ -363,9 +366,12 @@ export function DimensionsContent({
             hasManuallyAdjustedShape: false
           });
           toast.success('Switched to Automatic mode - shape fitted to measurements');
+        } else {
+          toast.info('Switched to Automatic mode - shape will update as you enter measurements');
         }
       } else {
-        toast.warning('Cannot switch to Automatic mode - please enter all required measurements first');
+        // Partial or no measurements - still allow the switch
+        toast.info('Switched to Automatic mode - shape will update as you enter measurements');
       }
     } else {
       // Switching to Manual mode
