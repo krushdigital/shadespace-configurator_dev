@@ -24,12 +24,20 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       aria-checked={enabled}
       disabled={disabled}
       onClick={() => !disabled && onChange(!enabled)}
-      className={`relative inline-flex items-center h-7 rounded-full w-14 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+      style={{
+        WebkitTapHighlightColor: 'transparent',
+      }}
+      className={`relative inline-flex items-center h-7 rounded-full w-14 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 touch-manipulation ${
         enabled ? 'bg-green-500' : 'bg-slate-300'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${className}`}
     >
       <span
-        className={`inline-block w-5 h-5 transform transition-transform bg-white rounded-full shadow-lg ${
+        style={{
+          willChange: 'transform',
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+        }}
+        className={`inline-block w-5 h-5 transition-transform duration-200 ease-in-out bg-white rounded-full shadow-lg ${
           enabled ? 'translate-x-1' : 'translate-x-8'
         }`}
       />

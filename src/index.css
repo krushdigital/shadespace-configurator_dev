@@ -356,6 +356,32 @@ button.bg-transparent:focus-visible {
   border: none !important;
 }
 
+/* Mobile-specific toggle switch optimizations */
+@supports (-webkit-appearance: none) {
+  .transition-transform {
+    -webkit-transition: -webkit-transform 200ms ease-in-out;
+    transition: transform 200ms ease-in-out;
+  }
+
+  .translate-x-1 {
+    -webkit-transform: translate3d(0.25rem, 0, 0);
+    transform: translate3d(0.25rem, 0, 0);
+  }
+
+  .translate-x-8 {
+    -webkit-transform: translate3d(2rem, 0, 0);
+    transform: translate3d(2rem, 0, 0);
+  }
+}
+
+/* Hardware acceleration for mobile transforms */
+.transition-transform {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .corner-pulse,
