@@ -6,7 +6,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -621,16 +621,27 @@ export function DimensionsContent({
               })}
 
               {/* Diagonal measurements for 4+ corners */}
-              {config.corners >= 4 && config.corners <= 6 && (
+              {config.corners >= 4 && config.corners <= 6 && (() => {
+                const shapeAccuracyInfo = getShapeAccuracy(config.measurements, config.corners);
+                const isApproximate = shapeAccuracyInfo.accuracy === 'approximate';
+
+                return (
                 <>
-                <div ref={diagonalsSectionRef} className="pt-2 sm:pt-3 border-t border-[#307C31]/30">
+                <div ref={diagonalsSectionRef} className={`pt-2 sm:pt-3 border-t-2 ${isApproximate ? 'border-amber-300 bg-amber-50/30 -mx-2 px-2 sm:-mx-3 sm:px-3 md:-mx-4 md:px-4 pb-2 sm:pb-3 rounded-b-lg' : 'border-[#307C31]/30'}`}>
+                  {isApproximate && (
+                    <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded-lg">
+                      <p className="text-xs sm:text-sm text-amber-800 font-medium">
+                        Add at least one diagonal to see your exact shape in the preview above
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
                     <div className="flex flex-col">
-                      <h5 className="text-xs sm:text-sm md:text-base font-medium text-[#01312D]">
-                        Diagonal Measurements
+                      <h5 className={`text-xs sm:text-sm md:text-base font-medium ${isApproximate ? 'text-amber-900' : 'text-[#01312D]'}`}>
+                        Diagonal Measurements {isApproximate && '- Recommended for Accurate Preview'}
                       </h5>
                       <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
-                        Optional Now • Required at Checkout
+                        Optional Now - Required at Checkout
                       </span>
                     </div>
                     <Tooltip
@@ -761,7 +772,8 @@ export function DimensionsContent({
                   </div>
                 </div>
                 </>
-              )}
+                );
+              })()}
             </div>
           </Card>
         </div>

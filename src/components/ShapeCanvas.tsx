@@ -1,11 +1,11 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { ConfiguratorState, Point } from '../types';
 import { ShadeSVGCore } from './ShadeSVGCore';
-import { convertMmToUnit, convertUnitToMm } from '../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, getShapeAccuracy } from '../utils/geometry';
 import { getOutwardPosition, getSelectedColor } from '../utils/svgHelpers';
 import { toast } from 'react-toastify';
 import { Tooltip } from './ui/Tooltip';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface ShapeCanvasProps {
   config: ConfiguratorState;
@@ -278,6 +278,11 @@ export function ShapeCanvas({
     y: config.points.reduce((sum, p) => sum + p.y, 0) / config.points.length
   } : { x: 300, y: 300 }, [config.points]);
 
+  // Calculate shape accuracy
+  const shapeAccuracyInfo = useMemo(() => {
+    return getShapeAccuracy(config.measurements, config.corners);
+  }, [config.measurements, config.corners]);
+
   // Memoize corner points to prevent unnecessary re-renders
   const cornerPoints = useMemo(() => {
     return config.points.map((point, index) => {
@@ -320,6 +325,34 @@ export function ShapeCanvas({
 
   return (
     <div>
+      {/* Shape Accuracy Indicator - Above Canvas */}
+      {shapeAccuracyInfo.accuracy === 'approximate' && config.corners >= 4 && (
+        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                Approximate Shape Preview
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                This is an estimate based on your edge measurements. Add diagonal measurements below to see your exact shape.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {shapeAccuracyInfo.accuracy === 'exact' && config.corners >= 3 && (
+        <div className="mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <p className="text-sm text-emerald-700">
+              Shape preview matches your measurements
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="relative w-full pb-[100%] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
         {/* Help Icon Tooltip in Top-Left Corner */}
         <div className="absolute top-3 left-3 z-20">
@@ -358,6 +391,7 @@ export function ShapeCanvas({
             onEditCancel={cancelEdit}
             onEditKeyDown={handleEditKeyDown}
             isMobile={isMobile}
+            showAccuracyBadge={true}
           >
             {/* Corner points */}
             {cornerPoints.map(({ point, index, labelPosition, cornerColor, label }) => {
