@@ -10,7 +10,7 @@ const App = () => {
   console.log('currency: ', currency);
   console.log('🚀 App component is rendering - this should appear in console');
 
-  console.log(`8th December, 2025 11:53:07`);
+  console.log(`11th December, 2025 16:58:43`);
 
 
   useEffect(() => {
