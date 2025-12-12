@@ -359,7 +359,7 @@ export function validateHeights(heights: number[], unit: 'metric' | 'imperial'):
 
 export function getDiagonalKeysForCorners(corners: number): string[] {
   const diagonals: string[] = [];
-  
+
   if (corners === 4) {
     diagonals.push('AC', 'BD');
   } else if (corners === 5) {
@@ -367,8 +367,94 @@ export function getDiagonalKeysForCorners(corners: number): string[] {
   } else if (corners === 6) {
     diagonals.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
   }
-  
+
   return diagonals;
+}
+
+export type ShapeAccuracy = 'exact' | 'approximate' | 'incomplete';
+
+export function getShapeAccuracy(
+  measurements: { [key: string]: number },
+  corners: number
+): { accuracy: ShapeAccuracy; message: string; hasDiagonals: boolean } {
+  if (corners === 3) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CA = measurements['CA'];
+
+    if (AB && BC && CA) {
+      return {
+        accuracy: 'exact',
+        message: 'Shape is accurate based on your measurements',
+        hasDiagonals: true
+      };
+    }
+    return {
+      accuracy: 'incomplete',
+      message: 'Enter all edge measurements to see your shape',
+      hasDiagonals: true
+    };
+  }
+
+  if (corners >= 4 && corners <= 6) {
+    let edgeCount = 0;
+    for (let i = 0; i < corners; i++) {
+      const nextIndex = (i + 1) % corners;
+      const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+      if (measurements[edgeKey] && measurements[edgeKey] > 0) {
+        edgeCount++;
+      }
+    }
+
+    if (edgeCount < corners) {
+      return {
+        accuracy: 'incomplete',
+        message: 'Enter all edge measurements to see your shape',
+        hasDiagonals: false
+      };
+    }
+
+    const diagonalKeys = getDiagonalKeysForCorners(corners);
+    const diagonalCount = diagonalKeys.filter(key =>
+      measurements[key] && measurements[key] > 0
+    ).length;
+
+    if (diagonalCount === 0) {
+      return {
+        accuracy: 'approximate',
+        message: 'Shape preview is approximate. Add diagonal measurements for an accurate preview.',
+        hasDiagonals: false
+      };
+    }
+
+    if (corners === 4 && diagonalCount >= 1) {
+      return {
+        accuracy: 'exact',
+        message: 'Shape is accurate based on your measurements',
+        hasDiagonals: true
+      };
+    }
+
+    if (diagonalCount === diagonalKeys.length) {
+      return {
+        accuracy: 'exact',
+        message: 'Shape is accurate based on your measurements',
+        hasDiagonals: true
+      };
+    }
+
+    return {
+      accuracy: 'approximate',
+      message: 'Shape preview is approximate. Add more diagonal measurements for better accuracy.',
+      hasDiagonals: diagonalCount > 0
+    };
+  }
+
+  return {
+    accuracy: 'incomplete',
+    message: 'Select number of corners to begin',
+    hasDiagonals: false
+  };
 }
 /**
  * Calculate the area of a triangle using Heron's formula

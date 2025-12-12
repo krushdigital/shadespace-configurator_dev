@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, forwardRef } from 'react';
 import { ConfiguratorState, Point } from '../types';
-import { formatMeasurement } from '../utils/geometry';
+import { formatMeasurement, getShapeAccuracy, ShapeAccuracy } from '../utils/geometry';
 import { FABRICS } from '../data/fabrics';
 
 interface ShadeSVGCoreProps {
@@ -17,9 +17,10 @@ interface ShadeSVGCoreProps {
   onEditCommit?: () => void;
   onEditCancel?: () => void;
   onEditKeyDown?: (e: React.KeyboardEvent) => void;
-  children?: React.ReactNode; // For corner points or other custom content
+  children?: React.ReactNode;
   forPdfCapture?: boolean;
   isMobile?: boolean;
+  showAccuracyBadge?: boolean;
 }
 
 export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
@@ -38,9 +39,16 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   onEditKeyDown,
   children,
   forPdfCapture = false,
-  isMobile = false
+  isMobile = false,
+  showAccuracyBadge = false
 }, ref) => {
   const [fabricImageBase64, setFabricImageBase64] = useState<string | null>(null);
+
+  const shapeAccuracyInfo = useMemo(() => {
+    return getShapeAccuracy(config.measurements, config.corners);
+  }, [config.measurements, config.corners]);
+
+  const isApproximate = shapeAccuracyInfo.accuracy === 'approximate';
 
   // Stable click handler that always uses the current onMeasurementClick prop
   const handleMeasurementClick = useCallback((measurementKey: string, currentValue: number, position: { x: number; y: number }) => {
@@ -370,11 +378,45 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       {sailAttachmentPoints.length > 2 && (
         <path
           d={generateSailPath(sailAttachmentPoints)}
-          fill={fabricImageBase64 ? "url(#fabricTexture)" : forPdfCapture ? getSelectedColor() : `${getSelectedColor()}20`}
-          stroke={getSelectedColor()}
-          strokeWidth="2"
+          fill={isApproximate && !forPdfCapture
+            ? `${getSelectedColor()}10`
+            : fabricImageBase64
+              ? "url(#fabricTexture)"
+              : forPdfCapture
+                ? getSelectedColor()
+                : `${getSelectedColor()}20`
+          }
+          stroke={isApproximate ? "#F59E0B" : getSelectedColor()}
+          strokeWidth={isApproximate ? "3" : "2"}
+          strokeDasharray={isApproximate ? "8,4" : "none"}
           className="drop-shadow-sm"
         />
+      )}
+
+      {/* Approximate shape indicator badge */}
+      {showAccuracyBadge && isApproximate && !forPdfCapture && (
+        <g transform="translate(300, 30)">
+          <rect
+            x="-120"
+            y="-12"
+            width="240"
+            height="24"
+            rx="12"
+            fill="#FEF3C7"
+            stroke="#F59E0B"
+            strokeWidth="1.5"
+          />
+          <text
+            x="0"
+            y="5"
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="600"
+            fill="#92400E"
+          >
+            Approximate Preview - Add Diagonals
+          </text>
+        </g>
       )}
 
       {/* Edge lines */}
