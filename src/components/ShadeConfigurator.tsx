@@ -613,21 +613,6 @@ export function ShadeConfigurator() {
         }
 
         showToast(data.message, "success");
-
-        // customer subscription
-
-        const subscription_response = await fetch('/apps/shade_space/api/v1/customers/subscribe', { method: "POST", body: JSON.stringify({ email }) })
-
-        const subscription_data = await subscription_response.json()
-
-        const { success, message, error } = subscription_data
-
-        if (success && message && !error) {
-          showToast(message, 'success')
-        } else if (!success && !message && error) {
-          showToast(error, 'error')
-        }
-
         setShowEmailInput(false);
         setEmail('');
       } else {
@@ -790,268 +775,243 @@ export function ShadeConfigurator() {
     backendDiagonalMeasurements: Record<string, string>;
     backendAnchorMeasurements: Record<string, string>;
     originalUnit: 'metric' | 'imperial';
-    manufacture_option?: string;
   }
 
 
-const handleAddToCart = async (orderData: OrderData): Promise<void> => {
-  console.log('Product being created. Add to cart');
-  setShowLoadingOverlay(true);
-  setLoadingStep({ text: 'Starting order process...', progress: 10 });
-  setLoading(true);
+  const handleAddToCart = async (orderData: OrderData): Promise<void> => {
+    console.log('Product being created. Add to cart');
+    setShowLoadingOverlay(true);
+    setLoadingStep({ text: 'Starting order process...', progress: 10 });
+    setLoading(true);
 
-  // Check if this is a converted quote
-  const quoteParams = getQuoteFromUrl();
-  let quoteData: any = null;
+    // Check if this is a converted quote
+    const quoteParams = getQuoteFromUrl();
+    let quoteData: any = null;
 
-  if (quoteReference && quoteParams) {
+    if (quoteReference && quoteParams) {
+      try {
+        quoteData = await getQuoteById(quoteParams.id, quoteParams.token);
+      } catch (error) {
+        console.error('Failed to load quote data for conversion tracking:', error);
+      }
+    }
+
     try {
-      quoteData = await getQuoteById(quoteParams.id, quoteParams.token);
-    } catch (error) {
-      console.error('Failed to load quote data for conversion tracking:', error);
-    }
-  }
+      setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
 
-  try {
-    setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
+      // Format measurements for cart display
+      const formatCartProperties = (measurements: any) => {
+        const formatted: Record<string, string> = {};
 
-    // Format measurements for cart display
-    const formatCartProperties = (measurements: any) => {
-      const formatted: Record<string, string> = {};
-
-      Object.keys(measurements).forEach(key => {
-        if (measurements[key] && typeof measurements[key] === 'object' && measurements[key].formatted) {
-          formatted[key] = measurements[key].formatted;
-        }
-      });
-
-      return formatted;
-    };
-
-    const cartEdgeMeasurements = formatCartProperties(orderData.edgeMeasurements);
-    const cartDiagonalMeasurements = formatCartProperties(orderData.diagonalMeasurementsObj);
-    // REMOVED: cartAnchorMeasurements - we don't want Anchor Height in line items
-    // const cartAnchorMeasurements = formatCartProperties(orderData.anchorPointMeasurements);
-
-    // Create backend-only dual measurement objects for Shopify admin
-    const backendEdgeMeasurements: Record<string, string> = {};
-    Object.keys(orderData.edgeMeasurements || {}).forEach(key => {
-      const measurement = config.measurements[key];
-      if (measurement && measurement > 0) {
-        backendEdgeMeasurements[key] = formatDualMeasurement(measurement, config.unit);
-      }
-    });
-
-    const backendDiagonalMeasurements: Record<string, string> = {};
-    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-    diagonalKeys.forEach(key => {
-      const measurement = config.measurements[key];
-      if (measurement && measurement > 0) {
-        backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
-      }
-    });
-
-    // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-    const backendAnchorMeasurements: Record<string, string> = {};
-    if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        if (height && height > 0) {
-          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
-        }
-      });
-    }
-
-    // Format arrays for cart display
-    const formatArrayForCart = (array: any[], label: string) => {
-      if (!array || !Array.isArray(array)) return {};
-
-      const result: Record<string, string> = {};
-      array.forEach((item, index) => {
-        const corner = String.fromCharCode(65 + index);
-        result[`${label} ${corner}`] = typeof item === 'string' ? item : String(item);
-      });
-      return result;
-    };
-
-    // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-    const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
-    const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
-
-    // DEBUG: Log what's being sent
-    console.log('DEBUG - Manufacturing option values:');
-    console.log('measurementOption from orderData:', orderData.measurementOption);
-    console.log('manufacture_option from orderData:', orderData.manufacture_option);
-    console.log('hardware_included from orderData:', orderData.hardware_included);
-
-    const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...orderData,
-        // Pass all original data including manufacturing options
-        measurementOption: orderData.measurementOption,
-        hardware_included: orderData.hardware_included,
-        manufacture_option: orderData.manufacture_option,
-        // Pass formatted properties for cart display (customer-facing, single unit)
-        cartEdgeMeasurements,
-        cartDiagonalMeasurements,
-        // REMOVED: cartAnchorMeasurements - we don't want Anchor Height in line items
-        cartFixingHeights,
-        cartFixingTypes,
-        // Pass dual measurements for backend/fulfillment (Shopify admin only)
-        backendEdgeMeasurements,
-        backendDiagonalMeasurements,
-        backendAnchorMeasurements,
-        originalUnit: config.unit
-      }),
-    });
-
-    const data = await response.json();
-    const { success, product, error } = data;
-
-    if (success && product) {
-      console.log('Product created... Adding to cart');
-      setLoadingStep({ text: 'Processing product details...', progress: 60 });
-
-      const metafieldProperties: Record<string, string> = {};
-
-      // Only include specific metafields in cart properties - EXCLUDE 'fabric_certification_type'
-      const allowedCartProperties = [
-        'fabric_material',
-        'fabric_color',
-        // REMOVED: 'fabric_certification_type' - we don't want this in line items
-        'edge_type',
-        'wire_thickness',
-        'corners',
-        'area',
-        'perimeter'
-      ];
-
-      product.metafields.edges.forEach((edge: any) => {
-        // Only include allowed properties in cart display
-        if (allowedCartProperties.includes(edge.node.key)) {
-          const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-          metafieldProperties[key] = edge.node.value;
-        }
-      });
-
-      // Add manufacturing option to cart display
-      if (orderData.manufacture_option) {
-        metafieldProperties['Manufacture Option'] = orderData.manufacture_option;
-      } else {
-        // Fallback based on measurementOption
-        const fallbackManufactureOption = orderData.measurementOption === 'adjust' 
-          ? 'Manufactured To Fit Space' 
-          : 'Manufactured to Dimensions Provided';
-        metafieldProperties['Manufacture Option'] = fallbackManufactureOption;
-      }
-
-      // Add hardware included status
-      metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
-
-      // Add formatted cart properties (these will show in cart)
-      Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
-        metafieldProperties[`Edge ${key}`] = value;
-      });
-
-      Object.entries(cartDiagonalMeasurements).forEach(([key, value]) => {
-        metafieldProperties[`Diagonal ${key}`] = value;
-      });
-
-      // REMOVED: Anchor Height properties - we don't want these in line items
-      // Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
-      //   metafieldProperties[`Anchor Height ${key}`] = value;
-      // });
-
-      Object.entries(cartFixingHeights).forEach(([key, value]) => {
-        metafieldProperties[key] = value;
-      });
-
-      Object.entries(cartFixingTypes).forEach(([key, value]) => {
-        metafieldProperties[key] = value;
-      });
-
-      const gid = product?.variants?.edges?.[0]?.node?.id;
-      if (gid) {
-        const variantId = gid.split('/').pop();
-
-        const formData = {
-          items: [{
-            id: Number(variantId),
-            quantity: 1,
-            properties: metafieldProperties
-          }]
-        };
-
-        console.log('Add to cart in progress');
-        setLoadingStep({ text: 'Adding item to your cart...', progress: 85 });
-
-        const cartResponse = await fetch('/cart/add.js', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+        Object.keys(measurements).forEach(key => {
+          if (measurements[key] && typeof measurements[key] === 'object' && measurements[key].formatted) {
+            formatted[key] = measurements[key].formatted;
+          }
         });
 
-        if (cartResponse.ok) {
-          console.log('Added to cart');
+        return formatted;
+      };
 
-          // Track add to cart event for admin dashboard
-          eventTrackers.addToCart(
-            quoteReference || (quoteParams?.id || null),
-            email || null,
-            calculations.totalPrice,
-            config.currency,
-            true
-          );
+      const cartEdgeMeasurements = formatCartProperties(orderData.edgeMeasurements);
+      const cartDiagonalMeasurements = formatCartProperties(orderData.diagonalMeasurementsObj);
+      const cartAnchorMeasurements = formatCartProperties(orderData.anchorPointMeasurements);
 
-          // Track quote conversion if applicable
-          if (quoteData && quoteParams) {
-            try {
-              const createdAt = new Date(quoteData.created_at);
-              const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+      // Create backend-only dual measurement objects for Shopify admin
+      const backendEdgeMeasurements: Record<string, string> = {};
+      Object.keys(orderData.edgeMeasurements || {}).forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendEdgeMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
 
-              analytics.quoteConvertedToCart({
-                quote_reference: quoteReference!,
-                quote_age_hours: quoteAgeHours,
-                time_from_save_to_cart_hours: quoteAgeHours,
-                total_price: calculations.totalPrice,
-                currency: config.currency,
-                conversion_source: 'loaded_quote',
-              });
+      const backendDiagonalMeasurements: Record<string, string> = {};
+      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+      diagonalKeys.forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
 
-              // Mark quote as converted
-              await markQuoteConverted(quoteParams.id, quoteParams.token);
-            } catch (error) {
-              console.error('Failed to track quote conversion:', error);
-            }
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+      const backendAnchorMeasurements: Record<string, string> = {};
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          if (height && height > 0) {
+            backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
           }
+        });
+      }
 
-          setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
-          window.location.href = '/cart';
+      // Format arrays for cart display
+      const formatArrayForCart = (array: any[], label: string) => {
+        if (!array || !Array.isArray(array)) return {};
+
+        const result: Record<string, string> = {};
+        array.forEach((item, index) => {
+          const corner = String.fromCharCode(65 + index);
+          result[`${label} ${corner}`] = typeof item === 'string' ? item : String(item);
+        });
+        return result;
+      };
+
+      // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+      const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
+      const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
+
+      const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...orderData,
+          // Pass formatted properties for cart display (customer-facing, single unit)
+          cartEdgeMeasurements,
+          cartDiagonalMeasurements,
+          cartAnchorMeasurements,
+          cartFixingHeights,
+          cartFixingTypes,
+          // Pass dual measurements for backend/fulfillment (Shopify admin only)
+          backendEdgeMeasurements,
+          backendDiagonalMeasurements,
+          backendAnchorMeasurements,
+          originalUnit: config.unit
+        }),
+      });
+
+      const data = await response.json();
+      const { success, product, error } = data;
+
+      if (success && product) {
+        console.log('Product created... Adding to cart');
+        setLoadingStep({ text: 'Processing product details...', progress: 60 });
+
+        const metafieldProperties: Record<string, string> = {};
+
+        // Only include specific metafields in cart properties (exclude the ones you want to hide)
+        const allowedCartProperties = [
+          'fabric_material',
+          'fabric_color',
+          'fabric_certification_type',
+          'edge_type',
+          'wire_thickness',
+          'corners',
+          'area',
+          'perimeter'
+        ];
+
+        product.metafields.edges.forEach((edge: any) => {
+          // Only include allowed properties in cart display
+          if (allowedCartProperties.includes(edge.node.key)) {
+            const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            metafieldProperties[key] = edge.node.value;
+          }
+        });
+
+        metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
+
+        // Add formatted cart properties (these will show in cart)
+        Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
+          metafieldProperties[`Edge ${key}`] = value;
+        });
+
+        Object.entries(cartDiagonalMeasurements).forEach(([key, value]) => {
+          metafieldProperties[`Diagonal ${key}`] = value;
+        });
+
+        Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
+          metafieldProperties[`Anchor Height ${key}`] = value;
+        });
+
+        Object.entries(cartFixingHeights).forEach(([key, value]) => {
+          metafieldProperties[key] = value;
+        });
+
+        Object.entries(cartFixingTypes).forEach(([key, value]) => {
+          metafieldProperties[key] = value;
+        });
+
+        const gid = product?.variants?.edges?.[0]?.node?.id;
+        if (gid) {
+          const variantId = gid.split('/').pop();
+
+          const formData = {
+            items: [{
+              id: Number(variantId),
+              quantity: 1,
+              properties: metafieldProperties
+            }]
+          };
+
+          console.log('Add to cart in progress');
+          setLoadingStep({ text: 'Adding item to your cart...', progress: 85 });
+
+          const cartResponse = await fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+
+          if (cartResponse.ok) {
+            console.log('Added to cart');
+
+            // Track add to cart event for admin dashboard
+            eventTrackers.addToCart(
+              quoteReference || (quoteParams?.id || null),
+              email || null,
+              calculations.totalPrice,
+              config.currency,
+              true
+            );
+
+            // Track quote conversion if applicable
+            if (quoteData && quoteParams) {
+              try {
+                const createdAt = new Date(quoteData.created_at);
+                const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+
+                analytics.quoteConvertedToCart({
+                  quote_reference: quoteReference!,
+                  quote_age_hours: quoteAgeHours,
+                  time_from_save_to_cart_hours: quoteAgeHours,
+                  total_price: calculations.totalPrice,
+                  currency: config.currency,
+                  conversion_source: 'loaded_quote',
+                });
+
+                // Mark quote as converted
+                await markQuoteConverted(quoteParams.id, quoteParams.token);
+              } catch (error) {
+                console.error('Failed to track quote conversion:', error);
+              }
+            }
+
+            setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
+            window.location.href = '/cart';
+          } else {
+            console.error('Failed to add to cart');
+            setShowLoadingOverlay(false);
+            setLoading(false);
+          }
         } else {
-          console.error('Failed to add to cart');
+          console.error('No variant found in product');
           setShowLoadingOverlay(false);
           setLoading(false);
         }
-      } else {
-        console.error('No variant found in product');
+      } else if (!success && error) {
+        console.error('Product creation failed:', error);
         setShowLoadingOverlay(false);
         setLoading(false);
       }
-    } else if (!success && error) {
-      console.error('Product creation failed:', error);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
       setShowLoadingOverlay(false);
       setLoading(false);
     }
-  } catch (error) {
-    console.error('Error adding to cart:', error);
-    setShowLoadingOverlay(false);
-    setLoading(false);
-  }
-};
+  };
 
 
   // Auto-center shape when moving between steps
@@ -1559,9 +1519,9 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
             ? 'lg:col-span-2'
             : (openStep >= 5 && !shouldSkipStep(5)) // Review step (when step 5 is not skipped)
               ? 'lg:col-span-3'
-              : (openStep === 6 && shouldSkipStep(5)) // Review step (when step 5 is skipped)
-                ? 'lg:col-span-3'
-                : 'lg:col-span-4'
+            : (openStep === 6 && shouldSkipStep(5)) // Review step (when step 5 is skipped)
+              ? 'lg:col-span-3'
+              : 'lg:col-span-4'
             }`}>
             {steps.map((step, index) => {
               const StepComponent = step.component;
