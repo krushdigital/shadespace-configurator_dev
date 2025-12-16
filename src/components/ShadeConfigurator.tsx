@@ -1630,7 +1630,7 @@ export function ShadeConfigurator() {
         calculations={calculations}
         currentStep={openStep}
         totalSteps={7}
-        shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements && allDiagonalsEntered}
+        shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
         onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
         onEmailPDFQuote={handleEmailPDFQuote}
       />
