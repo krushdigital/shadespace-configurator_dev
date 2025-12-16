@@ -817,7 +817,7 @@ export function DimensionsContent({
               </button>
 
               {showHeightsSection && (
-                <div className="p-3 pt-0 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
+                <div className="p-3 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
                   <div className="p-2 sm:p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg">
                     <p className="text-sm text-[#01312D]">
                       <strong>Note:</strong> Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.
