@@ -426,7 +426,7 @@ export function DimensionsContent({
             Interactive Measurement Guide
           </h4>
 
-          <div>
+          <div className="relative">
             <ShapeCanvas
               config={config}
               updateConfig={updateConfig}
@@ -438,8 +438,8 @@ export function DimensionsContent({
               unit={config.unit}
             />
 
-            {/* Shape Mode Toggle Control - Below Canvas */}
-            <div className="mt-4 flex justify-center">
+            {/* Shape Mode Toggle Control - Bottom Right Corner */}
+            <div className="absolute bottom-2 right-2 z-10">
               <CollapsibleToggleControl
                 isAutoMode={!config.hasManuallyAdjustedShape}
                 onToggle={(isAuto) => handleToggleMode(isAuto)}
