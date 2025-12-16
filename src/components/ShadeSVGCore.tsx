@@ -397,18 +397,18 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       {showAccuracyBadge && isApproximate && !forPdfCapture && (
         <g transform="translate(300, 30)">
           <rect
-            x="-110"
-            y="-15"
-            width="220"
-            height="30"
-            rx="15"
+            x="-100"
+            y="-12"
+            width="200"
+            height="24"
+            rx="12"
             fill="#FEF3C7"
             stroke="#F59E0B"
             strokeWidth="1.5"
           />
           <text
             x="0"
-            y="6"
+            y="5"
             textAnchor="middle"
             fontSize="11"
             fontWeight="600"
