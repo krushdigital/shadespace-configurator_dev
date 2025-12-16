@@ -92,8 +92,16 @@ async function getImageDimensions(base64: string): Promise<{ width: number; heig
   });
 }
 
+export interface CustomerDetails {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  quoteName?: string;
+  customerReference?: string | null;
+}
+
 export async function generatePDF(
-config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined): Promise<string | void> {
+config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined, customerDetails?: CustomerDetails): Promise<string | void> {
   console.log('🚀 Starting PDF generation...');
   console.log('📱 User agent:', navigator.userAgent);
   console.log('📊 Config corners:', config.corners);
@@ -218,14 +226,84 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     pdf.text(`Quote ID: SS-${Date.now()}`, pageWidth - 15, 22, { align: 'right' });
     
     let yPos = 55;
-    
+
     // Main title
     pdf.setTextColor(...textDark);
     pdf.setFontSize(20);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Custom Shade Sail Quote', 15, yPos);
-    yPos += 15;
-    
+    yPos += 12;
+
+    // Customer Details Section (if provided)
+    if (customerDetails && (customerDetails.firstName || customerDetails.quoteName)) {
+      const hasCustomerName = customerDetails.firstName && customerDetails.lastName;
+      const hasQuoteName = customerDetails.quoteName;
+      const hasEmail = customerDetails.email;
+      const hasReference = customerDetails.customerReference;
+
+      const customerDetailsCount = [hasCustomerName, hasQuoteName, hasEmail, hasReference].filter(Boolean).length;
+      const customerDetailsHeight = customerDetailsCount * 6 + 16;
+
+      pdf.setFillColor(...lightGreenBg);
+      pdf.rect(10, yPos - 3, pageWidth - 20, customerDetailsHeight, 'F');
+      pdf.setDrawColor(...primaryGreen);
+      pdf.setLineWidth(0.5);
+      pdf.rect(10, yPos - 3, pageWidth - 20, customerDetailsHeight, 'S');
+
+      pdf.setTextColor(...primaryGreen);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Quote Prepared For:', 15, yPos + 4);
+      yPos += 12;
+
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+
+      if (hasCustomerName) {
+        pdf.setTextColor(...textMedium);
+        pdf.text('Customer:', 15, yPos);
+        pdf.setTextColor(...textDark);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${customerDetails.firstName} ${customerDetails.lastName}`, 50, yPos);
+        pdf.setFont('helvetica', 'normal');
+        yPos += 6;
+      }
+
+      if (hasEmail) {
+        pdf.setTextColor(...textMedium);
+        pdf.text('Email:', 15, yPos);
+        pdf.setTextColor(...textDark);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(customerDetails.email!, 50, yPos);
+        pdf.setFont('helvetica', 'normal');
+        yPos += 6;
+      }
+
+      if (hasQuoteName) {
+        pdf.setTextColor(...textMedium);
+        pdf.text('Shade Sail Name:', 15, yPos);
+        pdf.setTextColor(...textDark);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(customerDetails.quoteName!, 50, yPos);
+        pdf.setFont('helvetica', 'normal');
+        yPos += 6;
+      }
+
+      if (hasReference) {
+        pdf.setTextColor(...textMedium);
+        pdf.text('Reference:', 15, yPos);
+        pdf.setTextColor(...textDark);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(customerDetails.customerReference!, 50, yPos);
+        pdf.setFont('helvetica', 'normal');
+        yPos += 6;
+      }
+
+      yPos += 8;
+    } else {
+      yPos += 3;
+    }
+
     // Determine if fabric color is fire retardant
     const isFireRetardant = selectedFabric?.id === 'extrablock330' && 
       config.fabricColor && 

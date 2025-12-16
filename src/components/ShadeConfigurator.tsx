@@ -15,15 +15,13 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements } from '../utils/geometry';
-import { generatePDF } from '../utils/pdfGenerator';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea } from '../utils/geometry';
+import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
-import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
-import { formatMeasurement, formatArea } from '../utils/geometry';
+import { EXCHANGE_RATES } from '../data/pricing';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
-import { SaveQuoteModal } from './SaveQuoteModal';
-import { SaveProgressButton } from './SaveProgressButton';
+import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { CollapsibleToggleControl } from './ui/CollapsibleToggleControl';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
@@ -66,12 +64,8 @@ export function ShadeConfigurator() {
   console.log('isMobile: ', isMobile);
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  // Pricing and order state (lifted from ReviewContent)
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [showEmailInput, setShowEmailInput] = useState(false);
   const { showToast } = useToast();
-  const [email, setEmail] = useState('');
+  const [showUnifiedSaveModal, setShowUnifiedSaveModal] = useState(false);
   const [acknowledgments, setAcknowledgments] = useState({
     customManufactured: false,
     measurementsAccurate: false,
@@ -85,7 +79,6 @@ export function ShadeConfigurator() {
   });
 
   // Quote management state
-  const [showSaveQuoteModal, setShowSaveQuoteModal] = useState(false);
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
@@ -273,40 +266,41 @@ export function ShadeConfigurator() {
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
-  // Pricing and order handlers (lifted from ReviewContent)
-  const handleGeneratePDF = async (svgElement?: SVGElement, isEmailSummary?: boolean) => {
-    setIsGeneratingPDF(true);
+  // PDF generation handler for unified modal with customer details
+  const handleGeneratePDFWithDetails = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    quoteName: string,
+    customerReference: string | null
+  ): Promise<string | void> => {
     try {
-      const pdf = await generatePDF(config, calculations, svgElement, isEmailSummary);
+      const svgElement = canvasRef.current?.getSVGElement?.();
+      const customerDetails: CustomerDetails = {
+        firstName,
+        lastName,
+        email,
+        quoteName,
+        customerReference
+      };
+      const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
 
-      // Track PDF download event for admin dashboard
-      if (!isEmailSummary) {
-        const quoteParams = getQuoteFromUrl();
-        eventTrackers.pdfDownload(
-          quoteReference || (quoteParams?.id || null),
-          email || null,
-          calculations.totalPrice,
-          config.currency
-        );
-      }
+      // Track PDF generation event
+      const quoteParams = getQuoteFromUrl();
+      eventTrackers.pdfDownload(
+        quoteReference || (quoteParams?.id || null),
+        email,
+        calculations.totalPrice,
+        config.currency
+      );
 
-      return pdf
+      return pdf;
     } catch (error) {
       console.error('Error generating PDF:', error);
-
-      // More user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Failed to generate PDF: ${errorMessage}\n\nPlease try again. If the problem persists, please contact support.`);
-    } finally {
-      setIsGeneratingPDF(false);
+      showToast(`Failed to generate PDF: ${errorMessage}`, 'error');
+      return undefined;
     }
-  };
-
-  // Enhanced PDF generation with SVG element
-  const handleGeneratePDFWithSVG = async (isEmailSummary: boolean) => {
-    const svgElement = canvasRef.current?.getSVGElement?.();
-    const pdf = await handleGeneratePDF(svgElement, isEmailSummary);
-    return pdf;
   };
 
   const convertSvgToPng = async (
@@ -397,25 +391,16 @@ export function ShadeConfigurator() {
     }
   };
 
-  const handleEmailSummary = async () => {
+  // Email PDF Quote handler for unified modal
+  const handleEmailPDFQuote = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    quoteName: string,
+    customerReference: string | null,
+    pdfBase64: string
+  ): Promise<boolean> => {
     try {
-      if (!showEmailInput) {
-        setShowEmailInput(true);
-        return;
-      }
-
-      if (!email.trim()) {
-        setShowEmailInput(false);
-        setEmail('');
-        return;
-      }
-
-      setIsSendingEmail(true); // ✅ Start loading
-
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      const pdf = await handleGeneratePDFWithSVG(true);
-
       // Get the SVG element and upload preview
       const svgElement = canvasRef.current?.getSVGElement();
       let canvasImageUrl = null;
@@ -434,8 +419,8 @@ export function ShadeConfigurator() {
         }
       }
 
-      const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
-      const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
+      const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
+      const selectedColor = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
 
       const edgeMeasurements: Record<string, { unit: string; formatted: string }> = {};
       for (let i = 0; i < config.corners; i++) {
@@ -450,13 +435,13 @@ export function ShadeConfigurator() {
         }
       }
 
-      const diagonalMeasurementsObj: Record<string, { unit: string; formatted: string }> = {};
       const diagonalKeys =
         config.corners === 4 ? ['AC', 'BD'] :
           config.corners === 5 ? ['AC', 'AD', 'CE', 'BD', 'BE'] :
             config.corners === 6 ? ['AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF'] :
               [];
 
+      const diagonalMeasurementsObj: Record<string, { unit: string; formatted: string }> = {};
       diagonalKeys.forEach(key => {
         const measurement = config.measurements[key];
         if (measurement && measurement > 0) {
@@ -467,7 +452,6 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const anchorPointMeasurements: Record<string, { unit: string; formatted: string }> = {};
       if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
@@ -481,7 +465,6 @@ export function ShadeConfigurator() {
         });
       }
 
-      // Create backend-only dual measurement objects for email to fulfillment team
       const backendEdgeMeasurementsEmail: Record<string, string> = {};
       for (let i = 0; i < config.corners; i++) {
         const nextIndex = (i + 1) % config.corners;
@@ -500,7 +483,6 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const backendAnchorMeasurementsEmail: Record<string, string> = {};
       if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
@@ -512,14 +494,8 @@ export function ShadeConfigurator() {
       }
 
       const userCurrency = window.Shopify?.currency?.active || 'USD';
-      console.log('userCurrency: ', userCurrency);
-
       const exchangeRate = parseFloat(window.Shopify?.currency?.rate || '1');
-      console.log('exchangeRate: ', exchangeRate);
-
-      // Convert amount using Shopify's rate
       const convertedAmount = calculations?.totalPrice * exchangeRate;
-      console.log('convertedAmount: ', convertedAmount);
 
       const orderData = {
         fabricType: config.fabricType,
@@ -532,10 +508,9 @@ export function ShadeConfigurator() {
         area: calculations.area,
         perimeter: calculations.perimeter,
         totalPrice: convertedAmount.toFixed(2),
-        selectedFabric,
+        selectedFabric: selectedFabricLocal,
         selectedColor,
-        warranty: selectedFabric?.warrantyYears || "",
-        // Only include fixing heights data if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+        warranty: selectedFabricLocal?.warrantyYears || "",
         ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
           fixingHeights: config.fixingHeights,
           fixingTypes: config.fixingTypes,
@@ -545,7 +520,7 @@ export function ShadeConfigurator() {
         anchorPointMeasurements,
         Fabric_Type: config.fabricType === 'extrablock330' && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor)
           ? 'Not FR Certified'
-          : selectedFabric?.label,
+          : selectedFabricLocal?.label,
         Shade_Factor: selectedColor?.shadeFactor,
         Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
         Wire_Thickness: config.unit === 'imperial'
@@ -559,18 +534,21 @@ export function ShadeConfigurator() {
         Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
         canvasImage: canvasImageUrl,
         createdAt: new Date().toISOString(),
-        // Add dual measurements for backend/fulfillment team emails
         backendEdgeMeasurements: backendEdgeMeasurementsEmail,
         backendDiagonalMeasurements: backendDiagonalMeasurementsEmail,
         backendAnchorMeasurements: backendAnchorMeasurementsEmail,
-        originalUnit: config.unit
+        originalUnit: config.unit,
+        firstName,
+        lastName,
+        quoteName,
+        customerReference
       };
 
       const response = await fetch(
         '/apps/shade_space/api/v1/public/email-summary-send',
         {
           method: "POST",
-          body: JSON.stringify({ pdf, ...orderData, email }),
+          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email }),
         }
       );
 
@@ -579,10 +557,9 @@ export function ShadeConfigurator() {
       if (data.success) {
         const emailDomain = email.split('@')[1] || 'unknown';
 
-        // Track email summary sent
         analytics.emailSummaryWithShopify({
           email_domain: emailDomain,
-          includes_pdf: !!pdf,
+          includes_pdf: !!pdfBase64,
           includes_canvas: !!canvasImageUrl,
           total_price: calculations.totalPrice,
           currency: config.currency,
@@ -590,7 +567,6 @@ export function ShadeConfigurator() {
           shopify_customer_id: data.shopifyCustomerId,
         });
 
-        // Track email summary event for admin dashboard
         const quoteParams = getQuoteFromUrl();
         eventTrackers.emailSummary(
           quoteReference || (quoteParams?.id || null),
@@ -600,51 +576,36 @@ export function ShadeConfigurator() {
           true
         );
 
-        // Track Shopify customer creation if it happened
         if (data.shopifyCustomerCreated && data.shopifyCustomerId) {
           analytics.shopifyCustomerCreated({
             customer_id: data.shopifyCustomerId,
             email_domain: emailDomain,
-            source: 'email_summary',
-            tags: ['quote_saved', 'email_summary_requested'],
+            source: 'email_pdf_quote',
+            tags: ['quote_saved', 'email_pdf_quote_requested'],
             total_quote_value: calculations.totalPrice,
             currency: config.currency,
           });
         }
 
-        showToast(data.message, "success");
-        setShowEmailInput(false);
-        setEmail('');
+        return true;
       } else {
-        const emailDomain = email.split('@')[1] || 'unknown';
-
         analytics.emailSendFailed({
           error_message: data.error || 'Unknown error',
           error_type: 'EmailSendError',
         });
-
-        showToast(data.error || "Failed to send email", "error");
+        return false;
       }
     } catch (error: any) {
       console.error("Email send failed:", error);
-
       analytics.emailSendFailed({
         error_message: error?.message || 'Unknown error',
         error_type: error?.name || 'EmailSendError',
       });
-
-      showToast("An unexpected error occurred while sending email.", "error");
-    } finally {
-      setIsSendingEmail(false);
+      return false;
     }
   };
 
 
-
-  const handleCancelEmailInput = () => {
-    setShowEmailInput(false);
-    setEmail('');
-  };
 
   const handleAcknowledgmentChange = (key: keyof typeof acknowledgments) => {
     setAcknowledgments(prev => ({
@@ -1443,9 +1404,9 @@ export function ShadeConfigurator() {
   // Check if quote is ready (has price)
   const hasQuote = calculations.totalPrice > 0;
 
-  // Handle save quote
+  // Handle save quote - opens unified modal
   const handleSaveQuote = () => {
-    setShowSaveQuoteModal(true);
+    setShowUnifiedSaveModal(true);
   };
 
   // Handle toggle between Auto and Manual mode
@@ -1577,13 +1538,7 @@ export function ShadeConfigurator() {
                     setConfig={setConfig}
                     setOpenStep={setOpenStep}
                     mobileGuidance={mobileGuidance}
-                    // Pricing and order props for ReviewContent
-                    isGeneratingPDF={isGeneratingPDF}
-                    handleGeneratePDF={handleGeneratePDF}
-                    showEmailInput={showEmailInput}
-                    email={email}
-                    setEmail={setEmail}
-                    handleEmailSummary={handleEmailSummary}
+                    // Props for ReviewContent
                     acknowledgments={acknowledgments}
                     handleAcknowledgmentChange={handleAcknowledgmentChange}
                     handleAddToCart={handleAddToCart}
@@ -1591,7 +1546,6 @@ export function ShadeConfigurator() {
                     allAcknowledgmentsChecked={allAcknowledgmentsChecked}
                     canAddToCart={canAddToCart}
                     hasAllEdgeMeasurements={hasAllEdgeMeasurements}
-                    handleCancelEmailInput={handleCancelEmailInput}
                     nextStepTitle={getNextStepTitle(index)}
                     showBackButton={shouldShowBackButton(index)}
                     isMobile={isMobile}
@@ -1655,13 +1609,6 @@ export function ShadeConfigurator() {
                 config={config}
                 calculations={calculations}
                 onSaveQuote={handleSaveQuote}
-                onGeneratePDF={() => handleGeneratePDFWithSVG(false)}
-                isGeneratingPDF={isGeneratingPDF}
-                showEmailInput={showEmailInput}
-                email={email}
-                setEmail={setEmail}
-                onEmailSummary={handleEmailSummary}
-                onCancelEmailInput={handleCancelEmailInput}
               />
             </div>
           )}
@@ -1675,14 +1622,16 @@ export function ShadeConfigurator() {
         />
       </div>
 
-      {/* Save Quote Modal */}
-      <SaveQuoteModal
-        isOpen={showSaveQuoteModal}
-        onClose={() => setShowSaveQuoteModal(false)}
+      {/* Unified Save Modal */}
+      <UnifiedSaveModal
+        isOpen={showUnifiedSaveModal}
+        onClose={() => setShowUnifiedSaveModal(false)}
         config={config}
         calculations={calculations}
         currentStep={openStep}
         totalSteps={7}
+        onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
+        onEmailPDFQuote={handleEmailPDFQuote}
       />
     </>
   );

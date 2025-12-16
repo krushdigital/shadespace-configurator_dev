@@ -1,7 +1,6 @@
 import React from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../types';
 import { Button } from './ui/Button';
-import { Input } from './ui/Input';
 import { Tooltip } from './ui/Tooltip';
 import { FABRICS } from '../data/fabrics';
 import { formatCurrency } from '../utils/currencyFormatter';
@@ -18,13 +17,6 @@ interface PriceSummaryDisplayProps {
   config: ConfiguratorState;
   calculations: ShadeCalculations;
   onSaveQuote?: () => void;
-  onGeneratePDF?: () => void;
-  isGeneratingPDF?: boolean;
-  showEmailInput?: boolean;
-  email?: string;
-  setEmail?: (email: string) => void;
-  onEmailSummary?: () => void;
-  onCancelEmailInput?: () => void;
   isMobile?: boolean;
 }
 
@@ -32,13 +24,6 @@ export function PriceSummaryDisplay({
   config,
   calculations,
   onSaveQuote,
-  onGeneratePDF,
-  isGeneratingPDF = false,
-  showEmailInput = false,
-  email = '',
-  setEmail,
-  onEmailSummary,
-  onCancelEmailInput,
   isMobile = false,
 }: PriceSummaryDisplayProps) {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
@@ -174,12 +159,12 @@ export function PriceSummaryDisplay({
 
           {/* Quote Actions - Desktop Only */}
           {onSaveQuote && (
-            <div className="space-y-3 mt-6 pt-6 border-t border-slate-200">
+            <div className="mt-6 pt-6 border-t border-slate-200">
               <Tooltip
                 content={
                   <div className="text-slate-700">
-                    <p className="font-semibold mb-1">Save Your Progress</p>
-                    <p>Save your configuration at any point and return later when you're ready to continue.</p>
+                    <p className="font-semibold mb-1">Save Your Configuration</p>
+                    <p>Save your progress or receive a detailed PDF quote via email.</p>
                   </div>
                 }
                 fullWidth
@@ -194,64 +179,9 @@ export function PriceSummaryDisplay({
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
-                  Save Progress
+                  Save
                 </Button>
               </Tooltip>
-
-              {onGeneratePDF && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onGeneratePDF}
-                  disabled={isGeneratingPDF}
-                  fullWidth
-                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
-                >
-                  {isGeneratingPDF ? 'Generating...' : 'Download PDF Quote'}
-                </Button>
-              )}
-
-              {onEmailSummary && !showEmailInput && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onEmailSummary}
-                  fullWidth
-                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
-                >
-                  Email Summary
-                </Button>
-              )}
-
-              {showEmailInput && setEmail && onEmailSummary && onCancelEmailInput && (
-                <div className="space-y-2">
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="w-full"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={onEmailSummary}
-                      className="w-full"
-                    >
-                      Send
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={onCancelEmailInput}
-                      className="w-full"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </>
