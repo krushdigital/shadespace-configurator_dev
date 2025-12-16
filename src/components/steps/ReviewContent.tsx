@@ -1276,7 +1276,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           )}
 
           {/* Save button - Full width (mobile only when conditions met) */}
-          {isMobile && allDiagonalsEntered && onSaveQuote && (
+          {isMobile && hasAllEdgeMeasurements && onSaveQuote && (
             <Button
               variant="outline"
               size="sm"
