@@ -1451,8 +1451,11 @@ export function ShadeConfigurator() {
   // Handle toggle between Auto and Manual mode
   const handleToggleMode = (isAutomatic: boolean) => {
     if (isAutomatic) {
-      // Switching to Automatic mode - reconstruct from measurements
+      // Switching to Automatic mode - always allow the switch
+      updateConfig({ hasManuallyAdjustedShape: false });
+
       if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        // If all measurements are present, reconstruct the shape
         const reconstructedPoints = reconstructPolygonFromMeasurements(
           config.measurements,
           config.corners,
@@ -1469,9 +1472,15 @@ export function ShadeConfigurator() {
             autoClose: 3000,
             hideProgressBar: false,
           });
+        } else {
+          toast.info('Switched to Automatic mode - shape will update as you enter measurements', {
+            autoClose: 3000,
+            hideProgressBar: false,
+          });
         }
       } else {
-        toast.warning('Cannot switch to Automatic mode - measurements incomplete', {
+        // Partial or no measurements - still allow the switch
+        toast.info('Switched to Automatic mode - shape will update as you enter measurements', {
           autoClose: 3000,
           hideProgressBar: false,
         });
@@ -1479,7 +1488,7 @@ export function ShadeConfigurator() {
     } else {
       // Switching to Manual mode
       updateConfig({ hasManuallyAdjustedShape: true });
-      toast.info('Switched to Manual mode - you can now customize the shape', {
+      toast.info('Switched to Manual mode - drag corners to customize shape', {
         autoClose: 3000,
         hideProgressBar: false,
       });
