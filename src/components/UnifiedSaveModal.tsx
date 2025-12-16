@@ -26,6 +26,7 @@ interface UnifiedSaveModalProps {
   calculations: ShadeCalculations;
   currentStep?: number;
   totalSteps?: number;
+  shouldShowEmailOption?: boolean;
   onGeneratePDFWithDetails?: (
     firstName: string,
     lastName: string,
@@ -50,6 +51,7 @@ export function UnifiedSaveModal({
   calculations,
   currentStep,
   totalSteps = 7,
+  shouldShowEmailOption = true,
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
 }: UnifiedSaveModalProps) {
@@ -389,26 +391,28 @@ export function UnifiedSaveModal({
                   </div>
                 </button>
 
-                <button
-                  onClick={() => handleActionSelect('email')}
-                  className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-[#BFF102] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
+                {shouldShowEmailOption && (
+                  <button
+                    onClick={() => handleActionSelect('email')}
+                    className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-[#BFF102] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg className="w-5 h-5 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-[#01312D] mb-1">
+                          Email PDF Quote
+                        </h4>
+                        <p className="text-sm text-slate-600">
+                          Receive a detailed PDF quote with your shade sail specifications via email
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-[#01312D] mb-1">
-                        Email PDF Quote
-                      </h4>
-                      <p className="text-sm text-slate-600">
-                        Receive a detailed PDF quote with your shade sail specifications via email
-                      </p>
-                    </div>
-                  </div>
-                </button>
+                  </button>
+                )}
               </div>
             </>
           )}
