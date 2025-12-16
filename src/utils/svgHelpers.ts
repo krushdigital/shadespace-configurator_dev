@@ -117,18 +117,23 @@ export function calculateDynamicViewBox(
     allCoordinates.push({ x: 300, y: 45 });
   }
 
-  const minX = Math.min(...allCoordinates.map(p => p.x));
-  const maxX = Math.max(...allCoordinates.map(p => p.x));
-  const minY = Math.min(...allCoordinates.map(p => p.y));
-  const maxY = Math.max(...allCoordinates.map(p => p.y));
+  // Include baseline 0 and 600 to ensure viewBox always covers standard canvas
+  const minX = Math.min(...allCoordinates.map(p => p.x), 0);
+  const maxX = Math.max(...allCoordinates.map(p => p.x), 600);
+  const minY = Math.min(...allCoordinates.map(p => p.y), 0);
+  const maxY = Math.max(...allCoordinates.map(p => p.y), 600);
 
   const padding = isMobile ? 60 : 50;
   const textPadding = isMobile ? 30 : 20;
+  const totalPadding = padding + textPadding;
 
-  const x = Math.max(0, minX - padding - textPadding);
-  const y = Math.max(0, minY - padding - textPadding);
-  const width = Math.max(600, maxX - minX + 2 * (padding + textPadding));
-  const height = Math.max(600, maxY - minY + 2 * (padding + textPadding));
+  // Calculate viewBox origin with padding
+  const x = minX - totalPadding;
+  const y = minY - totalPadding;
+
+  // Calculate viewBox dimensions: span from x to max coordinate + padding on the right
+  const width = (maxX - x) + totalPadding;
+  const height = (maxY - y) + totalPadding;
 
   const viewBoxString = `${x} ${y} ${width} ${height}`;
 

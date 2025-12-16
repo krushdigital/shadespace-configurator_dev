@@ -99,10 +99,10 @@ export function ShapeCanvas({
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
 
-    // No hard constraints - allow canvas to expand dynamically
-    // Only prevent extremely large values that would break rendering
-    svgX = Math.max(-5000, Math.min(10000, svgX));
-    svgY = Math.max(-5000, Math.min(10000, svgY));
+    // Allow reasonable expansion beyond canvas but prevent extreme values
+    // Canvas will dynamically expand to show content beyond 0-600
+    svgX = Math.max(-100, Math.min(800, svgX));
+    svgY = Math.max(-100, Math.min(800, svgY));
 
     // Snap to grid
     if (snapToGrid) {
@@ -161,10 +161,10 @@ export function ShapeCanvas({
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
 
-    // No hard constraints - allow canvas to expand dynamically
-    // Only prevent extremely large values that would break rendering
-    svgX = Math.max(-5000, Math.min(10000, svgX));
-    svgY = Math.max(-5000, Math.min(10000, svgY));
+    // Allow reasonable expansion beyond canvas but prevent extreme values
+    // Canvas will dynamically expand to show content beyond 0-600
+    svgX = Math.max(-100, Math.min(800, svgX));
+    svgY = Math.max(-100, Math.min(800, svgY));
 
     // Snap to grid
     if (snapToGrid) {
