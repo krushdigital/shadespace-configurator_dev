@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useMemo, useCallback, forwardRef } 
 import { ConfiguratorState, Point } from '../types';
 import { formatMeasurement, getShapeAccuracy, ShapeAccuracy } from '../utils/geometry';
 import { FABRICS } from '../data/fabrics';
+import { calculateDynamicViewBox } from '../utils/svgHelpers';
 
 interface ShadeSVGCoreProps {
   config: ConfiguratorState;
@@ -312,12 +313,24 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   const height = compact ? 180 : 300;
   const viewBoxHeight = compact ? 240 : 600;
 
+  // Calculate dynamic viewBox to ensure all content is visible
+  const dynamicViewBox = useMemo(() => {
+    return calculateDynamicViewBox(
+      config.points,
+      config.corners,
+      isMobile,
+      compact,
+      showAccuracyBadge && isApproximate,
+      forPdfCapture
+    );
+  }, [config.points, config.corners, isMobile, compact, showAccuracyBadge, isApproximate, forPdfCapture]);
+
   return (
     <svg
       ref={ref}
       width="100%"
       height="100%"
-      viewBox={`0 0 600 600`}
+      viewBox={dynamicViewBox.viewBoxString}
       className="absolute inset-0"
       style={{ userSelect: 'none' }}
     >

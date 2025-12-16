@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { ConfiguratorState, Point } from '../types';
 import { ShadeSVGCore } from './ShadeSVGCore';
 import { convertMmToUnit, convertUnitToMm, getShapeAccuracy } from '../utils/geometry';
-import { getOutwardPosition, getSelectedColor } from '../utils/svgHelpers';
+import { getOutwardPosition, getSelectedColor, calculateDynamicViewBox } from '../utils/svgHelpers';
 import { toast } from 'react-toastify';
 import { Tooltip } from './ui/Tooltip';
 import { HelpCircle, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -72,14 +72,6 @@ export function ShapeCanvas({
     };
   }, [snapToGrid]);
 
-  // Constrain to bounds
-  const constrainToBounds = useCallback((point: Point): Point => {
-    return {
-      x: Math.max(5, Math.min(595, point.x)),
-      y: Math.max(5, Math.min(595, point.y))
-    };
-  }, []);
-
   const handleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
     if (readonly) return;
     
@@ -107,9 +99,10 @@ export function ShapeCanvas({
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
 
-    // Constrain to canvas bounds
-    svgX = Math.max(5, Math.min(viewBox.width - 5, svgX));
-    svgY = Math.max(5, Math.min(viewBox.height - 5, svgY));
+    // No hard constraints - allow canvas to expand dynamically
+    // Only prevent extremely large values that would break rendering
+    svgX = Math.max(-5000, Math.min(10000, svgX));
+    svgY = Math.max(-5000, Math.min(10000, svgY));
 
     // Snap to grid
     if (snapToGrid) {
@@ -168,9 +161,10 @@ export function ShapeCanvas({
     svgX = (svgX / rect.width) * viewBox.width + viewBox.x;
     svgY = (svgY / rect.height) * viewBox.height + viewBox.y;
 
-    // Constrain to canvas bounds
-    svgX = Math.max(5, Math.min(viewBox.width - 5, svgX));
-    svgY = Math.max(5, Math.min(viewBox.height - 5, svgY));
+    // No hard constraints - allow canvas to expand dynamically
+    // Only prevent extremely large values that would break rendering
+    svgX = Math.max(-5000, Math.min(10000, svgX));
+    svgY = Math.max(-5000, Math.min(10000, svgY));
 
     // Snap to grid
     if (snapToGrid) {
@@ -300,6 +294,18 @@ export function ShapeCanvas({
     });
   }, [config.points, config.fabricType, config.fabricColor, config.hasManuallyAdjustedShape, centroid, isMobile]);
 
+  // Calculate dynamic viewBox to ensure all content is visible
+  const dynamicViewBox = useMemo(() => {
+    return calculateDynamicViewBox(
+      config.points,
+      config.corners,
+      isMobile,
+      false,
+      shapeAccuracyInfo.accuracy === 'approximate',
+      false
+    );
+  }, [config.points, config.corners, isMobile, shapeAccuracyInfo.accuracy]);
+
   // Generate tooltip content based on props
   const tooltipContent = (
     <div className="max-w-xs">
@@ -370,9 +376,9 @@ export function ShapeCanvas({
           ref={svgRef}
           width="100%"
           height="100%"
-          viewBox="0 0 600 600"
+          viewBox={dynamicViewBox.viewBoxString}
           className="absolute inset-0"
-          style={{ 
+          style={{
             cursor: dragIndex !== null ? 'grabbing' : 'default',
             userSelect: 'none'
           }}
