@@ -803,7 +803,7 @@ export function DimensionsContent({
                       <h5 className="text-sm sm:text-base font-semibold text-[#01312D]">
                         Height Information (optional)
                       </h5>
-                      <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium w-fit">
+                      <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-medium w-fit">
                         Not required - standard manufacturing process will be used
                       </span>
                     </div>
