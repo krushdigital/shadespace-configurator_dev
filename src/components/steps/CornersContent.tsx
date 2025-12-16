@@ -46,35 +46,35 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
   const generateRegularPoints = (corners: number) => {
     const centerX = 300;
     const centerY = 300;
-    const radius = 200;
+    const radius = 160;
     const points = [];
 
     // Custom realistic shade sail shapes for 5 and 6 points
     if (corners === 5) {
-      // 5-point concave shade sail shape
+      // 5-point concave shade sail shape (scaled down for better padding)
       // Top edge: A (left), B (center-top), C (right)
       // Bottom edge: E (bottom-left), D (bottom-right)
       points.push(
-        { x: 120, y: 150 },  // A - top-left
-        { x: 300, y: 100 },  // B - top-center (highest point)
-        { x: 480, y: 150 },  // C - top-right
-        { x: 450, y: 450 },  // D - bottom-right
-        { x: 150, y: 450 }   // E - bottom-left
+        { x: 156, y: 180 },  // A - top-left
+        { x: 300, y: 140 },  // B - top-center (highest point)
+        { x: 444, y: 180 },  // C - top-right
+        { x: 420, y: 420 },  // D - bottom-right
+        { x: 180, y: 420 }   // E - bottom-left
       );
       return points;
     }
 
     if (corners === 6) {
-      // 6-point concave shade sail shape
+      // 6-point concave shade sail shape (scaled down for better padding)
       // Top edge: A (left), B (center), C (right)
       // Bottom edge: F (left), E (center), D (right)
       points.push(
-        { x: 120, y: 120 },  // A - top-left
-        { x: 300, y: 100 },  // B - top-center
-        { x: 480, y: 120 },  // C - top-right
-        { x: 480, y: 480 },  // D - bottom-right
-        { x: 300, y: 500 },  // E - bottom-center
-        { x: 120, y: 480 }   // F - bottom-left
+        { x: 156, y: 156 },  // A - top-left
+        { x: 300, y: 140 },  // B - top-center
+        { x: 444, y: 156 },  // C - top-right
+        { x: 444, y: 444 },  // D - bottom-right
+        { x: 300, y: 460 },  // E - bottom-center
+        { x: 156, y: 444 }   // F - bottom-left
       );
       return points;
     }
