@@ -1261,37 +1261,36 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
         )}
 
-        {/* Mobile Action Button - Unified Save */}
-        {isMobile && allDiagonalsEntered && onSaveQuote && (
-          <div className="lg:hidden">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onSaveQuote}
-              className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              Save
-            </Button>
-          </div>
-        )}
-
-
         {/* Action Buttons - Full width on desktop */}
         <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
-          <div className="flex flex-col sm:flex-row gap-4" ref={addToCartButtonRef}>
-            {showBackButton && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPrev}
-                className="sm:w-auto"
-              >
-                Back
-              </Button>
-            )}
+          <div className="flex flex-col sm:flex-row gap-3" ref={addToCartButtonRef}>
+            {/* Back and Save buttons side by side on mobile */}
+            <div className="flex gap-3">
+              {showBackButton && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onPrev}
+                  className="sm:w-auto"
+                >
+                  Back
+                </Button>
+              )}
+
+              {isMobile && allDiagonalsEntered && onSaveQuote && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onSaveQuote}
+                  className="border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  Save
+                </Button>
+              )}
+            </div>
 
             <Button
               size={isMobile ? "lg" : "md"}
