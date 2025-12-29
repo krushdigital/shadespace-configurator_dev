@@ -148,7 +148,7 @@ if (saveMethod === 'email' && email) {
           email: email,
           quoteReference: result.reference,
           quoteUrl: quoteUrl,
-          expiresAt: result.expiresAt
+          expiresAt: result.expiresAt,
         }),
       }
     );

@@ -208,6 +208,21 @@ export function UnifiedSaveModal({
         shopify_customer_id: result.shopifyCustomerId,
       });
 
+
+      // customer subscription
+
+        const subscription_response = await fetch('/apps/shade_space/api/v1/customers/subscribe', { method: "POST", body: JSON.stringify({ email, firstName, lastName }) })
+
+        const subscription_data = await subscription_response.json()
+
+        const { success, message, error } = subscription_data
+
+        if (success && message && !error) {
+          showToast(message, 'success')
+        } else if (!success && !message && error) {
+          showToast(error, 'error')
+        }
+
       setModalStep('success');
       showToast('Quote saved! Check your email for the link.', 'success');
     } catch (error: any) {
