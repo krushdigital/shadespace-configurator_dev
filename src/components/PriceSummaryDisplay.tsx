@@ -29,25 +29,25 @@ export function PriceSummaryDisplay({
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
   return (
-    <div className={`bg-white border border-slate-200 rounded-xl shadow-lg p-8 ${
+    <div className={`bg-white border border-slate-200 rounded-xl shadow-lg p-6 ${
       isMobile ? 'lg:bg-white bg-gradient-to-br from-[#307C31]/5 to-[#BFF102]/5' : ''
     }`}>
       {calculations.totalPrice > 0 ? (
         <>
-          <div className={`mb-8 ${
-            isMobile ? 'bg-[#01312D] -mx-8 -mt-8 px-8 pt-8 pb-6 rounded-t-xl' : ''
+          <div className={`mb-6 ${
+            isMobile ? 'bg-[#01312D] -mx-6 -mt-6 px-6 pt-6 pb-5 rounded-t-xl' : ''
           }`}>
             <h3 className={`text-xl font-bold mb-3 ${
               isMobile ? 'text-white' : 'text-[#01312D]'
             }`}>
               All-Inclusive Price to Your Door
             </h3>
-            <div className={`text-4xl font-extrabold mb-4 whitespace-nowrap ${
+            <div className={`text-4xl font-extrabold mb-3 whitespace-nowrap ${
               isMobile ? 'text-white' : 'text-[#01312D]'
             }`}>
               {formatCurrency(calculations.totalPrice, config.currency)}
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <p className={`text-sm font-semibold ${
                 isMobile ? 'text-[#BFF102]' : 'text-[#307C31] font-medium'
               }`}>
@@ -87,7 +87,7 @@ export function PriceSummaryDisplay({
             </div>
           </div>
 
-          <div className="space-y-4 border-t border-slate-200 pt-6">
+          <div className="space-y-4 border-t border-slate-200 pt-4">
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <span className="text-[#01312D]/60">Tensioning hardware & fittings:</span>
@@ -135,11 +135,11 @@ export function PriceSummaryDisplay({
             </div>
 
             {!isMobile && (
-              <div className="bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-5 mt-8">
+              <div className="bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-4 mt-6">
                 <div className="text-sm font-bold text-[#01312D] mb-2">
                   Premium Quality Guarantee
                 </div>
-                <ul className="text-xs text-[#01312D]/80 space-y-2">
+                <ul className="text-xs text-[#01312D]/80 space-y-1">
                   <li>
                     ✓ <a
                       href="https://shadespace.com/pages/warranty"
@@ -159,7 +159,7 @@ export function PriceSummaryDisplay({
 
           {/* Quote Actions - Desktop Only */}
           {onSaveQuote && (
-            <div className="mt-8 pt-8 border-t border-slate-200">
+            <div className="mt-6 pt-6 border-t border-slate-200">
               <Tooltip
                 content={
                   <div className="text-slate-700">
@@ -186,7 +186,7 @@ export function PriceSummaryDisplay({
           )}
         </>
       ) : (
-        <div className="text-center py-12">
+        <div className="text-center py-8">
           <h3 className="text-xl font-bold text-[#01312D] mb-3">
             Your Shade Sail Price
           </h3>
