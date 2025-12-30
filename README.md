@@ -1,4 +1,4 @@
-# ShadeSpace Professional Shade Sail Configurator
+# ShadeSpace Professional Shade Sail Configurator.
 
 This project is a professional shade sail configurator application, built with React and Vite, designed to allow customers to customize their shade sails, visualize them, and receive an instant quote. It integrates with various data sources for fabric types, pricing, and currency conversion, and is prepared for integration into a Shopify e-commerce environment.
 

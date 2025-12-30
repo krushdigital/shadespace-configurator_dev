@@ -10,7 +10,6 @@ import { AccordionItem } from '../ui/AccordionItem';
 import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
-import { SaveProgressButton } from '../SaveProgressButton';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
 
 interface ReviewContentProps {
@@ -22,13 +21,6 @@ interface ReviewContentProps {
   onPrev: (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
-  // Pricing and order props (lifted from local state)
-  isGeneratingPDF: boolean;
-  handleGeneratePDF: () => void;
-  showEmailInput: boolean;
-  email: string;
-  setEmail: (email: string) => void;
-  handleEmailSummary: () => void;
   acknowledgments: {
     customManufactured: boolean;
     measurementsAccurate: boolean;
@@ -42,7 +34,6 @@ interface ReviewContentProps {
   canAddToCart: boolean;
   hasAllEdgeMeasurements: boolean;
   isMobile?: boolean;
-  handleCancelEmailInput: () => void;
   canvasRef: React.RefObject<InteractiveMeasurementCanvasRef>;
   loading: boolean
   setLoading: (loading: boolean) => void;
@@ -58,12 +49,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   nextStepTitle = '',
   showBackButton = false,
   onPrev,
-  isGeneratingPDF,
-  handleGeneratePDF,
-  showEmailInput,
-  email,
-  setEmail,
-  handleEmailSummary,
   acknowledgments,
   handleAcknowledgmentChange,
   handleAddToCart,
@@ -72,7 +57,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   canAddToCart,
   hasAllEdgeMeasurements,
   isMobile = false,
-  handleCancelEmailInput,
   canvasRef,
   loading,
   setLoading,
@@ -97,12 +81,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     nextStepTitle,
     showBackButton,
     onPrev,
-    isGeneratingPDF,
-    handleGeneratePDF,
-    showEmailInput,
-    email,
-    setEmail,
-    handleEmailSummary,
     acknowledgments,
     handleAcknowledgmentChange,
     handleAddToCart,
@@ -111,7 +89,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     canAddToCart,
     hasAllEdgeMeasurements,
     isMobile,
-    handleCancelEmailInput,
     canvasRef,
     loading,
     setLoading,
@@ -332,18 +309,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   };
 
   const handleAttemptAddToCart = async () => {
-
-    console.log('=== DEBUG measurementOption ===');
-    console.log('config.measurementOption:', config.measurementOption);
-    console.log('Type of config.measurementOption:', typeof config.measurementOption);
-    console.log('=== END DEBUG ===');
-
-    const manufactureOptionText = config.measurementOption === 'adjust'
-      ? 'Manufactured To Fit Space'
-      : 'Manufactured to Dimensions Provided';
-
-    console.log('manufactureOptionText:', manufactureOptionText);
-
     if (!canAddToCart) {
       // Immediately trigger validation feedback
       setShowValidationFeedback(true);
@@ -533,10 +498,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       const hardwareIncluded = config.measurementOption === 'adjust';
       const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
 
-      const manufactureOptionText = config.measurementOption === 'adjust'
-        ? 'Manufactured To Fit Space'
-        : 'Manufactured to Dimensions Provided';
-
       if (canvasImageUrl) {
         const orderData = {
           fabricType: config.fabricType,
@@ -555,7 +516,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           selectedFabric: selectedFabric,
           selectedColor: selectedColor,
           canvasImageUrl: canvasImageUrl,
-          manufacture_option: manufactureOptionText,
           warranty: selectedFabric?.warrantyYears || "",
           // Only include fixing heights data if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
           ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
@@ -589,16 +549,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     }
   };
 
-  // Enhanced PDF generation with SVG element
-  const handleGeneratePDFWithSVG = async () => {
-    const svgElement = canvasRef.current?.getSVGElement();
-    await handleGeneratePDF(svgElement);
-  };
-
-
-
-
-  return (<>
+  return (
     <div className="p-6">
       <div className="space-y-6">
         {/* Configuration Checklist - Desktop only at top */}
@@ -1310,75 +1261,67 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
         )}
 
-        {/* Mobile Action Buttons - Save Quote and PDF only (positioned after acknowledgments) */}
-        {isMobile && allDiagonalsEntered && (
-          <div className="space-y-2 lg:hidden">
-            {onSaveQuote && (
-              <SaveProgressButton
-                onClick={onSaveQuote}
-                className="w-full"
-              />
-            )}
-
+        {/* Action Buttons - Full width on desktop */}
+        <div className="flex flex-col gap-3 pt-4 border-t border-slate-200 mt-6">
+          {/* Back button - Full width */}
+          {showBackButton && (
             <Button
               variant="outline"
               size="sm"
-              onClick={handleGeneratePDFWithSVG}
-              disabled={isGeneratingPDF}
-              className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white text-xs py-2"
+              onClick={onPrev}
+              className="w-full"
             >
-              {isGeneratingPDF ? 'Generating...' : 'Download PDF'}
+              Back
             </Button>
-          </div>
-        )}
+          )}
 
-
-        {/* Action Buttons - Full width on desktop */}
-        <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
-          <div className="flex flex-col sm:flex-row gap-4" ref={addToCartButtonRef}>
-            {showBackButton && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPrev}
-                className="sm:w-auto"
-              >
-                Back
-              </Button>
-            )}
-
+          {/* Save button - Full width (mobile only when conditions met) */}
+          {isMobile && hasAllEdgeMeasurements && onSaveQuote && (
             <Button
-              size={isMobile ? "lg" : "md"}
-              className={`flex-1 transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
-                ? '!bg-[#01312D]/40 hover:!bg-[#01312D]/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
-                : loading
-                  ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'
-                  : ''
-                }`}
-              onClick={() => {
-                if (canAddToCart) {
-                  setLoading(true);
-                  setShowLoadingOverlay(true);
-                }
-                handleAttemptAddToCart();
-              }}
-              disabled={loading}
+              variant="outline"
+              size="sm"
+              onClick={onSaveQuote}
+              className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white flex items-center justify-center gap-2"
             >
-              {loading ? (
-                'ADDING TO CART...'
-              ) : canAddToCart ? (
-                `ADD TO CART - ${formatCurrency(calculations.totalPrice, config.currency)}`
-              ) : (
-                <div className="flex flex-col items-center">
-                  <span className="text-xs sm:text-sm">Complete above requirements to</span>
-                  <span className="text-base font-semibold">ADD TO CART</span>
-                </div>
-              )}
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              Save
             </Button>
-          </div>
+          )}
+
+          {/* Add to Cart button - Full width */}
+          <Button
+            ref={addToCartButtonRef}
+            size={isMobile ? "lg" : "md"}
+            className={`w-full transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
+              ? '!bg-[#01312D]/40 hover:!bg-[#01312D]/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
+              : loading
+                ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'
+                : ''
+              }`}
+            onClick={() => {
+              if (canAddToCart) {
+                setLoading(true);
+                setShowLoadingOverlay(true);
+              }
+              handleAttemptAddToCart();
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              'ADDING TO CART...'
+            ) : canAddToCart ? (
+              `ADD TO CART - ${formatCurrency(calculations.totalPrice, config.currency)}`
+            ) : (
+              <div className="flex flex-col items-center">
+                <span className="text-xs sm:text-sm">Complete above requirements to</span>
+                <span className="text-base font-semibold">ADD TO CART</span>
+              </div>
+            )}
+          </Button>
         </div>
       </div>
     </div>
-    </>
   );
 });

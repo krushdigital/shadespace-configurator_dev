@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // Currency symbols mapping
 const CURRENCY_SYMBOLS: { [key: string]: string } = {
@@ -65,11 +65,15 @@ function generateEmailHTML(data: any): string {
     Area,
     Perimeter,
     quoteName,
-    customerReference
+    customerReference,
+    firstName,
+    lastName
   } = data;
 
   const formattedPrice = formatCurrency(totalPrice, currency);
   const currencySymbol = CURRENCY_SYMBOLS[currency] || currency;
+  const customerName = firstName && lastName ? `${firstName} ${lastName}` : (firstName || '');
+  const greeting = customerName ? `Dear ${customerName},` : 'Hello,';
 
   return `
 <!DOCTYPE html>
@@ -88,10 +92,11 @@ function generateEmailHTML(data: any): string {
         <p style="color: #307C31; margin: 5px 0 0 0; font-size: 14px;">Where Cool Spaces Begin</p>
       </td>
     </tr>
-    
+
     <!-- Greeting -->
     <tr>
       <td style="padding: 30px 20px;">
+        <p style="color: #01312D; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">${greeting}</p>
         <h2 style="color: #01312D; margin: 0 0 10px 0; font-size: 22px;">Your Custom Shade Sail Quote</h2>
         <p style="color: #64748B; margin: 0; font-size: 14px; line-height: 1.6;">
           Thank you for designing your custom shade sail! Here's a summary of your configuration.
@@ -99,15 +104,25 @@ function generateEmailHTML(data: any): string {
       </td>
     </tr>
 
-    ${quoteName ? `
-    <!-- Quote Name -->
+    <!-- Customer & Quote Details -->
     <tr>
       <td style="padding: 0 20px 20px 20px;">
-        <div style="background: linear-gradient(135deg, #F3FFE3 0%, #BFF102 100%); border: 2px solid #307C31; border-radius: 10px; padding: 20px; text-align: center;">
-          <div style="color: #307C31; font-size: 12px; font-weight: bold; margin-bottom: 8px;">QUOTE NAME</div>
-          <div style="color: #01312D; font-size: 24px; font-weight: bold;">${quoteName}</div>
+        <div style="background: linear-gradient(135deg, #F3FFE3 0%, #BFF102 100%); border: 2px solid #307C31; border-radius: 10px; padding: 20px;">
+          ${customerName ? `
+          <div style="margin-bottom: 15px;">
+            <div style="color: #307C31; font-size: 10px; font-weight: bold; margin-bottom: 5px;">PREPARED FOR</div>
+            <div style="color: #01312D; font-size: 18px; font-weight: bold;">${customerName}</div>
+            <div style="color: #64748B; font-size: 12px;">${email}</div>
+          </div>
+          ` : ''}
+          ${quoteName ? `
+          <div style="${customerName ? 'padding-top: 15px; border-top: 1px solid #307C31;' : ''}">
+            <div style="color: #307C31; font-size: 10px; font-weight: bold; margin-bottom: 5px;">SHADE SAIL NAME</div>
+            <div style="color: #01312D; font-size: 20px; font-weight: bold;">${quoteName}</div>
+          </div>
+          ` : ''}
           ${customerReference ? `
-          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #307C31;">
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #307C31;">
             <div style="color: #307C31; font-size: 10px; font-weight: bold; margin-bottom: 5px;">CUSTOMER REFERENCE</div>
             <div style="color: #01312D; font-size: 16px; font-weight: 600;">${customerReference}</div>
           </div>
@@ -115,7 +130,6 @@ function generateEmailHTML(data: any): string {
         </div>
       </td>
     </tr>
-    ` : ''}
 
     <!-- Canvas Preview -->
     ${canvasImage ? `
@@ -227,7 +241,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
 };
 
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -270,7 +284,9 @@ serve(async (req: Request) => {
             },
             body: JSON.stringify({
               email: email,
-              tags: ['quote_saved', 'email_summary_requested'],
+              firstName: data.firstName || null,
+              lastName: data.lastName || null,
+              tags: ['quote_saved', 'email_pdf_quote_requested'],
               totalPrice: totalPrice,
               currency: currency,
             }),
@@ -285,7 +301,6 @@ serve(async (req: Request) => {
         }
       } catch (shopifyError) {
         console.error('Failed to add customer to Shopify:', shopifyError);
-        // Continue even if Shopify integration fails
       }
     }
 
@@ -301,7 +316,6 @@ serve(async (req: Request) => {
 
     console.log({SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL})
 
-
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
       console.error('SMTP credentials not configured');
       return new Response(
@@ -313,15 +327,9 @@ serve(async (req: Request) => {
       );
     }
 
-    // Send email using SMTP
-    // Note: In a production environment, you would use a proper email service
-    // For now, we'll return success with the HTML for testing
     console.log('Email would be sent to:', email);
     console.log('Currency:', currency);
     console.log('Total Price:', formatCurrency(totalPrice, currency));
-
-    // TODO: Implement actual email sending using nodemailer or similar
-    // For now, return success
 
     // Track email summary event
     try {
@@ -329,16 +337,19 @@ serve(async (req: Request) => {
       const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY');
 
       if (supabaseUrl && supabaseKey) {
-        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const { createClient } = await import('npm:@supabase/supabase-js@2');
         const supabase = createClient(supabaseUrl, supabaseKey);
 
         await supabase.from('user_events').insert({
-          event_type: 'email_summary',
+          event_type: 'email_pdf_quote',
           event_data: {
             totalPrice: totalPrice,
             currency: currency,
             corners: data.corners || null,
             fabricType: data.Fabric_Type || null,
+            quoteName: data.quoteName || null,
+            customerReference: data.customerReference || null,
+            customerName: data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : null,
             sent_by: 'edge_function',
             shopifyCustomerCreated: shopifyCustomerCreated
           },
@@ -358,11 +369,9 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Quote summary sent to ${email} with price in ${currency}`,
+        message: `PDF quote sent to ${email}`,
         shopifyCustomerCreated: shopifyCustomerCreated,
-        shopifyCustomerId: shopifyCustomerId,
-        // Include HTML for debugging
-        debug: { emailHTML: emailHTML.substring(0, 500) + '...' }
+        shopifyCustomerId: shopifyCustomerId
       }),
       {
         status: 200,

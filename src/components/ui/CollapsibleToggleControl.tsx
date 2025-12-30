@@ -63,21 +63,22 @@ export const CollapsibleToggleControl: React.FC<CollapsibleToggleControlProps> =
           aria-label={`Shape mode control. Currently ${modeLabel} mode. Click to expand options.`}
           aria-controls="toggle-control-panel"
           className={`
-            ${isMobile ? 'w-12 h-12 sm:w-14 sm:h-14' : 'w-14 h-14'}
+            ${isMobile ? 'w-8 h-8' : 'w-14 h-14'}
             ${modeBgColor}
-            rounded-full shadow-lg hover:shadow-xl
+            ${isMobile ? 'opacity-75' : 'opacity-100'}
+            rounded-full shadow-md hover:shadow-lg
             flex items-center justify-center
             transition-all duration-300 ease-out
-            active:scale-95 hover:scale-105
+            active:scale-95 hover:scale-105 hover:opacity-100
             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
             group cursor-pointer
             touch-manipulation
           `}
         >
           <div className="relative flex items-center justify-center">
-            <ModeIcon className={`${isMobile ? 'w-5 h-5 sm:w-6 sm:h-6' : 'w-6 h-6'} text-white transition-transform group-hover:scale-110`} />
-            <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5">
-              <ChevronUp className={`${isMobile ? 'w-2.5 h-2.5 sm:w-3 sm:h-3' : 'w-3 h-3'} text-slate-600`} />
+            <ModeIcon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-white transition-transform group-hover:scale-110`} />
+            <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5">
+              <ChevronUp className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} text-slate-600`} />
             </div>
           </div>
         </button>
@@ -88,9 +89,10 @@ export const CollapsibleToggleControl: React.FC<CollapsibleToggleControlProps> =
           aria-label="Shape mode control panel"
           className={`
             bg-white rounded-lg shadow-lg border border-slate-200
-            ${isMobile ? 'p-2 sm:p-3' : 'p-3'}
+            ${isMobile ? 'p-2' : 'p-3'}
             transform transition-all duration-300 ease-out
             animate-in slide-in-from-bottom-4 fade-in
+            ${isMobile ? 'min-w-[140px]' : ''}
           `}
         >
           <div className="flex items-center justify-between mb-2">

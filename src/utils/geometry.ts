@@ -1063,7 +1063,7 @@ export function scalePolygonToCanvas(
   points: Point[],
   canvasWidth: number,
   canvasHeight: number,
-  margin: number = 50
+  margin: number = 120
 ): Point[] {
   if (points.length === 0) return points;
 

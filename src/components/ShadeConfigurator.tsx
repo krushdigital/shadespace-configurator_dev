@@ -15,15 +15,13 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements } from '../utils/geometry';
-import { generatePDF } from '../utils/pdfGenerator';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea } from '../utils/geometry';
+import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
-import { EXCHANGE_RATES } from '../data/pricing'; // Import EXCHANGE_RATES to check supported currencies
-import { formatMeasurement, formatArea } from '../utils/geometry';
+import { EXCHANGE_RATES } from '../data/pricing';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
-import { SaveQuoteModal } from './SaveQuoteModal';
-import { SaveProgressButton } from './SaveProgressButton';
+import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { CollapsibleToggleControl } from './ui/CollapsibleToggleControl';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
@@ -66,12 +64,8 @@ export function ShadeConfigurator() {
   console.log('isMobile: ', isMobile);
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
-  // Pricing and order state (lifted from ReviewContent)
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const [showEmailInput, setShowEmailInput] = useState(false);
   const { showToast } = useToast();
-  const [email, setEmail] = useState('');
+  const [showUnifiedSaveModal, setShowUnifiedSaveModal] = useState(false);
   const [acknowledgments, setAcknowledgments] = useState({
     customManufactured: false,
     measurementsAccurate: false,
@@ -85,7 +79,6 @@ export function ShadeConfigurator() {
   });
 
   // Quote management state
-  const [showSaveQuoteModal, setShowSaveQuoteModal] = useState(false);
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
@@ -273,40 +266,41 @@ export function ShadeConfigurator() {
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
-  // Pricing and order handlers (lifted from ReviewContent)
-  const handleGeneratePDF = async (svgElement?: SVGElement, isEmailSummary?: boolean) => {
-    setIsGeneratingPDF(true);
+  // PDF generation handler for unified modal with customer details
+  const handleGeneratePDFWithDetails = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    quoteName: string,
+    customerReference: string | null
+  ): Promise<string | void> => {
     try {
-      const pdf = await generatePDF(config, calculations, svgElement, isEmailSummary);
+      const svgElement = canvasRef.current?.getSVGElement?.();
+      const customerDetails: CustomerDetails = {
+        firstName,
+        lastName,
+        email,
+        quoteName,
+        customerReference
+      };
+      const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
 
-      // Track PDF download event for admin dashboard
-      if (!isEmailSummary) {
-        const quoteParams = getQuoteFromUrl();
-        eventTrackers.pdfDownload(
-          quoteReference || (quoteParams?.id || null),
-          email || null,
-          calculations.totalPrice,
-          config.currency
-        );
-      }
+      // Track PDF generation event
+      const quoteParams = getQuoteFromUrl();
+      eventTrackers.pdfDownload(
+        quoteReference || (quoteParams?.id || null),
+        email,
+        calculations.totalPrice,
+        config.currency
+      );
 
-      return pdf
+      return pdf;
     } catch (error) {
       console.error('Error generating PDF:', error);
-
-      // More user-friendly error message
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      alert(`Failed to generate PDF: ${errorMessage}\n\nPlease try again. If the problem persists, please contact support.`);
-    } finally {
-      setIsGeneratingPDF(false);
+      showToast(`Failed to generate PDF: ${errorMessage}`, 'error');
+      return undefined;
     }
-  };
-
-  // Enhanced PDF generation with SVG element
-  const handleGeneratePDFWithSVG = async (isEmailSummary: boolean) => {
-    const svgElement = canvasRef.current?.getSVGElement?.();
-    const pdf = await handleGeneratePDF(svgElement, isEmailSummary);
-    return pdf;
   };
 
   const convertSvgToPng = async (
@@ -397,25 +391,16 @@ export function ShadeConfigurator() {
     }
   };
 
-  const handleEmailSummary = async () => {
+  // Email PDF Quote handler for unified modal
+  const handleEmailPDFQuote = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    quoteName: string,
+    customerReference: string | null,
+    pdfBase64: string
+  ): Promise<boolean> => {
     try {
-      if (!showEmailInput) {
-        setShowEmailInput(true);
-        return;
-      }
-
-      if (!email.trim()) {
-        setShowEmailInput(false);
-        setEmail('');
-        return;
-      }
-
-      setIsSendingEmail(true); // ✅ Start loading
-
-      await new Promise(resolve => setTimeout(resolve, 0));
-
-      const pdf = await handleGeneratePDFWithSVG(true);
-
       // Get the SVG element and upload preview
       const svgElement = canvasRef.current?.getSVGElement();
       let canvasImageUrl = null;
@@ -434,8 +419,8 @@ export function ShadeConfigurator() {
         }
       }
 
-      const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
-      const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
+      const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
+      const selectedColor = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
 
       const edgeMeasurements: Record<string, { unit: string; formatted: string }> = {};
       for (let i = 0; i < config.corners; i++) {
@@ -450,13 +435,13 @@ export function ShadeConfigurator() {
         }
       }
 
-      const diagonalMeasurementsObj: Record<string, { unit: string; formatted: string }> = {};
       const diagonalKeys =
         config.corners === 4 ? ['AC', 'BD'] :
           config.corners === 5 ? ['AC', 'AD', 'CE', 'BD', 'BE'] :
             config.corners === 6 ? ['AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF'] :
               [];
 
+      const diagonalMeasurementsObj: Record<string, { unit: string; formatted: string }> = {};
       diagonalKeys.forEach(key => {
         const measurement = config.measurements[key];
         if (measurement && measurement > 0) {
@@ -467,7 +452,6 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const anchorPointMeasurements: Record<string, { unit: string; formatted: string }> = {};
       if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
@@ -481,7 +465,6 @@ export function ShadeConfigurator() {
         });
       }
 
-      // Create backend-only dual measurement objects for email to fulfillment team
       const backendEdgeMeasurementsEmail: Record<string, string> = {};
       for (let i = 0; i < config.corners; i++) {
         const nextIndex = (i + 1) % config.corners;
@@ -500,7 +483,6 @@ export function ShadeConfigurator() {
         }
       });
 
-      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const backendAnchorMeasurementsEmail: Record<string, string> = {};
       if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
         config.fixingHeights.forEach((height, index) => {
@@ -512,14 +494,8 @@ export function ShadeConfigurator() {
       }
 
       const userCurrency = window.Shopify?.currency?.active || 'USD';
-      console.log('userCurrency: ', userCurrency);
-
       const exchangeRate = parseFloat(window.Shopify?.currency?.rate || '1');
-      console.log('exchangeRate: ', exchangeRate);
-
-      // Convert amount using Shopify's rate
       const convertedAmount = calculations?.totalPrice * exchangeRate;
-      console.log('convertedAmount: ', convertedAmount);
 
       const orderData = {
         fabricType: config.fabricType,
@@ -532,10 +508,9 @@ export function ShadeConfigurator() {
         area: calculations.area,
         perimeter: calculations.perimeter,
         totalPrice: convertedAmount.toFixed(2),
-        selectedFabric,
+        selectedFabric: selectedFabricLocal,
         selectedColor,
-        warranty: selectedFabric?.warrantyYears || "",
-        // Only include fixing heights data if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+        warranty: selectedFabricLocal?.warrantyYears || "",
         ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
           fixingHeights: config.fixingHeights,
           fixingTypes: config.fixingTypes,
@@ -545,7 +520,7 @@ export function ShadeConfigurator() {
         anchorPointMeasurements,
         Fabric_Type: config.fabricType === 'extrablock330' && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor)
           ? 'Not FR Certified'
-          : selectedFabric?.label,
+          : selectedFabricLocal?.label,
         Shade_Factor: selectedColor?.shadeFactor,
         Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
         Wire_Thickness: config.unit === 'imperial'
@@ -559,18 +534,21 @@ export function ShadeConfigurator() {
         Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
         canvasImage: canvasImageUrl,
         createdAt: new Date().toISOString(),
-        // Add dual measurements for backend/fulfillment team emails
         backendEdgeMeasurements: backendEdgeMeasurementsEmail,
         backendDiagonalMeasurements: backendDiagonalMeasurementsEmail,
         backendAnchorMeasurements: backendAnchorMeasurementsEmail,
-        originalUnit: config.unit
+        originalUnit: config.unit,
+        firstName,
+        lastName,
+        quoteName,
+        customerReference
       };
 
       const response = await fetch(
         '/apps/shade_space/api/v1/public/email-summary-send',
         {
           method: "POST",
-          body: JSON.stringify({ pdf, ...orderData, email }),
+          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email }),
         }
       );
 
@@ -579,10 +557,9 @@ export function ShadeConfigurator() {
       if (data.success) {
         const emailDomain = email.split('@')[1] || 'unknown';
 
-        // Track email summary sent
         analytics.emailSummaryWithShopify({
           email_domain: emailDomain,
-          includes_pdf: !!pdf,
+          includes_pdf: !!pdfBase64,
           includes_canvas: !!canvasImageUrl,
           total_price: calculations.totalPrice,
           currency: config.currency,
@@ -590,7 +567,6 @@ export function ShadeConfigurator() {
           shopify_customer_id: data.shopifyCustomerId,
         });
 
-        // Track email summary event for admin dashboard
         const quoteParams = getQuoteFromUrl();
         eventTrackers.emailSummary(
           quoteReference || (quoteParams?.id || null),
@@ -600,23 +576,21 @@ export function ShadeConfigurator() {
           true
         );
 
-        // Track Shopify customer creation if it happened
         if (data.shopifyCustomerCreated && data.shopifyCustomerId) {
           analytics.shopifyCustomerCreated({
             customer_id: data.shopifyCustomerId,
             email_domain: emailDomain,
-            source: 'email_summary',
-            tags: ['quote_saved', 'email_summary_requested'],
+            source: 'email_pdf_quote',
+            tags: ['quote_saved', 'email_pdf_quote_requested'],
             total_quote_value: calculations.totalPrice,
             currency: config.currency,
           });
         }
 
-        showToast(data.message, "success");
 
         // customer subscription
 
-        const subscription_response = await fetch('/apps/shade_space/api/v1/customers/subscribe', { method: "POST", body: JSON.stringify({ email }) })
+        const subscription_response = await fetch('/apps/shade_space/api/v1/customers/subscribe', { method: "POST", body: JSON.stringify({ email, firstName, lastName }) })
 
         const subscription_data = await subscription_response.json()
 
@@ -628,38 +602,25 @@ export function ShadeConfigurator() {
           showToast(error, 'error')
         }
 
-        setShowEmailInput(false);
-        setEmail('');
+        return true;
       } else {
-        const emailDomain = email.split('@')[1] || 'unknown';
-
         analytics.emailSendFailed({
           error_message: data.error || 'Unknown error',
           error_type: 'EmailSendError',
         });
-
-        showToast(data.error || "Failed to send email", "error");
+        return false;
       }
     } catch (error: any) {
       console.error("Email send failed:", error);
-
       analytics.emailSendFailed({
         error_message: error?.message || 'Unknown error',
         error_type: error?.name || 'EmailSendError',
       });
-
-      showToast("An unexpected error occurred while sending email.", "error");
-    } finally {
-      setIsSendingEmail(false);
+      return false;
     }
   };
 
 
-
-  const handleCancelEmailInput = () => {
-    setShowEmailInput(false);
-    setEmail('');
-  };
 
   const handleAcknowledgmentChange = (key: keyof typeof acknowledgments) => {
     setAcknowledgments(prev => ({
@@ -790,268 +751,243 @@ export function ShadeConfigurator() {
     backendDiagonalMeasurements: Record<string, string>;
     backendAnchorMeasurements: Record<string, string>;
     originalUnit: 'metric' | 'imperial';
-    manufacture_option?: string;
   }
 
 
-const handleAddToCart = async (orderData: OrderData): Promise<void> => {
-  console.log('Product being created. Add to cart');
-  setShowLoadingOverlay(true);
-  setLoadingStep({ text: 'Starting order process...', progress: 10 });
-  setLoading(true);
+  const handleAddToCart = async (orderData: OrderData): Promise<void> => {
+    console.log('Product being created. Add to cart');
+    setShowLoadingOverlay(true);
+    setLoadingStep({ text: 'Starting order process...', progress: 10 });
+    setLoading(true);
 
-  // Check if this is a converted quote
-  const quoteParams = getQuoteFromUrl();
-  let quoteData: any = null;
+    // Check if this is a converted quote
+    const quoteParams = getQuoteFromUrl();
+    let quoteData: any = null;
 
-  if (quoteReference && quoteParams) {
+    if (quoteReference && quoteParams) {
+      try {
+        quoteData = await getQuoteById(quoteParams.id, quoteParams.token);
+      } catch (error) {
+        console.error('Failed to load quote data for conversion tracking:', error);
+      }
+    }
+
     try {
-      quoteData = await getQuoteById(quoteParams.id, quoteParams.token);
-    } catch (error) {
-      console.error('Failed to load quote data for conversion tracking:', error);
-    }
-  }
+      setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
 
-  try {
-    setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
+      // Format measurements for cart display
+      const formatCartProperties = (measurements: any) => {
+        const formatted: Record<string, string> = {};
 
-    // Format measurements for cart display
-    const formatCartProperties = (measurements: any) => {
-      const formatted: Record<string, string> = {};
-
-      Object.keys(measurements).forEach(key => {
-        if (measurements[key] && typeof measurements[key] === 'object' && measurements[key].formatted) {
-          formatted[key] = measurements[key].formatted;
-        }
-      });
-
-      return formatted;
-    };
-
-    const cartEdgeMeasurements = formatCartProperties(orderData.edgeMeasurements);
-    const cartDiagonalMeasurements = formatCartProperties(orderData.diagonalMeasurementsObj);
-    // REMOVED: cartAnchorMeasurements - we don't want Anchor Height in line items
-    // const cartAnchorMeasurements = formatCartProperties(orderData.anchorPointMeasurements);
-
-    // Create backend-only dual measurement objects for Shopify admin
-    const backendEdgeMeasurements: Record<string, string> = {};
-    Object.keys(orderData.edgeMeasurements || {}).forEach(key => {
-      const measurement = config.measurements[key];
-      if (measurement && measurement > 0) {
-        backendEdgeMeasurements[key] = formatDualMeasurement(measurement, config.unit);
-      }
-    });
-
-    const backendDiagonalMeasurements: Record<string, string> = {};
-    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-    diagonalKeys.forEach(key => {
-      const measurement = config.measurements[key];
-      if (measurement && measurement > 0) {
-        backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
-      }
-    });
-
-    // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-    const backendAnchorMeasurements: Record<string, string> = {};
-    if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        if (height && height > 0) {
-          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
-        }
-      });
-    }
-
-    // Format arrays for cart display
-    const formatArrayForCart = (array: any[], label: string) => {
-      if (!array || !Array.isArray(array)) return {};
-
-      const result: Record<string, string> = {};
-      array.forEach((item, index) => {
-        const corner = String.fromCharCode(65 + index);
-        result[`${label} ${corner}`] = typeof item === 'string' ? item : String(item);
-      });
-      return result;
-    };
-
-    // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-    const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
-    const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
-
-    // DEBUG: Log what's being sent
-    console.log('DEBUG - Manufacturing option values:');
-    console.log('measurementOption from orderData:', orderData.measurementOption);
-    console.log('manufacture_option from orderData:', orderData.manufacture_option);
-    console.log('hardware_included from orderData:', orderData.hardware_included);
-
-    const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...orderData,
-        // Pass all original data including manufacturing options
-        measurementOption: orderData.measurementOption,
-        hardware_included: orderData.hardware_included,
-        manufacture_option: orderData.manufacture_option,
-        // Pass formatted properties for cart display (customer-facing, single unit)
-        cartEdgeMeasurements,
-        cartDiagonalMeasurements,
-        // REMOVED: cartAnchorMeasurements - we don't want Anchor Height in line items
-        cartFixingHeights,
-        cartFixingTypes,
-        // Pass dual measurements for backend/fulfillment (Shopify admin only)
-        backendEdgeMeasurements,
-        backendDiagonalMeasurements,
-        backendAnchorMeasurements,
-        originalUnit: config.unit
-      }),
-    });
-
-    const data = await response.json();
-    const { success, product, error } = data;
-
-    if (success && product) {
-      console.log('Product created... Adding to cart');
-      setLoadingStep({ text: 'Processing product details...', progress: 60 });
-
-      const metafieldProperties: Record<string, string> = {};
-
-      // Only include specific metafields in cart properties - EXCLUDE 'fabric_certification_type'
-      const allowedCartProperties = [
-        'fabric_material',
-        'fabric_color',
-        // REMOVED: 'fabric_certification_type' - we don't want this in line items
-        'edge_type',
-        'wire_thickness',
-        'corners',
-        'area',
-        'perimeter'
-      ];
-
-      product.metafields.edges.forEach((edge: any) => {
-        // Only include allowed properties in cart display
-        if (allowedCartProperties.includes(edge.node.key)) {
-          const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-          metafieldProperties[key] = edge.node.value;
-        }
-      });
-
-      // Add manufacturing option to cart display
-      if (orderData.manufacture_option) {
-        metafieldProperties['Manufacture Option'] = orderData.manufacture_option;
-      } else {
-        // Fallback based on measurementOption
-        const fallbackManufactureOption = orderData.measurementOption === 'adjust' 
-          ? 'Manufactured To Fit Space' 
-          : 'Manufactured to Dimensions Provided';
-        metafieldProperties['Manufacture Option'] = fallbackManufactureOption;
-      }
-
-      // Add hardware included status
-      metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
-
-      // Add formatted cart properties (these will show in cart)
-      Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
-        metafieldProperties[`Edge ${key}`] = value;
-      });
-
-      Object.entries(cartDiagonalMeasurements).forEach(([key, value]) => {
-        metafieldProperties[`Diagonal ${key}`] = value;
-      });
-
-      // REMOVED: Anchor Height properties - we don't want these in line items
-      // Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
-      //   metafieldProperties[`Anchor Height ${key}`] = value;
-      // });
-
-      Object.entries(cartFixingHeights).forEach(([key, value]) => {
-        metafieldProperties[key] = value;
-      });
-
-      Object.entries(cartFixingTypes).forEach(([key, value]) => {
-        metafieldProperties[key] = value;
-      });
-
-      const gid = product?.variants?.edges?.[0]?.node?.id;
-      if (gid) {
-        const variantId = gid.split('/').pop();
-
-        const formData = {
-          items: [{
-            id: Number(variantId),
-            quantity: 1,
-            properties: metafieldProperties
-          }]
-        };
-
-        console.log('Add to cart in progress');
-        setLoadingStep({ text: 'Adding item to your cart...', progress: 85 });
-
-        const cartResponse = await fetch('/cart/add.js', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+        Object.keys(measurements).forEach(key => {
+          if (measurements[key] && typeof measurements[key] === 'object' && measurements[key].formatted) {
+            formatted[key] = measurements[key].formatted;
+          }
         });
 
-        if (cartResponse.ok) {
-          console.log('Added to cart');
+        return formatted;
+      };
 
-          // Track add to cart event for admin dashboard
-          eventTrackers.addToCart(
-            quoteReference || (quoteParams?.id || null),
-            email || null,
-            calculations.totalPrice,
-            config.currency,
-            true
-          );
+      const cartEdgeMeasurements = formatCartProperties(orderData.edgeMeasurements);
+      const cartDiagonalMeasurements = formatCartProperties(orderData.diagonalMeasurementsObj);
+      const cartAnchorMeasurements = formatCartProperties(orderData.anchorPointMeasurements);
 
-          // Track quote conversion if applicable
-          if (quoteData && quoteParams) {
-            try {
-              const createdAt = new Date(quoteData.created_at);
-              const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+      // Create backend-only dual measurement objects for Shopify admin
+      const backendEdgeMeasurements: Record<string, string> = {};
+      Object.keys(orderData.edgeMeasurements || {}).forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendEdgeMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
 
-              analytics.quoteConvertedToCart({
-                quote_reference: quoteReference!,
-                quote_age_hours: quoteAgeHours,
-                time_from_save_to_cart_hours: quoteAgeHours,
-                total_price: calculations.totalPrice,
-                currency: config.currency,
-                conversion_source: 'loaded_quote',
-              });
+      const backendDiagonalMeasurements: Record<string, string> = {};
+      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+      diagonalKeys.forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
 
-              // Mark quote as converted
-              await markQuoteConverted(quoteParams.id, quoteParams.token);
-            } catch (error) {
-              console.error('Failed to track quote conversion:', error);
-            }
+      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+      const backendAnchorMeasurements: Record<string, string> = {};
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          if (height && height > 0) {
+            backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
           }
+        });
+      }
 
-          setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
-          window.location.href = '/cart';
+      // Format arrays for cart display
+      const formatArrayForCart = (array: any[], label: string) => {
+        if (!array || !Array.isArray(array)) return {};
+
+        const result: Record<string, string> = {};
+        array.forEach((item, index) => {
+          const corner = String.fromCharCode(65 + index);
+          result[`${label} ${corner}`] = typeof item === 'string' ? item : String(item);
+        });
+        return result;
+      };
+
+      // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+      const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
+      const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
+
+      const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...orderData,
+          // Pass formatted properties for cart display (customer-facing, single unit)
+          cartEdgeMeasurements,
+          cartDiagonalMeasurements,
+          cartAnchorMeasurements,
+          cartFixingHeights,
+          cartFixingTypes,
+          // Pass dual measurements for backend/fulfillment (Shopify admin only)
+          backendEdgeMeasurements,
+          backendDiagonalMeasurements,
+          backendAnchorMeasurements,
+          originalUnit: config.unit
+        }),
+      });
+
+      const data = await response.json();
+      const { success, product, error } = data;
+
+      if (success && product) {
+        console.log('Product created... Adding to cart');
+        setLoadingStep({ text: 'Processing product details...', progress: 60 });
+
+        const metafieldProperties: Record<string, string> = {};
+
+        // Only include specific metafields in cart properties (exclude the ones you want to hide)
+        const allowedCartProperties = [
+          'fabric_material',
+          'fabric_color',
+          'fabric_certification_type',
+          'edge_type',
+          'wire_thickness',
+          'corners',
+          'area',
+          'perimeter'
+        ];
+
+        product.metafields.edges.forEach((edge: any) => {
+          // Only include allowed properties in cart display
+          if (allowedCartProperties.includes(edge.node.key)) {
+            const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            metafieldProperties[key] = edge.node.value;
+          }
+        });
+
+        metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
+
+        // Add formatted cart properties (these will show in cart)
+        Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
+          metafieldProperties[`Edge ${key}`] = value;
+        });
+
+        Object.entries(cartDiagonalMeasurements).forEach(([key, value]) => {
+          metafieldProperties[`Diagonal ${key}`] = value;
+        });
+
+        Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
+          metafieldProperties[`Anchor Height ${key}`] = value;
+        });
+
+        Object.entries(cartFixingHeights).forEach(([key, value]) => {
+          metafieldProperties[key] = value;
+        });
+
+        Object.entries(cartFixingTypes).forEach(([key, value]) => {
+          metafieldProperties[key] = value;
+        });
+
+        const gid = product?.variants?.edges?.[0]?.node?.id;
+        if (gid) {
+          const variantId = gid.split('/').pop();
+
+          const formData = {
+            items: [{
+              id: Number(variantId),
+              quantity: 1,
+              properties: metafieldProperties
+            }]
+          };
+
+          console.log('Add to cart in progress');
+          setLoadingStep({ text: 'Adding item to your cart...', progress: 85 });
+
+          const cartResponse = await fetch('/cart/add.js', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+          });
+
+          if (cartResponse.ok) {
+            console.log('Added to cart');
+
+            // Track add to cart event for admin dashboard
+            eventTrackers.addToCart(
+              quoteReference || (quoteParams?.id || null),
+              email || null,
+              calculations.totalPrice,
+              config.currency,
+              true
+            );
+
+            // Track quote conversion if applicable
+            if (quoteData && quoteParams) {
+              try {
+                const createdAt = new Date(quoteData.created_at);
+                const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+
+                analytics.quoteConvertedToCart({
+                  quote_reference: quoteReference!,
+                  quote_age_hours: quoteAgeHours,
+                  time_from_save_to_cart_hours: quoteAgeHours,
+                  total_price: calculations.totalPrice,
+                  currency: config.currency,
+                  conversion_source: 'loaded_quote',
+                });
+
+                // Mark quote as converted
+                await markQuoteConverted(quoteParams.id, quoteParams.token);
+              } catch (error) {
+                console.error('Failed to track quote conversion:', error);
+              }
+            }
+
+            setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
+            window.location.href = '/cart';
+          } else {
+            console.error('Failed to add to cart');
+            setShowLoadingOverlay(false);
+            setLoading(false);
+          }
         } else {
-          console.error('Failed to add to cart');
+          console.error('No variant found in product');
           setShowLoadingOverlay(false);
           setLoading(false);
         }
-      } else {
-        console.error('No variant found in product');
+      } else if (!success && error) {
+        console.error('Product creation failed:', error);
         setShowLoadingOverlay(false);
         setLoading(false);
       }
-    } else if (!success && error) {
-      console.error('Product creation failed:', error);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
       setShowLoadingOverlay(false);
       setLoading(false);
     }
-  } catch (error) {
-    console.error('Error adding to cart:', error);
-    setShowLoadingOverlay(false);
-    setLoading(false);
-  }
-};
+  };
 
 
   // Auto-center shape when moving between steps
@@ -1483,16 +1419,19 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
   // Check if quote is ready (has price)
   const hasQuote = calculations.totalPrice > 0;
 
-  // Handle save quote
+  // Handle save quote - opens unified modal
   const handleSaveQuote = () => {
-    setShowSaveQuoteModal(true);
+    setShowUnifiedSaveModal(true);
   };
 
   // Handle toggle between Auto and Manual mode
   const handleToggleMode = (isAutomatic: boolean) => {
     if (isAutomatic) {
-      // Switching to Automatic mode - reconstruct from measurements
+      // Switching to Automatic mode - always allow the switch
+      updateConfig({ hasManuallyAdjustedShape: false });
+
       if (hasRequiredMeasurements(config.measurements, config.corners)) {
+        // If all measurements are present, reconstruct the shape
         const reconstructedPoints = reconstructPolygonFromMeasurements(
           config.measurements,
           config.corners,
@@ -1509,9 +1448,15 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
             autoClose: 3000,
             hideProgressBar: false,
           });
+        } else {
+          toast.info('Switched to Automatic mode - shape will update as you enter measurements', {
+            autoClose: 3000,
+            hideProgressBar: false,
+          });
         }
       } else {
-        toast.warning('Cannot switch to Automatic mode - measurements incomplete', {
+        // Partial or no measurements - still allow the switch
+        toast.info('Switched to Automatic mode - shape will update as you enter measurements', {
           autoClose: 3000,
           hideProgressBar: false,
         });
@@ -1519,7 +1464,7 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
     } else {
       // Switching to Manual mode
       updateConfig({ hasManuallyAdjustedShape: true });
-      toast.info('Switched to Manual mode - you can now customize the shape', {
+      toast.info('Switched to Manual mode - drag corners to customize shape', {
         autoClose: 3000,
         hideProgressBar: false,
       });
@@ -1559,9 +1504,9 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
             ? 'lg:col-span-2'
             : (openStep >= 5 && !shouldSkipStep(5)) // Review step (when step 5 is not skipped)
               ? 'lg:col-span-3'
-              : (openStep === 6 && shouldSkipStep(5)) // Review step (when step 5 is skipped)
-                ? 'lg:col-span-3'
-                : 'lg:col-span-4'
+            : (openStep === 6 && shouldSkipStep(5)) // Review step (when step 5 is skipped)
+              ? 'lg:col-span-3'
+              : 'lg:col-span-4'
             }`}>
             {steps.map((step, index) => {
               const StepComponent = step.component;
@@ -1608,13 +1553,7 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
                     setConfig={setConfig}
                     setOpenStep={setOpenStep}
                     mobileGuidance={mobileGuidance}
-                    // Pricing and order props for ReviewContent
-                    isGeneratingPDF={isGeneratingPDF}
-                    handleGeneratePDF={handleGeneratePDF}
-                    showEmailInput={showEmailInput}
-                    email={email}
-                    setEmail={setEmail}
-                    handleEmailSummary={handleEmailSummary}
+                    // Props for ReviewContent
                     acknowledgments={acknowledgments}
                     handleAcknowledgmentChange={handleAcknowledgmentChange}
                     handleAddToCart={handleAddToCart}
@@ -1622,7 +1561,6 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
                     allAcknowledgmentsChecked={allAcknowledgmentsChecked}
                     canAddToCart={canAddToCart}
                     hasAllEdgeMeasurements={hasAllEdgeMeasurements}
-                    handleCancelEmailInput={handleCancelEmailInput}
                     nextStepTitle={getNextStepTitle(index)}
                     showBackButton={shouldShowBackButton(index)}
                     isMobile={isMobile}
@@ -1686,13 +1624,6 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
                 config={config}
                 calculations={calculations}
                 onSaveQuote={handleSaveQuote}
-                onGeneratePDF={() => handleGeneratePDFWithSVG(false)}
-                isGeneratingPDF={isGeneratingPDF}
-                showEmailInput={showEmailInput}
-                email={email}
-                setEmail={setEmail}
-                onEmailSummary={handleEmailSummary}
-                onCancelEmailInput={handleCancelEmailInput}
               />
             </div>
           )}
@@ -1706,14 +1637,17 @@ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
         />
       </div>
 
-      {/* Save Quote Modal */}
-      <SaveQuoteModal
-        isOpen={showSaveQuoteModal}
-        onClose={() => setShowSaveQuoteModal(false)}
+      {/* Unified Save Modal */}
+      <UnifiedSaveModal
+        isOpen={showUnifiedSaveModal}
+        onClose={() => setShowUnifiedSaveModal(false)}
         config={config}
         calculations={calculations}
         currentStep={openStep}
         totalSteps={7}
+        shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
+        onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
+        onEmailPDFQuote={handleEmailPDFQuote}
       />
     </>
   );

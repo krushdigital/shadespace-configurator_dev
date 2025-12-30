@@ -426,7 +426,7 @@ export function DimensionsContent({
             Interactive Measurement Guide
           </h4>
 
-          <div>
+          <div className="relative">
             <ShapeCanvas
               config={config}
               updateConfig={updateConfig}
@@ -438,8 +438,8 @@ export function DimensionsContent({
               unit={config.unit}
             />
 
-            {/* Shape Mode Toggle Control - Below Canvas */}
-            <div className="mt-4 flex justify-center">
+            {/* Shape Mode Toggle Control - Bottom Right Corner */}
+            <div className="absolute bottom-2 right-2 z-10">
               <CollapsibleToggleControl
                 isAutoMode={!config.hasManuallyAdjustedShape}
                 onToggle={(isAuto) => handleToggleMode(isAuto)}
@@ -803,7 +803,7 @@ export function DimensionsContent({
                       <h5 className="text-sm sm:text-base font-semibold text-[#01312D]">
                         Height Information (optional)
                       </h5>
-                      <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-medium w-fit">
+                      <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-medium w-fit">
                         Not required - standard manufacturing process will be used
                       </span>
                     </div>
@@ -817,7 +817,7 @@ export function DimensionsContent({
               </button>
 
               {showHeightsSection && (
-                <div className="p-3 pt-0 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
+                <div className="p-3 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
                   <div className="p-2 sm:p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg">
                     <p className="text-sm text-[#01312D]">
                       <strong>Note:</strong> Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.
