@@ -543,10 +543,10 @@ export const analytics = {
     });
   },
 
-  emailSendFailed: (errorMessage: string, errorType: string) => {
+   emailSendFailed: (payload: { error_message: string; error_type?: string }) => {
     trackEvent('email_send_failed', {
-      error_message: errorMessage,
-      error_type: errorType,
+      error_message: payload.error_message,
+      error_type: payload.error_type || 'EmailSendError',
     });
   },
 
@@ -856,7 +856,12 @@ export const analytics = {
     has_shopify_customer: boolean;
     shopify_customer_id?: string;
   }) => {
-    trackEvent('quote_save_success', data);
+    // Convert null email_domain to undefined to satisfy GAEventProperties
+    const safeData = {
+      ...data,
+      email_domain: data.email_domain === null ? undefined : data.email_domain,
+    };
+    trackEvent('quote_save_success', safeData);
   },
 
   quoteSaveFailed: (data: {
@@ -940,7 +945,11 @@ export const analytics = {
     total_quote_value: number;
     currency: string;
   }) => {
-    trackEvent('shopify_customer_created', data);
+    const { tags, ...rest } = data;
+    trackEvent('shopify_customer_created', {
+      ...rest,
+      tags: tags.join(','),
+    });
   },
 
   shopifyCustomerCreationFailed: (data: {
