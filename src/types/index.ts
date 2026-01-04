@@ -5,9 +5,9 @@ export interface Point {
 
 export interface ConfiguratorState {
   step: number;
-  fabricType: FabricType;
+  fabricType: FabricType | '';
   fabricColor: string;
-  edgeType: EdgeType;
+  edgeType: EdgeType | '';
   corners: number;
   unit: 'metric' | 'imperial';
   measurementOption: 'adjust' | 'exact';
@@ -37,8 +37,8 @@ export interface ShadeCalculations {
   totalWeightGrams: number;
 }
 
-export type FabricType = 'monotec370' | 'extrablock330' | 'shadetec320';
-export type EdgeType = 'webbing' | 'cabled';
+export type FabricType = 'monotec370' | 'extrablock330' | 'otherFabricId'; 
+export type EdgeType = 'webbing' | 'cabled' | 'none'; 
 
 export interface Fabric {
   id: FabricType;

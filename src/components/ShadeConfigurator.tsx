@@ -126,7 +126,7 @@ export function ShadeConfigurator() {
 
   // Default fabric selection for desktop only (monotec370), mobile has no preselection
   useEffect(() => {
-    const hasNoFabricSelected = !config.fabricType || config.fabricType === '';
+    const hasNoFabricSelected = !config.fabricType;
     const isInitialLoad = config.step === 0 && !quoteReference;
 
     // Only preselect on initial load, when no quote is being loaded, and no fabric is selected
@@ -761,7 +761,7 @@ export function ShadeConfigurator() {
     setLoading(true);
 
     // Check if this is a converted quote
-    const quoteParams = getQuoteFromUrl();
+   const quoteParams = getQuoteFromUrl();
     let quoteData: any = null;
 
     if (quoteReference && quoteParams) {
@@ -771,6 +771,8 @@ export function ShadeConfigurator() {
         console.error('Failed to load quote data for conversion tracking:', error);
       }
     }
+
+     const email: string | null = quoteData?.customer_email ?? null;
 
     try {
       setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
@@ -835,7 +837,7 @@ export function ShadeConfigurator() {
 
       // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
       const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
-      const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes, 'Fixing Type') : {};
+      const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes ?? [], 'Fixing Type') : {};
 
       const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
         method: 'POST',
@@ -879,13 +881,20 @@ export function ShadeConfigurator() {
           'perimeter'
         ];
 
-        product.metafields.edges.forEach((edge: any) => {
-          // Only include allowed properties in cart display
-          if (allowedCartProperties.includes(edge.node.key)) {
-            const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            metafieldProperties[key] = edge.node.value;
-          }
-        });
+        // Find edge type to conditionally exclude wire thickness
+      const edgeTypeValue = product.metafields.edges.find((e: any) => e.node.key.toLowerCase() === 'edge_type')?.node.value.toLowerCase();
+
+          product.metafields.edges.forEach((edge: any) => {
+        if (!allowedCartProperties.includes(edge.node.key)) return;
+
+        // Exclude wire thickness if edge type is webbing or webbing reinforced
+        if (edge.node.key === 'wire_thickness' && (edgeTypeValue === 'webbing' || edgeTypeValue === 'webbing reinforced')) {
+          return;
+        }
+
+        const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+        metafieldProperties[key] = edge.node.value;
+      });
 
         metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
 
@@ -930,6 +939,8 @@ export function ShadeConfigurator() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
           });
+
+          console.log('cartResponse', cartResponse)
 
           if (cartResponse.ok) {
             console.log('Added to cart');
@@ -1060,13 +1071,13 @@ export function ShadeConfigurator() {
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 0: // Fabric & Color
-        return !!config.fabricType && config.fabricType !== '' && !!config.fabricColor && config.fabricColor !== '';
+        return !!config.fabricType && !!config.fabricColor;
       case 1: // Style (Edge Type)
-        return !!config.edgeType && config.edgeType !== '';
+        return !!config.edgeType;
       case 2: // Number of Fixing Points
         return config.corners >= 3 && config.corners <= 6;
       case 3: // Measurement Options (Combined)
-        return !!config.unit && config.unit !== '' && !!config.measurementOption && config.measurementOption !== '';
+        return (config.unit === 'metric' || config.unit === 'imperial') && (config.measurementOption === 'adjust' || config.measurementOption === 'exact');
       case 4: // Dimensions
         if (config.corners === 0) {
           return false;
@@ -1153,20 +1164,20 @@ export function ShadeConfigurator() {
     setDismissedTypoSuggestions(new Set());
 
     // Perform validation for current step
-    const errors: { [key: string]: string } = {};
-    const suggestions: { [key: string]: number } = {};
-
-    switch (openStep) {
-      case 0: // Fabric & Color
-        if (!config.fabricType || config.fabricType === '') {
-          errors.fabricType = 'Please select a fabric type';
-        }
-        if (!config.fabricColor || config.fabricColor === '') {
-          errors.fabricColor = 'Please select a fabric color';
-        }
-        break;
+        const errors: { [key: string]: string } = {};
+        const suggestions: { [key: string]: number } = {};
+    
+        switch (openStep) {
+          case 0: // Fabric & Color
+            if (!config.fabricType) {
+              errors.fabricType = 'Please select a fabric type';
+            }
+            if (!config.fabricColor || config.fabricColor === '') {
+              errors.fabricColor = 'Please select a fabric color';
+            }
+            break;
       case 1: // Style (Edge Type)
-        if (!config.edgeType || config.edgeType === '') {
+        if (!config.edgeType) {
           errors.edgeType = 'Please select an edge reinforcement type';
         }
         break;
@@ -1176,10 +1187,10 @@ export function ShadeConfigurator() {
         }
         break;
       case 3: // Measurement Options
-        if (!config.unit || config.unit === '') {
+        if (!config.unit) {
           errors.unit = 'Please select measurement units';
         }
-        if (!config.measurementOption || config.measurementOption === '') {
+        if (!config.measurementOption) {
           errors.measurementOption = 'Please select a measurement option';
         }
         break;
@@ -1550,8 +1561,6 @@ export function ShadeConfigurator() {
                     setValidationErrors={setValidationErrors}
                     setTypoSuggestions={setTypoSuggestions}
                     dismissTypoSuggestion={dismissTypoSuggestion}
-                    setConfig={setConfig}
-                    setOpenStep={setOpenStep}
                     mobileGuidance={mobileGuidance}
                     // Props for ReviewContent
                     acknowledgments={acknowledgments}
