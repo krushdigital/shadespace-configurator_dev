@@ -1281,7 +1281,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               variant="outline"
               size="lg"
               onClick={onSaveQuote}
-              className="w-full border-3 border-[#BFF102] bg-gradient-to-r from-[#BFF102] to-[#d4f542] text-[#01312D] hover:from-[#caee41] hover:to-[#BFF102] hover:shadow-xl transition-all duration-300 hover:scale-[1.02] flex flex-col items-center justify-center py-4 font-bold shadow-lg"
+              className="w-full border-2 border-slate-300 bg-gradient-to-r from-slate-100 to-slate-50 text-slate-600 hover:from-slate-200 hover:to-slate-100 hover:border-slate-400 hover:text-slate-700 transition-all duration-300 flex flex-col items-center justify-center py-4 font-semibold"
             >
               <div className="flex items-center justify-center gap-2">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
