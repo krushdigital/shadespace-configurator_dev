@@ -1509,15 +1509,15 @@ export function ShadeConfigurator() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className={`grid grid-cols-1 gap-8 ${openStep === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step
+          <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step (50% of 4 cols)
             ? 'lg:col-span-2'
-            : (openStep >= 5 && !shouldSkipStep(5)) // Review step (when step 5 is not skipped)
-              ? 'lg:col-span-3'
-            : (openStep === 6 && shouldSkipStep(5)) // Review step (when step 5 is skipped)
-              ? 'lg:col-span-3'
-              : 'lg:col-span-4'
+            : (openStep >= 5 && !shouldSkipStep(5)) // Review step (66.7% of 3 cols when step 5 is not skipped)
+              ? 'lg:col-span-2'
+            : (openStep === 6 && shouldSkipStep(5)) // Review step (66.7% of 3 cols when step 5 is skipped)
+              ? 'lg:col-span-2'
+              : 'lg:col-span-3'
             }`}>
             {steps.map((step, index) => {
               const StepComponent = step.component;
@@ -1596,7 +1596,7 @@ export function ShadeConfigurator() {
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
           {openStep === 4 && !isMobile && (
-            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-28 lg:self-start z-10">
+            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <h4 className="text-lg font-semibold text-slate-900 mb-4">
                 Interactive Measurement Guide
               </h4>
@@ -1628,7 +1628,7 @@ export function ShadeConfigurator() {
 
           {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
           {(openStep >= 5 && (!shouldSkipStep(5) || openStep === 6)) && (
-            <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-28 lg:self-start z-10">
+            <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <PriceSummaryDisplay
                 config={config}
                 calculations={calculations}

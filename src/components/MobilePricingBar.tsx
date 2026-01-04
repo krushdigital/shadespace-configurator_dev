@@ -102,7 +102,7 @@ export function MobilePricingBar({
                 >
                   <button
                     onClick={onSaveQuote}
-                    className="flex-shrink-0 p-3 bg-white border-2 border-[#307C31] text-[#307C31] rounded-lg hover:bg-[#307C31] hover:text-white transition-all duration-200 shadow-md hover:shadow-lg"
+                    className="flex-shrink-0 p-3 bg-slate-100 border-2 border-slate-300 text-slate-600 rounded-lg hover:bg-slate-200 hover:border-slate-400 hover:text-slate-700 transition-all duration-200"
                     aria-label="Save Progress"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

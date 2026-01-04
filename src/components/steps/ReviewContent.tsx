@@ -1275,18 +1275,21 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </Button>
           )}
 
-          {/* Save button - Full width (mobile only when conditions met) */}
-          {isMobile && hasAllEdgeMeasurements && onSaveQuote && (
+          {/* Save button - Full width (mobile - always shown) */}
+          {isMobile && onSaveQuote && (
             <Button
               variant="outline"
-              size="sm"
+              size="lg"
               onClick={onSaveQuote}
-              className="w-full border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white flex items-center justify-center gap-2"
+              className="w-full border-2 border-slate-300 bg-gradient-to-r from-slate-100 to-slate-50 text-slate-600 hover:from-slate-200 hover:to-slate-100 hover:border-slate-400 hover:text-slate-700 transition-all duration-300 flex flex-col items-center justify-center py-4 font-semibold"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              Save
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                <span className="text-base">Save Progress & Get Quote</span>
+              </div>
+              <span className="text-xs font-medium mt-1 opacity-90">Continue later or email PDF</span>
             </Button>
           )}
 

@@ -159,29 +159,40 @@ export function PriceSummaryDisplay({
 
           {/* Quote Actions - Desktop Only */}
           {onSaveQuote && (
-            <div className="mt-6 pt-6 border-t border-slate-200">
+            <div className="mt-5 pt-5 border-t border-slate-200">
               <Tooltip
                 content={
                   <div className="text-slate-700">
-                    <p className="font-semibold mb-1">Save Your Configuration</p>
-                    <p>Save your progress or receive a detailed PDF quote via email.</p>
+                    <p className="font-semibold mb-2">Two Ways to Save:</p>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <p className="font-medium">💾 Save Progress</p>
+                        <p className="text-slate-600">Return anytime within 30 days to continue your configuration</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">📧 Email PDF Quote</p>
+                        <p className="text-slate-600">Receive a detailed quote with all specifications via email</p>
+                      </div>
+                    </div>
                   </div>
                 }
                 fullWidth
               >
                 <Button
                   variant="outline"
-                  size="sm"
                   onClick={onSaveQuote}
                   fullWidth
-                  className="items-center justify-center gap-2 border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                  className="flex items-center justify-center gap-2 border-2 !bg-gradient-to-r !from-[#d4f763] !to-[#BFF102] hover:!from-[#BFF102] hover:!to-[#a8d902] !text-[#01312D] hover:!text-[#01312D] !border-[#BFF102] hover:!border-[#a8d902] transition-colors font-semibold"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
-                  Save
+                  <span>Save Configuration</span>
                 </Button>
               </Tooltip>
+              <p className="text-xs text-center text-slate-500 mt-2">
+                Save progress or get a PDF quote via email
+              </p>
             </div>
           )}
         </>
