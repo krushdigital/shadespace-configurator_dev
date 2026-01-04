@@ -160,26 +160,55 @@ export function PriceSummaryDisplay({
           {/* Quote Actions - Desktop Only */}
           {onSaveQuote && (
             <div className="mt-6 pt-6 border-t border-slate-200">
+              {/* Information Card */}
+              <div className="bg-gradient-to-br from-[#BFF102]/10 to-[#307C31]/5 border-2 border-[#BFF102] rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-[#BFF102] rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-[#01312D] mb-1">Save Your Configuration</h4>
+                    <p className="text-sm text-slate-700">
+                      Save your progress to return later within 30 days <strong>OR</strong> receive a detailed PDF quote via email.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Tooltip
                 content={
                   <div className="text-slate-700">
-                    <p className="font-semibold mb-1">Save Your Configuration</p>
-                    <p>Save your progress or receive a detailed PDF quote via email.</p>
+                    <p className="font-semibold mb-2">Two Ways to Save:</p>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <p className="font-medium">💾 Save Progress</p>
+                        <p className="text-slate-600">Return anytime within 30 days to continue your configuration</p>
+                      </div>
+                      <div>
+                        <p className="font-medium">📧 Email PDF Quote</p>
+                        <p className="text-slate-600">Receive a detailed quote with all specifications via email</p>
+                      </div>
+                    </div>
                   </div>
                 }
                 fullWidth
               >
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="lg"
                   onClick={onSaveQuote}
                   fullWidth
-                  className="items-center justify-center gap-2 border-2 border-[#307C31] text-[#307C31] hover:bg-[#307C31] hover:text-white"
+                  className="flex flex-col items-center justify-center gap-1 border-3 border-[#BFF102] bg-gradient-to-r from-[#BFF102] to-[#d4f542] text-[#01312D] hover:from-[#caee41] hover:to-[#BFF102] hover:shadow-xl transition-all duration-300 hover:scale-[1.02] py-4 font-bold shadow-lg"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                  </svg>
-                  Save
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    <span className="text-base">Save Progress & Get Quote</span>
+                  </div>
+                  <span className="text-xs font-medium opacity-90">Choose how to save</span>
                 </Button>
               </Tooltip>
             </div>
