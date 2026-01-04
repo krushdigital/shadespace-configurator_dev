@@ -24,7 +24,7 @@ export function SaveProgressButton({ onClick, className = '' }: SaveProgressButt
         variant="outline"
         size="md"
         onClick={onClick}
-        className={`${className} !bg-gradient-to-r !from-[#BFF102]/10 !to-white hover:!from-[#BFF102]/20 hover:!to-white !text-[#01312D] hover:!text-[#01312D] !border-2 !border-[#307C31] hover:!border-[#01312D]`}
+        className={`${className} !bg-gradient-to-r !from-[#BFF102]/10 !to-white hover:!bg-[#307C31] !text-[#01312D] hover:!text-white !border-2 !border-[#307C31]`}
         aria-label="Save your progress"
       >
         <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
