@@ -1633,6 +1633,25 @@ export function ShadeConfigurator() {
                 config={config}
                 calculations={calculations}
                 onSaveQuote={handleSaveQuote}
+                allAcknowledgmentsChecked={openStep === 6 ? allAcknowledgmentsChecked : false}
+                canAddToCart={openStep === 6 ? canAddToCart : false}
+                handleAddToCart={() => {
+                  // Scroll to the main Add to Cart button at the bottom of the review page
+                  const reviewSection = reviewContentRef.current;
+                  if (reviewSection) {
+                    const addToCartButtons = reviewSection.querySelectorAll('button');
+                    const mainAddToCartButton = Array.from(addToCartButtons).find(
+                      btn => btn.textContent?.includes('ADD TO CART')
+                    );
+                    if (mainAddToCartButton) {
+                      mainAddToCartButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      setTimeout(() => {
+                        mainAddToCartButton.click();
+                      }, 500);
+                    }
+                  }
+                }}
+                loading={loading}
               />
             </div>
           )}
