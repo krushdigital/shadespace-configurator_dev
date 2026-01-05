@@ -1297,7 +1297,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           <Button
             ref={addToCartButtonRef}
             size={isMobile ? "lg" : "md"}
-            className={`w-full transition-all duration-200 ${buttonShake ? 'shake' : ''} ${!canAddToCart && !loading
+            className={`w-full transition-all duration-200 ${buttonShake ? 'shake' : ''} ${
+              allAcknowledgmentsChecked && canAddToCart && !loading ? 'pulsate-cta' : ''
+            } ${!canAddToCart && !loading
               ? '!bg-[#01312D]/40 hover:!bg-[#01312D]/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
               : loading
                 ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'

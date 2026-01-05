@@ -309,6 +309,38 @@ html {
   }
 }
 
+/* Pulsating animation for Add to Cart button when ready */
+@keyframes pulsate-cta {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
+    transform: scale(1.02);
+  }
+}
+
+.pulsate-cta {
+  animation: pulsate-cta 1.5s ease-in-out infinite;
+  position: relative;
+  z-index: 10;
+}
+
+/* Desktop-specific refinement: slightly more subtle CTA animation on larger screens */
+@media (min-width: 640px) {
+  @keyframes pulsate-cta {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+      transform: scale(1.015);
+    }
+  }
+}
+
 /* Remove default focus outlines on buttons for mouse users, preserve for keyboard users */
 button:focus {
   outline: none;
@@ -410,7 +442,8 @@ button.bg-transparent:focus-visible {
     animation: none;
   }
 
-  .pulsate-guidance {
+  .pulsate-guidance,
+  .pulsate-cta {
     animation: none;
   }
 }
