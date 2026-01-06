@@ -206,7 +206,7 @@ export function PriceSummaryDisplay({
               {allAcknowledgmentsChecked && handleAddToCart && (
                 <div className="mt-4">
                   <Button
-                    onClick={handleAddToCart}
+                    onClick={() => handleAddToCart()}
                     fullWidth
                     disabled={loading || !canAddToCart}
                     className={`flex items-center justify-center gap-2 !bg-[#01312D] hover:!bg-[#024f3a] !text-white font-bold ${

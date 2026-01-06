@@ -401,6 +401,11 @@ export function ShadeConfigurator() {
     pdfBase64: string
   ): Promise<boolean> => {
     try {
+
+      console.log(firstName, lastName, email, quoteName, customerReference,'kkkkkkkkkkkkk');
+
+      console.log('Preparing to send email with PDF quote to:', email);
+
       // Get the SVG element and upload preview
       const svgElement = canvasRef.current?.getSVGElement();
       let canvasImageUrl = null;
@@ -548,7 +553,7 @@ export function ShadeConfigurator() {
         '/apps/shade_space/api/v1/public/email-summary-send',
         {
           method: "POST",
-          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email }),
+          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email, firstName, lastName }),
         }
       );
 
@@ -1491,6 +1496,153 @@ export function ShadeConfigurator() {
     );
   }
 
+  // Add this function in ShadeConfigurator.tsx, somewhere before the return statement:
+const handleAddToCartFromConfigurator = async (): Promise<void> => {
+      console.log('Product being created. Add to cart');
+    setShowLoadingOverlay(true);
+    // setLoadingStep({ text: 'Starting order process...', progress: 10 });
+    setLoading(true);
+  // First, get the canvas image URL
+  const svgElement = canvasRef.current?.getSVGElement?.();
+  let canvasImageUrl = null;
+
+  if (svgElement) {
+    try {
+      const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+      canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
+      
+      if (!canvasImageUrl) {
+        console.warn('Failed to upload canvas image to Shopify, proceeding without image');
+      }
+    } catch (error) {
+      console.error('Error processing canvas image:', error);
+    }
+  }
+
+  // Prepare the edge measurements
+  const edgeMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
+  for (let i = 0; i < config.corners; i++) {
+    const nextIndex = (i + 1) % config.corners;
+    const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+    const measurement = config.measurements[edgeKey];
+    
+    if (measurement && measurement > 0) {
+      edgeMeasurements[edgeKey] = {
+        unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+        formatted: formatMeasurement(measurement, config.unit)
+      };
+    }
+  }
+
+  // Prepare diagonal measurements
+  const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+  const diagonalMeasurementsObj: { [key: string]: { unit: string; formatted: string } } = {};
+  diagonalKeys.forEach(key => {
+    const measurement = config.measurements[key];
+    if (measurement && measurement > 0) {
+      diagonalMeasurementsObj[key] = {
+        unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+        formatted: formatMeasurement(measurement, config.unit)
+      };
+    }
+  });
+
+  // Prepare anchor point measurements
+  const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
+  if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+    config.fixingHeights.forEach((height, index) => {
+      if (height && height > 0) {
+        const corner = String.fromCharCode(65 + index);
+        anchorPointMeasurements[corner] = {
+          unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+          formatted: formatMeasurement(height, config.unit)
+        };
+      }
+    });
+  }
+
+  // Prepare backend measurements
+  const backendEdgeMeasurements: Record<string, string> = {};
+  for (let i = 0; i < config.corners; i++) {
+    const nextIndex = (i + 1) % config.corners;
+    const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+    const measurement = config.measurements[edgeKey];
+    if (measurement && measurement > 0) {
+      backendEdgeMeasurements[edgeKey] = formatDualMeasurement(measurement, config.unit);
+    }
+  }
+
+  const backendDiagonalMeasurements: Record<string, string> = {};
+  diagonalKeys.forEach(key => {
+    const measurement = config.measurements[key];
+    if (measurement && measurement > 0) {
+      backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+    }
+  });
+
+  const backendAnchorMeasurements: Record<string, string> = {};
+  if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+    config.fixingHeights.forEach((height, index) => {
+      const corner = String.fromCharCode(65 + index);
+      if (height && height > 0) {
+        backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+      }
+    });
+  }
+
+  const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
+  const selectedColorLocal = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
+  const hardwareIncluded = config.measurementOption === 'adjust';
+  const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
+
+  // Create the order data
+  const orderData: any = {
+    fabricType: config.fabricType,
+    fabricColor: config.fabricColor,
+    edgeType: config.edgeType,
+    corners: config.corners,
+    unit: config.unit,
+    currency: config.currency,
+    measurementOption: config.measurementOption,
+    hardware_included: hardwareText,
+    measurements: config.measurements,
+    area: calculations.area,
+    perimeter: calculations.perimeter,
+    totalPrice: calculations.totalPrice,
+    totalWeightGrams: calculations.totalWeightGrams,
+    selectedFabric: selectedFabricLocal,
+    selectedColor: selectedColorLocal,
+    canvasImageUrl: canvasImageUrl,
+    warranty: selectedFabricLocal?.warrantyYears || "",
+    ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
+      fixingHeights: config.fixingHeights,
+      fixingTypes: config.fixingTypes,
+    }),
+    edgeMeasurements: edgeMeasurements,
+    diagonalMeasurementsObj: diagonalMeasurementsObj,
+    anchorPointMeasurements: anchorPointMeasurements,
+    Fabric_Type: config.fabricType === 'extrablock330' && config.fabricColor && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor) ?
+      'Not FR Certified' : selectedFabricLocal?.label,
+    Shade_Factor: selectedColorLocal?.shadeFactor,
+    Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
+    Wire_Thickness: config.unit === 'imperial' ?
+      calculations?.wireThickness !== undefined ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"` : 'N/A'
+      : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
+    Area: formatArea(calculations.area * 1000000, config.unit),
+    Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
+    createdAt: new Date().toISOString(),
+    backendEdgeMeasurements,
+    backendDiagonalMeasurements,
+    backendAnchorMeasurements,
+    originalUnit: config.unit
+  };
+
+  // Add to cart immediately (without waiting for image upload)
+  await handleAddToCart(orderData);
+};
+
   return (
     <>
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
@@ -1635,22 +1787,7 @@ export function ShadeConfigurator() {
                 onSaveQuote={handleSaveQuote}
                 allAcknowledgmentsChecked={openStep === 6 ? allAcknowledgmentsChecked : false}
                 canAddToCart={openStep === 6 ? canAddToCart : false}
-                handleAddToCart={() => {
-                  // Scroll to the main Add to Cart button at the bottom of the review page
-                  const reviewSection = reviewContentRef.current;
-                  if (reviewSection) {
-                    const addToCartButtons = reviewSection.querySelectorAll('button');
-                    const mainAddToCartButton = Array.from(addToCartButtons).find(
-                      btn => btn.textContent?.includes('ADD TO CART')
-                    );
-                    if (mainAddToCartButton) {
-                      mainAddToCartButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      setTimeout(() => {
-                        mainAddToCartButton.click();
-                      }, 500);
-                    }
-                  }
-                }}
+                handleAddToCart={handleAddToCartFromConfigurator}
                 loading={loading}
               />
             </div>

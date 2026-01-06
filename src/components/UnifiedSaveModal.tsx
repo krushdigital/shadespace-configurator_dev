@@ -133,8 +133,6 @@ export function UnifiedSaveModal({
         sanitizedReference,
         currentStep,
         totalSteps,
-        firstName.trim(),
-        lastName.trim()
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
@@ -173,6 +171,8 @@ export function UnifiedSaveModal({
                 email: email,
                 quoteReference: result.reference,
                 quoteUrl: quoteUrl,
+                quoteName: result.quoteName,
+                quoteId: result.id,
                 expiresAt: result.expiresAt,
                 firstName: firstName.trim(),
                 lastName: lastName.trim()
