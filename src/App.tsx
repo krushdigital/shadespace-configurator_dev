@@ -10,6 +10,7 @@ const App = () => {
   console.log('currency: ', currency);
   console.log('🚀 App component is rendering - this should appear in console');
   console.log('🚀 testing');
+  console.log('🚀 another test log');
 
   useEffect(() => {
     // Check if current URL is the admin route
