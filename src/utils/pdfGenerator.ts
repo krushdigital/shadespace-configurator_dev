@@ -1,8 +1,7 @@
-import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { ConfiguratorState, ShadeCalculations } from '../types';
+import { ConfiguratorState, ShadeCalculations, Point } from '../types';
 import { FABRICS } from '../data/fabrics';
-import { formatMeasurement, formatArea, getDiagonalKeysForCorners } from './geometry';
+import { formatMeasurement, formatArea, getDiagonalKeysForCorners, scalePolygonToCanvas, calculateCentroid } from './geometry';
 import { formatCurrency } from './currencyFormatter';
 
 // Function to load image, optimize it, and convert to Base64
@@ -92,6 +91,210 @@ async function getImageDimensions(base64: string): Promise<{ width: number; heig
   });
 }
 
+function drawShadeSailDiagram(
+  pdf: jsPDF,
+  config: ConfiguratorState,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): void {
+  const points = config.points;
+  if (!points || points.length < 3) return;
+
+  const scaledPoints = scalePolygonToCanvas(points, width, height, 15);
+  const centroid = calculateCentroid(scaledPoints);
+
+  const pdfPoints = scaledPoints.map(p => ({
+    x: x + p.x,
+    y: y + p.y
+  }));
+  const pdfCentroid = { x: x + centroid.x, y: y + centroid.y };
+
+  const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
+  const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
+
+  let fillColor: [number, number, number] = [200, 220, 200];
+  if (selectedColor?.hex) {
+    const hex = selectedColor.hex.replace('#', '');
+    fillColor = [
+      parseInt(hex.substring(0, 2), 16),
+      parseInt(hex.substring(2, 4), 16),
+      parseInt(hex.substring(4, 6), 16)
+    ];
+  }
+
+  pdf.setFillColor(...fillColor);
+  pdf.setDrawColor(48, 124, 49);
+  pdf.setLineWidth(0.5);
+
+  const pathData: number[] = [];
+  pdfPoints.forEach((point, index) => {
+    if (index === 0) {
+      pathData.push(point.x, point.y);
+    } else {
+      pathData.push(point.x, point.y);
+    }
+  });
+
+  if (pdfPoints.length >= 3) {
+    pdf.setFillColor(...fillColor);
+    pdf.setDrawColor(48, 124, 49);
+
+    const lines: { op: string; c: number[] }[] = [];
+    pdfPoints.forEach((point, index) => {
+      if (index === 0) {
+        lines.push({ op: 'm', c: [point.x, point.y] });
+      } else {
+        lines.push({ op: 'l', c: [point.x, point.y] });
+      }
+    });
+    lines.push({ op: 'h', c: [] });
+
+    (pdf as any).path(lines, 'FD');
+  }
+
+  for (let i = 0; i < config.corners; i++) {
+    const nextIndex = (i + 1) % config.corners;
+    const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+    const measurement = config.measurements[edgeKey];
+
+    if (measurement) {
+      const from = pdfPoints[i];
+      const to = pdfPoints[nextIndex];
+      const midX = (from.x + to.x) / 2;
+      const midY = (from.y + to.y) / 2;
+
+      const edgeX = to.x - from.x;
+      const edgeY = to.y - from.y;
+      const perpX = -edgeY;
+      const perpY = edgeX;
+      const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+
+      if (perpLength > 0) {
+        const normalizedPerpX = perpX / perpLength;
+        const normalizedPerpY = perpY / perpLength;
+
+        const toCentroidX = pdfCentroid.x - midX;
+        const toCentroidY = pdfCentroid.y - midY;
+        const dotProduct = normalizedPerpX * toCentroidX + normalizedPerpY * toCentroidY;
+        const direction = dotProduct > 0 ? -1 : 1;
+
+        const labelOffset = 5;
+        const labelX = midX + normalizedPerpX * labelOffset * direction;
+        const labelY = midY + normalizedPerpY * labelOffset * direction;
+
+        pdf.setFontSize(6);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(5, 150, 105);
+        pdf.text(formatMeasurement(measurement, config.unit), labelX, labelY, { align: 'center' });
+      }
+    }
+  }
+
+  if (config.corners >= 4) {
+    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+    pdf.setDrawColor(59, 130, 246);
+    pdf.setLineWidth(0.3);
+
+    diagonalKeys.forEach(key => {
+      const measurement = config.measurements[key];
+      if (measurement) {
+        const fromIndex = key.charCodeAt(0) - 65;
+        const toIndex = key.charCodeAt(1) - 65;
+
+        if (fromIndex < pdfPoints.length && toIndex < pdfPoints.length) {
+          const from = pdfPoints[fromIndex];
+          const to = pdfPoints[toIndex];
+
+          pdf.setLineDashPattern([1, 1], 0);
+          pdf.line(from.x, from.y, to.x, to.y);
+          pdf.setLineDashPattern([], 0);
+
+          const midX = (from.x + to.x) / 2;
+          const midY = (from.y + to.y) / 2;
+
+          const edgeX = to.x - from.x;
+          const edgeY = to.y - from.y;
+          const perpX = -edgeY;
+          const perpY = edgeX;
+          const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
+
+          if (perpLength > 0) {
+            const normalizedPerpX = perpX / perpLength;
+            const normalizedPerpY = perpY / perpLength;
+
+            const toCentroidX = pdfCentroid.x - midX;
+            const toCentroidY = pdfCentroid.y - midY;
+            const dotProduct = normalizedPerpX * toCentroidX + normalizedPerpY * toCentroidY;
+            const direction = dotProduct > 0 ? -1 : 1;
+
+            const labelOffset = 4;
+            const labelX = midX + normalizedPerpX * labelOffset * direction;
+            const labelY = midY + normalizedPerpY * labelOffset * direction;
+
+            pdf.setFontSize(5);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setTextColor(59, 130, 246);
+            pdf.text(formatMeasurement(measurement, config.unit), labelX, labelY, { align: 'center' });
+          }
+        }
+      }
+    });
+  }
+
+  const cornerRadius = 2;
+  pdf.setFillColor(48, 124, 49);
+  pdf.setDrawColor(255, 255, 255);
+  pdf.setLineWidth(0.3);
+
+  pdfPoints.forEach((point, index) => {
+    pdf.circle(point.x, point.y, cornerRadius, 'FD');
+
+    const dx = point.x - pdfCentroid.x;
+    const dy = point.y - pdfCentroid.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+
+    let labelX = point.x;
+    let labelY = point.y;
+    if (length > 0) {
+      const normalizedX = dx / length;
+      const normalizedY = dy / length;
+      const labelOffset = 5;
+      labelX = point.x + normalizedX * labelOffset;
+      labelY = point.y + normalizedY * labelOffset;
+    }
+
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30, 41, 59);
+    pdf.text(String.fromCharCode(65 + index), labelX, labelY + 0.5, { align: 'center' });
+  });
+
+  if (config.measurementOption === 'adjust') {
+    pdfPoints.forEach((point, index) => {
+      const dx = pdfCentroid.x - point.x;
+      const dy = pdfCentroid.y - point.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+
+      if (length > 0) {
+        const normalizedX = dx / length;
+        const normalizedY = dy / length;
+        const turnbuckleLength = 3;
+
+        const startX = point.x + normalizedX * cornerRadius;
+        const startY = point.y + normalizedY * cornerRadius;
+        const endX = startX + normalizedX * turnbuckleLength;
+        const endY = startY + normalizedY * turnbuckleLength;
+
+        pdf.setDrawColor(220, 38, 38);
+        pdf.setLineWidth(0.5);
+        pdf.line(startX, startY, endX, endY);
+      }
+    });
+  }
+}
+
 export interface CustomerDetails {
   firstName?: string;
   lastName?: string;
@@ -101,11 +304,10 @@ export interface CustomerDetails {
 }
 
 export async function generatePDF(
-config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined, customerDetails?: CustomerDetails): Promise<string | void> {
+config: ConfiguratorState, calculations: ShadeCalculations, _svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined, customerDetails?: CustomerDetails): Promise<string | void> {
   console.log('🚀 Starting PDF generation...');
   console.log('📱 User agent:', navigator.userAgent);
   console.log('📊 Config corners:', config.corners);
-  console.log('🖼️ SVG element provided:', !!svgElement);
   
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -517,28 +719,34 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     
     // Force new page for Page 2 content
     pdf.addPage();
-    yPos = 30;
-    
-    // Anchor Point Configuration (full width at top of page 2)
-    const anchorPointsHeight = config.corners * 6 + 26;
+    yPos = 25;
 
+    // Calculate anchor points section height
+    const anchorPointsHeight = config.corners * 6 + 35;
+    const diagramHeight = 75;
+    const topRowHeight = Math.max(anchorPointsHeight, diagramHeight + 15);
+
+    // TOP ROW: Two-column layout - Anchor Point Config (left) and Shade Sail Preview (right)
+
+    // LEFT COLUMN: Anchor Point Configuration
     pdf.setTextColor(...primaryDark);
-    pdf.setFontSize(12);
+    pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
-    pdf.text('Anchor Point Configuration', 15, yPos);
-    yPos += 12;
+    pdf.text('Anchor Point Configuration', leftColX + 5, yPos);
 
+    const anchorCardY = yPos + 5;
     pdf.setFillColor(255, 255, 255);
-    pdf.rect(10, yPos - 5, pageWidth - 20, anchorPointsHeight, 'F');
+    pdf.rect(leftColX, anchorCardY, colWidth, anchorPointsHeight, 'F');
     pdf.setDrawColor(...textLight);
     pdf.setLineWidth(0.2);
-    pdf.rect(10, yPos - 5, pageWidth - 20, anchorPointsHeight, 'S');
+    pdf.rect(leftColX, anchorCardY, colWidth, anchorPointsHeight, 'S');
 
-    // Add Fixing Points Installation Status
+    let anchorY = anchorCardY + 8;
+
     pdf.setTextColor(...textMedium);
-    pdf.setFontSize(9);
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Fixing Points Installed:', 15, yPos);
+    pdf.text('Fixing Points Installed:', leftColX + 5, anchorY);
     pdf.setTextColor(...textDark);
     pdf.setFont('helvetica', 'bold');
     const installationStatus = config.fixingPointsInstalled === true
@@ -546,16 +754,16 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       : config.fixingPointsInstalled === false
       ? 'No - Planning Installation'
       : 'Not specified';
-    pdf.text(installationStatus, 70, yPos);
-    yPos += 8;
+    pdf.text(installationStatus, leftColX + 45, anchorY);
+    anchorY += 8;
 
     pdf.setTextColor(...primaryGreen);
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('Fixing Point Details', 15, yPos);
-    yPos += 10;
-
     pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Fixing Point Details', leftColX + 5, anchorY);
+    anchorY += 8;
+
+    pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
 
     config.fixingHeights.forEach((height, index) => {
@@ -568,80 +776,52 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
         : 'Not set';
 
       pdf.setTextColor(...textMedium);
-      pdf.text(`Corner ${corner}:`, 15, yPos);
+      pdf.text(`Corner ${corner}:`, leftColX + 5, anchorY);
       pdf.setTextColor(...textDark);
       pdf.setFont('helvetica', 'bold');
 
-      // Conditionally include eye orientation based on fixingPointsInstalled
       if (config.fixingPointsInstalled === true && orientation) {
-        pdf.text(`${heightDisplay} (${type}, ${orientation} eye)`, 50, yPos);
+        pdf.text(`${heightDisplay} (${type}, ${orientation} eye)`, leftColX + 30, anchorY);
       } else {
-        pdf.text(`${heightDisplay} (${type})`, 50, yPos);
+        pdf.text(`${heightDisplay} (${type})`, leftColX + 30, anchorY);
       }
 
       pdf.setFont('helvetica', 'normal');
-      yPos += 6;
+      anchorY += 6;
     });
-    
-    yPos += 10; // Reduced spacing after anchor points
-    
-    // Add shade sail diagram if SVG element is provided
-    if (svgElement) {
-      console.log('🖼️ Starting shade sail diagram capture...');
-      try {
-        // Capture the SVG element as canvas
-        const canvas = await html2canvas(svgElement, {
-          backgroundColor: 'white', // White background to prevent black areas
-          scale: 1, // Reduce scale for smaller file size
-          width: 600,
-          height: 600,
-          useCORS: true,
-          allowTaint: true,
-          logging: false // Disable html2canvas logging
-        });
-        
-        // Convert canvas to optimized JPEG
-        const diagramBase64 = canvas.toDataURL('image/jpeg', 0.7); // Medium quality
-        
-        // Add diagram title
-        pdf.setTextColor(...primaryDark);
-        pdf.setFontSize(12);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Shade Sail Diagram', 15, yPos);
-        yPos += 12;
-        
-        // Calculate diagram dimensions (maintain aspect ratio, fit within page)
-        const maxDiagramWidth = pageWidth - 30; // Leave margins
-        const maxDiagramHeight = 80; // Smaller square diagram to fit better
-        
-        // Make it a proper square, using the smaller of max width/height
-        const diagramSize = Math.min(maxDiagramWidth, maxDiagramHeight);
-        let diagramWidth = diagramSize;
-        let diagramHeight = diagramSize;
-        
-        // Center the diagram horizontally
-        const diagramX = (pageWidth - diagramWidth) / 2;
-        
-        // Add the diagram image
-        pdf.addImage(diagramBase64, 'JPEG', diagramX, yPos, diagramWidth, diagramHeight);
-        yPos += diagramHeight + 5;
-        
-        // Add diagram caption
-        pdf.setTextColor(...textMedium);
-        pdf.setFontSize(8);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text('Visual reference showing corner positions and measurements', pageWidth / 2, yPos, { align: 'center' });
-        yPos += 10;
-        
-        console.log('✅ Shade sail diagram added successfully');
-      } catch (error) {
-        console.warn('⚠️ Diagram capture failed:', error);
-        // Continue without diagram if capture fails
-        yPos += 5;
-      }
+
+    // RIGHT COLUMN: Shade Sail Preview diagram (drawn directly, no DOM dependency)
+    pdf.setTextColor(...primaryDark);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Shade Sail Preview', rightColX + 5, yPos);
+
+    const diagramCardY = yPos + 5;
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(rightColX, diagramCardY, colWidth, diagramHeight + 10, 'F');
+    pdf.setDrawColor(...textLight);
+    pdf.setLineWidth(0.2);
+    pdf.rect(rightColX, diagramCardY, colWidth, diagramHeight + 10, 'S');
+
+    if (config.points && config.points.length >= 3) {
+      drawShadeSailDiagram(
+        pdf,
+        config,
+        rightColX + 2,
+        diagramCardY + 2,
+        colWidth - 4,
+        diagramHeight
+      );
     }
-    
-    // Two-column layout at bottom of page 2
+
+    pdf.setTextColor(...textMedium);
+    pdf.setFontSize(6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Corner positions and measurements', rightColX + colWidth / 2, diagramCardY + diagramHeight + 7, { align: 'center' });
+
+    yPos = yPos + topRowHeight + 15;
+
+    // BOTTOM ROW: Two-column layout
     const guaranteeHeight = 45;
     const priceCardHeight = 40;
     const maxColumnHeight = Math.max(guaranteeHeight, priceCardHeight);
