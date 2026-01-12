@@ -379,7 +379,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
         <path
           d={generateSailPath(sailAttachmentPoints)}
           fill={isApproximate && !forPdfCapture
-            ? `${getSelectedColor()}10`
+            ? getSelectedColor()
             : fabricImageBase64
               ? "url(#fabricTexture)"
               : forPdfCapture
