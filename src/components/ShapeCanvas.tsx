@@ -124,7 +124,7 @@ export function ShapeCanvas({
     // Only log and notify once when flag changes
     if (!config.hasManuallyAdjustedShape) {
       console.log('User manually adjusted shape - disabling auto-reconstruction');
-      toast.info('Switched to Manual mode - you can now customize the shape', {
+      toast.info('Switched to Manual mode. Toggle back to Auto to have your shape automatically fit your measurements.', {
         autoClose: 3000,
         hideProgressBar: false,
       });
@@ -185,7 +185,7 @@ export function ShapeCanvas({
     // Only log and notify once when flag changes
     if (!config.hasManuallyAdjustedShape) {
       console.log('User manually adjusted shape - disabling auto-reconstruction');
-      toast.info('Switched to Manual mode - you can now customize the shape', {
+      toast.info('Switched to Manual mode. Toggle back to Auto to have your shape automatically fit your measurements.', {
         autoClose: 3000,
         hideProgressBar: false,
       });
