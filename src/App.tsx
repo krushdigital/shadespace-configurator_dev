@@ -11,6 +11,7 @@ const App = () => {
   console.log('🚀 App component is rendering - this should appear in console');
   console.log('🚀 testing');
   console.log('🚀 another test log');
+  console.log('🚀 yet another log for testing 13/01/2026');
 
   useEffect(() => {
     // Check if current URL is the admin route
