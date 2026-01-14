@@ -91,14 +91,15 @@ async function getImageDimensions(base64: string): Promise<{ width: number; heig
   });
 }
 
-function drawShadeSailDiagram(
+async function drawShadeSailDiagram(
   pdf: jsPDF,
   config: ConfiguratorState,
   x: number,
   y: number,
   width: number,
-  height: number
-): void {
+  height: number,
+  fabricSwatchBase64?: string
+): Promise<void> {
   const points = config.points;
   if (!points || points.length < 3) return;
 
@@ -114,7 +115,8 @@ function drawShadeSailDiagram(
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
 
-  let fillColor: [number, number, number] = [200, 220, 200];
+  // Default to a visible green color
+  let fillColor: [number, number, number] = [48, 124, 49];
   if (selectedColor?.hex) {
     const hex = selectedColor.hex.replace('#', '');
     fillColor = [
@@ -124,22 +126,12 @@ function drawShadeSailDiagram(
     ];
   }
 
-  pdf.setFillColor(...fillColor);
-  pdf.setDrawColor(48, 124, 49);
-  pdf.setLineWidth(0.5);
-
-  const pathData: number[] = [];
-  pdfPoints.forEach((point, index) => {
-    if (index === 0) {
-      pathData.push(point.x, point.y);
-    } else {
-      pathData.push(point.x, point.y);
-    }
-  });
-
-  if (pdfPoints.length >= 3) {
+  // If we have a fabric swatch, use it as a tiled texture within the shape
+  if (fabricSwatchBase64) {
+    // First, draw the shape filled with a semi-transparent version of the color
     pdf.setFillColor(...fillColor);
     pdf.setDrawColor(48, 124, 49);
+    pdf.setLineWidth(0.5);
 
     const lines: { op: string; c: number[] }[] = [];
     pdfPoints.forEach((point, index) => {
@@ -151,6 +143,61 @@ function drawShadeSailDiagram(
     });
     lines.push({ op: 'h', c: [] });
 
+    // Draw filled shape
+    (pdf as any).path(lines, 'FD');
+
+    // Now overlay the fabric texture using addImage with clipping
+    // Calculate bounding box of the shape
+    const minX = Math.min(...pdfPoints.map(p => p.x));
+    const maxX = Math.max(...pdfPoints.map(p => p.x));
+    const minY = Math.min(...pdfPoints.map(p => p.y));
+    const maxY = Math.max(...pdfPoints.map(p => p.y));
+    const shapeWidth = maxX - minX;
+    const shapeHeight = maxY - minY;
+
+    // Add the fabric texture as an overlay within the shape bounds
+    // Using a semi-transparent overlay effect
+    try {
+      // Create a clipping path
+      pdf.saveGraphicsState();
+      const clipLines: { op: string; c: number[] }[] = [];
+      pdfPoints.forEach((point, index) => {
+        if (index === 0) {
+          clipLines.push({ op: 'm', c: [point.x, point.y] });
+        } else {
+          clipLines.push({ op: 'l', c: [point.x, point.y] });
+        }
+      });
+      clipLines.push({ op: 'h', c: [] });
+      clipLines.push({ op: 'W', c: [] }); // Clip
+      clipLines.push({ op: 'n', c: [] }); // End path without drawing
+
+      (pdf as any).path(clipLines);
+
+      // Add texture with slight transparency to show the fabric pattern
+      pdf.addImage(fabricSwatchBase64, 'JPEG', minX, minY, shapeWidth, shapeHeight, undefined, 'FAST');
+
+      pdf.restoreGraphicsState();
+    } catch (error) {
+      console.warn('Failed to add fabric texture to PDF:', error);
+    }
+  } else {
+    // No fabric texture, just fill with solid color
+    pdf.setFillColor(...fillColor);
+    pdf.setDrawColor(48, 124, 49);
+    pdf.setLineWidth(0.5);
+
+    const lines: { op: string; c: number[] }[] = [];
+    pdfPoints.forEach((point, index) => {
+      if (index === 0) {
+        lines.push({ op: 'm', c: [point.x, point.y] });
+      } else {
+        lines.push({ op: 'l', c: [point.x, point.y] });
+      }
+    });
+    lines.push({ op: 'h', c: [] });
+
+    // Draw filled shape
     (pdf as any).path(lines, 'FD');
   }
 
@@ -804,13 +851,14 @@ config: ConfiguratorState, calculations: ShadeCalculations, _svgElement?: SVGEle
     pdf.rect(rightColX, diagramCardY, colWidth, diagramHeight + 10, 'S');
 
     if (config.points && config.points.length >= 3) {
-      drawShadeSailDiagram(
+      await drawShadeSailDiagram(
         pdf,
         config,
         rightColX + 2,
         diagramCardY + 2,
         colWidth - 4,
-        diagramHeight
+        diagramHeight,
+        fabricSwatchBase64
       );
     }
 
