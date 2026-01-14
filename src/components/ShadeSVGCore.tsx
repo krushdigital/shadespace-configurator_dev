@@ -378,17 +378,15 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       {sailAttachmentPoints.length > 2 && (
         <path
           d={generateSailPath(sailAttachmentPoints)}
-          fill={isApproximate && !forPdfCapture
-            ? getSelectedColor()
-            : fabricImageBase64
-              ? "url(#fabricTexture)"
-              : forPdfCapture
-                ? getSelectedColor()
-                : `${getSelectedColor()}20`
+          fill={fabricImageBase64
+            ? "url(#fabricTexture)"
+            : forPdfCapture
+              ? getSelectedColor()
+              : `${getSelectedColor()}20`
           }
-          stroke={isApproximate ? "#F59E0B" : getSelectedColor()}
-          strokeWidth={isApproximate ? "3" : "2"}
-          strokeDasharray={isApproximate ? "8,4" : "none"}
+          stroke={getSelectedColor()}
+          strokeWidth="2"
+          strokeDasharray="none"
           className="drop-shadow-sm"
         />
       )}
