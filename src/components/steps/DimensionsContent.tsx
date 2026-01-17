@@ -426,7 +426,7 @@ export function DimensionsContent({
             Interactive Measurement Guide
           </h4>
 
-          <div className="relative">
+          <div className="relative overflow-hidden rounded-lg">
             <ShapeCanvas
               config={config}
               updateConfig={updateConfig}
