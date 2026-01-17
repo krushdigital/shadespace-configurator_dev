@@ -91,6 +91,51 @@ async function getImageDimensions(base64: string): Promise<{ width: number; heig
   });
 }
 
+// Function to convert SVG element to base64 PNG image
+async function convertSvgToBase64Png(
+  svgElement: SVGElement,
+  width: number = 800,
+  height: number = 800
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    try {
+      const svgString = new XMLSerializer().serializeToString(svgElement);
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+      const svgUrl = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const pngDataUrl = canvas.toDataURL('image/png');
+          URL.revokeObjectURL(svgUrl);
+          resolve(pngDataUrl);
+        } else {
+          URL.revokeObjectURL(svgUrl);
+          reject(new Error('Failed to get canvas context'));
+        }
+      };
+
+      img.onerror = function () {
+        URL.revokeObjectURL(svgUrl);
+        reject(new Error('Failed to load SVG image'));
+      };
+
+      img.src = svgUrl;
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 async function drawShadeSailDiagram(
   pdf: jsPDF,
   config: ConfiguratorState,
@@ -351,10 +396,11 @@ export interface CustomerDetails {
 }
 
 export async function generatePDF(
-config: ConfiguratorState, calculations: ShadeCalculations, _svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined, customerDetails?: CustomerDetails): Promise<string | void> {
+config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined, customerDetails?: CustomerDetails): Promise<string | void> {
   console.log('🚀 Starting PDF generation...');
   console.log('📱 User agent:', navigator.userAgent);
   console.log('📊 Config corners:', config.corners);
+  console.log('🖼️ SVG element provided:', !!svgElement);
   
   try {
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -434,6 +480,19 @@ config: ConfiguratorState, calculations: ShadeCalculations, _svgElement?: SVGEle
       } catch (error) {
         console.warn('⚠️ Hardware pack image loading failed:', error);
         // Hardware pack image loading failed - PDF will continue without image
+      }
+    }
+
+    // Convert SVG canvas to PNG for diagram if available
+    let canvasDiagramBase64: string | undefined;
+    if (svgElement) {
+      console.log('🎨 Converting SVG canvas to PNG for diagram...');
+      try {
+        canvasDiagramBase64 = await convertSvgToBase64Png(svgElement, 800, 800);
+        console.log('✅ SVG canvas converted to PNG successfully');
+      } catch (error) {
+        console.warn('⚠️ SVG canvas conversion failed, will use manual drawing:', error);
+        // SVG conversion failed - will fall back to manual drawing
       }
     }
 
@@ -837,7 +896,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, _svgElement?: SVGEle
       anchorY += 6;
     });
 
-    // RIGHT COLUMN: Shade Sail Preview diagram (drawn directly, no DOM dependency)
+    // RIGHT COLUMN: Shade Sail Preview diagram
     pdf.setTextColor(...primaryDark);
     pdf.setFontSize(11);
     pdf.setFont('helvetica', 'bold');
@@ -851,15 +910,35 @@ config: ConfiguratorState, calculations: ShadeCalculations, _svgElement?: SVGEle
     pdf.rect(rightColX, diagramCardY, colWidth, diagramHeight + 10, 'S');
 
     if (config.points && config.points.length >= 3) {
-      await drawShadeSailDiagram(
-        pdf,
-        config,
-        rightColX + 2,
-        diagramCardY + 2,
-        colWidth - 4,
-        diagramHeight,
-        fabricSwatchBase64
-      );
+      if (canvasDiagramBase64) {
+        console.log('📸 Using SVG canvas screenshot for diagram');
+        const padding = 2;
+        const availableWidth = colWidth - (padding * 2);
+        const availableHeight = diagramHeight;
+        const diagramSize = Math.min(availableWidth, availableHeight);
+        const centerX = rightColX + padding + (availableWidth - diagramSize) / 2;
+        const centerY = diagramCardY + padding + (availableHeight - diagramSize) / 2;
+
+        pdf.addImage(
+          canvasDiagramBase64,
+          'PNG',
+          centerX,
+          centerY,
+          diagramSize,
+          diagramSize
+        );
+      } else {
+        console.log('✏️ Using manual drawing for diagram (SVG not available)');
+        await drawShadeSailDiagram(
+          pdf,
+          config,
+          rightColX + 2,
+          diagramCardY + 2,
+          colWidth - 4,
+          diagramHeight,
+          fabricSwatchBase64
+        );
+      }
     }
 
     pdf.setTextColor(...textMedium);
