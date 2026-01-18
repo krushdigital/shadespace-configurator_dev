@@ -69,14 +69,14 @@ export const CollapsibleToggleControl: React.FC<CollapsibleToggleControlProps> =
             rounded-full shadow-md hover:shadow-lg
             flex items-center justify-center
             transition-all duration-300 ease-out
-            active:scale-95 hover:scale-105 hover:opacity-100
+            hover:opacity-100
             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
             group cursor-pointer
             touch-manipulation
           `}
         >
           <div className="relative flex items-center justify-center">
-            <ModeIcon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-white transition-transform group-hover:scale-110`} />
+            <ModeIcon className={`${isMobile ? 'w-4 h-4' : 'w-6 h-6'} text-white`} />
             <div className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5">
               <ChevronUp className={`${isMobile ? 'w-2 h-2' : 'w-3 h-3'} text-slate-600`} />
             </div>
