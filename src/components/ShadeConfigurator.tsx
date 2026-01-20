@@ -267,41 +267,62 @@ export function ShadeConfigurator() {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
   // PDF generation handler for unified modal with customer details
-  const handleGeneratePDFWithDetails = async (
-    firstName: string,
-    lastName: string,
-    email: string,
-    quoteName: string,
-    customerReference: string | null
-  ): Promise<string | void> => {
-    try {
-      const svgElement = canvasRef.current?.getSVGElement?.();
-      const customerDetails: CustomerDetails = {
-        firstName,
-        lastName,
-        email,
-        quoteName,
-        customerReference
-      };
-      const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
-
-      // Track PDF generation event
-      const quoteParams = getQuoteFromUrl();
-      eventTrackers.pdfDownload(
-        quoteReference || (quoteParams?.id || null),
-        email,
-        calculations.totalPrice,
-        config.currency
-      );
-
-      return pdf;
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showToast(`Failed to generate PDF: ${errorMessage}`, 'error');
-      return undefined;
+const handleGeneratePDFWithDetails = async (
+  firstName: string,
+  lastName: string,
+  email: string,
+  quoteName: string,
+  customerReference: string | null
+): Promise<string | void> => {
+  try {
+    console.log('🔄 Starting PDF generation...');
+    const svgElement = canvasRef.current?.getSVGElement?.();
+    console.log('SVG element found:', !!svgElement);
+    
+    const customerDetails: CustomerDetails = {
+      firstName,
+      lastName,
+      email,
+      quoteName,
+      customerReference
+    };
+    
+    console.log('Calling generatePDF function...');
+    const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
+    
+    console.log('✅ PDF generated successfully');
+    console.log('PDF type:', typeof pdf);
+    console.log('Is Blob?', typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob);
+    console.log('Is string?', typeof pdf === 'string');
+    
+    if (typeof pdf === 'string') {
+      console.log('String length:', pdf.length);
+      console.log('First 100 chars:', pdf.substring(0, 100));
+    } else if (typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob) {
+      console.log('Blob size:', (pdf as any).size);
+      console.log('Blob type:', (pdf as any).type);
     }
-  };
+
+    // Track PDF generation event
+    const quoteParams = getQuoteFromUrl();
+    eventTrackers.pdfDownload(
+      quoteReference || (quoteParams?.id || null),
+      email,
+      calculations.totalPrice,
+      config.currency
+    );
+
+    return pdf;
+  } catch (error) {
+    console.error('❌ Error generating PDF:', error);
+    if (error instanceof Error) {
+      console.error('❌ Error stack:', error.stack);
+    }
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    showToast(`Failed to generate PDF: ${errorMessage}`, 'error');
+    return undefined;
+  }
+};
 
   const convertSvgToPng = async (
     svgElement: SVGSVGElement,
@@ -362,34 +383,81 @@ export function ShadeConfigurator() {
   };
 
 
-  // Add this function to your component
-  const uploadImageToShopify = async (blob: Blob, filename: string): Promise<string | null> => {
-    try {
-      const formData = new FormData();
-      formData.append('file', blob, filename);
 
-      const response = await fetch('/apps/shade_space/api/v1/public/file/upload', {
-        method: 'POST',
-        body: formData,
+
+// ============ ENHANCED DEBUGGING FOR UPLOAD FUNCTION ============
+const uploadImageToShopify = async (file: File | Blob, filename: string): Promise<string | null> => {
+  try {
+    console.log('📤 uploadImageToShopify called with:', { 
+      filename, 
+      fileType: file.type,
+      fileSize: file.size,
+      isFile: file instanceof File,
+      isBlob: file instanceof Blob 
+    });
+
+    // Ensure we have a proper File object
+    let fileToUpload: File;
+
+    if (file instanceof Blob && !(file instanceof File)) {
+      // Convert Blob to File
+      console.log('Converting Blob to File...');
+      fileToUpload = new File([file], filename, {
+        type: file.type || 'application/octet-stream'
       });
+      console.log('Converted to File:', { 
+        name: fileToUpload.name,
+        type: fileToUpload.type,
+        size: fileToUpload.size 
+      });
+    } else {
+      fileToUpload = file as File;
+      console.log('Already a File:', { 
+        name: fileToUpload.name,
+        type: fileToUpload.type,
+        size: fileToUpload.size 
+      });
+    }
 
-      if (!response.ok) {
-        throw new Error('Failed to upload image to Shopify');
-      }
+    const formData = new FormData();
+    formData.append('file', fileToUpload);
 
-      const result = await response.json();
+    console.log('Sending request to upload API...');
+    const response = await fetch('/apps/shade_space/api/v1/public/file/upload', {
+      method: 'POST',
+      body: formData,
+    });
 
-      if (result.success && result.url) {
-        return result.url;
-      } else {
-        console.error('Shopify upload failed:', result.error);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error uploading image to Shopify:', error);
+    console.log('Upload API response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      console.error('❌ Upload failed with status:', response.status);
+      const errorText = await response.text();
+      console.error('❌ Error response:', errorText);
+      throw new Error(`Failed to upload file to Shopify: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log('📥 Upload API response:', result);
+
+    if (result.success && result.url) {
+      console.log(`✅ File uploaded successfully: ${filename} - URL: ${result.url}`);
+      return result.url;
+    } else {
+      console.error('❌ Shopify upload failed:', result.error || 'Unknown error');
+      console.error('❌ Full result:', result);
       return null;
     }
-  };
+  } catch (error) {
+    console.error('❌ Error uploading file to Shopify:', error);
+    console.error('❌ Error details:', {
+      message: typeof error === 'object' && error !== null && 'message' in error ? (error as any).message : String(error),
+      stack: typeof error === 'object' && error !== null && 'stack' in error ? (error as any).stack : '',
+      name: typeof error === 'object' && error !== null && 'name' in error ? (error as any).name : ''
+    });
+    return null;
+  }
+};
 
   // Email PDF Quote handler for unified modal
   const handleEmailPDFQuote = async (
@@ -402,7 +470,7 @@ export function ShadeConfigurator() {
   ): Promise<boolean> => {
     try {
 
-      console.log(firstName, lastName, email, quoteName, customerReference,'kkkkkkkkkkkkk');
+      console.log(firstName, lastName, email, quoteName, customerReference, 'kkkkkkkkkkkkk');
 
       console.log('Preparing to send email with PDF quote to:', email);
 
@@ -758,15 +826,14 @@ export function ShadeConfigurator() {
     originalUnit: 'metric' | 'imperial';
   }
 
-
-  const handleAddToCart = async (orderData: OrderData): Promise<void> => {
+ const handleAddToCart = async (orderData: OrderData): Promise<void> => {
     console.log('Product being created. Add to cart');
     setShowLoadingOverlay(true);
     setLoadingStep({ text: 'Starting order process...', progress: 10 });
     setLoading(true);
 
     // Check if this is a converted quote
-   const quoteParams = getQuoteFromUrl();
+    const quoteParams = getQuoteFromUrl();
     let quoteData: any = null;
 
     if (quoteReference && quoteParams) {
@@ -777,10 +844,199 @@ export function ShadeConfigurator() {
       }
     }
 
-     const email: string | null = quoteData?.customer_email ?? null;
+    const email: string | null = quoteData?.customer_email ?? null;
 
     try {
       setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
+
+      // ============ UPDATED SECTION START: Generate and Upload PDF FIRST ============
+      let pdfUrl = null;
+      let technicalDrawingUrl = orderData.canvasImageUrl || null;
+      
+      try {
+        setLoadingStep({ text: 'Generating PDF documentation...', progress: 40 });
+        
+        // Generate PDF with customer details
+        const customerFirstName = quoteData?.customer_first_name || '';
+        const customerLastName = quoteData?.customer_last_name || '';
+        const customerEmail = quoteData?.customer_email || '';
+        
+        console.log('Calling handleGeneratePDFWithDetails...');
+        const pdfResult = await handleGeneratePDFWithDetails(
+          customerFirstName,
+          customerLastName,
+          customerEmail,
+          'Custom Shade Sail Quote',
+          quoteReference
+        );
+        
+        console.log('PDF result type:', typeof pdfResult, 'Result:', pdfResult);
+        
+        if (pdfResult) {
+          let pdfBlob: Blob | null = null;
+          
+          if (typeof pdfResult === 'string' && pdfResult.startsWith('blob:')) {
+            // If it's a blob URL, fetch the blob
+            console.log('PDF is blob URL, fetching blob...');
+            try {
+              const response = await fetch(pdfResult);
+              pdfBlob = await response.blob();
+              console.log('Fetched PDF blob:', { size: pdfBlob.size, type: pdfBlob.type });
+            } catch (fetchError) {
+              console.error('Failed to fetch PDF blob:', fetchError);
+            }
+          } else if (
+            typeof Blob !== "undefined" &&
+            typeof Blob === "function" &&
+            typeof pdfResult === "object" &&
+            pdfResult !== null &&
+            (pdfResult as any) instanceof Blob
+          ) {
+            // If it's a Blob object directly
+            console.log('PDF is Blob object:', { size: (pdfResult as Blob).size, type: (pdfResult as Blob).type });
+            pdfBlob = pdfResult as Blob;
+          } else if (typeof pdfResult === 'string' && pdfResult.startsWith('http')) {
+            // If it's already a URL
+            console.log('PDF already has URL:', pdfResult);
+            pdfUrl = pdfResult;
+          } else {
+            console.log('Unknown PDF result format:', pdfResult);
+          }
+          
+          // Upload PDF blob if we have one
+          if (pdfBlob) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
+            
+            // Create proper File object
+            const pdfFile = new File([pdfBlob], pdfFilename, { 
+              type: 'application/pdf' 
+            });
+            
+            console.log('Uploading PDF to Shopify...', { 
+              filename: pdfFilename, 
+              size: pdfBlob.size,
+              type: pdfBlob.type 
+            });
+            
+            try {
+              const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
+              console.log('Upload response:', uploadResponse);
+              
+              if (uploadResponse) {
+                pdfUrl = uploadResponse;
+                console.log('PDF uploaded successfully, URL:', pdfUrl);
+              } else {
+                console.error('PDF upload failed - no URL returned from uploadFileToShopify');
+              }
+            } catch (uploadError) {
+              console.error('PDF upload error:', uploadError);
+            }
+          }
+          else {
+            // Upload base64 if we have one
+            // use pdfResult
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
+            console.log('Uploading PDF to Shopify...', {
+              filename: pdfFilename, 
+              file: pdfResult
+            });
+
+            async function base64ToBlob(base64: any) {
+              const res = await fetch(base64);
+              return await res.blob();
+            }
+            const pdfFile = await base64ToBlob(pdfResult);
+            console.log('pdfFile', pdfFile)
+            
+            try {
+
+              const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
+              console.log('Upload response:', uploadResponse);
+
+              pdfUrl = uploadResponse
+
+              // console.log('Sending request to upload API...');
+              // const response = await fetch('/apps/shade_space/api/v1/public/file/upload', {
+              //   method: 'POST',
+              //   headers: { 'Content-Type': 'application/json' },
+              //   body: JSON.stringify({
+              //     filename: pdfFilename, 
+              //     file: pdfResult
+              //   })
+              // });
+
+              // console.log('Upload API response status:', response.status, response.statusText);
+              
+              // if (!response.ok) {
+              //   console.error('❌ Upload failed with status:', response.status);
+              //   const errorText = await response.text();
+              //   console.error('❌ Error response:', errorText);
+              //   throw new Error(`Failed to upload file to Shopify: ${response.status} ${response.statusText}`);
+              // }
+
+              // const result = await response.json();
+              // console.log('📥 Upload API response:', result);
+
+              // if (result.success && result.url) {
+              //   console.log(`✅ File uploaded successfully: URL: ${result.url}`);
+              //   return result.url;
+              // } else {
+              //   console.error('❌ Shopify upload failed:', result.error || 'Unknown error');
+              //   console.error('❌ Full result:', result);
+              // }
+
+            } catch (error) {
+              console.error('Something went wrong while uploading pdf file.');
+              
+            }
+
+          }
+        } else {
+          console.log('No PDF result returned from handleGeneratePDFWithDetails');
+        }
+        
+        // Also upload the technical drawing image if it exists
+        if (orderData.canvasImageUrl && orderData.canvasImageUrl.startsWith('blob:')) {
+          setLoadingStep({ text: 'Uploading technical drawing...', progress: 45 });
+          
+          try {
+            console.log('Fetching technical drawing from blob URL...');
+            const response = await fetch(orderData.canvasImageUrl);
+            const imageBlob = await response.blob();
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const imageFilename = `technical-drawing-${timestamp}.png`;
+            
+            const imageFile = new File([imageBlob], imageFilename, { 
+              type: 'image/png' 
+            });
+            
+            console.log('Uploading technical drawing...', { 
+              filename: imageFilename, 
+              size: imageBlob.size,
+              type: imageBlob.type 
+            });
+            
+            const imageUploadResponse = await uploadImageToShopify(imageFile, imageFilename);
+            if (imageUploadResponse) {
+              technicalDrawingUrl = imageUploadResponse;
+              console.log('Technical drawing uploaded successfully, URL:', technicalDrawingUrl);
+            } else {
+              console.error('Technical drawing upload failed');
+            }
+          } catch (imageError) {
+            console.error('Failed to upload technical drawing:', imageError);
+          }
+        }
+      } catch (pdfError) {
+        console.error('Failed to generate or upload PDF:', pdfError);
+        // Continue even if PDF generation fails
+      }
+      
+      console.log('Final PDF URL for line item:', pdfUrl);
+      console.log('Final technical drawing URL:', technicalDrawingUrl);
+      // ============ UPDATED SECTION END ============
 
       // Format measurements for cart display
       const formatCartProperties = (measurements: any) => {
@@ -851,6 +1107,8 @@ export function ShadeConfigurator() {
         },
         body: JSON.stringify({
           ...orderData,
+          // Pass updated canvas image URL (might be uploaded version)
+          canvasImageUrl: technicalDrawingUrl,
           // Pass formatted properties for cart display (customer-facing, single unit)
           cartEdgeMeasurements,
           cartDiagonalMeasurements,
@@ -866,7 +1124,7 @@ export function ShadeConfigurator() {
       });
 
       const data = await response.json();
-      const { success, product, error } = data;
+      const { success, product, error, fulfillmentProperties } = data;
 
       if (success && product) {
         console.log('Product created... Adding to cart');
@@ -887,35 +1145,50 @@ export function ShadeConfigurator() {
         ];
 
         // Find edge type to conditionally exclude wire thickness
-      const edgeTypeValue = product.metafields.edges.find((e: any) => e.node.key.toLowerCase() === 'edge_type')?.node.value.toLowerCase();
+        const edgeTypeValue = product.metafields.edges.find((e: any) => e.node.key.toLowerCase() === 'edge_type')?.node.value.toLowerCase();
 
-          product.metafields.edges.forEach((edge: any) => {
-        if (!allowedCartProperties.includes(edge.node.key)) return;
+        product.metafields.edges.forEach((edge: any) => {
+          if (!allowedCartProperties.includes(edge.node.key)) return;
 
-        // Exclude wire thickness if edge type is webbing or webbing reinforced
-        if (edge.node.key === 'wire_thickness' && (edgeTypeValue === 'webbing' || edgeTypeValue === 'webbing reinforced')) {
-          return;
-        }
+          // Exclude wire thickness if edge type is webbing or webbing reinforced
+          if (edge.node.key === 'wire_thickness' && (edgeTypeValue === 'webbing' || edgeTypeValue === 'webbing reinforced')) {
+            return;
+          }
 
-        const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-        metafieldProperties[key] = edge.node.value;
-      });
+          const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+          metafieldProperties[key] = edge.node.value;
+        });
 
         metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
 
         // Add formatted cart properties (these will show in cart)
+        // Fabric details
+        metafieldProperties['Fabric Material'] = orderData.selectedFabric?.label || '';
+        metafieldProperties['Fabric Color'] = orderData.selectedColor?.name || '';
+        metafieldProperties['Fabric Certification Type'] = orderData.Fabric_Type || orderData.selectedFabric?.label || '';
+        metafieldProperties['Edge Type'] = orderData.Edge_Type || 'Cabled Edge';
+        metafieldProperties['Wire Thickness'] = orderData.Wire_Thickness || '0.16"';
+        metafieldProperties['Corners'] = orderData.corners?.toString() || '4';
+        metafieldProperties['Area'] = orderData.Area || '0 in²';
+        metafieldProperties['Perimeter'] = orderData.Perimeter || '40\'';
+        metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Included';
+
+        // Edge measurements
         Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
           metafieldProperties[`Edge ${key}`] = value;
         });
 
+        // Diagonal measurements
         Object.entries(cartDiagonalMeasurements).forEach(([key, value]) => {
           metafieldProperties[`Diagonal ${key}`] = value;
         });
 
+        // Anchor measurements
         Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
           metafieldProperties[`Anchor Height ${key}`] = value;
         });
 
+        // Fixing heights and types
         Object.entries(cartFixingHeights).forEach(([key, value]) => {
           metafieldProperties[key] = value;
         });
@@ -924,19 +1197,70 @@ export function ShadeConfigurator() {
           metafieldProperties[key] = value;
         });
 
+        // ============ CRITICAL FIX: Add PDF URL as line item property ============
+        // Add PDF URL as a line item property if available
+        if (pdfUrl) {
+          // Ensure it's a valid URL string
+          const pdfUrlString = String(pdfUrl).trim();
+          if (pdfUrlString.startsWith('http')) {
+            metafieldProperties['_quote_pdf_url'] = pdfUrlString;
+            metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteReference || 'custom'}.pdf`;
+            metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
+            
+            // Also add a customer-facing property
+            metafieldProperties['Technical Documentation'] = 'Included (PDF)';
+            
+            console.log('✅ Added PDF URL to line item properties:', pdfUrlString);
+          } else {
+            console.log('❌ PDF URL is not a valid HTTP URL:', pdfUrlString);
+          }
+        } else {
+          console.log('❌ No PDF URL available to add to line item');
+        }
+        
+        // Add technical drawing URL if available
+        if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http')) {
+          metafieldProperties['_technical_drawing_url'] = technicalDrawingUrl;
+          metafieldProperties['Technical Drawing'] = 'Included';
+          console.log('✅ Added technical drawing URL:', technicalDrawingUrl);
+        }
+        // ============ CRITICAL FIX END ============
+
         const gid = product?.variants?.edges?.[0]?.node?.id;
         if (gid) {
           const variantId = gid.split('/').pop();
+
+          // Prepare properties object with both regular and private properties
+          const properties: Record<string, string> = {
+            ...metafieldProperties
+          };
+
+          // If we have fulfillmentProperties from the API response, add them as private properties
+          // Private properties start with underscore and are only visible in admin
+          if (fulfillmentProperties && typeof fulfillmentProperties === 'object') {
+            Object.entries(fulfillmentProperties).forEach(([key, value]) => {
+              if (key.startsWith('_')) {
+                properties[key] = String(value);
+              }
+            });
+          }
+
+          // Log all properties before sending to cart
+          console.log('📋 ALL PROPERTIES TO BE ADDED TO CART:');
+          Object.entries(properties).forEach(([key, value]) => {
+            console.log(`  ${key}: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+          });
 
           const formData = {
             items: [{
               id: Number(variantId),
               quantity: 1,
-              properties: metafieldProperties
+              properties: properties
             }]
           };
 
           console.log('Add to cart in progress');
+          console.log('Form data JSON:', JSON.stringify(formData, null, 2)); // Debug log
           setLoadingStep({ text: 'Adding item to your cart...', progress: 85 });
 
           const cartResponse = await fetch('/cart/add.js', {
@@ -945,10 +1269,22 @@ export function ShadeConfigurator() {
             body: JSON.stringify(formData)
           });
 
-          console.log('cartResponse', cartResponse)
+          console.log('Cart response status:', cartResponse.status);
 
           if (cartResponse.ok) {
-            console.log('Added to cart');
+            console.log('✅ Added to cart successfully');
+            const cartData = await cartResponse.json();
+            console.log('Cart response data:', cartData);
+            
+            // Check if properties were added to cart
+            if (cartData.items && cartData.items[0] && cartData.items[0].properties) {
+              console.log('📦 Properties in cart item:', cartData.items[0].properties);
+              if (pdfUrl && cartData.items[0].properties['_quote_pdf_url']) {
+                console.log('✅ PDF URL successfully added to cart!');
+              } else {
+                console.log('❌ PDF URL NOT found in cart item properties');
+              }
+            }
 
             // Track add to cart event for admin dashboard
             eventTrackers.addToCart(
@@ -982,9 +1318,10 @@ export function ShadeConfigurator() {
             }
 
             setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
-            window.location.href = '/cart';
+            // window.location.href = '/cart';
           } else {
-            console.error('Failed to add to cart');
+            const errorText = await cartResponse.text();
+            console.error('❌ Failed to add to cart. Status:', cartResponse.status, 'Error:', errorText);
             setShowLoadingOverlay(false);
             setLoading(false);
           }
@@ -1169,18 +1506,18 @@ export function ShadeConfigurator() {
     setDismissedTypoSuggestions(new Set());
 
     // Perform validation for current step
-        const errors: { [key: string]: string } = {};
-        const suggestions: { [key: string]: number } = {};
-    
-        switch (openStep) {
-          case 0: // Fabric & Color
-            if (!config.fabricType) {
-              errors.fabricType = 'Please select a fabric type';
-            }
-            if (!config.fabricColor || config.fabricColor === '') {
-              errors.fabricColor = 'Please select a fabric color';
-            }
-            break;
+    const errors: { [key: string]: string } = {};
+    const suggestions: { [key: string]: number } = {};
+
+    switch (openStep) {
+      case 0: // Fabric & Color
+        if (!config.fabricType) {
+          errors.fabricType = 'Please select a fabric type';
+        }
+        if (!config.fabricColor || config.fabricColor === '') {
+          errors.fabricColor = 'Please select a fabric color';
+        }
+        break;
       case 1: // Style (Edge Type)
         if (!config.edgeType) {
           errors.edgeType = 'Please select an edge reinforcement type';
@@ -1497,151 +1834,151 @@ export function ShadeConfigurator() {
   }
 
   // Add this function in ShadeConfigurator.tsx, somewhere before the return statement:
-const handleAddToCartFromConfigurator = async (): Promise<void> => {
-      console.log('Product being created. Add to cart');
+  const handleAddToCartFromConfigurator = async (): Promise<void> => {
+    console.log('Product being created. Add to cart');
     setShowLoadingOverlay(true);
     // setLoadingStep({ text: 'Starting order process...', progress: 10 });
     setLoading(true);
-  // First, get the canvas image URL
-  const svgElement = canvasRef.current?.getSVGElement?.();
-  let canvasImageUrl = null;
+    // First, get the canvas image URL
+    const svgElement = canvasRef.current?.getSVGElement?.();
+    let canvasImageUrl = null;
 
-  if (svgElement) {
-    try {
-      const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-      canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
-      
-      if (!canvasImageUrl) {
-        console.warn('Failed to upload canvas image to Shopify, proceeding without image');
+    if (svgElement) {
+      try {
+        const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+        canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
+
+        if (!canvasImageUrl) {
+          console.warn('Failed to upload canvas image to Shopify, proceeding without image');
+        }
+      } catch (error) {
+        console.error('Error processing canvas image:', error);
       }
-    } catch (error) {
-      console.error('Error processing canvas image:', error);
     }
-  }
 
-  // Prepare the edge measurements
-  const edgeMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-  for (let i = 0; i < config.corners; i++) {
-    const nextIndex = (i + 1) % config.corners;
-    const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-    const measurement = config.measurements[edgeKey];
-    
-    if (measurement && measurement > 0) {
-      edgeMeasurements[edgeKey] = {
-        unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-        formatted: formatMeasurement(measurement, config.unit)
-      };
-    }
-  }
+    // Prepare the edge measurements
+    const edgeMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
+    for (let i = 0; i < config.corners; i++) {
+      const nextIndex = (i + 1) % config.corners;
+      const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+      const measurement = config.measurements[edgeKey];
 
-  // Prepare diagonal measurements
-  const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-  const diagonalMeasurementsObj: { [key: string]: { unit: string; formatted: string } } = {};
-  diagonalKeys.forEach(key => {
-    const measurement = config.measurements[key];
-    if (measurement && measurement > 0) {
-      diagonalMeasurementsObj[key] = {
-        unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-        formatted: formatMeasurement(measurement, config.unit)
-      };
-    }
-  });
-
-  // Prepare anchor point measurements
-  const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-  if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-    config.fixingHeights.forEach((height, index) => {
-      if (height && height > 0) {
-        const corner = String.fromCharCode(65 + index);
-        anchorPointMeasurements[corner] = {
+      if (measurement && measurement > 0) {
+        edgeMeasurements[edgeKey] = {
           unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-          formatted: formatMeasurement(height, config.unit)
+          formatted: formatMeasurement(measurement, config.unit)
+        };
+      }
+    }
+
+    // Prepare diagonal measurements
+    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+    const diagonalMeasurementsObj: { [key: string]: { unit: string; formatted: string } } = {};
+    diagonalKeys.forEach(key => {
+      const measurement = config.measurements[key];
+      if (measurement && measurement > 0) {
+        diagonalMeasurementsObj[key] = {
+          unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+          formatted: formatMeasurement(measurement, config.unit)
         };
       }
     });
-  }
 
-  // Prepare backend measurements
-  const backendEdgeMeasurements: Record<string, string> = {};
-  for (let i = 0; i < config.corners; i++) {
-    const nextIndex = (i + 1) % config.corners;
-    const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-    const measurement = config.measurements[edgeKey];
-    if (measurement && measurement > 0) {
-      backendEdgeMeasurements[edgeKey] = formatDualMeasurement(measurement, config.unit);
+    // Prepare anchor point measurements
+    const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
+    if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      config.fixingHeights.forEach((height, index) => {
+        if (height && height > 0) {
+          const corner = String.fromCharCode(65 + index);
+          anchorPointMeasurements[corner] = {
+            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+            formatted: formatMeasurement(height, config.unit)
+          };
+        }
+      });
     }
-  }
 
-  const backendDiagonalMeasurements: Record<string, string> = {};
-  diagonalKeys.forEach(key => {
-    const measurement = config.measurements[key];
-    if (measurement && measurement > 0) {
-      backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+    // Prepare backend measurements
+    const backendEdgeMeasurements: Record<string, string> = {};
+    for (let i = 0; i < config.corners; i++) {
+      const nextIndex = (i + 1) % config.corners;
+      const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+      const measurement = config.measurements[edgeKey];
+      if (measurement && measurement > 0) {
+        backendEdgeMeasurements[edgeKey] = formatDualMeasurement(measurement, config.unit);
+      }
     }
-  });
 
-  const backendAnchorMeasurements: Record<string, string> = {};
-  if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-    config.fixingHeights.forEach((height, index) => {
-      const corner = String.fromCharCode(65 + index);
-      if (height && height > 0) {
-        backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+    const backendDiagonalMeasurements: Record<string, string> = {};
+    diagonalKeys.forEach(key => {
+      const measurement = config.measurements[key];
+      if (measurement && measurement > 0) {
+        backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
       }
     });
-  }
 
-  const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
-  const selectedColorLocal = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
-  const hardwareIncluded = config.measurementOption === 'adjust';
-  const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
+    const backendAnchorMeasurements: Record<string, string> = {};
+    if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      config.fixingHeights.forEach((height, index) => {
+        const corner = String.fromCharCode(65 + index);
+        if (height && height > 0) {
+          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+        }
+      });
+    }
 
-  // Create the order data
-  const orderData: any = {
-    fabricType: config.fabricType,
-    fabricColor: config.fabricColor,
-    edgeType: config.edgeType,
-    corners: config.corners,
-    unit: config.unit,
-    currency: config.currency,
-    measurementOption: config.measurementOption,
-    hardware_included: hardwareText,
-    measurements: config.measurements,
-    area: calculations.area,
-    perimeter: calculations.perimeter,
-    totalPrice: calculations.totalPrice,
-    totalWeightGrams: calculations.totalWeightGrams,
-    selectedFabric: selectedFabricLocal,
-    selectedColor: selectedColorLocal,
-    canvasImageUrl: canvasImageUrl,
-    warranty: selectedFabricLocal?.warrantyYears || "",
-    ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
-      fixingHeights: config.fixingHeights,
-      fixingTypes: config.fixingTypes,
-    }),
-    edgeMeasurements: edgeMeasurements,
-    diagonalMeasurementsObj: diagonalMeasurementsObj,
-    anchorPointMeasurements: anchorPointMeasurements,
-    Fabric_Type: config.fabricType === 'extrablock330' && config.fabricColor && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor) ?
-      'Not FR Certified' : selectedFabricLocal?.label,
-    Shade_Factor: selectedColorLocal?.shadeFactor,
-    Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
-    Wire_Thickness: config.unit === 'imperial' ?
-      calculations?.wireThickness !== undefined ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"` : 'N/A'
-      : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
-    Area: formatArea(calculations.area * 1000000, config.unit),
-    Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
-    createdAt: new Date().toISOString(),
-    backendEdgeMeasurements,
-    backendDiagonalMeasurements,
-    backendAnchorMeasurements,
-    originalUnit: config.unit
+    const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
+    const selectedColorLocal = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
+    const hardwareIncluded = config.measurementOption === 'adjust';
+    const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
+
+    // Create the order data
+    const orderData: any = {
+      fabricType: config.fabricType,
+      fabricColor: config.fabricColor,
+      edgeType: config.edgeType,
+      corners: config.corners,
+      unit: config.unit,
+      currency: config.currency,
+      measurementOption: config.measurementOption,
+      hardware_included: hardwareText,
+      measurements: config.measurements,
+      area: calculations.area,
+      perimeter: calculations.perimeter,
+      totalPrice: calculations.totalPrice,
+      totalWeightGrams: calculations.totalWeightGrams,
+      selectedFabric: selectedFabricLocal,
+      selectedColor: selectedColorLocal,
+      canvasImageUrl: canvasImageUrl,
+      warranty: selectedFabricLocal?.warrantyYears || "",
+      ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
+        fixingHeights: config.fixingHeights,
+        fixingTypes: config.fixingTypes,
+      }),
+      edgeMeasurements: edgeMeasurements,
+      diagonalMeasurementsObj: diagonalMeasurementsObj,
+      anchorPointMeasurements: anchorPointMeasurements,
+      Fabric_Type: config.fabricType === 'extrablock330' && config.fabricColor && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor) ?
+        'Not FR Certified' : selectedFabricLocal?.label,
+      Shade_Factor: selectedColorLocal?.shadeFactor,
+      Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
+      Wire_Thickness: config.unit === 'imperial' ?
+        calculations?.wireThickness !== undefined ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"` : 'N/A'
+        : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
+      Area: formatArea(calculations.area * 1000000, config.unit),
+      Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
+      createdAt: new Date().toISOString(),
+      backendEdgeMeasurements,
+      backendDiagonalMeasurements,
+      backendAnchorMeasurements,
+      originalUnit: config.unit
+    };
+
+    // Add to cart immediately (without waiting for image upload)
+    await handleAddToCart(orderData);
   };
-
-  // Add to cart immediately (without waiting for image upload)
-  await handleAddToCart(orderData);
-};
 
   return (
     <>
@@ -1667,9 +2004,9 @@ const handleAddToCartFromConfigurator = async (): Promise<void> => {
             ? 'lg:col-span-2'
             : (openStep >= 5 && !shouldSkipStep(5)) // Review step (66.7% of 3 cols when step 5 is not skipped)
               ? 'lg:col-span-2'
-            : (openStep === 6 && shouldSkipStep(5)) // Review step (66.7% of 3 cols when step 5 is skipped)
-              ? 'lg:col-span-2'
-              : 'lg:col-span-3'
+              : (openStep === 6 && shouldSkipStep(5)) // Review step (66.7% of 3 cols when step 5 is skipped)
+                ? 'lg:col-span-2'
+                : 'lg:col-span-3'
             }`}>
             {steps.map((step, index) => {
               const StepComponent = step.component;

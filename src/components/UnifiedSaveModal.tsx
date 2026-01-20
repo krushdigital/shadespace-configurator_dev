@@ -120,6 +120,7 @@ export function UnifiedSaveModal({
   };
 
   const handleSaveProgress = async () => {
+    console.log('Initiating save progress...');
     setIsSubmitting(true);
     try {
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : undefined;
@@ -134,6 +135,8 @@ export function UnifiedSaveModal({
         currentStep,
         totalSteps,
       );
+
+      console.log('Save quote result:', result);
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
       const modalDuration = (Date.now() - modalOpenTime) / 1000;
