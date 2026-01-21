@@ -1318,7 +1318,7 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
             }
 
             setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
-            // window.location.href = '/cart';
+            window.location.href = '/cart';
           } else {
             const errorText = await cartResponse.text();
             console.error('❌ Failed to add to cart. Status:', cartResponse.status, 'Error:', errorText);
