@@ -860,63 +860,51 @@ export function DimensionsContent({
                           <div className="grid grid-cols-1 gap-2 sm:gap-3 md:gap-4 md:grid-cols-2">
                             {/* Height Input */}
                             <div>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  value={config.fixingHeights[index]
-                                    ? (config.unit === 'imperial'
-                                      ? String(Math.round(convertMmToUnit(config.fixingHeights[index], config.unit) * 100) / 100)
-                                      : Math.round(convertMmToUnit(config.fixingHeights[index], config.unit)).toString()
-                                    )
-                                    : ''}
-                                  onChange={(e) => {
-                                    if (e.target.value === '') {
-                                      const newHeights = [...config.fixingHeights];
-                                      newHeights[index] = 0;
-                                      updateConfig({ fixingHeights: newHeights });
-                                    } else {
-                                      const numValue = parseFloat(e.target.value);
-                                      if (!isNaN(numValue)) {
-                                        updateFixingHeight(index, numValue);
-                                      }
-                                    }
-                                  }}
-                                  onFocus={() => setHighlightedCorner(index)}
-                                  onBlur={() => setHighlightedCorner(null)}
-                                  placeholder={config.unit === 'imperial' ? '100' : '2500'}
-                                  autoComplete="off"
-                                  className={`flex-1 text-sm sm:text-base ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
-                                  step={config.unit === 'imperial' ? '0.1' : '10'}
-                                  isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
-                                  label={
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs font-medium text-[#01312D]">
-                                        Height from Ground
-                                      </span>
-                                      <Tooltip
-                                        content={
-                                          <div>
-                                            <p className="text-sm text-[#01312D] font-medium mb-2">
-                                              What is this measurement?
-                                            </p>
-                                            <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
-                                              Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
-                                            </p>
-                                          </div>
-                                        }
-                                      >
-                                        <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                                          ?
-                                        </span>
-                                      </Tooltip>
-                                    </div>
+                              <DualImperialInput
+                                value={config.fixingHeights[index]
+                                  ? convertMmToUnit(config.fixingHeights[index], config.unit)
+                                  : 0}
+                                onChange={(value) => {
+                                  if (value === 0) {
+                                    const newHeights = [...config.fixingHeights];
+                                    newHeights[index] = 0;
+                                    updateConfig({ fixingHeights: newHeights });
+                                  } else {
+                                    updateFixingHeight(index, value);
                                   }
-                                  secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
-                                />
-                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
-                                  {config.unit === 'metric' ? 'mm' : 'in'}
-                                </span>
-                              </div>
+                                }}
+                                onFocus={() => setHighlightedCorner(index)}
+                                onBlur={() => setHighlightedCorner(null)}
+                                unit={config.unit}
+                                className="text-sm sm:text-base"
+                                isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
+                                label={
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium text-[#01312D]">
+                                      Height from Ground
+                                    </span>
+                                    <Tooltip
+                                      content={
+                                        <div>
+                                          <p className="text-sm text-[#01312D] font-medium mb-2">
+                                            What is this measurement?
+                                          </p>
+                                          <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
+                                            Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
+                                          </p>
+                                        </div>
+                                      }
+                                    >
+                                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                        ?
+                                      </span>
+                                    </Tooltip>
+                                  </div>
+                                }
+                                secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
+                                showConversion={false}
+                                allowFormatSwitch={true}
+                              />
                             </div>
 
                             {/* Attachment Type */}

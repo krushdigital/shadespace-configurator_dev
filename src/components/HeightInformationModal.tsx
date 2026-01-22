@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
-import { Input } from './ui/Input';
+import { DualImperialInput } from './ui/DualImperialInput';
 import { Tooltip } from './ui/Tooltip';
 import { ConfiguratorState } from '../types';
 import { convertMmToUnit, convertUnitToMm, formatSecondaryUnit } from '../utils/geometry';
@@ -109,63 +109,51 @@ export function HeightInformationModal({
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     {/* Height Input */}
                     <div>
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          value={localHeights[index]
-                            ? (config.unit === 'imperial'
-                              ? String(Math.round(convertMmToUnit(localHeights[index], config.unit) * 100) / 100)
-                              : Math.round(convertMmToUnit(localHeights[index], config.unit)).toString()
-                            )
-                            : ''}
-                          onChange={(e) => {
-                            if (e.target.value === '') {
-                              const newHeights = [...localHeights];
-                              newHeights[index] = 0;
-                              setLocalHeights(newHeights);
-                            } else {
-                              const numValue = parseFloat(e.target.value);
-                              if (!isNaN(numValue)) {
-                                updateFixingHeight(index, numValue);
-                              }
-                            }
-                          }}
-                          onFocus={() => setHighlightedCorner(index)}
-                          onBlur={() => setHighlightedCorner(null)}
-                          placeholder={config.unit === 'imperial' ? '100' : '2500'}
-                          autoComplete="off"
-                          className={`flex-1 text-sm ${localHeights[index] && localHeights[index] > 0 ? '!pr-14 sm:!pr-16' : '!pr-10 sm:!pr-12'}`}
-                          step={config.unit === 'imperial' ? '0.1' : '10'}
-                          isSuccess={!!(localHeights[index] && localHeights[index] > 0)}
-                          label={
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-[#01312D]">
-                                Height from Ground
-                              </span>
-                              <Tooltip
-                                content={
-                                  <div>
-                                    <p className="text-sm text-[#01312D] font-medium mb-2">
-                                      What is this measurement?
-                                    </p>
-                                    <p className="text-sm text-[#01312D]/80 leading-relaxed">
-                                      Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
-                                    </p>
-                                  </div>
-                                }
-                              >
-                                <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-[#01312D] rounded-full cursor-help">
-                                  ?
-                                </span>
-                              </Tooltip>
-                            </div>
+                      <DualImperialInput
+                        value={localHeights[index]
+                          ? convertMmToUnit(localHeights[index], config.unit)
+                          : 0}
+                        onChange={(value) => {
+                          if (value === 0) {
+                            const newHeights = [...localHeights];
+                            newHeights[index] = 0;
+                            setLocalHeights(newHeights);
+                          } else {
+                            updateFixingHeight(index, value);
                           }
-                          secondaryValue={localHeights[index] && localHeights[index] > 0 ? formatSecondaryUnit(localHeights[index], config.unit) : ''}
-                        />
-                        <span className={`absolute ${localHeights[index] && localHeights[index] > 0 ? 'right-9 sm:right-11' : 'right-2.5 sm:right-3'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
-                          {config.unit === 'imperial' ? 'in' : 'mm'}
-                        </span>
-                      </div>
+                        }}
+                        onFocus={() => setHighlightedCorner(index)}
+                        onBlur={() => setHighlightedCorner(null)}
+                        unit={config.unit}
+                        className="text-sm"
+                        isSuccess={!!(localHeights[index] && localHeights[index] > 0)}
+                        label={
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-[#01312D]">
+                              Height from Ground
+                            </span>
+                            <Tooltip
+                              content={
+                                <div>
+                                  <p className="text-sm text-[#01312D] font-medium mb-2">
+                                    What is this measurement?
+                                  </p>
+                                  <p className="text-sm text-[#01312D]/80 leading-relaxed">
+                                    Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
+                                  </p>
+                                </div>
+                              }
+                            >
+                              <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-[#01312D] rounded-full cursor-help">
+                                ?
+                              </span>
+                            </Tooltip>
+                          </div>
+                        }
+                        secondaryValue={localHeights[index] && localHeights[index] > 0 ? formatSecondaryUnit(localHeights[index], config.unit) : ''}
+                        showConversion={false}
+                        allowFormatSwitch={true}
+                      />
                     </div>
 
                     {/* Attachment Type */}

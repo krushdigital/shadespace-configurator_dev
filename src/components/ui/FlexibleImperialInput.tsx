@@ -180,14 +180,17 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
           onChange={handleSingleInputChange}
           onFocus={onFocus}
           onBlur={onBlur}
-          placeholder="3000"
-          className={className}
+          placeholder=""
+          className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
           isSuccess={isSuccess}
           error={error}
           errorKey={errorKey}
           label={label}
           secondaryValue={secondaryValue}
         />
+        <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
+          mm
+        </span>
       </div>
     );
   }
@@ -237,7 +240,7 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
                 onChange={handleFeetChange}
                 onFocus={onFocus}
                 onBlur={onBlur}
-                placeholder="10"
+                placeholder=""
                 className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                 isSuccess={isSuccess}
                 error={error}
@@ -255,7 +258,7 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
                 onChange={handleInchesChange}
                 onFocus={onFocus}
                 onBlur={onBlur}
-                placeholder="6"
+                placeholder=""
                 className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                 isSuccess={isSuccess}
               />
@@ -272,7 +275,7 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
               onChange={handleSingleInputChange}
               onFocus={onFocus}
               onBlur={onBlur}
-              placeholder="126 or 10'6&quot; or 10ft 6in"
+              placeholder=""
               className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
               isSuccess={isSuccess}
               error={error}

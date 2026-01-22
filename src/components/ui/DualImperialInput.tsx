@@ -213,14 +213,17 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
           onChange={handleTotalInchesChange}
           onFocus={onFocus}
           onBlur={onBlur}
-          placeholder="3000"
-          className={className}
+          placeholder=""
+          className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
           isSuccess={isSuccess}
           error={error}
           errorKey={errorKey}
           label={label}
           secondaryValue={secondaryValue}
         />
+        <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
+          mm
+        </span>
       </div>
     );
   }
@@ -244,7 +247,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onChange={handleFeetChange}
                   onFocus={onFocus}
                   onBlur={onBlur}
-                  placeholder="10 (optional)"
+                  placeholder=""
                   className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                   isSuccess={isSuccess}
                   error={error}
@@ -262,7 +265,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onChange={handleInchesChange}
                   onFocus={onFocus}
                   onBlur={onBlur}
-                  placeholder={feetInput ? "6" : "300 (or any value)"}
+                  placeholder=""
                   className={`${className} ${(isSuccess && !inchesError) ? 'pr-16' : 'pr-12'}`}
                   isSuccess={isSuccess && !inchesError}
                   error={inchesError}
@@ -293,7 +296,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 onChange={handleTotalInchesChange}
                 onFocus={onFocus}
                 onBlur={onBlur}
-                placeholder="126"
+                placeholder=""
                 className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                 isSuccess={isSuccess}
                 error={error}
