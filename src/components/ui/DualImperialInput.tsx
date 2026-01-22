@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from './Input';
-import { Info, ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
 import { parseImperialMeasurement, inchesToFeetInches } from '../../utils/imperialParser';
 
 interface ImperialValue {
@@ -47,7 +47,6 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
   const [inchesInput, setInchesInput] = useState('');
   const [totalInchesInput, setTotalInchesInput] = useState('');
   const [inchesError, setInchesError] = useState('');
-  const [showQuickInput, setShowQuickInput] = useState(false);
   const [isUserTyping, setIsUserTyping] = useState(false);
 
   // Load saved preference from localStorage
@@ -204,20 +203,6 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     }
   };
 
-  const getConversionText = () => {
-    if (!showConversion || value === 0) return '';
-
-    if (displayMode === 'feet-inches' && (feetInput || inchesInput)) {
-      return `= ${Math.round(value * 100) / 100}"`;
-    } else if (displayMode === 'inches-only' && value > 0) {
-      const conversion = inchesToFeetInches(value);
-      if (conversion.feet > 0) {
-        return `= ${conversion.display}`;
-      }
-    }
-    return '';
-  };
-
   // Metric mode - use simple input
   if (unit === 'metric') {
     return (
@@ -260,12 +245,12 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   placeholder="10 (optional)"
-                  className={`${className} pr-12`}
+                  className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                   isSuccess={isSuccess}
                   error={error}
                   errorKey={errorKey}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none">
+                <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                   ft
                 </span>
               </div>
@@ -278,11 +263,11 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   placeholder={feetInput ? "6" : "300 (or any value)"}
-                  className={`${className} pr-12`}
+                  className={`${className} ${(isSuccess && !inchesError) ? 'pr-16' : 'pr-12'}`}
                   isSuccess={isSuccess && !inchesError}
                   error={inchesError}
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none">
+                <span className={`absolute ${(isSuccess && !inchesError) ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                   in
                 </span>
               </div>
@@ -309,12 +294,12 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 onFocus={onFocus}
                 onBlur={onBlur}
                 placeholder="126"
-                className={`${className} pr-12`}
+                className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                 isSuccess={isSuccess}
                 error={error}
                 errorKey={errorKey}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none">
+              <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                 in
               </span>
             </div>
@@ -332,65 +317,13 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
           </div>
         )}
 
-        {/* Conversion display */}
-        {getConversionText() && (
-          <div className="flex items-center gap-1 mt-1 text-xs text-[#01312D]/60">
-            <Info className="w-3 h-3" />
-            <span>{getConversionText()}</span>
-          </div>
-        )}
-
         {/* Secondary unit display */}
         {secondaryValue && (
           <div className="text-xs text-[#01312D]/60 mt-1">
             {secondaryValue}
           </div>
         )}
-
-        {/* Help text for flexible input */}
-        {displayMode === 'feet-inches' && !feetInput && !inchesInput && (
-          <div className="text-xs text-slate-500 mt-1.5 italic">
-            Tip: Enter total inches (e.g., 300) in inches field, or split as feet + inches (e.g., 25 ft + 0 in)
-          </div>
-        )}
       </div>
-
-      {/* Quick single-field input option */}
-      {displayMode === 'feet-inches' && (
-        <div className="mt-2">
-          <button
-            type="button"
-            onClick={() => setShowQuickInput(!showQuickInput)}
-            className="text-xs text-blue-600 hover:text-blue-700 underline"
-          >
-            {showQuickInput ? 'Hide' : 'Or enter as single value'}
-          </button>
-
-          {showQuickInput && (
-            <div className="mt-2 relative">
-              <Input
-                type="text"
-                value={totalInchesInput}
-                onChange={(e) => {
-                  handleTotalInchesChange(e);
-                  const result = parseImperialMeasurement(e.target.value);
-                  if (result.isValid && result.feet !== undefined) {
-                    setFeetInput(String(result.feet));
-                    setInchesInput(result.inches ? String(result.inches) : '0');
-                  }
-                }}
-                onFocus={onFocus}
-                onBlur={onBlur}
-                placeholder="e.g., 10'6&quot; or 126 or 10ft 6in"
-                className="text-sm pr-12"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 pointer-events-none">
-                any format
-              </span>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

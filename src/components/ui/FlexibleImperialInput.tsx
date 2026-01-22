@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from './Input';
-import { Info } from 'lucide-react';
 import { parseImperialMeasurement, inchesToFeetInches } from '../../utils/imperialParser';
 
 interface FlexibleImperialInputProps {
@@ -157,20 +156,6 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
     }
   };
 
-  const getConversionText = () => {
-    if (!showConversion || value === 0) return '';
-
-    if (inputMode === 'combined') {
-      return `= ${Math.round(value * 100) / 100}"`;
-    } else if (inputMode === 'single' && value > 0) {
-      const conversion = inchesToFeetInches(value);
-      if (conversion.feet > 0 || conversion.inches > 0) {
-        return `= ${conversion.display}`;
-      }
-    }
-    return '';
-  };
-
   const switchMode = (mode: 'combined' | 'single') => {
     setInputMode(mode);
 
@@ -253,12 +238,12 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
                 onFocus={onFocus}
                 onBlur={onBlur}
                 placeholder="10"
-                className={`${className} pr-12`}
+                className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                 isSuccess={isSuccess}
                 error={error}
                 errorKey={errorKey}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none">
+              <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                 ft
               </span>
             </div>
@@ -271,10 +256,10 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
                 onFocus={onFocus}
                 onBlur={onBlur}
                 placeholder="6"
-                className={`${className} pr-12`}
+                className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
                 isSuccess={isSuccess}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none">
+              <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                 in
               </span>
             </div>
@@ -288,22 +273,14 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
               onFocus={onFocus}
               onBlur={onBlur}
               placeholder="126 or 10'6&quot; or 10ft 6in"
-              className={`${className} pr-12`}
+              className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
               isSuccess={isSuccess}
               error={error}
               errorKey={errorKey}
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none">
+            <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
               in
             </span>
-          </div>
-        )}
-
-        {/* Conversion display */}
-        {getConversionText() && (
-          <div className="flex items-center gap-1 mt-1 text-xs text-[#01312D]/60">
-            <Info className="w-3 h-3" />
-            <span>{getConversionText()}</span>
           </div>
         )}
 
@@ -312,15 +289,6 @@ export const FlexibleImperialInput: React.FC<FlexibleImperialInputProps> = ({
           <div className="text-xs text-[#01312D]/60 mt-1">
             {secondaryValue}
           </div>
-        )}
-      </div>
-
-      {/* Help Text */}
-      <div className="text-xs text-slate-500">
-        {inputMode === 'combined' ? (
-          <span>Enter feet and inches separately, or use "Inches Only" for large measurements</span>
-        ) : (
-          <span>Enter total inches (e.g., 300) or any format like 10'6&quot; or 10 feet 6 inches</span>
         )}
       </div>
     </div>
