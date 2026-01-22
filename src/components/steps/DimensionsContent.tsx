@@ -4,7 +4,7 @@ import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
-import { ImperialMeasurementInput } from '../ui/ImperialMeasurementInput';
+import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided } from '../../utils/geometry';
@@ -574,14 +574,12 @@ export function DimensionsContent({
                 
                 return (
                   <div key={edgeKey}>
-                   <div className="relative">
-                     <ImperialMeasurementInput
+                     <DualImperialInput
                       value={config.measurements[edgeKey]
                         ? convertMmToUnit(config.measurements[edgeKey], config.unit)
                         : 0}
                        onChange={(value) => {
                          if (value === 0) {
-                           // Allow complete clearing
                            const newMeasurements = { ...config.measurements };
                            delete newMeasurements[edgeKey];
                            updateConfig({ measurements: newMeasurements });
@@ -591,23 +589,18 @@ export function DimensionsContent({
                        }}
                        onFocus={() => setHighlightedMeasurement(edgeKey)}
                        onBlur={() => setHighlightedMeasurement(null)}
-                       placeholder={config.unit === 'imperial' ? '120 or 10\'0"' : '3000'}
                        unit={config.unit}
-                      autoComplete="off"
-                       className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
+                       className={`text-sm sm:text-base`}
                        isSuccess={isSuccess}
-                       isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
                       errorKey={edgeKey}
                       label={config.measurementOption === 'adjust'
                         ? `Space Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Fixing Point to Fixing Point)`
                         : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
                       secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
+                      showConversion={true}
+                      allowFormatSwitch={true}
                      />
-                     <div className={`absolute ${isSuccess ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
-                       {config.unit === 'metric' ? 'mm' : 'in'}
-                     </div>
-                   </div>
 
                    {/* Typo Warning */}
                    {typoSuggestions[edgeKey] && (
@@ -723,8 +716,7 @@ export function DimensionsContent({
                       
                       return (
                         <div key={key}>
-                          <div className="relative">
-                            <ImperialMeasurementInput
+                            <DualImperialInput
                              value={config.measurements[key]
                                ? convertMmToUnit(config.measurements[key], config.unit)
                                : 0}
@@ -744,21 +736,16 @@ export function DimensionsContent({
                               }}
                               onFocus={() => setHighlightedMeasurement?.(key)}
                               onBlur={() => setHighlightedMeasurement?.(null)}
-                              placeholder={config.unit === 'imperial' ? '240 or 20\'0"' : '6000'}
                               unit={config.unit}
-                             autoComplete="off"
-                              className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
+                              className={`text-sm sm:text-base`}
                               error={validationErrors[key]}
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
-                              isSuggestedTypo={!!typoSuggestions[key]}
                               label={label}
                               secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
+                              showConversion={true}
+                              allowFormatSwitch={true}
                             />
-                            <div className={`absolute ${isSuccess ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
-                              {config.unit === 'metric' ? 'mm' : 'in'}
-                            </div>
-                          </div>
 
                           {/* Typo Warning */}
                           {typoSuggestions[key] && (

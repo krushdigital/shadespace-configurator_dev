@@ -3,7 +3,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
 import { Input } from './ui/Input';
-import { ImperialMeasurementInput } from './ui/ImperialMeasurementInput';
+import { DualImperialInput } from './ui/DualImperialInput';
 import { ConfiguratorState } from '../types';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, isHeightRequiredForCheckout, areHeightsProvided } from '../utils/geometry';
 
@@ -472,11 +472,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                     const isFirstEmpty = !diagonal.hasValue && diagonalMeasurements.slice(0, index).every(d => d.hasValue);
                     return (
                       <div key={diagonal.key}>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                          {diagonal.label}
-                        </label>
-                        <div className="relative">
-                          <ImperialMeasurementInput
+                          <DualImperialInput
                             ref={isFirstEmpty ? firstEmptyInputRef : undefined}
                             value={config.measurements[diagonal.key]
                               ? convertMmToUnit(config.measurements[diagonal.key], config.unit)
@@ -490,20 +486,18 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                               setHighlightedMeasurement(null);
                               setIsEditingDiagonals(false);
                             }}
-                            placeholder={config.unit === 'imperial' ? '240 or 20\'0"' : '6000'}
                             unit={config.unit}
-                            className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
+                            className={`${diagonal.hasValue
                               ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
                               : isHighlighted && !diagonal.hasValue
                                 ? '!border-red-400 !bg-red-50 !ring-2 !ring-red-200'
                                 : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-500'
                             }`}
                             isSuccess={diagonal.hasValue}
+                            label={diagonal.label}
+                            showConversion={true}
+                            allowFormatSwitch={true}
                           />
-                          <div className={`absolute ${diagonal.hasValue ? 'right-11' : 'right-3'} bottom-[15px] text-xs text-slate-500 pointer-events-none`}>
-                            {config.unit === 'metric' ? 'mm' : 'in'}
-                          </div>
-                        </div>
                       </div>
                     );
                   })}
@@ -599,30 +593,24 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
                     return (
                       <div key={index}>
-                        <label className="block text-xs font-medium text-slate-700 mb-1">
-                          Anchor Point {getCornerLabel(index)} Height
-                        </label>
-                        <div className="relative">
-                          <ImperialMeasurementInput
+                          <DualImperialInput
                             ref={isFirstEmpty ? firstEmptyHeightInputRef : undefined}
                             value={hasValue ? convertMmToUnit(height, config.unit) : 0}
                             onChange={(value) => updateFixingHeight(index, String(value))}
                             onFocus={() => setHighlightedMeasurement(`height_${getCornerLabel(index)}`)}
                             onBlur={() => setHighlightedMeasurement(null)}
-                            placeholder={config.unit === 'imperial' ? '100 or 8\'4"' : '2500'}
                             unit={config.unit}
-                            className={`${hasValue ? 'pr-16' : 'pr-12'} ${hasValue
+                            className={`${hasValue
                               ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
                               : isHeightHighlighted && !hasValue
                                 ? '!border-red-400 !bg-red-50 !ring-2 !ring-red-200'
                                 : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-500'
                             }`}
                             isSuccess={hasValue}
+                            label={`Anchor Point ${getCornerLabel(index)} Height`}
+                            showConversion={true}
+                            allowFormatSwitch={true}
                           />
-                          <div className={`absolute ${hasValue ? 'right-11' : 'right-3'} bottom-[15px] text-xs text-slate-500 pointer-events-none`}>
-                            {config.unit === 'metric' ? 'mm' : 'in'}
-                          </div>
-                        </div>
                       </div>
                     );
                   })}
