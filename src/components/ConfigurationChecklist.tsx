@@ -3,6 +3,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
 import { Input } from './ui/Input';
+import { ImperialMeasurementInput } from './ui/ImperialMeasurementInput';
 import { ConfiguratorState } from '../types';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, isHeightRequiredForCheckout, areHeightsProvided } from '../utils/geometry';
 
@@ -475,13 +476,12 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                           {diagonal.label}
                         </label>
                         <div className="relative">
-                          <Input
+                          <ImperialMeasurementInput
                             ref={isFirstEmpty ? firstEmptyInputRef : undefined}
-                            type="number"
                             value={config.measurements[diagonal.key]
-                              ? Math.round(convertMmToUnit(config.measurements[diagonal.key], config.unit))
-                              : ''}
-                            onChange={(e) => updateMeasurement(diagonal.key, e.target.value)}
+                              ? convertMmToUnit(config.measurements[diagonal.key], config.unit)
+                              : 0}
+                            onChange={(value) => updateMeasurement(diagonal.key, String(value))}
                             onFocus={() => {
                               setHighlightedMeasurement(diagonal.key);
                               setIsEditingDiagonals(true);
@@ -490,9 +490,8 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                               setHighlightedMeasurement(null);
                               setIsEditingDiagonals(false);
                             }}
-                            placeholder={config.unit === 'imperial' ? '240' : '6000'}
-                            min="100"
-                            step={config.unit === 'imperial' ? '1' : '10'}
+                            placeholder={config.unit === 'imperial' ? '240 or 20\'0"' : '6000'}
+                            unit={config.unit}
                             className={`${diagonal.hasValue ? 'pr-16' : 'pr-12'} ${diagonal.hasValue
                               ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
                               : isHighlighted && !diagonal.hasValue
@@ -604,21 +603,14 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                           Anchor Point {getCornerLabel(index)} Height
                         </label>
                         <div className="relative">
-                          <Input
+                          <ImperialMeasurementInput
                             ref={isFirstEmpty ? firstEmptyHeightInputRef : undefined}
-                            type="number"
-                            value={hasValue
-                              ? (config.unit === 'imperial'
-                                ? String(Math.round(convertMmToUnit(height, config.unit) * 100) / 100)
-                                : Math.round(convertMmToUnit(height, config.unit)).toString()
-                              )
-                              : ''}
-                            onChange={(e) => updateFixingHeight(index, e.target.value)}
+                            value={hasValue ? convertMmToUnit(height, config.unit) : 0}
+                            onChange={(value) => updateFixingHeight(index, String(value))}
                             onFocus={() => setHighlightedMeasurement(`height_${getCornerLabel(index)}`)}
                             onBlur={() => setHighlightedMeasurement(null)}
-                            placeholder={config.unit === 'imperial' ? '100' : '2500'}
-                            min="100"
-                            step={config.unit === 'imperial' ? '0.1' : '10'}
+                            placeholder={config.unit === 'imperial' ? '100 or 8\'4"' : '2500'}
+                            unit={config.unit}
                             className={`${hasValue ? 'pr-16' : 'pr-12'} ${hasValue
                               ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
                               : isHeightHighlighted && !hasValue

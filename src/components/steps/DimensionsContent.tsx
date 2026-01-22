@@ -4,6 +4,7 @@ import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
+import { ImperialMeasurementInput } from '../ui/ImperialMeasurementInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided } from '../../utils/geometry';
@@ -85,6 +86,23 @@ export function DimensionsContent({
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
   const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
   const lastValidPointsRef = React.useRef(config.points);
+
+  // Helper function to convert error messages with mm units to user's preferred unit
+  const convertErrorMessageUnits = (errorMessage: string): string => {
+    // Pattern: "Diagonal XX (YYYmm) is too long/short. With your edge measurements, it should be at least/cannot exceed ZZZmm."
+    const diagonalMatch = errorMessage.match(/Diagonal ([A-Z]+) \((\d+)mm\) is (too long|too short)\. With your edge measurements, it (should be at least|cannot exceed) (\d+)mm/);
+
+    if (diagonalMatch) {
+      const [, diagonalName, currentValue, condition, phrase, suggestedValue] = diagonalMatch;
+      const currentFormatted = formatMeasurement(parseFloat(currentValue), config.unit);
+      const suggestedFormatted = formatMeasurement(parseFloat(suggestedValue), config.unit);
+
+      return `Diagonal ${diagonalName} (${currentFormatted}) is ${condition}. With your edge measurements, it ${phrase} ${suggestedFormatted}.`;
+    }
+
+    // Return original message if pattern doesn't match
+    return errorMessage;
+  };
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -287,7 +305,9 @@ export function DimensionsContent({
         if (!validation.isValid) {
           // Geometry is invalid - preserve last valid shape and show warnings
           console.log('Geometry validation failed - setting warning:', validation.errors[0]);
-          setGeometryWarnings({ general: validation.errors[0] || 'Invalid measurements' });
+          const errorMessage = validation.errors[0] || 'Invalid measurements';
+          const convertedError = convertErrorMessageUnits(errorMessage);
+          setGeometryWarnings({ general: convertedError });
           // Keep the last valid points - don't update
           return;
         }
@@ -555,29 +575,24 @@ export function DimensionsContent({
                 return (
                   <div key={edgeKey}>
                    <div className="relative">
-                     <Input
-                       type="number"
+                     <ImperialMeasurementInput
                       value={config.measurements[edgeKey]
-                        ? (config.unit === 'imperial'
-                          ? String(Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit) * 100) / 100)
-                          : Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit)).toString()
-                        )
-                        : ''}
-                       onChange={(e) => {
-                         if (e.target.value === '') {
+                        ? convertMmToUnit(config.measurements[edgeKey], config.unit)
+                        : 0}
+                       onChange={(value) => {
+                         if (value === 0) {
                            // Allow complete clearing
                            const newMeasurements = { ...config.measurements };
                            delete newMeasurements[edgeKey];
                            updateConfig({ measurements: newMeasurements });
                          } else {
-                           updateMeasurement(edgeKey, e.target.value);
+                           updateMeasurement(edgeKey, String(value));
                          }
                        }}
                        onFocus={() => setHighlightedMeasurement(edgeKey)}
                        onBlur={() => setHighlightedMeasurement(null)}
-                       placeholder={config.unit === 'imperial' ? '120' : '3000'}
-                       min="100"
-                      step={config.unit === 'imperial' ? '0.1' : '10'}
+                       placeholder={config.unit === 'imperial' ? '120 or 10\'0"' : '3000'}
+                       unit={config.unit}
                       autoComplete="off"
                        className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
                        isSuccess={isSuccess}
@@ -709,16 +724,12 @@ export function DimensionsContent({
                       return (
                         <div key={key}>
                           <div className="relative">
-                            <Input
-                              type="number"
+                            <ImperialMeasurementInput
                              value={config.measurements[key]
-                               ? (config.unit === 'imperial'
-                                 ? String(Math.round(convertMmToUnit(config.measurements[key], config.unit) * 100) / 100)
-                                 : Math.round(convertMmToUnit(config.measurements[key], config.unit)).toString()
-                               )
-                               : ''}
-                              onChange={(e) => {
-                                if (e.target.value === '') {
+                               ? convertMmToUnit(config.measurements[key], config.unit)
+                               : 0}
+                              onChange={(value) => {
+                                if (value === 0) {
                                   const newMeasurements = { ...config.measurements };
                                   delete newMeasurements[key];
                                   updateConfig({ measurements: newMeasurements });
@@ -728,14 +739,13 @@ export function DimensionsContent({
                                     setValidationErrors(newErrors);
                                   }
                                 } else {
-                                  updateMeasurement(key, e.target.value);
+                                  updateMeasurement(key, String(value));
                                 }
                               }}
                               onFocus={() => setHighlightedMeasurement?.(key)}
                               onBlur={() => setHighlightedMeasurement?.(null)}
-                              placeholder={config.unit === 'imperial' ? '240' : '6000'}
-                              min="100"
-                             step={config.unit === 'imperial' ? '0.1' : '10'}
+                              placeholder={config.unit === 'imperial' ? '240 or 20\'0"' : '6000'}
+                              unit={config.unit}
                              autoComplete="off"
                               className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
                               error={validationErrors[key]}
