@@ -15,7 +15,7 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided } from '../utils/geometry';
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
@@ -1092,7 +1092,15 @@ export function ShadeConfigurator() {
             edgeCount++;
           }
         }
-        return edgeCount === config.corners;
+
+        const allEdgesProvided = edgeCount === config.corners;
+
+        const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
+        if (heightRequirement === 'mandatory') {
+          return allEdgesProvided && areHeightsProvided(config.fixingHeights, config.corners);
+        }
+
+        return allEdgesProvided;
       case 5: // Heights & Anchor Points
         // Step 5 is now always skipped (integrated into Step 4 as optional)
         return true;

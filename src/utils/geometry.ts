@@ -251,6 +251,40 @@ export function validateMeasurements(measurements: {[key: string]: number}, corn
   return { errors, typoSuggestions };
 }
 
+export function getHeightRequirement(corners: number, measurementOption: 'adjust' | 'exact'): 'none' | 'optional' | 'mandatory' {
+  if (corners === 3) {
+    return 'none';
+  }
+
+  if (measurementOption !== 'adjust') {
+    return 'none';
+  }
+
+  if (corners === 4) {
+    return 'optional';
+  }
+
+  if (corners >= 5) {
+    return 'mandatory';
+  }
+
+  return 'none';
+}
+
+export function areHeightsProvided(heights: number[], corners: number): boolean {
+  if (heights.length < corners) {
+    return false;
+  }
+
+  for (let i = 0; i < corners; i++) {
+    if (!heights[i] || heights[i] <= 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function validateHeights(heights: number[], unit: 'metric' | 'imperial'): {
   errors: {[key: string]: string};
   typoSuggestions: {[key: string]: number};
