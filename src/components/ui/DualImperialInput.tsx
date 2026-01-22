@@ -109,9 +109,10 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
       return;
     }
 
-    // Validate inches range when feet are present
+    // Only validate inches range when feet are present
+    // This allows users to enter large inch values (like 300) when feet field is empty
     if (feet > 0 && inches >= 12) {
-      setInchesError('Inches must be less than 12');
+      setInchesError('When using feet, inches must be less than 12');
       return;
     } else {
       setInchesError('');
@@ -226,7 +227,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onChange={handleFeetChange}
                   onFocus={onFocus}
                   onBlur={onBlur}
-                  placeholder="10"
+                  placeholder="10 (optional)"
                   className={`${className} pr-12`}
                   isSuccess={isSuccess}
                   error={error}
@@ -244,7 +245,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onChange={handleInchesChange}
                   onFocus={onFocus}
                   onBlur={onBlur}
-                  placeholder="6"
+                  placeholder={feetInput ? "6" : "300 (or any value)"}
                   className={`${className} pr-12`}
                   isSuccess={isSuccess && !inchesError}
                   error={inchesError}
@@ -311,6 +312,13 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
         {secondaryValue && (
           <div className="text-xs text-[#01312D]/60 mt-1">
             {secondaryValue}
+          </div>
+        )}
+
+        {/* Help text for flexible input */}
+        {displayMode === 'feet-inches' && !feetInput && !inchesInput && (
+          <div className="text-xs text-slate-500 mt-1.5 italic">
+            Tip: Enter total inches (e.g., 300) in inches field, or split as feet + inches (e.g., 25 ft + 0 in)
           </div>
         )}
       </div>
