@@ -15,7 +15,7 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout } from '../utils/geometry';
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
