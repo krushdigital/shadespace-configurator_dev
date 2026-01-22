@@ -48,6 +48,10 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   },
   ref
 ) => {
+  // Calculate height-related values first (needed for state initialization)
+  const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
+  const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
+
   const [diagonalsExpanded, setDiagonalsExpanded] = useState(!allDiagonalsEntered);
   const [heightsExpanded, setHeightsExpanded] = useState(!allHeightsProvided && heightIsRequiredForCheckout);
   const [validationExpanded, setValidationExpanded] = useState(false);
@@ -112,9 +116,6 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   };
 
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
-
-  const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
-  const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
 
   const hasHeightInformation = config.corners !== 3 &&
     config.measurementOption === 'adjust' &&
