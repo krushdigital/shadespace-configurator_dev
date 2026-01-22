@@ -338,9 +338,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         // 3. Check height measurements (for 5+ corner sails)
         else if (isHeightRequiredForCheckout(config.corners, config.measurementOption) &&
                  !areHeightsProvided(config.fixingHeights, config.corners)) {
-          // Expand the heights section and highlight it
-          checklistRef.current?.expandHeights();
-          targetElement = checklistRef.current?.getHeightSectionElement() || null;
+          // Navigate back to dimensions step to enter heights
+          onPrev({ navigateToHeights: true });
+          return;
         }
         // 4. Check acknowledgments
         else if (!allAcknowledgmentsChecked) {
