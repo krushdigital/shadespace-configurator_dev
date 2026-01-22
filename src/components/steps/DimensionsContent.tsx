@@ -806,21 +806,30 @@ export function DimensionsContent({
                     )}
                   </div>
                   <div className="text-left flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                    <div className="flex items-center gap-2">
                       <h5 className="text-sm sm:text-base font-semibold text-[#01312D]">
                         Height Information {heightRequirement === 'required-at-checkout' ? '(required)' : '(optional)'}
                       </h5>
-                      {heightRequirement === 'required-at-checkout' ? (
-                        <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full font-medium w-fit">
-                          Optional Now - Required at Checkout
-                        </span>
-                      ) : (
-                        <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-medium w-fit">
-                          Not required - standard manufacturing process will be used
-                        </span>
+                      {heightRequirement === 'required-at-checkout' && (
+                        <Tooltip
+                          content={
+                            <div>
+                              <p className="text-xs text-white font-medium mb-1">
+                                Required at Checkout
+                              </p>
+                              <p className="text-xs text-white/90 leading-relaxed">
+                                Shade sails with {config.corners} corners require height measurements for each fixing point before checkout. This ensures proper tension, water runoff, and structural integrity for complex installations. You can add them now or during the review step.
+                              </p>
+                            </div>
+                          }
+                        >
+                          <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-blue-600 rounded-full cursor-help hover:bg-blue-700">
+                            i
+                          </span>
+                        </Tooltip>
                       )}
                     </div>
-                    <p className="text-sm text-slate-600 mt-2">
+                    <p className="text-sm text-slate-600 mt-1.5">
                       {heightRequirement === 'required-at-checkout'
                         ? `${config.corners} corner shade sails require height measurements for each fixing point to ensure proper installation`
                         : showHeightsSection
@@ -832,32 +841,17 @@ export function DimensionsContent({
               </button>
 
               {showHeightsSection && (
-                <div className="p-3 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
-                  <div className={`p-2 sm:p-3 rounded-lg ${
-                    heightRequirement === 'required-at-checkout'
-                      ? 'bg-blue-50 border border-blue-300'
-                      : 'bg-[#BFF102]/10 border border-[#307C31]/30'
-                  }`}>
-                    <p className="text-sm text-[#01312D]">
-                      <strong>
-                        {heightRequirement === 'required-at-checkout' ? 'Required at Checkout:' : 'Note:'}
-                      </strong>{' '}
-                      {heightRequirement === 'required-at-checkout'
-                        ? `Shade sails with ${config.corners} corners require height measurements for each fixing point before checkout. This ensures proper tension, water runoff, and structural integrity for complex installations. You can add them now or during the review step.`
-                        : 'Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.'}
-                    </p>
-                  </div>
-
+                <div className="p-3 sm:p-4 border-t border-slate-200 space-y-2 sm:space-y-3">
                   {/* Height inputs for each corner */}
-                  <div className="space-y-2 sm:space-y-3">
+                  <div className="space-y-2">
                     {Array.from({ length: config.corners }, (_, index) => (
-                      <Card key={index} className="p-2 sm:p-3 border-l-4 border-l-[#01312D]">
-                        <div className="space-y-1.5 sm:space-y-2">
-                          <h6 className="font-semibold text-[#01312D] text-xs sm:text-sm">
-                            Anchor Point {getCornerLabel(index)} Configuration
+                      <Card key={index} className="p-2 border-l-4 border-l-[#01312D]">
+                        <div className="space-y-1.5">
+                          <h6 className="font-semibold text-[#01312D] text-xs">
+                            Anchor Point {getCornerLabel(index)}
                           </h6>
 
-                          <div className="grid grid-cols-1 gap-2 sm:gap-3 md:gap-4 md:grid-cols-2">
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
                             {/* Height Input */}
                             <div>
                               <DualImperialInput
@@ -876,32 +870,31 @@ export function DimensionsContent({
                                 onFocus={() => setHighlightedCorner(index)}
                                 onBlur={() => setHighlightedCorner(null)}
                                 unit={config.unit}
-                                className="text-sm sm:text-base"
+                                className="text-sm"
                                 isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
                                 label={
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1.5">
                                     <span className="text-xs font-medium text-[#01312D]">
                                       Height from Ground
                                     </span>
                                     <Tooltip
                                       content={
                                         <div>
-                                          <p className="text-sm text-[#01312D] font-medium mb-2">
+                                          <p className="text-xs text-[#01312D] font-medium mb-1">
                                             What is this measurement?
                                           </p>
-                                          <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
-                                            Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
+                                          <p className="text-xs text-[#01312D]/80 leading-relaxed">
+                                            Height is measured from ground level to the anchor point. This helps ensure proper sail tension and water runoff.
                                           </p>
                                         </div>
                                       }
                                     >
-                                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                      <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
                                         ?
                                       </span>
                                     </Tooltip>
                                   </div>
                                 }
-                                secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
                                 showConversion={false}
                                 allowFormatSwitch={true}
                               />
@@ -909,44 +902,44 @@ export function DimensionsContent({
 
                             {/* Attachment Type */}
                             <div>
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 mb-1">
                                 <span className="text-xs font-medium text-[#01312D]">
                                   Attachment Type
                                 </span>
                                 <Tooltip
                                   content={
                                     <div>
-                                      <p className="text-sm text-[#01312D] font-medium mb-1">
+                                      <p className="text-xs text-[#01312D] font-medium mb-1">
                                         Attachment Type
                                       </p>
-                                      <p className="text-sm text-[#01312D]/70">
-                                        Post: Freestanding pole installation. Building: Attached to wall, roof, or existing structure.
+                                      <p className="text-xs text-[#01312D]/70">
+                                        Post: Freestanding pole. Building: Wall, roof, or structure.
                                       </p>
                                     </div>
                                   }
                                 >
-                                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
                                     ?
                                   </span>
                                 </Tooltip>
                               </div>
-                              <div className="flex gap-1">
+                              <div className="flex gap-1.5">
                                 <button
                                   onClick={() => updateFixingType(index, 'post')}
-                                  className={`flex-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300 border-2 ${
+                                  className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'post'
-                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
-                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
                                   }`}
                                 >
                                   Post
                                 </button>
                                 <button
                                   onClick={() => updateFixingType(index, 'building')}
-                                  className={`flex-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300 border-2 ${
+                                  className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'building'
-                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
-                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
                                   }`}
                                 >
                                   Building
