@@ -48,6 +48,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
   const [totalInchesInput, setTotalInchesInput] = useState('');
   const [inchesError, setInchesError] = useState('');
   const [showQuickInput, setShowQuickInput] = useState(false);
+  const [isUserTyping, setIsUserTyping] = useState(false);
 
   // Load saved preference from localStorage
   useEffect(() => {
@@ -59,6 +60,22 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
 
   // Initialize from prop value
   useEffect(() => {
+    // Don't overwrite user input while they're typing
+    if (isUserTyping) {
+      return;
+    }
+
+    // Calculate what the current inputs would produce
+    const currentFeet = parseFloat(feetInput) || 0;
+    const currentInches = parseFloat(inchesInput) || 0;
+    const currentTotal = (currentFeet * 12) + currentInches;
+
+    // If the incoming value matches what we already have, don't update
+    // This prevents circular updates when user types in the inches field
+    if (Math.abs(currentTotal - value) < 0.01 && value > 0) {
+      return;
+    }
+
     if (value > 0) {
       if (unit === 'imperial') {
         const conversion = inchesToFeetInches(value);
@@ -71,19 +88,22 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
       } else {
         setTotalInchesInput(Math.round(value).toString());
       }
-    } else {
+    } else if (value === 0 && currentTotal === 0) {
+      // Only clear if both are actually zero
       setFeetInput('');
       setInchesInput('');
       setTotalInchesInput('');
     }
-  }, [value, unit, displayMode]);
+  }, [value, unit, displayMode, isUserTyping, feetInput, inchesInput]);
 
   const handleFeetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    setIsUserTyping(true);
     setFeetInput(newValue);
 
     if (newValue === '' && inchesInput === '') {
       onChange(0);
+      setTimeout(() => setIsUserTyping(false), 100);
       return;
     }
 
@@ -91,21 +111,25 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     const inches = parseFloat(inchesInput) || 0;
 
     if (feet < 0) {
+      setTimeout(() => setIsUserTyping(false), 100);
       return;
     }
 
     const totalInches = (feet * 12) + inches;
     onChange(totalInches);
+    setTimeout(() => setIsUserTyping(false), 100);
   };
 
   const handleInchesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    setIsUserTyping(true);
     setInchesInput(newValue);
 
     const inches = parseFloat(newValue);
     const feet = parseFloat(feetInput) || 0;
 
     if (newValue !== '' && (isNaN(inches) || inches < 0)) {
+      setTimeout(() => setIsUserTyping(false), 100);
       return;
     }
 
@@ -113,6 +137,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     // This allows users to enter large inch values (like 300) when feet field is empty
     if (feet > 0 && inches >= 12) {
       setInchesError('When using feet, inches must be less than 12');
+      setTimeout(() => setIsUserTyping(false), 100);
       return;
     } else {
       setInchesError('');
@@ -120,19 +145,23 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
 
     if (newValue === '' && feetInput === '') {
       onChange(0);
+      setTimeout(() => setIsUserTyping(false), 100);
       return;
     }
 
     const totalInches = (feet * 12) + (inches || 0);
     onChange(totalInches);
+    setTimeout(() => setIsUserTyping(false), 100);
   };
 
   const handleTotalInchesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
+    setIsUserTyping(true);
     setTotalInchesInput(newValue);
 
     if (newValue === '') {
       onChange(0);
+      setTimeout(() => setIsUserTyping(false), 100);
       return;
     }
 
@@ -141,17 +170,20 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
       if (result.isValid) {
         onChange(result.totalInches);
 
-        // Update feet+inches fields if in that mode
-        if (displayMode === 'feet-inches' && result.feet !== undefined) {
+        // Only auto-populate feet+inches fields if mixed units were explicitly entered
+        // (e.g., "4 feet 5 inches" or "7'10"", but NOT "200 inches" or "200")
+        if (displayMode === 'feet-inches' && result.feet !== undefined && result.inches !== undefined) {
           setFeetInput(String(result.feet));
-          setInchesInput(result.inches ? String(result.inches) : '');
+          setInchesInput(String(result.inches));
         }
       }
+      setTimeout(() => setIsUserTyping(false), 100);
     } else {
       const numValue = parseFloat(newValue);
       if (!isNaN(numValue) && numValue >= 0) {
         onChange(numValue);
       }
+      setTimeout(() => setIsUserTyping(false), 100);
     }
   };
 
