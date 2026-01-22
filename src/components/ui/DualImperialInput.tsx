@@ -266,11 +266,11 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   placeholder=""
-                  className={`${className} ${(isSuccess && !inchesError) ? 'pr-16' : 'pr-12'}`}
-                  isSuccess={isSuccess && !inchesError}
+                  className={`${className} ${(isSuccess && !inchesError && !error) ? 'pr-16' : 'pr-12'} ${error ? '!border-red-500 !bg-red-50 focus:!ring-red-500 focus:!border-red-500' : ''}`}
+                  isSuccess={isSuccess && !inchesError && !error}
                   error={inchesError}
                 />
-                <span className={`absolute ${(isSuccess && !inchesError) ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
+                <span className={`absolute ${(isSuccess && !inchesError && !error) ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                   in
                 </span>
               </div>
