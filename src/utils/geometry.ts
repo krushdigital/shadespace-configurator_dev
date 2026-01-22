@@ -404,6 +404,8 @@ export function getDiagonalKeysForCorners(corners: number): string[] {
     diagonals.push('AC', 'AD', 'CE', 'BD', 'BE');
   } else if (corners === 6) {
     diagonals.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
+  } else if (corners === 7) {
+    diagonals.push('AC', 'AD', 'AE', 'AF', 'BD', 'BE', 'BF', 'BG', 'CE', 'CF', 'CG', 'DF', 'DG', 'EG');
   }
 
   return diagonals;
@@ -434,7 +436,7 @@ export function getShapeAccuracy(
     };
   }
 
-  if (corners >= 4 && corners <= 6) {
+  if (corners >= 4 && corners <= 7) {
     let edgeCount = 0;
     for (let i = 0; i < corners; i++) {
       const nextIndex = (i + 1) % corners;
@@ -465,6 +467,9 @@ export function getShapeAccuracy(
       };
     }
 
+    // Define minimum diagonals needed for each polygon type
+    const minDiagonalsNeeded = corners - 3;
+
     if (corners === 4 && diagonalCount >= 1) {
       return {
         accuracy: 'exact',
@@ -473,7 +478,7 @@ export function getShapeAccuracy(
       };
     }
 
-    if (diagonalCount === diagonalKeys.length) {
+    if (diagonalCount >= minDiagonalsNeeded) {
       return {
         accuracy: 'exact',
         message: 'Shape is accurate based on your measurements',
@@ -1151,15 +1156,20 @@ export function hasRequiredMeasurements(
     // For 4 corners, we need all edges
     return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA']);
   } else if (corners === 5) {
-    // For 5 corners, we need all edges AND all diagonals
+    // For 5 corners, we need all edges AND minimum 2 diagonals (AC and AD) for reconstruction
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
-    const diagonals = !!(measurements['AC'] && measurements['AD'] && measurements['CE'] && measurements['BD'] && measurements['BE']);
-    return edges && diagonals;
+    const minDiagonals = !!(measurements['AC'] && measurements['AD']);
+    return edges && minDiagonals;
   } else if (corners === 6) {
-    // For 6 corners, we need all edges AND all diagonals
+    // For 6 corners, we need all edges AND minimum 3 diagonals (AC, AD, and AE) for reconstruction
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
-    const diagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['BD'] && measurements['BE'] && measurements['BF'] && measurements['CE'] && measurements['CF'] && measurements['DF']);
-    return edges && diagonals;
+    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE']);
+    return edges && minDiagonals;
+  } else if (corners === 7) {
+    // For 7 corners, we need all edges AND minimum 4 diagonals (AC, AD, AE, and AF) for reconstruction
+    const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GA']);
+    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF']);
+    return edges && minDiagonals;
   }
   return false;
 }
@@ -1360,6 +1370,48 @@ export function reconstructPolygonFromMeasurements(
     if (!F) return null;
 
     points = [A, B, C, D, E, F];
+
+  } else if (corners === 7) {
+    // Reconstruct heptagon (requires minimum 4 diagonals: AC, AD, AE, AF)
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EF = measurements['EF'];
+    const FG = measurements['FG'];
+    const GA = measurements['GA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const AE = measurements['AE'];
+    const AF = measurements['AF'];
+
+    // Place A at origin
+    const A: Point = { x: 0, y: 0 };
+
+    // Place B along x-axis
+    const B: Point = { x: AB, y: 0 };
+
+    // Calculate C using AC and BC
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+
+    // Calculate D using AD and CD
+    const D = trilateratePoint(A, C, AD, CD);
+    if (!D) return null;
+
+    // Calculate E using AE and DE
+    const E = trilateratePoint(A, D, AE, DE);
+    if (!E) return null;
+
+    // Calculate F using AF and EF
+    const F = trilateratePoint(A, E, AF, EF);
+    if (!F) return null;
+
+    // Calculate G using GA and FG
+    const G = trilateratePoint(A, F, GA, FG);
+    if (!G) return null;
+
+    points = [A, B, C, D, E, F, G];
   }
 
   // Scale and center the polygon to fit canvas

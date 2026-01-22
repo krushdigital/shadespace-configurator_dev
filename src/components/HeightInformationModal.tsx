@@ -27,7 +27,7 @@ export function HeightInformationModal({
   useEffect(() => {
     if (isOpen) {
       setLocalHeights([...config.fixingHeights]);
-      setLocalAttachmentTypes([...config.attachmentTypes]);
+      setLocalAttachmentTypes(config.attachmentTypes ? [...config.attachmentTypes] : []);
     }
   }, [isOpen, config.fixingHeights, config.attachmentTypes]);
 
@@ -59,7 +59,7 @@ export function HeightInformationModal({
 
   const handleCancel = () => {
     setLocalHeights([...config.fixingHeights]);
-    setLocalAttachmentTypes([...config.attachmentTypes]);
+    setLocalAttachmentTypes(config.attachmentTypes ? [...config.attachmentTypes] : []);
     onClose();
   };
 

@@ -46,6 +46,7 @@ const INITIAL_STATE: ConfiguratorState = {
   measurements: {},
   fixingHeights: [],
   fixingTypes: undefined,
+  attachmentTypes: [],
   eyeOrientations: undefined,
   fixingPointsInstalled: undefined,
   currency: 'NZD',
