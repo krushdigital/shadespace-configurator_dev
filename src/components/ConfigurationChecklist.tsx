@@ -4,7 +4,7 @@ import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
 import { Input } from './ui/Input';
 import { ConfiguratorState } from '../types';
-import { convertMmToUnit, formatMeasurement, isHeightRequiredForCheckout, areHeightsProvided } from '../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, isHeightRequiredForCheckout, areHeightsProvided } from '../utils/geometry';
 
 interface ConfigurationChecklistProps {
   config: ConfiguratorState;
@@ -49,12 +49,15 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   ref
 ) => {
   const [diagonalsExpanded, setDiagonalsExpanded] = useState(!allDiagonalsEntered);
+  const [heightsExpanded, setHeightsExpanded] = useState(!allHeightsProvided && heightIsRequiredForCheckout);
   const [validationExpanded, setValidationExpanded] = useState(false);
   const [isEditingDiagonals, setIsEditingDiagonals] = useState(false);
   const [isHighlighted, setIsHighlighted] = useState(false);
   const diagonalSectionRef = useRef<HTMLDivElement>(null);
   const mobileDiagonalSectionRef = useRef<HTMLDivElement>(null);
+  const heightSectionRef = useRef<HTMLDivElement>(null);
   const firstEmptyInputRef = useRef<HTMLInputElement>(null);
+  const firstEmptyHeightInputRef = useRef<HTMLInputElement>(null);
 
   useImperativeHandle(ref, () => ({
     expandDiagonals: () => {
@@ -80,6 +83,35 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
     },
     getDiagonalSectionElement: () => isMobile ? mobileDiagonalSectionRef.current : diagonalSectionRef.current,
   }));
+
+  // Helper function to update fixing heights
+  const updateFixingHeight = (index: number, value: string) => {
+    const numericValue = parseFloat(value);
+    if (!isNaN(numericValue) && numericValue > 0) {
+      const mmHeight = convertUnitToMm(numericValue, config.unit);
+      const newHeights = [...(config.fixingHeights || [])];
+
+      // Ensure array is large enough
+      while (newHeights.length < config.corners) {
+        newHeights.push(0);
+      }
+
+      newHeights[index] = mmHeight;
+      updateConfig({
+        fixingHeights: newHeights,
+        heightsProvidedByUser: true
+      });
+    } else if (value === '') {
+      // Allow clearing the field
+      const newHeights = [...(config.fixingHeights || [])];
+      if (newHeights[index]) {
+        newHeights[index] = 0;
+        updateConfig({ fixingHeights: newHeights });
+      }
+    }
+  };
+
+  const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
   const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
   const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
@@ -225,12 +257,20 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
           {showHeightRequired && (
             <div className="flex items-center justify-between pt-2 border-t border-slate-200">
               <div className="flex items-center gap-2 flex-1">
-                <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span className="text-xs font-medium text-slate-900">Height information required</span>
+                {allHeightsProvided ? (
+                  <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                )}
+                <span className={`text-xs font-medium ${allHeightsProvided ? 'text-emerald-900' : 'text-slate-900'}`}>
+                  Height information {allHeightsProvided ? 'complete' : 'required'}
+                </span>
               </div>
-              {onOpenHeightModal && (
+              {!allHeightsProvided && onOpenHeightModal && (
                 <button
                   onClick={onOpenHeightModal}
                   className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
@@ -450,42 +490,117 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
         {/* Required: Height Information */}
         {showHeightRequired && (
-          <div className="bg-white rounded-lg border-2 border-emerald-700">
-            <div className="flex items-start gap-3 p-3">
+          <div
+            ref={heightSectionRef}
+            className="bg-white rounded-lg border-2 border-emerald-700 transition-all duration-300"
+          >
+            <div
+              className={`flex items-start gap-3 p-3 cursor-pointer transition-colors ${
+                !heightsExpanded ? 'hover:bg-emerald-50/50' : ''
+              }`}
+              onClick={() => setHeightsExpanded(!heightsExpanded)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setHeightsExpanded(!heightsExpanded);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-expanded={heightsExpanded}
+              aria-label={heightsExpanded ? 'Collapse height measurements section' : 'Expand height measurements section'}
+            >
               <div className="flex-shrink-0 mt-0.5">
-                <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
+                {allHeightsProvided ? (
+                  <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5 text-amber-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                )}
               </div>
               <div className="flex-1">
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium text-slate-900">
-                    Height information required
+                <div className="flex items-center justify-between">
+                  <p className={`text-sm font-medium ${allHeightsProvided ? 'text-emerald-900' : 'text-slate-900'}`}>
+                    Height information {allHeightsProvided ? 'complete' : 'required'}
                   </p>
-                  <p className="text-xs text-slate-700">
-                    {config.corners} corner sails require height measurements before checkout
-                  </p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Tooltip content={`Shade sails with ${config.corners} corners require height measurements for each fixing point. This ensures proper tension, water runoff, and structural integrity for complex installations.`}>
-                      <span className="text-emerald-700 hover:text-emerald-900 inline-flex items-center justify-center" role="button" tabIndex={0}>
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </Tooltip>
-                    {onOpenHeightModal && (
-                      <Button
-                        size="sm"
-                        onClick={onOpenHeightModal}
-                        className="text-xs py-1 px-3 whitespace-nowrap"
-                      >
-                        Enter Heights →
-                      </Button>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Tooltip content={`Shade sails with ${config.corners} corners require height measurements for each fixing point. This ensures proper tension, water runoff, and structural integrity for complex installations.`}>
+                        <span className="text-emerald-700 hover:text-emerald-900 inline-flex items-center justify-center" role="button" tabIndex={0}>
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      </Tooltip>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHeightsExpanded(!heightsExpanded);
+                      }}
+                      className="text-emerald-700 hover:text-emerald-900 font-medium text-sm bg-transparent border-0 p-0 cursor-pointer"
+                    >
+                      {heightsExpanded ? 'Collapse ▲' : 'Enter Heights ▼'}
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
+
+            {heightsExpanded && (
+              <div className="px-3 pb-3 pt-0 border-t border-emerald-200 mt-2">
+                <div className="rounded-lg p-3 mb-3 mt-3 bg-emerald-50">
+                  <p className="text-xs font-semibold text-emerald-800">
+                    Enter the height from ground level to each anchor point. This ensures proper sail tension and water runoff.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {Array.from({ length: config.corners }, (_, index) => {
+                    const height = config.fixingHeights?.[index] || 0;
+                    const hasValue = height > 0;
+                    const isFirstEmpty = !hasValue &&
+                      Array.from({ length: index }).every(i => (config.fixingHeights?.[i] || 0) > 0);
+
+                    return (
+                      <div key={index}>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                          Anchor Point {getCornerLabel(index)} Height
+                        </label>
+                        <div className="relative">
+                          <Input
+                            ref={isFirstEmpty ? firstEmptyHeightInputRef : undefined}
+                            type="number"
+                            value={hasValue
+                              ? (config.unit === 'imperial'
+                                ? String(Math.round(convertMmToUnit(height, config.unit) * 100) / 100)
+                                : Math.round(convertMmToUnit(height, config.unit)).toString()
+                              )
+                              : ''}
+                            onChange={(e) => updateFixingHeight(index, e.target.value)}
+                            onFocus={() => setHighlightedMeasurement(`height_${getCornerLabel(index)}`)}
+                            onBlur={() => setHighlightedMeasurement(null)}
+                            placeholder={config.unit === 'imperial' ? '100' : '2500'}
+                            min="100"
+                            step={config.unit === 'imperial' ? '0.1' : '10'}
+                            className={`${hasValue ? 'pr-16' : 'pr-12'} ${hasValue
+                              ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
+                              : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-500'
+                            }`}
+                            isSuccess={hasValue}
+                          />
+                          <div className={`absolute ${hasValue ? 'right-11' : 'right-3'} bottom-[15px] text-xs text-slate-500 pointer-events-none`}>
+                            {config.unit === 'metric' ? 'mm' : 'in'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
