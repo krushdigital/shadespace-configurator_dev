@@ -633,7 +633,13 @@ export function DimensionsContent({
                   {isApproximate && (
                     <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded-lg">
                       <p className="text-xs sm:text-sm text-amber-800 font-medium">
-                        Add at least one diagonal to see your exact shape in the preview above
+                        {(() => {
+                          const minimumDiagonals = config.corners - 3;
+                          if (minimumDiagonals === 1) {
+                            return 'Add at least one diagonal to see your exact shape in the preview above';
+                          }
+                          return `Add at least ${minimumDiagonals} diagonals to see your exact shape in the preview above`;
+                        })()}
                       </p>
                     </div>
                   )}
