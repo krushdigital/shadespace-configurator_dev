@@ -36,8 +36,9 @@ export interface GAEventProperties {
  * 5. FIXING POINTS & SHAPE (1 event)
  *    - fixing_points_selected
  *
- * 6. MEASUREMENT (8 events)
- *    - unit_selected, measurement_option_selected, measurement_option_tooltip_viewed
+ * 6. MEASUREMENT (10 events)
+ *    - unit_selected, unit_auto_selected, unit_manually_changed
+ *    - measurement_option_selected, measurement_option_tooltip_viewed
  *    - edge_measurement_entered, diagonal_measurement_entered
  *    - measurement_field_focused, measurement_field_highlighted
  *
@@ -285,6 +286,24 @@ export const analytics = {
   unitSelected: (unit: string) => {
     trackEvent('unit_selected', {
       unit: unit,
+    });
+  },
+
+  unitAutoSelected: (unit: string, currency: string, source: string, confidence: string) => {
+    trackEvent('unit_auto_selected', {
+      unit: unit,
+      currency: currency,
+      selection_source: source,
+      confidence_level: confidence,
+    });
+  },
+
+  unitManuallyChanged: (fromUnit: string, toUnit: string, currency: string, wasAutoSelected: boolean) => {
+    trackEvent('unit_manually_changed', {
+      from_unit: fromUnit,
+      to_unit: toUnit,
+      currency: currency,
+      was_auto_selected: wasAutoSelected,
     });
   },
 
