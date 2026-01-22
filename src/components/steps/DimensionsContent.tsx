@@ -851,7 +851,7 @@ export function DimensionsContent({
                             Anchor Point {getCornerLabel(index)}
                           </h6>
 
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-[2fr_1fr] md:gap-3">
                             {/* Height Input */}
                             <div>
                               <DualImperialInput
@@ -923,10 +923,10 @@ export function DimensionsContent({
                                   </span>
                                 </Tooltip>
                               </div>
-                              <div className="flex gap-1.5">
+                              <div className="flex flex-col gap-1.5">
                                 <button
                                   onClick={() => updateFixingType(index, 'post')}
-                                  className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
+                                  className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'post'
                                       ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
                                       : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
@@ -936,7 +936,7 @@ export function DimensionsContent({
                                 </button>
                                 <button
                                   onClick={() => updateFixingType(index, 'building')}
-                                  className={`flex-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
+                                  className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'building'
                                       ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
                                       : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'

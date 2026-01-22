@@ -100,7 +100,7 @@ export function HeightInformationModal({
                     Anchor Point {getCornerLabel(index)}
                   </h6>
 
-                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-3">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-[2fr_1fr] md:gap-3">
                     {/* Height Input */}
                     <div>
                       <DualImperialInput
@@ -172,10 +172,10 @@ export function HeightInformationModal({
                           </span>
                         </Tooltip>
                       </div>
-                      <div className="flex gap-1.5">
+                      <div className="flex flex-col gap-1.5">
                         <button
                           onClick={() => updateAttachmentType(index, 'Post')}
-                          className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 border ${
+                          className={`w-full px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 border ${
                             localAttachmentTypes[index] === 'Post'
                               ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
                               : 'bg-white text-[#01312D] border-slate-300 hover:bg-[#BFF102]/10'
@@ -185,7 +185,7 @@ export function HeightInformationModal({
                         </button>
                         <button
                           onClick={() => updateAttachmentType(index, 'Building')}
-                          className={`flex-1 px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 border ${
+                          className={`w-full px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 border ${
                             localAttachmentTypes[index] === 'Building'
                               ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
                               : 'bg-white text-[#01312D] border-slate-300 hover:bg-[#BFF102]/10'
