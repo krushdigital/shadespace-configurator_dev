@@ -11,6 +11,7 @@ import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
+import { HeightInformationModal } from '../HeightInformationModal';
 
 interface ReviewContentProps {
   config: ConfiguratorState;
@@ -66,6 +67,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
   const [buttonShake, setButtonShake] = useState(false);
+  const [isHeightModalOpen, setIsHeightModalOpen] = useState(false);
   const checklistRef = useRef<ConfigurationChecklistRef>(null);
   const acknowledgementsCardRef = useRef<HTMLDivElement>(null);
   const addToCartButtonRef = useRef<HTMLDivElement>(null);
@@ -564,6 +566,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             diagonalMeasurements={diagonalMeasurements}
             onNavigateToDimensions={() => onPrev({ navigateToDiagonals: true })}
             onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
+            onOpenHeightModal={() => setIsHeightModalOpen(true)}
             highlightedMeasurement={highlightedMeasurement}
             setHighlightedMeasurement={setHighlightedMeasurement}
             updateMeasurement={updateMeasurement}
@@ -1097,6 +1100,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             diagonalMeasurements={diagonalMeasurements}
             onNavigateToDimensions={() => onPrev({ navigateToDiagonals: true })}
             onNavigateToHeights={() => onPrev({ navigateToHeights: true })}
+            onOpenHeightModal={() => setIsHeightModalOpen(true)}
             highlightedMeasurement={highlightedMeasurement}
             setHighlightedMeasurement={setHighlightedMeasurement}
             updateMeasurement={updateMeasurement}
@@ -1327,6 +1331,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </Button>
         </div>
       </div>
+
+      {/* Height Information Modal */}
+      <HeightInformationModal
+        config={config}
+        updateConfig={updateConfig}
+        isOpen={isHeightModalOpen}
+        onClose={() => setIsHeightModalOpen(false)}
+      />
     </div>
   );
 });

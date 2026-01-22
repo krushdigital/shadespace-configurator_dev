@@ -80,7 +80,7 @@ export function DimensionsContent({
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
-  const [showHeightsSection, setShowHeightsSection] = useState(heightRequirement === 'mandatory');
+  const [showHeightsSection, setShowHeightsSection] = useState(false);
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
   const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
@@ -262,13 +262,6 @@ export function DimensionsContent({
       }, 350);
     }
   }, [navigateToDiagonals, setNavigateToDiagonals]);
-
-  // Ensure heights section is shown when mandatory
-  React.useEffect(() => {
-    if (heightRequirement === 'mandatory') {
-      setShowHeightsSection(true);
-    }
-  }, [heightRequirement]);
 
   // Auto-reconstruct polygon from measurements with debouncing
   useEffect(() => {
@@ -792,51 +785,32 @@ export function DimensionsContent({
           <div className="mt-4 sm:mt-6" ref={heightsSectionRef}>
             <Card
               className={`overflow-hidden transition-all duration-300 ${
-                heightRequirement === 'mandatory' && !heightsAreProvided
-                  ? 'border-2 border-red-500'
-                  : showHeightsSection
+                showHeightsSection
                   ? 'border-2 border-[#307C31]'
                   : 'border border-slate-300'
               }`}
             >
               <button
-                onClick={() => {
-                  if (heightRequirement !== 'mandatory') {
-                    setShowHeightsSection(!showHeightsSection);
-                  }
-                }}
-                disabled={heightRequirement === 'mandatory'}
-                className={`w-full p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between transition-colors gap-2 sm:gap-3 ${
-                  heightRequirement === 'mandatory' ? 'cursor-default' : 'hover:bg-slate-50 cursor-pointer'
-                }`}
+                onClick={() => setShowHeightsSection(!showHeightsSection)}
+                className="w-full p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-2 sm:gap-3 cursor-pointer"
               >
                 <div className="flex items-start sm:items-center gap-3">
-                  {heightRequirement === 'optional' && (
-                    <div className="flex-shrink-0 pt-1 sm:pt-0">
-                      {showHeightsSection ? (
-                        <ChevronUp className="w-5 h-5 text-[#307C31]" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-slate-600" />
-                      )}
-                    </div>
-                  )}
+                  <div className="flex-shrink-0 pt-1 sm:pt-0">
+                    {showHeightsSection ? (
+                      <ChevronUp className="w-5 h-5 text-[#307C31]" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-slate-600" />
+                    )}
+                  </div>
                   <div className="text-left flex-1">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
                       <h5 className="text-sm sm:text-base font-semibold text-[#01312D]">
-                        {heightRequirement === 'mandatory'
-                          ? 'Height Information (required)'
-                          : 'Height Information (optional)'}
+                        Height Information {heightRequirement === 'required-at-checkout' ? '(required)' : '(optional)'}
                       </h5>
-                      {heightRequirement === 'mandatory' ? (
-                        heightsAreProvided ? (
-                          <span className="text-[10px] sm:text-xs bg-green-100 text-green-800 px-3 py-1.5 rounded-full font-medium w-fit">
-                            ✓ Required information provided
-                          </span>
-                        ) : (
-                          <span className="text-[10px] sm:text-xs bg-red-100 text-red-800 px-3 py-1.5 rounded-full font-medium w-fit">
-                            ⚠ Required for {config.corners} corner sails
-                          </span>
-                        )
+                      {heightRequirement === 'required-at-checkout' ? (
+                        <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full font-medium w-fit">
+                          Optional Now - Required at Checkout
+                        </span>
                       ) : (
                         <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-medium w-fit">
                           Not required - standard manufacturing process will be used
@@ -844,7 +818,7 @@ export function DimensionsContent({
                       )}
                     </div>
                     <p className="text-sm text-slate-600 mt-2">
-                      {heightRequirement === 'mandatory'
+                      {heightRequirement === 'required-at-checkout'
                         ? `${config.corners} corner shade sails require height measurements for each fixing point to ensure proper installation`
                         : showHeightsSection
                         ? 'Providing this information allows for more customized manufacturing'
@@ -857,16 +831,16 @@ export function DimensionsContent({
               {showHeightsSection && (
                 <div className="p-3 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
                   <div className={`p-2 sm:p-3 rounded-lg ${
-                    heightRequirement === 'mandatory'
-                      ? 'bg-red-50 border border-red-300'
+                    heightRequirement === 'required-at-checkout'
+                      ? 'bg-blue-50 border border-blue-300'
                       : 'bg-[#BFF102]/10 border border-[#307C31]/30'
                   }`}>
                     <p className="text-sm text-[#01312D]">
                       <strong>
-                        {heightRequirement === 'mandatory' ? 'Required Information:' : 'Note:'}
+                        {heightRequirement === 'required-at-checkout' ? 'Required at Checkout:' : 'Note:'}
                       </strong>{' '}
-                      {heightRequirement === 'mandatory'
-                        ? `Shade sails with ${config.corners} corners require height measurements for each fixing point. This ensures proper tension, water runoff, and structural integrity for complex installations.`
+                      {heightRequirement === 'required-at-checkout'
+                        ? `Shade sails with ${config.corners} corners require height measurements for each fixing point before checkout. This ensures proper tension, water runoff, and structural integrity for complex installations. You can add them now or during the review step.`
                         : 'Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.'}
                     </p>
                   </div>

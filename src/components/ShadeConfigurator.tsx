@@ -684,7 +684,14 @@ export function ShadeConfigurator() {
   }, [config.diagonalsInitiallyProvided, config.corners, config.measurements]);
 
   const allAcknowledgmentsChecked = Object.values(acknowledgments).every(checked => checked);
-  const canAddToCart = allDiagonalsEntered && allAcknowledgmentsChecked;
+
+  // Check if heights are required and provided for 5+ corner sails
+  const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
+  const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
+
+  const canAddToCart = allDiagonalsEntered &&
+                       allAcknowledgmentsChecked &&
+                       (!heightIsRequiredForCheckout || allHeightsProvided);
 
   // Calculate if all edge measurements are complete
   const hasAllEdgeMeasurements = useMemo(() => {
@@ -1095,11 +1102,7 @@ export function ShadeConfigurator() {
 
         const allEdgesProvided = edgeCount === config.corners;
 
-        const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
-        if (heightRequirement === 'mandatory') {
-          return allEdgesProvided && areHeightsProvided(config.fixingHeights, config.corners);
-        }
-
+        // Heights are never required to complete this step - they can be added during review
         return allEdgesProvided;
       case 5: // Heights & Anchor Points
         // Step 5 is now always skipped (integrated into Step 4 as optional)

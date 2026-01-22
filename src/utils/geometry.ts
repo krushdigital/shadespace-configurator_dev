@@ -251,7 +251,7 @@ export function validateMeasurements(measurements: {[key: string]: number}, corn
   return { errors, typoSuggestions };
 }
 
-export function getHeightRequirement(corners: number, measurementOption: 'adjust' | 'exact'): 'none' | 'optional' | 'mandatory' {
+export function getHeightRequirement(corners: number, measurementOption: 'adjust' | 'exact'): 'none' | 'optional' | 'required-at-checkout' {
   if (corners === 3) {
     return 'none';
   }
@@ -265,10 +265,14 @@ export function getHeightRequirement(corners: number, measurementOption: 'adjust
   }
 
   if (corners >= 5) {
-    return 'mandatory';
+    return 'required-at-checkout';
   }
 
   return 'none';
+}
+
+export function isHeightRequiredForCheckout(corners: number, measurementOption: 'adjust' | 'exact'): boolean {
+  return corners >= 5 && measurementOption === 'adjust';
 }
 
 export function areHeightsProvided(heights: number[], corners: number): boolean {
