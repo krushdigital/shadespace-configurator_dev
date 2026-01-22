@@ -8,7 +8,7 @@ import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { AccordionItem } from '../ui/AccordionItem';
 import { FABRICS } from '../../data/fabrics';
-import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners } from '../../utils/geometry';
+import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
 import { HeightInformationModal } from '../HeightInformationModal';
@@ -337,7 +337,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           checklistRef.current?.expandDiagonals();
           targetElement = checklistRef.current?.getDiagonalSectionElement() || null;
         }
-        // 3. Check acknowledgments
+        // 3. Check height measurements (for 5+ corner sails)
+        else if (isHeightRequiredForCheckout(config.corners, config.measurementOption) &&
+                 !areHeightsProvided(config.fixingHeights, config.corners)) {
+          // Expand the heights section and highlight it
+          checklistRef.current?.expandHeights();
+          targetElement = checklistRef.current?.getHeightSectionElement() || null;
+        }
+        // 4. Check acknowledgments
         else if (!allAcknowledgmentsChecked) {
           targetElement = acknowledgementsCardRef.current;
         }
@@ -370,6 +377,16 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               }
             } else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
               // Diagonal section handles its own highlighting via the ref
+              // Additional pulse for emphasis on mobile
+              if (isMobile && targetElement) {
+                targetElement.classList.add('pulse-error');
+                setTimeout(() => {
+                  targetElement.classList.remove('pulse-error');
+                }, 2400);
+              }
+            } else if (isHeightRequiredForCheckout(config.corners, config.measurementOption) &&
+                       !areHeightsProvided(config.fixingHeights, config.corners)) {
+              // Heights section handles its own highlighting via the ref
               // Additional pulse for emphasis on mobile
               if (isMobile && targetElement) {
                 targetElement.classList.add('pulse-error');

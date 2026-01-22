@@ -27,6 +27,8 @@ interface ConfigurationChecklistProps {
 export interface ConfigurationChecklistRef {
   expandDiagonals: () => void;
   getDiagonalSectionElement: () => HTMLDivElement | null;
+  expandHeights: () => void;
+  getHeightSectionElement: () => HTMLDivElement | null;
 }
 
 export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, ConfigurationChecklistProps>((
@@ -57,6 +59,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
   const [validationExpanded, setValidationExpanded] = useState(false);
   const [isEditingDiagonals, setIsEditingDiagonals] = useState(false);
   const [isHighlighted, setIsHighlighted] = useState(false);
+  const [isHeightHighlighted, setIsHeightHighlighted] = useState(false);
   const diagonalSectionRef = useRef<HTMLDivElement>(null);
   const mobileDiagonalSectionRef = useRef<HTMLDivElement>(null);
   const heightSectionRef = useRef<HTMLDivElement>(null);
@@ -86,6 +89,28 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
       }
     },
     getDiagonalSectionElement: () => isMobile ? mobileDiagonalSectionRef.current : diagonalSectionRef.current,
+    expandHeights: () => {
+      if (isMobile) {
+        // On mobile, just highlight the section since there's no expansion
+        setIsHeightHighlighted(true);
+        setTimeout(() => {
+          setIsHeightHighlighted(false);
+        }, 2400);
+      } else {
+        // On desktop, expand and focus
+        setHeightsExpanded(true);
+        setIsHeightHighlighted(true);
+        setTimeout(() => {
+          setIsHeightHighlighted(false);
+        }, 2400);
+        setTimeout(() => {
+          if (firstEmptyHeightInputRef.current) {
+            firstEmptyHeightInputRef.current.focus();
+          }
+        }, 800);
+      }
+    },
+    getHeightSectionElement: () => heightSectionRef.current,
   }));
 
   // Helper function to update fixing heights
@@ -493,7 +518,11 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
         {showHeightRequired && (
           <div
             ref={heightSectionRef}
-            className="bg-white rounded-lg border-2 border-emerald-700 transition-all duration-300"
+            className={`bg-white rounded-lg border-2 transition-all duration-300 ${
+              isHeightHighlighted
+                ? 'border-red-500 ring-4 ring-red-300 shadow-xl pulse-error'
+                : 'border-emerald-700'
+            }`}
           >
             <div
               className={`flex items-start gap-3 p-3 cursor-pointer transition-colors ${
@@ -553,9 +582,13 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
 
             {heightsExpanded && (
               <div className="px-3 pb-3 pt-0 border-t border-emerald-200 mt-2">
-                <div className="rounded-lg p-3 mb-3 mt-3 bg-emerald-50">
-                  <p className="text-xs font-semibold text-emerald-800">
-                    Enter the height from ground level to each anchor point. This ensures proper sail tension and water runoff.
+                <div className={`rounded-lg p-3 mb-3 mt-3 transition-colors duration-300 ${
+                  isHeightHighlighted ? 'bg-red-100 border-2 border-red-400' : 'bg-emerald-50'
+                }`}>
+                  <p className={`text-xs font-semibold ${
+                    isHeightHighlighted ? 'text-red-900' : 'text-emerald-800'
+                  }`}>
+                    {isHeightHighlighted ? '⚠️ Please enter all height measurements below to proceed:' : 'Enter the height from ground level to each anchor point. This ensures proper sail tension and water runoff.'}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -588,7 +621,9 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                             step={config.unit === 'imperial' ? '0.1' : '10'}
                             className={`${hasValue ? 'pr-16' : 'pr-12'} ${hasValue
                               ? '!border-emerald-500 !bg-emerald-50 !ring-2 !ring-emerald-200'
-                              : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-500'
+                              : isHeightHighlighted && !hasValue
+                                ? '!border-red-400 !bg-red-50 !ring-2 !ring-red-200'
+                                : 'border-slate-300 bg-white focus:border-blue-500 focus:ring-blue-500'
                             }`}
                             isSuccess={hasValue}
                           />
