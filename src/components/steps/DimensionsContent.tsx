@@ -583,6 +583,16 @@ export function DimensionsContent({
                            const newMeasurements = { ...config.measurements };
                            delete newMeasurements[edgeKey];
                            updateConfig({ measurements: newMeasurements });
+
+                           // Clear validation errors for this field
+                           if (setValidationErrors && setTypoSuggestions) {
+                             const newErrors = { ...validationErrors };
+                             const newSuggestions = { ...typoSuggestions };
+                             delete newErrors[edgeKey];
+                             delete newSuggestions[edgeKey];
+                             setValidationErrors(newErrors);
+                             setTypoSuggestions(newSuggestions);
+                           }
                          } else {
                            updateMeasurement(edgeKey, String(value));
                          }
@@ -725,10 +735,15 @@ export function DimensionsContent({
                                   const newMeasurements = { ...config.measurements };
                                   delete newMeasurements[key];
                                   updateConfig({ measurements: newMeasurements });
-                                  if (setValidationErrors) {
+
+                                  // Clear validation errors and typo suggestions for this field
+                                  if (setValidationErrors && setTypoSuggestions) {
                                     const newErrors = { ...validationErrors };
+                                    const newSuggestions = { ...typoSuggestions };
                                     delete newErrors[key];
+                                    delete newSuggestions[key];
                                     setValidationErrors(newErrors);
+                                    setTypoSuggestions(newSuggestions);
                                   }
                                 } else {
                                   updateMeasurement(key, String(value));

@@ -16,7 +16,6 @@ interface ConfigurationChecklistProps {
   diagonalMeasurements: Array<{ key: string; label: string; hasValue: boolean }>;
   onNavigateToDimensions?: () => void;
   onNavigateToHeights?: () => void;
-  onOpenHeightModal?: () => void;
   highlightedMeasurement: string | null;
   setHighlightedMeasurement: (key: string | null) => void;
   updateMeasurement: (edgeKey: string, value: string) => void;
@@ -41,7 +40,6 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
     diagonalMeasurements,
     onNavigateToDimensions,
     onNavigateToHeights,
-    onOpenHeightModal,
     highlightedMeasurement,
     setHighlightedMeasurement,
     updateMeasurement,
@@ -297,9 +295,9 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                   Height information {allHeightsProvided ? 'complete' : 'required'}
                 </span>
               </div>
-              {!allHeightsProvided && onOpenHeightModal && (
+              {!allHeightsProvided && onNavigateToHeights && (
                 <button
-                  onClick={onOpenHeightModal}
+                  onClick={onNavigateToHeights}
                   className="text-xs font-medium text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
                 >
                   Enter Heights →
