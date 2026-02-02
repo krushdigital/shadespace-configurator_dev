@@ -1350,21 +1350,52 @@ export function reconstructPolygonFromMeasurements(
     const B: Point = { x: AB, y: 0 };
 
     // Calculate C using AC and BC
-    const C = trilateratePoint(A, B, AC, BC);
+    let C = trilateratePoint(A, B, AC, BC);
     if (!C) {
       console.warn('5-corner reconstruction failed: Could not place point C');
       return null;
     }
 
-    // Calculate D using AD and CD
-    const D = trilateratePoint(A, C, AD, CD);
+    // Calculate D - use additional diagonals for refinement if available
+    let D: Point | null = null;
+    if (BD) {
+      // Try using BD for more accurate D placement
+      D = trilateratePoint(B, C, BD, CD);
+      // If BD placement fails or conflicts, fall back to AD
+      if (!D) {
+        D = trilateratePoint(A, C, AD, CD);
+      }
+    } else {
+      D = trilateratePoint(A, C, AD, CD);
+    }
     if (!D) {
       console.warn('5-corner reconstruction failed: Could not place point D');
       return null;
     }
 
-    // Calculate E using AE and DE
-    const E = trilateratePoint(A, D, EA, DE);
+    // Calculate E - use additional diagonals for refinement if available
+    let E: Point | null = null;
+    if (BE) {
+      // Try using BE for more accurate E placement
+      E = trilateratePoint(B, D, BE, DE);
+      // If BE placement fails, try CE
+      if (!E && CE) {
+        E = trilateratePoint(C, D, CE, DE);
+      }
+      // Fall back to AE if both fail
+      if (!E) {
+        E = trilateratePoint(A, D, EA, DE);
+      }
+    } else if (CE) {
+      // Try using CE for more accurate E placement
+      E = trilateratePoint(C, D, CE, DE);
+      // Fall back to AE if it fails
+      if (!E) {
+        E = trilateratePoint(A, D, EA, DE);
+      }
+    } else {
+      E = trilateratePoint(A, D, EA, DE);
+    }
     if (!E) {
       console.warn('5-corner reconstruction failed: Could not place point E');
       return null;
@@ -1384,10 +1415,16 @@ export function reconstructPolygonFromMeasurements(
     const AC = measurements['AC'];
     const AD = measurements['AD'];
     const AE = measurements['AE'];
+    const BD = measurements['BD'];
+    const BE = measurements['BE'];
+    const BF = measurements['BF'];
+    const CE = measurements['CE'];
+    const CF = measurements['CF'];
+    const DF = measurements['DF'];
 
     console.log('6-corner reconstruction started with measurements:', {
       edges: { AB, BC, CD, DE, EF, FA },
-      diagonals: { AC, AD, AE }
+      diagonals: { AC, AD, AE, BD, BE, BF, CE, CF, DF }
     });
 
     // Place A at origin
@@ -1397,28 +1434,95 @@ export function reconstructPolygonFromMeasurements(
     const B: Point = { x: AB, y: 0 };
 
     // Calculate C using AC and BC
-    const C = trilateratePoint(A, B, AC, BC);
+    let C = trilateratePoint(A, B, AC, BC);
     if (!C) {
       console.warn('6-corner reconstruction failed: Could not place point C');
       return null;
     }
 
-    // Calculate D using AD and CD
-    const D = trilateratePoint(A, C, AD, CD);
+    // Calculate D - use additional diagonals for refinement if available
+    let D: Point | null = null;
+    if (BD) {
+      // Try using BD for more accurate D placement
+      D = trilateratePoint(B, C, BD, CD);
+      // If BD placement fails or conflicts, fall back to AD
+      if (!D) {
+        D = trilateratePoint(A, C, AD, CD);
+      }
+    } else {
+      D = trilateratePoint(A, C, AD, CD);
+    }
     if (!D) {
       console.warn('6-corner reconstruction failed: Could not place point D');
       return null;
     }
 
-    // Calculate E using AE and DE
-    const E = trilateratePoint(A, D, AE, DE);
+    // Calculate E - use additional diagonals for refinement if available
+    let E: Point | null = null;
+    if (BE) {
+      // Try using BE for more accurate E placement
+      E = trilateratePoint(B, D, BE, DE);
+      // If BE placement fails, try CE
+      if (!E && CE) {
+        E = trilateratePoint(C, D, CE, DE);
+      }
+      // Fall back to AE if both fail
+      if (!E) {
+        E = trilateratePoint(A, D, AE, DE);
+      }
+    } else if (CE) {
+      // Try using CE for more accurate E placement
+      E = trilateratePoint(C, D, CE, DE);
+      // Fall back to AE if it fails
+      if (!E) {
+        E = trilateratePoint(A, D, AE, DE);
+      }
+    } else {
+      E = trilateratePoint(A, D, AE, DE);
+    }
     if (!E) {
       console.warn('6-corner reconstruction failed: Could not place point E');
       return null;
     }
 
-    // Calculate F using FA and EF
-    const F = trilateratePoint(A, E, FA, EF);
+    // Calculate F - use additional diagonals for refinement if available
+    let F: Point | null = null;
+    if (BF) {
+      // Try using BF for more accurate F placement
+      F = trilateratePoint(B, E, BF, EF);
+      // If BF placement fails, try CF
+      if (!F && CF) {
+        F = trilateratePoint(C, E, CF, EF);
+      }
+      // Try DF if previous attempts fail
+      if (!F && DF) {
+        F = trilateratePoint(D, E, DF, EF);
+      }
+      // Fall back to AF if all fail
+      if (!F) {
+        F = trilateratePoint(A, E, FA, EF);
+      }
+    } else if (CF) {
+      // Try using CF for more accurate F placement
+      F = trilateratePoint(C, E, CF, EF);
+      // Try DF if it fails
+      if (!F && DF) {
+        F = trilateratePoint(D, E, DF, EF);
+      }
+      // Fall back to AF
+      if (!F) {
+        F = trilateratePoint(A, E, FA, EF);
+      }
+    } else if (DF) {
+      // Try using DF for more accurate F placement
+      F = trilateratePoint(D, E, DF, EF);
+      // Fall back to AF if it fails
+      if (!F) {
+        F = trilateratePoint(A, E, FA, EF);
+      }
+    } else {
+      F = trilateratePoint(A, E, FA, EF);
+    }
     if (!F) {
       console.warn('6-corner reconstruction failed: Could not place point F');
       return null;
