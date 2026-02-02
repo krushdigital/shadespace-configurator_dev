@@ -899,7 +899,7 @@ export function DimensionsContent({
                                             What is this measurement?
                                           </p>
                                           <p className="text-xs text-[#01312D]/80 leading-relaxed">
-                                            Height is measured from ground level to the anchor point. This helps ensure proper sail tension and water runoff.
+                                            Height is measured from a level ground or datum level to the anchor point. This helps ensure proper sail tension and water runoff.
                                           </p>
                                         </div>
                                       }
