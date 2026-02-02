@@ -829,10 +829,10 @@ export function DimensionsContent({
                         <Tooltip
                           content={
                             <div>
-                              <p className="text-xs text-white font-medium mb-1">
+                              <p className="text-xs text-slate-900 font-medium mb-1">
                                 Required at Checkout
                               </p>
-                              <p className="text-xs text-white/90 leading-relaxed">
+                              <p className="text-xs text-slate-700 leading-relaxed">
                                 Shade sails with {config.corners} corners require height measurements for each fixing point before checkout. This ensures proper tension, water runoff, and structural integrity for complex installations. You can add them now or during the review step.
                               </p>
                             </div>
