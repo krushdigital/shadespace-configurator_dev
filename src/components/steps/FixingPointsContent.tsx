@@ -3,6 +3,7 @@ import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
+import { DualImperialInput } from '../ui/DualImperialInput';
 import { Tooltip } from '../ui/Tooltip';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
@@ -221,16 +222,10 @@ export function FixingPointsContent({
                       const isSuccess = hasValidValue && !hasError;
 
                       return (
-                    <Input
-                      type="number"
-                     value={hasValidValue
-                       ? (config.unit === 'imperial'
-                         ? String(Math.round(convertMmToUnit(currentHeight, config.unit) * 100) / 100)
-                         : Math.round(convertMmToUnit(currentHeight, config.unit)).toString()
-                       )
-                       : ''}
-                      onChange={(e) => {
-                        if (e.target.value === '') {
+                    <DualImperialInput
+                     value={hasValidValue ? convertMmToUnit(currentHeight, config.unit) : 0}
+                      onChange={(value) => {
+                        if (value === 0) {
                           const newHeights = [...config.fixingHeights];
                           newHeights[index] = undefined;
                           updateConfig({ fixingHeights: newHeights });
@@ -244,27 +239,20 @@ export function FixingPointsContent({
                             setTypoSuggestions(newSuggestions);
                           }
                         } else {
-                          const numValue = parseFloat(e.target.value);
-                          if (!isNaN(numValue)) {
-                            updateFixingHeight(index, numValue);
-                          }
+                          updateFixingHeight(index, value);
                         }
                       }}
-                      placeholder={config.unit === 'imperial' ? '100' : '2500'}
-                     autoComplete="off"
-                      className="flex-1 py-2 pr-12"
+                      unit={config.unit}
+                      className="flex-1 py-2"
                       isSuccess={isSuccess}
-                      isSuggestedTypo={!!typoSuggestions[`height_${index}`]}
-                     step={config.unit === 'imperial' ? '0.1' : '10'}
                      error={validationErrors[`height_${index}`]}
                      errorKey={`height_${index}`}
                      secondaryValue={hasValidValue ? formatSecondaryUnit(currentHeight, config.unit) : ''}
+                     showConversion={true}
+                     allowFormatSwitch={true}
                     />
                       );
                     })()}
-                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-[#01312D]/50 pointer-events-none">
-                      {config.unit === 'metric' ? 'mm' : 'in'}
-                    </span>
                   </div>
                   
                   {/* Typo Warning */}

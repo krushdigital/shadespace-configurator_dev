@@ -4,9 +4,10 @@ import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
+import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -78,11 +79,30 @@ export function DimensionsContent({
   navigateToDiagonals = false,
   setNavigateToDiagonals = () => {}
 }: DimensionsContentProps) {
+  const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
+  const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
   const [showHeightsSection, setShowHeightsSection] = useState(false);
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
   const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
   const lastValidPointsRef = React.useRef(config.points);
+
+  // Helper function to convert error messages with mm units to user's preferred unit
+  const convertErrorMessageUnits = (errorMessage: string): string => {
+    // Pattern: "Diagonal XX (YYYmm) is too long/short. With your edge measurements, it should be at least/cannot exceed ZZZmm."
+    const diagonalMatch = errorMessage.match(/Diagonal ([A-Z]+) \((\d+)mm\) is (too long|too short)\. With your edge measurements, it (should be at least|cannot exceed) (\d+)mm/);
+
+    if (diagonalMatch) {
+      const [, diagonalName, currentValue, condition, phrase, suggestedValue] = diagonalMatch;
+      const currentFormatted = formatMeasurement(parseFloat(currentValue), config.unit);
+      const suggestedFormatted = formatMeasurement(parseFloat(suggestedValue), config.unit);
+
+      return `Diagonal ${diagonalName} (${currentFormatted}) is ${condition}. With your edge measurements, it ${phrase} ${suggestedFormatted}.`;
+    }
+
+    // Return original message if pattern doesn't match
+    return errorMessage;
+  };
 
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
@@ -285,7 +305,9 @@ export function DimensionsContent({
         if (!validation.isValid) {
           // Geometry is invalid - preserve last valid shape and show warnings
           console.log('Geometry validation failed - setting warning:', validation.errors[0]);
-          setGeometryWarnings({ general: validation.errors[0] || 'Invalid measurements' });
+          const errorMessage = validation.errors[0] || 'Invalid measurements';
+          const convertedError = convertErrorMessageUnits(errorMessage);
+          setGeometryWarnings({ general: convertedError });
           // Keep the last valid points - don't update
           return;
         }
@@ -552,45 +574,43 @@ export function DimensionsContent({
                 
                 return (
                   <div key={edgeKey}>
-                   <div className="relative">
-                     <Input
-                       type="number"
+                     <DualImperialInput
                       value={config.measurements[edgeKey]
-                        ? (config.unit === 'imperial'
-                          ? String(Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit) * 100) / 100)
-                          : Math.round(convertMmToUnit(config.measurements[edgeKey], config.unit)).toString()
-                        )
-                        : ''}
-                       onChange={(e) => {
-                         if (e.target.value === '') {
-                           // Allow complete clearing
+                        ? convertMmToUnit(config.measurements[edgeKey], config.unit)
+                        : 0}
+                       onChange={(value) => {
+                         if (value === 0) {
                            const newMeasurements = { ...config.measurements };
                            delete newMeasurements[edgeKey];
                            updateConfig({ measurements: newMeasurements });
+
+                           // Clear validation errors for this field
+                           if (setValidationErrors && setTypoSuggestions) {
+                             const newErrors = { ...validationErrors };
+                             const newSuggestions = { ...typoSuggestions };
+                             delete newErrors[edgeKey];
+                             delete newSuggestions[edgeKey];
+                             setValidationErrors(newErrors);
+                             setTypoSuggestions(newSuggestions);
+                           }
                          } else {
-                           updateMeasurement(edgeKey, e.target.value);
+                           updateMeasurement(edgeKey, String(value));
                          }
                        }}
                        onFocus={() => setHighlightedMeasurement(edgeKey)}
                        onBlur={() => setHighlightedMeasurement(null)}
-                       placeholder={config.unit === 'imperial' ? '120' : '3000'}
-                       min="100"
-                      step={config.unit === 'imperial' ? '0.1' : '10'}
-                      autoComplete="off"
-                       className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
+                       unit={config.unit}
+                       className={`text-sm sm:text-base`}
                        isSuccess={isSuccess}
-                       isSuggestedTypo={!!typoSuggestions[edgeKey]}
                       error={validationErrors[edgeKey]}
                       errorKey={edgeKey}
                       label={config.measurementOption === 'adjust'
                         ? `Space Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Fixing Point to Fixing Point)`
                         : `Shade Edge ${getCornerLabel(index)} → ${getCornerLabel(nextIndex)} (Finished Sail)`}
                       secondaryValue={config.measurements[edgeKey] ? formatSecondaryUnit(config.measurements[edgeKey], config.unit) : ''}
+                      showConversion={true}
+                      allowFormatSwitch={true}
                      />
-                     <div className={`absolute ${isSuccess ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
-                       {config.unit === 'metric' ? 'mm' : 'in'}
-                     </div>
-                   </div>
 
                    {/* Typo Warning */}
                    {typoSuggestions[edgeKey] && (
@@ -631,7 +651,13 @@ export function DimensionsContent({
                   {isApproximate && (
                     <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded-lg">
                       <p className="text-xs sm:text-sm text-amber-800 font-medium">
-                        Add at least one diagonal to see your exact shape in the preview above
+                        {(() => {
+                          const minimumDiagonals = config.corners - 3;
+                          if (minimumDiagonals === 1) {
+                            return 'Add at least one diagonal to see your exact shape in the preview above';
+                          }
+                          return `Add at least ${minimumDiagonals} diagonals to see your exact shape in the preview above`;
+                        })()}
                       </p>
                     </div>
                   )}
@@ -700,47 +726,41 @@ export function DimensionsContent({
                       
                       return (
                         <div key={key}>
-                          <div className="relative">
-                            <Input
-                              type="number"
+                            <DualImperialInput
                              value={config.measurements[key]
-                               ? (config.unit === 'imperial'
-                                 ? String(Math.round(convertMmToUnit(config.measurements[key], config.unit) * 100) / 100)
-                                 : Math.round(convertMmToUnit(config.measurements[key], config.unit)).toString()
-                               )
-                               : ''}
-                              onChange={(e) => {
-                                if (e.target.value === '') {
+                               ? convertMmToUnit(config.measurements[key], config.unit)
+                               : 0}
+                              onChange={(value) => {
+                                if (value === 0) {
                                   const newMeasurements = { ...config.measurements };
                                   delete newMeasurements[key];
                                   updateConfig({ measurements: newMeasurements });
-                                  if (setValidationErrors) {
+
+                                  // Clear validation errors and typo suggestions for this field
+                                  if (setValidationErrors && setTypoSuggestions) {
                                     const newErrors = { ...validationErrors };
+                                    const newSuggestions = { ...typoSuggestions };
                                     delete newErrors[key];
+                                    delete newSuggestions[key];
                                     setValidationErrors(newErrors);
+                                    setTypoSuggestions(newSuggestions);
                                   }
                                 } else {
-                                  updateMeasurement(key, e.target.value);
+                                  updateMeasurement(key, String(value));
                                 }
                               }}
                               onFocus={() => setHighlightedMeasurement?.(key)}
                               onBlur={() => setHighlightedMeasurement?.(null)}
-                              placeholder={config.unit === 'imperial' ? '240' : '6000'}
-                              min="100"
-                             step={config.unit === 'imperial' ? '0.1' : '10'}
-                             autoComplete="off"
-                              className={`text-sm sm:text-base ${isSuccess ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
+                              unit={config.unit}
+                              className={`text-sm sm:text-base`}
                               error={validationErrors[key]}
                               errorKey={key}
                               isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
-                              isSuggestedTypo={!!typoSuggestions[key]}
                               label={label}
                               secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
+                              showConversion={true}
+                              allowFormatSwitch={true}
                             />
-                            <div className={`absolute ${isSuccess ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
-                              {config.unit === 'metric' ? 'mm' : 'in'}
-                            </div>
-                          </div>
 
                           {/* Typo Warning */}
                           {typoSuggestions[key] && (
@@ -778,17 +798,19 @@ export function DimensionsContent({
           </Card>
         </div>
 
-        {/* Optional Heights and Anchor Points Section - Only shown for "adjust" measurement option */}
-        {config.corners !== 3 && config.measurementOption === 'adjust' && (
+        {/* Heights and Anchor Points Section - Shown based on corner count and measurement option */}
+        {heightRequirement !== 'none' && (
           <div className="mt-4 sm:mt-6" ref={heightsSectionRef}>
             <Card
               className={`overflow-hidden transition-all duration-300 ${
-                showHeightsSection ? 'border-2 border-[#307C31]' : 'border border-slate-300'
+                showHeightsSection
+                  ? 'border-2 border-[#307C31]'
+                  : 'border border-slate-300'
               }`}
             >
               <button
                 onClick={() => setShowHeightsSection(!showHeightsSection)}
-                className="w-full p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-2 sm:gap-3"
+                className="w-full p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-2 sm:gap-3 cursor-pointer"
               >
                 <div className="flex items-start sm:items-center gap-3">
                   <div className="flex-shrink-0 pt-1 sm:pt-0">
@@ -799,16 +821,33 @@ export function DimensionsContent({
                     )}
                   </div>
                   <div className="text-left flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                    <div className="flex items-center gap-2">
                       <h5 className="text-sm sm:text-base font-semibold text-[#01312D]">
-                        Height Information (optional)
+                        Height Information {heightRequirement === 'required-at-checkout' ? '(required)' : '(optional)'}
                       </h5>
-                      <span className="text-[10px] sm:text-xs bg-amber-100 text-amber-800 px-3 py-1.5 rounded-full font-medium w-fit">
-                        Not required - standard manufacturing process will be used
-                      </span>
+                      {heightRequirement === 'required-at-checkout' && (
+                        <Tooltip
+                          content={
+                            <div>
+                              <p className="text-xs text-slate-900 font-medium mb-1">
+                                Required at Checkout
+                              </p>
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                Shade sails with {config.corners} corners require height measurements for each fixing point before checkout. This ensures proper tension, water runoff, and structural integrity for complex installations. You can add them now or during the review step.
+                              </p>
+                            </div>
+                          }
+                        >
+                          <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-blue-600 rounded-full cursor-help hover:bg-blue-700">
+                            i
+                          </span>
+                        </Tooltip>
+                      )}
                     </div>
-                    <p className="text-sm text-slate-600 mt-2">
-                      {showHeightsSection
+                    <p className="text-sm text-slate-600 mt-1.5">
+                      {heightRequirement === 'required-at-checkout'
+                        ? `${config.corners} corner shade sails require height measurements for each fixing point to ensure proper installation`
+                        : showHeightsSection
                         ? 'Providing this information allows for more customized manufacturing'
                         : 'Click to add height and attachment information for a more customized fit'}
                     </p>
@@ -817,124 +856,105 @@ export function DimensionsContent({
               </button>
 
               {showHeightsSection && (
-                <div className="p-3 sm:p-4 border-t border-slate-200 space-y-3 sm:space-y-4">
-                  <div className="p-2 sm:p-3 bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg">
-                    <p className="text-sm text-[#01312D]">
-                      <strong>Note:</strong> Adding heights and anchor point details helps us manufacture a sail that fits your specific installation perfectly. However, this information is not required to complete your order.
-                    </p>
-                  </div>
-
+                <div className="p-3 sm:p-4 border-t border-slate-200 space-y-2 sm:space-y-3">
                   {/* Height inputs for each corner */}
-                  <div className="space-y-2 sm:space-y-3">
+                  <div className="space-y-2">
                     {Array.from({ length: config.corners }, (_, index) => (
-                      <Card key={index} className="p-2 sm:p-3 border-l-4 border-l-[#01312D]">
-                        <div className="space-y-1.5 sm:space-y-2">
-                          <h6 className="font-semibold text-[#01312D] text-xs sm:text-sm">
-                            Anchor Point {getCornerLabel(index)} Configuration
+                      <Card key={index} className="p-2 border-l-4 border-l-[#01312D]">
+                        <div className="space-y-1.5">
+                          <h6 className="font-semibold text-[#01312D] text-xs">
+                            Anchor Point {getCornerLabel(index)}
                           </h6>
 
-                          <div className="grid grid-cols-1 gap-2 sm:gap-3 md:gap-4 md:grid-cols-2">
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-[2fr_1fr] md:gap-3">
                             {/* Height Input */}
                             <div>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  value={config.fixingHeights[index]
-                                    ? (config.unit === 'imperial'
-                                      ? String(Math.round(convertMmToUnit(config.fixingHeights[index], config.unit) * 100) / 100)
-                                      : Math.round(convertMmToUnit(config.fixingHeights[index], config.unit)).toString()
-                                    )
-                                    : ''}
-                                  onChange={(e) => {
-                                    if (e.target.value === '') {
-                                      const newHeights = [...config.fixingHeights];
-                                      newHeights[index] = 0;
-                                      updateConfig({ fixingHeights: newHeights });
-                                    } else {
-                                      const numValue = parseFloat(e.target.value);
-                                      if (!isNaN(numValue)) {
-                                        updateFixingHeight(index, numValue);
-                                      }
-                                    }
-                                  }}
-                                  onFocus={() => setHighlightedCorner(index)}
-                                  onBlur={() => setHighlightedCorner(null)}
-                                  placeholder={config.unit === 'imperial' ? '100' : '2500'}
-                                  autoComplete="off"
-                                  className={`flex-1 text-sm sm:text-base ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? '!pr-14 sm:!pr-16 md:!pr-[72px]' : '!pr-10 sm:!pr-12 md:!pr-14'}`}
-                                  step={config.unit === 'imperial' ? '0.1' : '10'}
-                                  isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
-                                  label={
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs font-medium text-[#01312D]">
-                                        Height from Ground
-                                      </span>
-                                      <Tooltip
-                                        content={
-                                          <div>
-                                            <p className="text-sm text-[#01312D] font-medium mb-2">
-                                              What is this measurement?
-                                            </p>
-                                            <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
-                                              Height is measured from ground level (or your chosen datum level) to the anchor point. This helps ensure proper sail tension and water runoff.
-                                            </p>
-                                          </div>
-                                        }
-                                      >
-                                        <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                                          ?
-                                        </span>
-                                      </Tooltip>
-                                    </div>
+                              <DualImperialInput
+                                value={config.fixingHeights[index]
+                                  ? convertMmToUnit(config.fixingHeights[index], config.unit)
+                                  : 0}
+                                onChange={(value) => {
+                                  if (value === 0) {
+                                    const newHeights = [...config.fixingHeights];
+                                    newHeights[index] = 0;
+                                    updateConfig({ fixingHeights: newHeights });
+                                  } else {
+                                    updateFixingHeight(index, value);
                                   }
-                                  secondaryValue={config.fixingHeights[index] && config.fixingHeights[index] > 0 ? formatSecondaryUnit(config.fixingHeights[index], config.unit) : ''}
-                                />
-                                <span className={`absolute ${config.fixingHeights[index] && config.fixingHeights[index] > 0 ? 'right-9 sm:right-11 md:right-14' : 'right-2.5 sm:right-3 md:right-4'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs md:text-sm text-[#01312D]/60 font-medium transition-all duration-200 pointer-events-none`}>
-                                  {config.unit === 'metric' ? 'mm' : 'in'}
-                                </span>
-                              </div>
+                                }}
+                                onFocus={() => setHighlightedCorner(index)}
+                                onBlur={() => setHighlightedCorner(null)}
+                                unit={config.unit}
+                                className="text-sm"
+                                isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
+                                label={
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-medium text-[#01312D]">
+                                      Height from Ground
+                                    </span>
+                                    <Tooltip
+                                      content={
+                                        <div>
+                                          <p className="text-xs text-[#01312D] font-medium mb-1">
+                                            What is this measurement?
+                                          </p>
+                                          <p className="text-xs text-[#01312D]/80 leading-relaxed">
+                                            Height is measured from a level ground or datum level to the anchor point. This helps ensure proper sail tension and water runoff.
+                                          </p>
+                                        </div>
+                                      }
+                                    >
+                                      <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                        ?
+                                      </span>
+                                    </Tooltip>
+                                  </div>
+                                }
+                                showConversion={false}
+                                allowFormatSwitch={true}
+                              />
                             </div>
 
                             {/* Attachment Type */}
                             <div>
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center gap-1.5 mb-1">
                                 <span className="text-xs font-medium text-[#01312D]">
                                   Attachment Type
                                 </span>
                                 <Tooltip
                                   content={
                                     <div>
-                                      <p className="text-sm text-[#01312D] font-medium mb-1">
+                                      <p className="text-xs text-[#01312D] font-medium mb-1">
                                         Attachment Type
                                       </p>
-                                      <p className="text-sm text-[#01312D]/70">
-                                        Post: Freestanding pole installation. Building: Attached to wall, roof, or existing structure.
+                                      <p className="text-xs text-[#01312D]/70">
+                                        Post: Freestanding pole. Building: Wall, roof, or structure.
                                       </p>
                                     </div>
                                   }
                                 >
-                                  <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
                                     ?
                                   </span>
                                 </Tooltip>
                               </div>
-                              <div className="flex gap-1">
+                              <div className="flex flex-col gap-1.5">
                                 <button
                                   onClick={() => updateFixingType(index, 'post')}
-                                  className={`flex-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300 border-2 ${
+                                  className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'post'
-                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
-                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
                                   }`}
                                 >
                                   Post
                                 </button>
                                 <button
                                   onClick={() => updateFixingType(index, 'building')}
-                                  className={`flex-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all duration-300 border-2 ${
+                                  className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'building'
-                                      ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
-                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                                      ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
                                   }`}
                                 >
                                   Building

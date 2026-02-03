@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info } from 'lucide-react';
+import { Info, RefreshCw } from 'lucide-react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -8,6 +8,16 @@ import { AccordionItem } from '../ui/AccordionItem';
 import { CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../../data/pricing';
 import { MeasurementOptionVisualizer } from '../MeasurementOptionVisualizer';
 import { SaveProgressButton } from '../SaveProgressButton';
+import {
+  determineUnit,
+  getUnitDisplayMessage,
+  getAlternativeUnit,
+  getAlternativeUnitName,
+  shouldShowProminentToggle,
+  setStoredUnitPreference
+} from '../../utils/unitAutoSelection';
+import { analytics } from '../../utils/analytics';
+import { getUserCurrencyInfo } from '../../utils/currencyFormatter';
 
 // Define the mapping for hardware pack images
 const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
@@ -37,6 +47,32 @@ interface CombinedMeasurementContentProps {
 }
 
 export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote, mobileGuidance }: CombinedMeasurementContentProps) {
+  const [wasAutoSelected, setWasAutoSelected] = React.useState(false);
+  const [autoSelectionSource, setAutoSelectionSource] = React.useState<string>('');
+  const [autoSelectionConfidence, setAutoSelectionConfidence] = React.useState<'high' | 'medium' | 'low'>('high');
+  const currencyInfo = getUserCurrencyInfo();
+
+  React.useEffect(() => {
+    if (!config.unit) {
+      const hasMeasurements = Object.keys(config.measurements || {}).length > 0;
+      const unitSelection = determineUnit(currencyInfo.currency, undefined, hasMeasurements);
+
+      updateConfig({ unit: unitSelection.unit });
+      setWasAutoSelected(unitSelection.autoSelected);
+      setAutoSelectionSource(unitSelection.source);
+      setAutoSelectionConfidence(unitSelection.confidence);
+
+      if (unitSelection.autoSelected) {
+        analytics.unitAutoSelected(
+          unitSelection.unit,
+          currencyInfo.currency,
+          unitSelection.source,
+          unitSelection.confidence
+        );
+      }
+    }
+  }, []);
+
   React.useEffect(() => {
     console.log('[CombinedMeasurement] Unit effect triggered', {
       isGuidanceActive: mobileGuidance?.isGuidanceActive,
@@ -78,55 +114,78 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
     updateConfig(updates);
   };
 
+  const handleUnitChange = () => {
+    if (!config.unit) return;
+
+    const currentUnit = config.unit;
+    const newUnit = getAlternativeUnit(currentUnit);
+
+    analytics.unitManuallyChanged(currentUnit, newUnit, currencyInfo.currency, wasAutoSelected);
+
+    setStoredUnitPreference(newUnit, currencyInfo.currency, true);
+
+    updateConfig({ unit: newUnit });
+    setWasAutoSelected(false);
+  };
+
   // Get the correct hardware pack image URL based on the number of corners
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
+
+  const showProminent = shouldShowProminentToggle(autoSelectionConfidence, currencyInfo.currency);
+  const unitMessage = config.unit ? getUnitDisplayMessage(config.unit, currencyInfo.currency, autoSelectionSource as any) : '';
+  const alternativeUnitName = config.unit ? getAlternativeUnitName(config.unit) : '';
 
   return (
     <div className="p-4 sm:p-6">
 
-      {/* Unit Selection */}
+      {/* Auto-Selected Unit Display with Toggle */}
       <div className="mb-6 sm:mb-8">
-        <h4 className="text-lg font-semibold text-slate-900 mb-2">
-          Units for measurements
-        </h4>
-        <p className="text-sm text-slate-600 mb-4">
-          Choose between metric (mm/m) or imperial (inches/feet) units
-        </p>
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            type="button"
-            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 bg-white ${
-              config.unit === 'metric'
-                ? 'ring-2 ring-[#01312D] !border-[#01312D] text-slate-900'
-                : validationErrors.unit && !config.unit
-                ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
-                : 'border-slate-300 text-slate-900 hover:border-slate-400 hover:shadow-md'
-            }`}
-            onClick={() => updateConfig({ unit: 'metric' })}
-          >
-            <div className="text-center">
-              <div className="font-semibold text-base mb-0.5">Metric</div>
-              <div className="text-sm opacity-80">(mm/m)</div>
+        {showProminent ? (
+          <>
+            <h4 className="text-lg font-semibold text-slate-900 mb-2">
+              Measurement Units
+            </h4>
+            <div className="bg-gradient-to-r from-[#F3FFE3] to-[#BFF102]/20 border-2 border-[#BFF102] rounded-lg p-4 mb-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-[#01312D] mb-1">
+                    {unitMessage}
+                  </p>
+                  <p className="text-xs text-slate-600">
+                    {currencyInfo.currency === 'GBP'
+                      ? 'UK construction commonly uses both systems. Switch if needed.'
+                      : 'Canadian construction often uses imperial. Switch if needed.'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleUnitChange}
+                  className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#01312D] text-[#01312D] rounded-lg hover:bg-[#01312D] hover:text-white transition-all duration-200 font-medium text-sm whitespace-nowrap"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Switch to {alternativeUnitName}
+                </button>
+              </div>
             </div>
-          </button>
-
-          <button
-            type="button"
-            className={`px-4 sm:px-6 py-3 rounded-lg border-2 transition-all duration-200 bg-white ${
-              config.unit === 'imperial'
-                ? 'ring-2 ring-[#01312D] !border-[#01312D] text-slate-900'
-                : validationErrors.unit && !config.unit
-                ? 'border-red-500 bg-red-50 text-slate-900 hover:border-red-600'
-                : 'border-slate-300 text-slate-900 hover:border-slate-400 hover:shadow-md'
-            }`}
-            onClick={() => updateConfig({ unit: 'imperial' })}
-          >
-            <div className="text-center">
-              <div className="font-semibold text-base mb-0.5">Imperial</div>
-              <div className="text-sm opacity-80">(in/ft)</div>
+          </>
+        ) : (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-[#BFF102] rounded-full"></div>
+                <p className="text-sm text-slate-700">
+                  {unitMessage}
+                </p>
+              </div>
+              <button
+                onClick={handleUnitChange}
+                className="text-sm text-[#307C31] hover:text-[#01312D] font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Switch to {alternativeUnitName}
+              </button>
             </div>
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Measurement Option Selection with Interactive Visualizer */}

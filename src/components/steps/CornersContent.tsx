@@ -101,14 +101,20 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     const newHeights = Array(corners).fill(undefined);
     const newTypes = Array(corners).fill('');
     const newOrientations = Array(corners).fill('');
+    const newAttachmentTypes = Array(corners).fill('');
 
     updateConfig({
       corners,
       points,
-      measurements: {}, // Reset measurements when corners change
+      measurements: {}, // Reset all measurements when corners change
       fixingHeights: newHeights,
       fixingTypes: newTypes,
-      eyeOrientations: newOrientations
+      eyeOrientations: newOrientations,
+      attachmentTypes: newAttachmentTypes, // Reset attachment types
+      fixingPointsInstalled: undefined, // Reset installation status
+      diagonalsInitiallyProvided: undefined, // Clear diagonal flags
+      heightsProvidedByUser: undefined, // Clear height flags
+      hasManuallyAdjustedShape: false // Reset manual adjustment flag
     });
   };
 

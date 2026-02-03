@@ -17,6 +17,7 @@ export interface ConfiguratorState {
   };
   fixingHeights: number[];
   fixingTypes?: ('post' | 'building')[];
+  attachmentTypes?: string[];
   eyeOrientations?: ('horizontal' | 'vertical')[];
   fixingPointsInstalled?: boolean;
   currency: string;

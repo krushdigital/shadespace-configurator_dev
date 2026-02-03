@@ -15,7 +15,7 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout } from '../utils/geometry';
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
@@ -46,6 +46,7 @@ const INITIAL_STATE: ConfiguratorState = {
   measurements: {},
   fixingHeights: [],
   fixingTypes: undefined,
+  attachmentTypes: [],
   eyeOrientations: undefined,
   fixingPointsInstalled: undefined,
   currency: 'NZD',
@@ -757,7 +758,14 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
   }, [config.diagonalsInitiallyProvided, config.corners, config.measurements]);
 
   const allAcknowledgmentsChecked = Object.values(acknowledgments).every(checked => checked);
-  const canAddToCart = allDiagonalsEntered && allAcknowledgmentsChecked;
+
+  // Check if heights are required and provided for 5+ corner sails
+  const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
+  const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
+
+  const canAddToCart = allDiagonalsEntered &&
+                       allAcknowledgmentsChecked &&
+                       (!heightIsRequiredForCheckout || allHeightsProvided);
 
   // Calculate if all edge measurements are complete
   const hasAllEdgeMeasurements = useMemo(() => {
@@ -1434,7 +1442,11 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
             edgeCount++;
           }
         }
-        return edgeCount === config.corners;
+
+        const allEdgesProvided = edgeCount === config.corners;
+
+        // Heights are never required to complete this step - they can be added during review
+        return allEdgesProvided;
       case 5: // Heights & Anchor Points
         // Step 5 is now always skipped (integrated into Step 4 as optional)
         return true;

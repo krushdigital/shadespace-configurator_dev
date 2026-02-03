@@ -251,6 +251,44 @@ export function validateMeasurements(measurements: {[key: string]: number}, corn
   return { errors, typoSuggestions };
 }
 
+export function getHeightRequirement(corners: number, measurementOption: 'adjust' | 'exact'): 'none' | 'optional' | 'required-at-checkout' {
+  if (corners === 3) {
+    return 'none';
+  }
+
+  if (measurementOption !== 'adjust') {
+    return 'none';
+  }
+
+  if (corners === 4) {
+    return 'optional';
+  }
+
+  if (corners >= 5) {
+    return 'required-at-checkout';
+  }
+
+  return 'none';
+}
+
+export function isHeightRequiredForCheckout(corners: number, measurementOption: 'adjust' | 'exact'): boolean {
+  return corners >= 5 && measurementOption === 'adjust';
+}
+
+export function areHeightsProvided(heights: number[], corners: number): boolean {
+  if (heights.length < corners) {
+    return false;
+  }
+
+  for (let i = 0; i < corners; i++) {
+    if (!heights[i] || heights[i] <= 0) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function validateHeights(heights: number[], unit: 'metric' | 'imperial'): {
   errors: {[key: string]: string};
   typoSuggestions: {[key: string]: number};
@@ -366,6 +404,8 @@ export function getDiagonalKeysForCorners(corners: number): string[] {
     diagonals.push('AC', 'AD', 'CE', 'BD', 'BE');
   } else if (corners === 6) {
     diagonals.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
+  } else if (corners === 7) {
+    diagonals.push('AC', 'AD', 'AE', 'AF', 'BD', 'BE', 'BF', 'BG', 'CE', 'CF', 'CG', 'DF', 'DG', 'EG');
   }
 
   return diagonals;
@@ -396,7 +436,7 @@ export function getShapeAccuracy(
     };
   }
 
-  if (corners >= 4 && corners <= 6) {
+  if (corners >= 4 && corners <= 7) {
     let edgeCount = 0;
     for (let i = 0; i < corners; i++) {
       const nextIndex = (i + 1) % corners;
@@ -427,6 +467,9 @@ export function getShapeAccuracy(
       };
     }
 
+    // Define minimum diagonals needed for each polygon type
+    const minDiagonalsNeeded = corners - 3;
+
     if (corners === 4 && diagonalCount >= 1) {
       return {
         accuracy: 'exact',
@@ -435,7 +478,7 @@ export function getShapeAccuracy(
       };
     }
 
-    if (diagonalCount === diagonalKeys.length) {
+    if (diagonalCount >= minDiagonalsNeeded) {
       return {
         accuracy: 'exact',
         message: 'Shape is accurate based on your measurements',
@@ -657,6 +700,11 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     return { isValid: false, errors: ['Invalid number of corners'] };
   }
 
+  console.log(`Validating ${corners}-corner polygon geometry:`, {
+    measurementKeys: Object.keys(measurements),
+    measurementValues: measurements
+  });
+
   if (corners === 3) {
     const AB = measurements['AB'] || 0;
     const BC = measurements['BC'] || 0;
@@ -729,41 +777,48 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const BE = measurements['BE'] || 0;
     const CE = measurements['CE'] || 0;
 
-    // Validate diagonal AC
+    // Pentagon ABCDE: For each diagonal, validate against the two chains it creates
+
+    // Validate diagonal AC (A→C)
+    // Chain 1: AB + BC, Chain 2: AE + ED + DC
     if (AC > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
-      const diagonalValidation = validateDiagonal(AC, AB, BC, DE, EA, 'AC');
+      const diagonalValidation = validateDiagonal(AC, AB, BC, EA, DE + CD, 'AC');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal AC is invalid');
       }
     }
 
-    // Validate diagonal AD
+    // Validate diagonal AD (A→D)
+    // Chain 1: AB + BC + CD, Chain 2: AE + ED
     if (AD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
-      const diagonalValidation = validateDiagonal(AD, AB, BC + CD, DE, EA, 'AD');
+      const diagonalValidation = validateDiagonal(AD, AB + BC, CD, EA, DE, 'AD');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal AD is invalid');
       }
     }
 
-    // Validate diagonal BD
+    // Validate diagonal BD (B→D)
+    // Chain 1: BC + CD, Chain 2: BA + AE + ED
     if (BD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
-      const diagonalValidation = validateDiagonal(BD, BC, CD, EA, AB, 'BD');
+      const diagonalValidation = validateDiagonal(BD, BC, CD, AB, EA + DE, 'BD');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal BD is invalid');
       }
     }
 
-    // Validate diagonal BE
+    // Validate diagonal BE (B→E)
+    // Chain 1: BC + CD + DE, Chain 2: BA + AE
     if (BE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
-      const diagonalValidation = validateDiagonal(BE, BC, CD + DE, EA, AB, 'BE');
+      const diagonalValidation = validateDiagonal(BE, BC + CD, DE, AB, EA, 'BE');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal BE is invalid');
       }
     }
 
-    // Validate diagonal CE
+    // Validate diagonal CE (C→E)
+    // Chain 1: CD + DE, Chain 2: CB + BA + AE
     if (CE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EA > 0) {
-      const diagonalValidation = validateDiagonal(CE, CD, DE, AB, BC, 'CE');
+      const diagonalValidation = validateDiagonal(CE, CD, DE, BC, AB + EA, 'CE');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal CE is invalid');
       }
@@ -805,73 +860,84 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const CF = measurements['CF'] || 0;
     const DF = measurements['DF'] || 0;
 
-    // Validate diagonal AC
+    // Hexagon ABCDEF: For each diagonal, validate against the two chains it creates
+
+    // Validate diagonal AC (A→C)
+    // Chain 1: AB + BC, Chain 2: AF + FE + ED + DC
     if (AC > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(AC, AB, BC, DE, EF + FA, 'AC');
+      const diagonalValidation = validateDiagonal(AC, AB, BC, FA, EF + DE + CD, 'AC');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal AC is invalid');
       }
     }
 
-    // Validate diagonal AD
+    // Validate diagonal AD (A→D)
+    // Chain 1: AB + BC + CD, Chain 2: AF + FE + ED
     if (AD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(AD, AB, BC + CD, DE, EF + FA, 'AD');
+      const diagonalValidation = validateDiagonal(AD, AB + BC, CD, FA, EF + DE, 'AD');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal AD is invalid');
       }
     }
 
-    // Validate diagonal AE
+    // Validate diagonal AE (A→E)
+    // Chain 1: AB + BC + CD + DE, Chain 2: AF + FE
     if (AE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(AE, AB, BC + CD + DE, EF, FA, 'AE');
+      const diagonalValidation = validateDiagonal(AE, AB + BC + CD, DE, FA, EF, 'AE');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal AE is invalid');
       }
     }
 
-    // Validate diagonal BD
+    // Validate diagonal BD (B→D)
+    // Chain 1: BC + CD, Chain 2: BA + AF + FE + ED
     if (BD > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(BD, BC, CD, EF, FA + AB, 'BD');
+      const diagonalValidation = validateDiagonal(BD, BC, CD, AB, FA + EF + DE, 'BD');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal BD is invalid');
       }
     }
 
-    // Validate diagonal BE
+    // Validate diagonal BE (B→E)
+    // Chain 1: BC + CD + DE, Chain 2: BA + AF + FE
     if (BE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(BE, BC, CD + DE, EF, FA + AB, 'BE');
+      const diagonalValidation = validateDiagonal(BE, BC + CD, DE, AB, FA + EF, 'BE');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal BE is invalid');
       }
     }
 
-    // Validate diagonal BF
+    // Validate diagonal BF (B→F)
+    // Chain 1: BC + CD + DE + EF, Chain 2: BA + AF
     if (BF > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(BF, BC, CD + DE + EF, FA, AB, 'BF');
+      const diagonalValidation = validateDiagonal(BF, BC + CD + DE, EF, AB, FA, 'BF');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal BF is invalid');
       }
     }
 
-    // Validate diagonal CE
+    // Validate diagonal CE (C→E)
+    // Chain 1: CD + DE, Chain 2: CB + BA + AF + FE
     if (CE > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(CE, CD, DE, FA, AB + BC, 'CE');
+      const diagonalValidation = validateDiagonal(CE, CD, DE, BC, AB + FA + EF, 'CE');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal CE is invalid');
       }
     }
 
-    // Validate diagonal CF
+    // Validate diagonal CF (C→F)
+    // Chain 1: CD + DE + EF, Chain 2: CB + BA + AF
     if (CF > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(CF, CD, DE + EF, FA, AB + BC, 'CF');
+      const diagonalValidation = validateDiagonal(CF, CD + DE, EF, BC, AB + FA, 'CF');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal CF is invalid');
       }
     }
 
-    // Validate diagonal DF
+    // Validate diagonal DF (D→F)
+    // Chain 1: DE + EF, Chain 2: DC + CB + BA + AF
     if (DF > 0 && AB > 0 && BC > 0 && CD > 0 && DE > 0 && EF > 0 && FA > 0) {
-      const diagonalValidation = validateDiagonal(DF, DE, EF, AB, BC + CD, 'DF');
+      const diagonalValidation = validateDiagonal(DF, DE, EF, CD, BC + AB + FA, 'DF');
       if (!diagonalValidation.isValid) {
         errors.push(diagonalValidation.error || 'Diagonal DF is invalid');
       }
@@ -1113,15 +1179,20 @@ export function hasRequiredMeasurements(
     // For 4 corners, we need all edges
     return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA']);
   } else if (corners === 5) {
-    // For 5 corners, we need all edges AND all diagonals
+    // For 5 corners, we need all edges AND minimum 2 diagonals (AC and AD) for reconstruction
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
-    const diagonals = !!(measurements['AC'] && measurements['AD'] && measurements['CE'] && measurements['BD'] && measurements['BE']);
-    return edges && diagonals;
+    const minDiagonals = !!(measurements['AC'] && measurements['AD']);
+    return edges && minDiagonals;
   } else if (corners === 6) {
-    // For 6 corners, we need all edges AND all diagonals
+    // For 6 corners, we need all edges AND minimum 3 diagonals (AC, AD, and AE) for reconstruction
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
-    const diagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['BD'] && measurements['BE'] && measurements['BF'] && measurements['CE'] && measurements['CF'] && measurements['DF']);
-    return edges && diagonals;
+    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE']);
+    return edges && minDiagonals;
+  } else if (corners === 7) {
+    // For 7 corners, we need all edges AND minimum 4 diagonals (AC, AD, AE, and AF) for reconstruction
+    const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GA']);
+    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF']);
+    return edges && minDiagonals;
   }
   return false;
 }
@@ -1267,6 +1338,11 @@ export function reconstructPolygonFromMeasurements(
     const BE = measurements['BE'];
     const CE = measurements['CE'];
 
+    console.log('5-corner reconstruction started with measurements:', {
+      edges: { AB, BC, CD, DE, EA },
+      diagonals: { AC, AD, BD, BE, CE }
+    });
+
     // Place A at origin
     const A: Point = { x: 0, y: 0 };
 
@@ -1274,17 +1350,58 @@ export function reconstructPolygonFromMeasurements(
     const B: Point = { x: AB, y: 0 };
 
     // Calculate C using AC and BC
-    const C = trilateratePoint(A, B, AC, BC);
-    if (!C) return null;
+    let C = trilateratePoint(A, B, AC, BC);
+    if (!C) {
+      console.warn('5-corner reconstruction failed: Could not place point C');
+      return null;
+    }
 
-    // Calculate D using AD and CD
-    const D = trilateratePoint(A, C, AD, CD);
-    if (!D) return null;
+    // Calculate D - use additional diagonals for refinement if available
+    let D: Point | null = null;
+    if (BD) {
+      // Try using BD for more accurate D placement
+      D = trilateratePoint(B, C, BD, CD);
+      // If BD placement fails or conflicts, fall back to AD
+      if (!D) {
+        D = trilateratePoint(A, C, AD, CD);
+      }
+    } else {
+      D = trilateratePoint(A, C, AD, CD);
+    }
+    if (!D) {
+      console.warn('5-corner reconstruction failed: Could not place point D');
+      return null;
+    }
 
-    // Calculate E using AE and DE
-    const E = trilateratePoint(A, D, EA, DE);
-    if (!E) return null;
+    // Calculate E - use additional diagonals for refinement if available
+    let E: Point | null = null;
+    if (BE) {
+      // Try using BE for more accurate E placement
+      E = trilateratePoint(B, D, BE, DE);
+      // If BE placement fails, try CE
+      if (!E && CE) {
+        E = trilateratePoint(C, D, CE, DE);
+      }
+      // Fall back to AE if both fail
+      if (!E) {
+        E = trilateratePoint(A, D, EA, DE);
+      }
+    } else if (CE) {
+      // Try using CE for more accurate E placement
+      E = trilateratePoint(C, D, CE, DE);
+      // Fall back to AE if it fails
+      if (!E) {
+        E = trilateratePoint(A, D, EA, DE);
+      }
+    } else {
+      E = trilateratePoint(A, D, EA, DE);
+    }
+    if (!E) {
+      console.warn('5-corner reconstruction failed: Could not place point E');
+      return null;
+    }
 
+    console.log('5-corner reconstruction succeeded!');
     points = [A, B, C, D, E];
 
   } else if (corners === 6) {
@@ -1298,6 +1415,135 @@ export function reconstructPolygonFromMeasurements(
     const AC = measurements['AC'];
     const AD = measurements['AD'];
     const AE = measurements['AE'];
+    const BD = measurements['BD'];
+    const BE = measurements['BE'];
+    const BF = measurements['BF'];
+    const CE = measurements['CE'];
+    const CF = measurements['CF'];
+    const DF = measurements['DF'];
+
+    console.log('6-corner reconstruction started with measurements:', {
+      edges: { AB, BC, CD, DE, EF, FA },
+      diagonals: { AC, AD, AE, BD, BE, BF, CE, CF, DF }
+    });
+
+    // Place A at origin
+    const A: Point = { x: 0, y: 0 };
+
+    // Place B along x-axis
+    const B: Point = { x: AB, y: 0 };
+
+    // Calculate C using AC and BC
+    let C = trilateratePoint(A, B, AC, BC);
+    if (!C) {
+      console.warn('6-corner reconstruction failed: Could not place point C');
+      return null;
+    }
+
+    // Calculate D - use additional diagonals for refinement if available
+    let D: Point | null = null;
+    if (BD) {
+      // Try using BD for more accurate D placement
+      D = trilateratePoint(B, C, BD, CD);
+      // If BD placement fails or conflicts, fall back to AD
+      if (!D) {
+        D = trilateratePoint(A, C, AD, CD);
+      }
+    } else {
+      D = trilateratePoint(A, C, AD, CD);
+    }
+    if (!D) {
+      console.warn('6-corner reconstruction failed: Could not place point D');
+      return null;
+    }
+
+    // Calculate E - use additional diagonals for refinement if available
+    let E: Point | null = null;
+    if (BE) {
+      // Try using BE for more accurate E placement
+      E = trilateratePoint(B, D, BE, DE);
+      // If BE placement fails, try CE
+      if (!E && CE) {
+        E = trilateratePoint(C, D, CE, DE);
+      }
+      // Fall back to AE if both fail
+      if (!E) {
+        E = trilateratePoint(A, D, AE, DE);
+      }
+    } else if (CE) {
+      // Try using CE for more accurate E placement
+      E = trilateratePoint(C, D, CE, DE);
+      // Fall back to AE if it fails
+      if (!E) {
+        E = trilateratePoint(A, D, AE, DE);
+      }
+    } else {
+      E = trilateratePoint(A, D, AE, DE);
+    }
+    if (!E) {
+      console.warn('6-corner reconstruction failed: Could not place point E');
+      return null;
+    }
+
+    // Calculate F - use additional diagonals for refinement if available
+    let F: Point | null = null;
+    if (BF) {
+      // Try using BF for more accurate F placement
+      F = trilateratePoint(B, E, BF, EF);
+      // If BF placement fails, try CF
+      if (!F && CF) {
+        F = trilateratePoint(C, E, CF, EF);
+      }
+      // Try DF if previous attempts fail
+      if (!F && DF) {
+        F = trilateratePoint(D, E, DF, EF);
+      }
+      // Fall back to AF if all fail
+      if (!F) {
+        F = trilateratePoint(A, E, FA, EF);
+      }
+    } else if (CF) {
+      // Try using CF for more accurate F placement
+      F = trilateratePoint(C, E, CF, EF);
+      // Try DF if it fails
+      if (!F && DF) {
+        F = trilateratePoint(D, E, DF, EF);
+      }
+      // Fall back to AF
+      if (!F) {
+        F = trilateratePoint(A, E, FA, EF);
+      }
+    } else if (DF) {
+      // Try using DF for more accurate F placement
+      F = trilateratePoint(D, E, DF, EF);
+      // Fall back to AF if it fails
+      if (!F) {
+        F = trilateratePoint(A, E, FA, EF);
+      }
+    } else {
+      F = trilateratePoint(A, E, FA, EF);
+    }
+    if (!F) {
+      console.warn('6-corner reconstruction failed: Could not place point F');
+      return null;
+    }
+
+    console.log('6-corner reconstruction succeeded!');
+    points = [A, B, C, D, E, F];
+
+  } else if (corners === 7) {
+    // Reconstruct heptagon (requires minimum 4 diagonals: AC, AD, AE, AF)
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EF = measurements['EF'];
+    const FG = measurements['FG'];
+    const GA = measurements['GA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const AE = measurements['AE'];
+    const AF = measurements['AF'];
 
     // Place A at origin
     const A: Point = { x: 0, y: 0 };
@@ -1317,11 +1563,15 @@ export function reconstructPolygonFromMeasurements(
     const E = trilateratePoint(A, D, AE, DE);
     if (!E) return null;
 
-    // Calculate F using FA and EF
-    const F = trilateratePoint(A, E, FA, EF);
+    // Calculate F using AF and EF
+    const F = trilateratePoint(A, E, AF, EF);
     if (!F) return null;
 
-    points = [A, B, C, D, E, F];
+    // Calculate G using GA and FG
+    const G = trilateratePoint(A, F, GA, FG);
+    if (!G) return null;
+
+    points = [A, B, C, D, E, F, G];
   }
 
   // Scale and center the polygon to fit canvas

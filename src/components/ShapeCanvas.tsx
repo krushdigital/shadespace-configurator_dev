@@ -326,22 +326,6 @@ export function ShapeCanvas({
   return (
     <div>
       {/* Shape Accuracy Indicator - Above Canvas */}
-      {shapeAccuracyInfo.accuracy === 'approximate' && config.corners >= 4 && (
-        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">
-                Approximate Shape Preview
-              </p>
-              <p className="text-xs text-amber-700 mt-1">
-                This is an estimate based on your edge measurements. Add diagonal measurements below to see your exact shape.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {shapeAccuracyInfo.accuracy === 'exact' && config.corners >= 3 && (
         <div className="mb-3 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
           <div className="flex items-center gap-2">

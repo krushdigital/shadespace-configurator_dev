@@ -4,6 +4,37 @@ import { FABRICS } from '../data/fabrics';
 import { formatMeasurement, formatArea, getDiagonalKeysForCorners, scalePolygonToCanvas, calculateCentroid } from './geometry';
 import { formatCurrency } from './currencyFormatter';
 
+/**
+ * Format measurement for PDF display with metric conversion in brackets for imperial
+ * @param mm Measurement in millimeters
+ * @param unit User's selected unit system
+ * @returns Formatted string with both imperial and metric (in brackets) if imperial selected
+ */
+function formatMeasurementForPDF(mm: number, unit: 'metric' | 'imperial'): string {
+  if (unit === 'imperial') {
+    const imperialDisplay = formatMeasurement(mm, 'imperial');
+    const metricDisplay = `${Math.round(mm)}mm`;
+    return `${imperialDisplay} (${metricDisplay})`;
+  }
+  return formatMeasurement(mm, 'metric');
+}
+
+/**
+ * Format area for PDF display with metric conversion in brackets for imperial
+ * @param mm2 Area in square millimeters
+ * @param unit User's selected unit system
+ * @returns Formatted string with both imperial and metric (in brackets) if imperial selected
+ */
+function formatAreaForPDF(mm2: number, unit: 'metric' | 'imperial'): string {
+  if (unit === 'imperial') {
+    const imperialDisplay = formatArea(mm2, 'imperial');
+    const m2 = mm2 / 1000000;
+    const metricDisplay = `${m2.toFixed(2)} m²`;
+    return `${imperialDisplay} (${metricDisplay})`;
+  }
+  return formatArea(mm2, 'metric');
+}
+
 // Function to load image, optimize it, and convert to Base64
 async function loadImageAsBase64(
   url: string, 
@@ -279,7 +310,7 @@ async function drawShadeSailDiagram(
         pdf.setFontSize(6);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(5, 150, 105);
-        pdf.text(formatMeasurement(measurement, config.unit), labelX, labelY, { align: 'center' });
+        pdf.text(formatMeasurementForPDF(measurement, config.unit), labelX, labelY, { align: 'center' });
       }
     }
   }
@@ -328,7 +359,7 @@ async function drawShadeSailDiagram(
             pdf.setFontSize(5);
             pdf.setFont('helvetica', 'normal');
             pdf.setTextColor(59, 130, 246);
-            pdf.text(formatMeasurement(measurement, config.unit), labelX, labelY, { align: 'center' });
+            pdf.text(formatMeasurementForPDF(measurement, config.unit), labelX, labelY, { align: 'center' });
           }
         }
       }
@@ -632,20 +663,20 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       ...(config.edgeType === 'webbing' ? [[
         'Webbing Width:',
         config.unit === 'imperial'
-          ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}"`
+          ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}" (${calculations.webbingWidth}mm)`
           : `${calculations.webbingWidth}mm`
       ]] : []),
       ...(config.edgeType === 'cabled' && calculations.wireThickness ? [[
         'Wire Thickness:',
         config.unit === 'imperial'
-          ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"`
+          ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
           : `${calculations.wireThickness}mm`
       ]] : []),
       ['Number of Corners:', config.corners.toString()],
-      ['Total Area:', formatArea(calculations.area * 1000000, config.unit)],
-      ['Total Perimeter:', formatMeasurement(calculations.perimeter * 1000, config.unit)],
+      ['Total Area:', formatAreaForPDF(calculations.area * 1000000, config.unit)],
+      ['Total Perimeter:', formatMeasurementForPDF(calculations.perimeter * 1000, config.unit)],
       ['Total Weight:', config.unit === 'imperial'
-        ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb`
+        ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
         : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`],
       ['Measurement Units:', config.unit === 'metric' ? 'Metric: mm' : 'Imperial: Inches'],
       ['Manufacturing Option:', config.measurementOption === 'adjust' ? 'Adjust to fit space (hardware included)' : 'Exact dimensions (hardware not included)'],
@@ -715,7 +746,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       const diagonalKeys = getDiagonalKeysForCorners(config.corners);
       diagonalKeys.forEach(key => {
         if (config.measurements[key]) {
-          diagonalMeasurements.push([`Diagonal ${key.charAt(0)} to ${key.charAt(1)}:`, formatMeasurement(config.measurements[key], config.unit)]);
+          diagonalMeasurements.push([`Diagonal ${key.charAt(0)} to ${key.charAt(1)}:`, formatMeasurementForPDF(config.measurements[key], config.unit)]);
         }
       });
     }
@@ -752,7 +783,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
         const measurement = config.measurements[edgeKey];
         
         const label = `Edge ${String.fromCharCode(65 + i)} to ${String.fromCharCode(65 + nextIndex)}:`;
-        const value = measurement ? formatMeasurement(measurement, config.unit) : 'Not provided';
+        const value = measurement ? formatMeasurementForPDF(measurement, config.unit) : 'Not provided';
         
         pdf.setTextColor(...textMedium);
         pdf.text(label, leftColX + 5, currentEdgeY);
@@ -811,7 +842,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
         const measurement = config.measurements[edgeKey];
         
         const label = `Edge ${String.fromCharCode(65 + i)} to ${String.fromCharCode(65 + nextIndex)}:`;
-        const value = measurement ? formatMeasurement(measurement, config.unit) : 'Not provided';
+        const value = measurement ? formatMeasurementForPDF(measurement, config.unit) : 'Not provided';
         
         pdf.setTextColor(...textMedium);
         pdf.text(label, leftColX + 5, currentEdgeY);
@@ -878,7 +909,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       const orientation = config.eyeOrientations?.[index];
 
       const heightDisplay = height && height > 0
-        ? formatMeasurement(height, config.unit)
+        ? formatMeasurementForPDF(height, config.unit)
         : 'Not set';
 
       pdf.setTextColor(...textMedium);
