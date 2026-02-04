@@ -9,10 +9,17 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { CollapsibleToggleControl } from '../ui/CollapsibleToggleControl';
 import { toast } from 'react-toastify';
+import {
+  getAlternativeUnit,
+  getAlternativeUnitName,
+  setStoredUnitPreference
+} from '../../utils/unitAutoSelection';
+import { analytics } from '../../utils/analytics';
+import { getUserCurrencyInfo } from '../../utils/currencyFormatter';
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -86,6 +93,18 @@ export function DimensionsContent({
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
   const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
   const lastValidPointsRef = React.useRef(config.points);
+
+  const currencyInfo = getUserCurrencyInfo();
+  const alternativeUnitName = config.unit ? getAlternativeUnitName(config.unit) : '';
+
+  const handleUnitChange = () => {
+    if (!config.unit) return;
+    const currentUnit = config.unit;
+    const newUnit = getAlternativeUnit(currentUnit);
+    analytics.unitManuallyChanged(currentUnit, newUnit, currencyInfo.currency, false);
+    setStoredUnitPreference(newUnit, currencyInfo.currency, true);
+    updateConfig({ unit: newUnit });
+  };
 
   // Helper function to convert error messages with mm units to user's preferred unit
   const convertErrorMessageUnits = (errorMessage: string): string => {
@@ -404,6 +423,27 @@ export function DimensionsContent({
 
   return (
     <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
+      {/* Unit Selection Toggle */}
+      <div className="mb-4 sm:mb-6">
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-[#BFF102] rounded-full"></div>
+              <p className="text-sm text-slate-700">
+                Using {config.unit === 'metric' ? 'Metric (mm/m)' : 'Imperial (in/ft)'}
+              </p>
+            </div>
+            <button
+              onClick={handleUnitChange}
+              className="text-sm text-[#307C31] hover:text-[#01312D] font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Switch to {alternativeUnitName}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Measurement Context Banner */}
       {config.measurementOption === 'adjust' && (
         <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
