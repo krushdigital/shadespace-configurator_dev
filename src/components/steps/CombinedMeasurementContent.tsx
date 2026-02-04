@@ -1,21 +1,12 @@
 import React from 'react';
-import { Info, RefreshCw } from 'lucide-react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { AccordionItem } from '../ui/AccordionItem';
-import { CURRENCY_NAMES, CURRENCY_SYMBOLS } from '../../data/pricing';
 import { MeasurementOptionVisualizer } from '../MeasurementOptionVisualizer';
 import { SaveProgressButton } from '../SaveProgressButton';
-import {
-  determineUnit,
-  getUnitDisplayMessage,
-  getAlternativeUnit,
-  getAlternativeUnitName,
-  shouldShowProminentToggle,
-  setStoredUnitPreference
-} from '../../utils/unitAutoSelection';
+import { determineUnit } from '../../utils/unitAutoSelection';
 import { analytics } from '../../utils/analytics';
 import { getUserCurrencyInfo } from '../../utils/currencyFormatter';
 
@@ -103,7 +94,6 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
     const updates: Partial<ConfiguratorState> = { measurementOption: option };
 
-    // Clear height data when switching to 'exact' measurement option
     if (option === 'exact') {
       updates.fixingHeights = [];
       updates.fixingTypes = undefined;
@@ -114,80 +104,10 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
     updateConfig(updates);
   };
 
-  const handleUnitChange = () => {
-    if (!config.unit) return;
-
-    const currentUnit = config.unit;
-    const newUnit = getAlternativeUnit(currentUnit);
-
-    analytics.unitManuallyChanged(currentUnit, newUnit, currencyInfo.currency, wasAutoSelected);
-
-    setStoredUnitPreference(newUnit, currencyInfo.currency, true);
-
-    updateConfig({ unit: newUnit });
-    setWasAutoSelected(false);
-  };
-
-  // Get the correct hardware pack image URL based on the number of corners
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
-
-  const showProminent = shouldShowProminentToggle(autoSelectionConfidence, currencyInfo.currency);
-  const unitMessage = config.unit ? getUnitDisplayMessage(config.unit, currencyInfo.currency, autoSelectionSource as any) : '';
-  const alternativeUnitName = config.unit ? getAlternativeUnitName(config.unit) : '';
 
   return (
     <div className="p-4 sm:p-6">
-
-      {/* Auto-Selected Unit Display with Toggle */}
-      <div className="mb-6 sm:mb-8">
-        {showProminent ? (
-          <>
-            <h4 className="text-lg font-semibold text-slate-900 mb-2">
-              Measurement Units
-            </h4>
-            <div className="bg-gradient-to-r from-[#F3FFE3] to-[#BFF102]/20 border-2 border-[#BFF102] rounded-lg p-4 mb-3">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-[#01312D] mb-1">
-                    {unitMessage}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    {currencyInfo.currency === 'GBP'
-                      ? 'UK construction commonly uses both systems. Switch if needed.'
-                      : 'Canadian construction often uses imperial. Switch if needed.'}
-                  </p>
-                </div>
-                <button
-                  onClick={handleUnitChange}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-[#01312D] text-[#01312D] rounded-lg hover:bg-[#01312D] hover:text-white transition-all duration-200 font-medium text-sm whitespace-nowrap"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Switch to {alternativeUnitName}
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#BFF102] rounded-full"></div>
-                <p className="text-sm text-slate-700">
-                  {unitMessage}
-                </p>
-              </div>
-              <button
-                onClick={handleUnitChange}
-                className="text-sm text-[#307C31] hover:text-[#01312D] font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
-              >
-                <RefreshCw className="w-3 h-3" />
-                Switch to {alternativeUnitName}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Measurement Option Selection with Interactive Visualizer */}
       <div className="mb-6 sm:mb-8" id="measurement-option-section" data-guidance-id="measurement-option-section">
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
