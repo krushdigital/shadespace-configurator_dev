@@ -1176,18 +1176,14 @@ export function hasRequiredMeasurements(
   if (corners === 3) {
     return !!(measurements['AB'] && measurements['BC'] && measurements['CA']);
   } else if (corners === 4) {
-    // For 4 corners, we need all edges
+    // For 4 corners, we need all edges (can show approximate shape, diagonals refine it)
     return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA']);
   } else if (corners === 5) {
-    // For 5 corners, we need all edges AND minimum 2 diagonals (AC and AD) for reconstruction
-    const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
-    const minDiagonals = !!(measurements['AC'] && measurements['AD']);
-    return edges && minDiagonals;
+    // For 5 corners, we need all edges (can show approximate shape, diagonals refine it)
+    return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
   } else if (corners === 6) {
-    // For 6 corners, we need all edges AND minimum 3 diagonals (AC, AD, and AE) for reconstruction
-    const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
-    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE']);
-    return edges && minDiagonals;
+    // For 6 corners, we need all edges (can show approximate shape, diagonals refine it)
+    return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
   } else if (corners === 7) {
     // For 7 corners, we need all edges AND minimum 4 diagonals (AC, AD, AE, and AF) for reconstruction
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GA']);
@@ -1326,7 +1322,7 @@ export function reconstructPolygonFromMeasurements(
     points = [A, B, C, D];
 
   } else if (corners === 5) {
-    // Reconstruct pentagon (requires all diagonals)
+    // Reconstruct pentagon
     const AB = measurements['AB'];
     const BC = measurements['BC'];
     const CD = measurements['CD'];
@@ -1338,9 +1334,12 @@ export function reconstructPolygonFromMeasurements(
     const BE = measurements['BE'];
     const CE = measurements['CE'];
 
+    const hasDiagonals = !!(AC && AD);
+
     console.log('5-corner reconstruction started with measurements:', {
       edges: { AB, BC, CD, DE, EA },
-      diagonals: { AC, AD, BD, BE, CE }
+      diagonals: { AC, AD, BD, BE, CE },
+      hasDiagonals
     });
 
     // Place A at origin
@@ -1349,52 +1348,74 @@ export function reconstructPolygonFromMeasurements(
     // Place B along x-axis
     const B: Point = { x: AB, y: 0 };
 
-    // Calculate C using AC and BC
-    let C = trilateratePoint(A, B, AC, BC);
+    // Calculate C
+    let C: Point | null = null;
+    if (AC) {
+      // Precise placement using diagonal
+      C = trilateratePoint(A, B, AC, BC);
+    } else {
+      // Approximate placement: assume roughly 108 degrees (interior angle of regular pentagon)
+      const angle = (108 * Math.PI) / 180;
+      C = {
+        x: B.x + BC * Math.cos(angle),
+        y: B.y + BC * Math.sin(angle)
+      };
+    }
     if (!C) {
       console.warn('5-corner reconstruction failed: Could not place point C');
       return null;
     }
 
-    // Calculate D - use additional diagonals for refinement if available
+    // Calculate D
     let D: Point | null = null;
-    if (BD) {
-      // Try using BD for more accurate D placement
-      D = trilateratePoint(B, C, BD, CD);
-      // If BD placement fails or conflicts, fall back to AD
-      if (!D) {
-        D = trilateratePoint(A, C, AD, CD);
-      }
-    } else {
+    if (AD && AC) {
+      // Precise placement using diagonals
       D = trilateratePoint(A, C, AD, CD);
+    } else if (BD) {
+      // Try using BD for placement
+      D = trilateratePoint(B, C, BD, CD);
+    } else {
+      // Approximate placement using edge CD from C
+      D = trilateratePoint(A, C, EA + DE + CD, CD);
+      if (!D) {
+        // Fallback: extend from C at an approximate angle
+        const angle = (108 * Math.PI) / 180;
+        const prevAngle = Math.atan2(C.y - B.y, C.x - B.x);
+        D = {
+          x: C.x + CD * Math.cos(prevAngle + angle),
+          y: C.y + CD * Math.sin(prevAngle + angle)
+        };
+      }
     }
     if (!D) {
       console.warn('5-corner reconstruction failed: Could not place point D');
       return null;
     }
 
-    // Calculate E - use additional diagonals for refinement if available
+    // Calculate E
     let E: Point | null = null;
     if (BE) {
       // Try using BE for more accurate E placement
       E = trilateratePoint(B, D, BE, DE);
-      // If BE placement fails, try CE
-      if (!E && CE) {
-        E = trilateratePoint(C, D, CE, DE);
-      }
-      // Fall back to AE if both fail
-      if (!E) {
-        E = trilateratePoint(A, D, EA, DE);
-      }
     } else if (CE) {
       // Try using CE for more accurate E placement
       E = trilateratePoint(C, D, CE, DE);
-      // Fall back to AE if it fails
-      if (!E) {
-        E = trilateratePoint(A, D, EA, DE);
-      }
-    } else {
+    }
+
+    // If no diagonal worked, try trilateration from A and D
+    if (!E) {
       E = trilateratePoint(A, D, EA, DE);
+    }
+
+    // Final fallback: approximate placement
+    if (!E) {
+      // Place E to close the pentagon from D to A
+      const angle = (108 * Math.PI) / 180;
+      const prevAngle = Math.atan2(D.y - C.y, D.x - C.x);
+      E = {
+        x: D.x + DE * Math.cos(prevAngle + angle),
+        y: D.y + DE * Math.sin(prevAngle + angle)
+      };
     }
     if (!E) {
       console.warn('5-corner reconstruction failed: Could not place point E');
@@ -1405,7 +1426,7 @@ export function reconstructPolygonFromMeasurements(
     points = [A, B, C, D, E];
 
   } else if (corners === 6) {
-    // Reconstruct hexagon (requires all diagonals)
+    // Reconstruct hexagon
     const AB = measurements['AB'];
     const BC = measurements['BC'];
     const CD = measurements['CD'];
@@ -1422,9 +1443,12 @@ export function reconstructPolygonFromMeasurements(
     const CF = measurements['CF'];
     const DF = measurements['DF'];
 
+    const hasDiagonals = !!(AC && AD && AE);
+
     console.log('6-corner reconstruction started with measurements:', {
       edges: { AB, BC, CD, DE, EF, FA },
-      diagonals: { AC, AD, AE, BD, BE, BF, CE, CF, DF }
+      diagonals: { AC, AD, AE, BD, BE, BF, CE, CF, DF },
+      hasDiagonals
     });
 
     // Place A at origin
@@ -1433,95 +1457,106 @@ export function reconstructPolygonFromMeasurements(
     // Place B along x-axis
     const B: Point = { x: AB, y: 0 };
 
-    // Calculate C using AC and BC
-    let C = trilateratePoint(A, B, AC, BC);
+    // Calculate C
+    let C: Point | null = null;
+    if (AC) {
+      // Precise placement using diagonal
+      C = trilateratePoint(A, B, AC, BC);
+    } else {
+      // Approximate placement: assume roughly 120 degrees (interior angle of regular hexagon)
+      const angle = (120 * Math.PI) / 180;
+      C = {
+        x: B.x + BC * Math.cos(angle),
+        y: B.y + BC * Math.sin(angle)
+      };
+    }
     if (!C) {
       console.warn('6-corner reconstruction failed: Could not place point C');
       return null;
     }
 
-    // Calculate D - use additional diagonals for refinement if available
+    // Calculate D
     let D: Point | null = null;
-    if (BD) {
-      // Try using BD for more accurate D placement
-      D = trilateratePoint(B, C, BD, CD);
-      // If BD placement fails or conflicts, fall back to AD
-      if (!D) {
-        D = trilateratePoint(A, C, AD, CD);
-      }
-    } else {
+    if (AD && AC) {
+      // Precise placement using diagonals
       D = trilateratePoint(A, C, AD, CD);
+    } else if (BD) {
+      // Try using BD for placement
+      D = trilateratePoint(B, C, BD, CD);
+    } else {
+      // Approximate placement using trilateration or angle
+      D = trilateratePoint(A, C, FA + EF + DE + CD, CD);
+      if (!D) {
+        // Fallback: extend from C at an approximate angle
+        const angle = (120 * Math.PI) / 180;
+        const prevAngle = Math.atan2(C.y - B.y, C.x - B.x);
+        D = {
+          x: C.x + CD * Math.cos(prevAngle + angle),
+          y: C.y + CD * Math.sin(prevAngle + angle)
+        };
+      }
     }
     if (!D) {
       console.warn('6-corner reconstruction failed: Could not place point D');
       return null;
     }
 
-    // Calculate E - use additional diagonals for refinement if available
+    // Calculate E
     let E: Point | null = null;
-    if (BE) {
-      // Try using BE for more accurate E placement
-      E = trilateratePoint(B, D, BE, DE);
-      // If BE placement fails, try CE
-      if (!E && CE) {
-        E = trilateratePoint(C, D, CE, DE);
-      }
-      // Fall back to AE if both fail
-      if (!E) {
-        E = trilateratePoint(A, D, AE, DE);
-      }
-    } else if (CE) {
-      // Try using CE for more accurate E placement
-      E = trilateratePoint(C, D, CE, DE);
-      // Fall back to AE if it fails
-      if (!E) {
-        E = trilateratePoint(A, D, AE, DE);
-      }
-    } else {
+    if (AE && AD) {
+      // Precise placement using diagonals from A
       E = trilateratePoint(A, D, AE, DE);
+    } else if (BE) {
+      // Try using BE for placement
+      E = trilateratePoint(B, D, BE, DE);
+    } else if (CE) {
+      // Try using CE for placement
+      E = trilateratePoint(C, D, CE, DE);
+    } else {
+      // Approximate: try trilateration from A and D
+      E = trilateratePoint(A, D, FA + EF, DE);
+      if (!E) {
+        // Fallback: extend from D at an approximate angle
+        const angle = (120 * Math.PI) / 180;
+        const prevAngle = Math.atan2(D.y - C.y, D.x - C.x);
+        E = {
+          x: D.x + DE * Math.cos(prevAngle + angle),
+          y: D.y + DE * Math.sin(prevAngle + angle)
+        };
+      }
     }
     if (!E) {
       console.warn('6-corner reconstruction failed: Could not place point E');
       return null;
     }
 
-    // Calculate F - use additional diagonals for refinement if available
+    // Calculate F
     let F: Point | null = null;
     if (BF) {
-      // Try using BF for more accurate F placement
+      // Try using BF for placement
       F = trilateratePoint(B, E, BF, EF);
-      // If BF placement fails, try CF
-      if (!F && CF) {
-        F = trilateratePoint(C, E, CF, EF);
-      }
-      // Try DF if previous attempts fail
-      if (!F && DF) {
-        F = trilateratePoint(D, E, DF, EF);
-      }
-      // Fall back to AF if all fail
-      if (!F) {
-        F = trilateratePoint(A, E, FA, EF);
-      }
     } else if (CF) {
-      // Try using CF for more accurate F placement
+      // Try using CF for placement
       F = trilateratePoint(C, E, CF, EF);
-      // Try DF if it fails
-      if (!F && DF) {
-        F = trilateratePoint(D, E, DF, EF);
-      }
-      // Fall back to AF
-      if (!F) {
-        F = trilateratePoint(A, E, FA, EF);
-      }
     } else if (DF) {
-      // Try using DF for more accurate F placement
+      // Try using DF for placement
       F = trilateratePoint(D, E, DF, EF);
-      // Fall back to AF if it fails
-      if (!F) {
-        F = trilateratePoint(A, E, FA, EF);
-      }
-    } else {
+    }
+
+    // If no diagonal worked, try trilateration from A and E
+    if (!F) {
       F = trilateratePoint(A, E, FA, EF);
+    }
+
+    // Final fallback: approximate placement
+    if (!F) {
+      // Place F to close the hexagon from E to A
+      const angle = (120 * Math.PI) / 180;
+      const prevAngle = Math.atan2(E.y - D.y, E.x - D.x);
+      F = {
+        x: E.x + EF * Math.cos(prevAngle + angle),
+        y: E.y + EF * Math.sin(prevAngle + angle)
+      };
     }
     if (!F) {
       console.warn('6-corner reconstruction failed: Could not place point F');
