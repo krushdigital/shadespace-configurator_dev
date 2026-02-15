@@ -11,7 +11,7 @@ import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysFor
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { CollapsibleToggleControl } from '../ui/CollapsibleToggleControl';
+import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { toast } from 'react-toastify';
 import {
   getAlternativeUnit,
@@ -482,35 +482,46 @@ export function DimensionsContent({
       )}
 
       {/* Mobile Diagram - Only show on mobile */}
-      {isMobile && (
-        <div className="mb-4 sm:mb-6">
-          <h4 className="text-lg font-semibold text-slate-900 mb-4">
-            Interactive Measurement Guide
-          </h4>
+      {isMobile && (() => {
+        const mobileShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
+        const mobileDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
+        const mobileMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
+        const mobileProvidedDiagonals = mobileDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
+        const mobileHasEnoughDiagonals = mobileProvidedDiagonals >= mobileMinDiagonals && mobileMinDiagonals > 0;
 
-          <div className="relative overflow-hidden rounded-lg">
-            <ShapeCanvas
-              config={config}
-              updateConfig={updateConfig}
-              readonly={false}
-              snapToGrid={true}
-              highlightedMeasurement={highlightedMeasurement}
-              isMobile={isMobile}
-              measurementOption={config.measurementOption}
-              unit={config.unit}
-            />
+        return (
+          <div className="mb-4 sm:mb-6">
+            <h4 className="text-lg font-semibold text-slate-900 mb-4">
+              Interactive Measurement Guide
+            </h4>
 
-            {/* Shape Mode Toggle Control - Bottom Right Corner */}
-            <div className="absolute bottom-2 right-2 z-10">
-              <CollapsibleToggleControl
-                isAutoMode={!config.hasManuallyAdjustedShape}
-                onToggle={(isAuto) => handleToggleMode(isAuto)}
-                isMobile={true}
+            <div className="overflow-hidden rounded-lg">
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={false}
+                snapToGrid={true}
+                highlightedMeasurement={highlightedMeasurement}
+                isMobile={isMobile}
+                measurementOption={config.measurementOption}
+                unit={config.unit}
               />
             </div>
+
+            {config.corners >= 4 && (
+              <div className="mt-2">
+                <ShapeModeToggle
+                  isAutoMode={!config.hasManuallyAdjustedShape}
+                  onToggle={(isAuto) => handleToggleMode(isAuto)}
+                  corners={config.corners}
+                  hasEnoughDiagonals={mobileHasEnoughDiagonals}
+                  shapeAccuracy={mobileShapeAccuracy.accuracy}
+                />
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Perimeter Too Large Warning */}
       {validationErrors.perimeterTooLarge && (

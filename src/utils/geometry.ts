@@ -784,9 +784,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (AC > 0 && AB > 0 && BC > 0) {
       const triangleValidation = validateTriangle(AB, BC, AC);
       if (!triangleValidation.isValid) {
-        const minAC = Math.abs(AB - BC);
-        const maxAC = AB + BC;
-        errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${minAC.toFixed(0)}mm to ${maxAC.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(AB, BC);
+        errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -795,14 +794,13 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (AD > 0 && AC > 0 && CD > 0) {
       const triangleValidation = validateTriangle(AC, CD, AD);
       if (!triangleValidation.isValid) {
-        const minAD = Math.abs(AC - CD);
-        const maxAD = AC + CD;
-        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${minAD.toFixed(0)}mm to ${maxAD.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(AC, CD);
+        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (AD > 0 && AB > 0 && BC > 0 && CD > 0) {
       // Fallback: AD should be less than the path AB + BC + CD
       const pathLength = AB + BC + CD;
-      if (AD >= pathLength * 0.95) { // Allow 5% tolerance
+      if (AD >= pathLength * 0.95) {
         errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
@@ -812,9 +810,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (BD > 0 && BC > 0 && CD > 0) {
       const triangleValidation = validateTriangle(BC, CD, BD);
       if (!triangleValidation.isValid) {
-        const minBD = Math.abs(BC - CD);
-        const maxBD = BC + CD;
-        errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${minBD.toFixed(0)}mm to ${maxBD.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(BC, CD);
+        errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -823,14 +820,13 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (BE > 0 && BD > 0 && DE > 0) {
       const triangleValidation = validateTriangle(BD, DE, BE);
       if (!triangleValidation.isValid) {
-        const minBE = Math.abs(BD - DE);
-        const maxBE = BD + DE;
-        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is incompatible with diagonal BD and edge DE. Valid range: ${minBE.toFixed(0)}mm to ${maxBE.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(BD, DE);
+        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is incompatible with diagonal BD and edge DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (BE > 0 && BC > 0 && CD > 0 && DE > 0) {
       // Fallback: BE should be less than the path BC + CD + DE
       const pathLength = BC + CD + DE;
-      if (BE >= pathLength * 0.95) { // Allow 5% tolerance
+      if (BE >= pathLength * 0.95) {
         errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
@@ -840,9 +836,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (CE > 0 && CD > 0 && DE > 0) {
       const triangleValidation = validateTriangle(CD, DE, CE);
       if (!triangleValidation.isValid) {
-        const minCE = Math.abs(CD - DE);
-        const maxCE = CD + DE;
-        errors.push(`Diagonal CE (${CE.toFixed(0)}mm) is incompatible with edges CD and DE. Valid range: ${minCE.toFixed(0)}mm to ${maxCE.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(CD, DE);
+        errors.push(`Diagonal CE (${CE.toFixed(0)}mm) is incompatible with edges CD and DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -889,9 +884,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (AC > 0 && AB > 0 && BC > 0) {
       const triangleValidation = validateTriangle(AB, BC, AC);
       if (!triangleValidation.isValid) {
-        const minAC = Math.abs(AB - BC);
-        const maxAC = AB + BC;
-        errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${minAC.toFixed(0)}mm to ${maxAC.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(AB, BC);
+        errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -900,28 +894,24 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (AD > 0 && AC > 0 && CD > 0) {
       const triangleValidation = validateTriangle(AC, CD, AD);
       if (!triangleValidation.isValid) {
-        const minAD = Math.abs(AC - CD);
-        const maxAD = AC + CD;
-        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${minAD.toFixed(0)}mm to ${maxAD.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(AC, CD);
+        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (AD > 0 && AB > 0 && BC > 0 && CD > 0) {
       // Fallback: AD should be less than the path AB + BC + CD
       const pathLength = AB + BC + CD;
-      if (AD >= pathLength * 0.95) { // Allow 5% tolerance
+      if (AD >= pathLength * 0.95) {
         errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
 
     // Validate diagonal AE (A→E)
     // AE forms a triangle with edges AF and FE (the short path around the hexagon)
-    // It should satisfy: |AF - FE| < AE < AF + FE
     if (AE > 0 && EF > 0 && FA > 0) {
       const triangleValidation = validateTriangle(FA, EF, AE);
       if (!triangleValidation.isValid) {
-        // Calculate the valid range for user guidance
-        const minAE = Math.abs(FA - EF);
-        const maxAE = FA + EF;
-        errors.push(`Diagonal AE (${AE.toFixed(0)}mm) is incompatible with edges FA and EF. Valid range: ${minAE.toFixed(0)}mm to ${maxAE.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(FA, EF);
+        errors.push(`Diagonal AE (${AE.toFixed(0)}mm) is incompatible with edges FA and EF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -930,9 +920,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (BD > 0 && BC > 0 && CD > 0) {
       const triangleValidation = validateTriangle(BC, CD, BD);
       if (!triangleValidation.isValid) {
-        const minBD = Math.abs(BC - CD);
-        const maxBD = BC + CD;
-        errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${minBD.toFixed(0)}mm to ${maxBD.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(BC, CD);
+        errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -941,14 +930,13 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (BE > 0 && BD > 0 && DE > 0) {
       const triangleValidation = validateTriangle(BD, DE, BE);
       if (!triangleValidation.isValid) {
-        const minBE = Math.abs(BD - DE);
-        const maxBE = BD + DE;
-        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is incompatible with diagonal BD and edge DE. Valid range: ${minBE.toFixed(0)}mm to ${maxBE.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(BD, DE);
+        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is incompatible with diagonal BD and edge DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (BE > 0 && BC > 0 && CD > 0 && DE > 0) {
       // Fallback: BE should be less than the path BC + CD + DE
       const pathLength = BC + CD + DE;
-      if (BE >= pathLength * 0.95) { // Allow 5% tolerance
+      if (BE >= pathLength * 0.95) {
         errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
@@ -958,9 +946,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (BF > 0 && AB > 0 && FA > 0) {
       const triangleValidation = validateTriangle(AB, FA, BF);
       if (!triangleValidation.isValid) {
-        const minBF = Math.abs(AB - FA);
-        const maxBF = AB + FA;
-        errors.push(`Diagonal BF (${BF.toFixed(0)}mm) is incompatible with edges BA and AF. Valid range: ${minBF.toFixed(0)}mm to ${maxBF.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(AB, FA);
+        errors.push(`Diagonal BF (${BF.toFixed(0)}mm) is incompatible with edges BA and AF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -969,9 +956,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (CE > 0 && CD > 0 && DE > 0) {
       const triangleValidation = validateTriangle(CD, DE, CE);
       if (!triangleValidation.isValid) {
-        const minCE = Math.abs(CD - DE);
-        const maxCE = CD + DE;
-        errors.push(`Diagonal CE (${CE.toFixed(0)}mm) is incompatible with edges CD and DE. Valid range: ${minCE.toFixed(0)}mm to ${maxCE.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(CD, DE);
+        errors.push(`Diagonal CE (${CE.toFixed(0)}mm) is incompatible with edges CD and DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
@@ -980,14 +966,13 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (CF > 0 && CE > 0 && EF > 0) {
       const triangleValidation = validateTriangle(CE, EF, CF);
       if (!triangleValidation.isValid) {
-        const minCF = Math.abs(CE - EF);
-        const maxCF = CE + EF;
-        errors.push(`Diagonal CF (${CF.toFixed(0)}mm) is incompatible with diagonal CE and edge EF. Valid range: ${minCF.toFixed(0)}mm to ${maxCF.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(CE, EF);
+        errors.push(`Diagonal CF (${CF.toFixed(0)}mm) is incompatible with diagonal CE and edge EF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (CF > 0 && CD > 0 && DE > 0 && EF > 0) {
       // Fallback: CF should be less than the path CD + DE + EF
       const pathLength = CD + DE + EF;
-      if (CF >= pathLength * 0.95) { // Allow 5% tolerance
+      if (CF >= pathLength * 0.95) {
         errors.push(`Diagonal CF (${CF.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
@@ -997,9 +982,8 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     if (DF > 0 && DE > 0 && EF > 0) {
       const triangleValidation = validateTriangle(DE, EF, DF);
       if (!triangleValidation.isValid) {
-        const minDF = Math.abs(DE - EF);
-        const maxDF = DE + EF;
-        errors.push(`Diagonal DF (${DF.toFixed(0)}mm) is incompatible with edges DE and EF. Valid range: ${minDF.toFixed(0)}mm to ${maxDF.toFixed(0)}mm.`);
+        const range = calculateTriangleSideRange(DE, EF);
+        errors.push(`Diagonal DF (${DF.toFixed(0)}mm) is incompatible with edges DE and EF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
