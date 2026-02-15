@@ -15,14 +15,14 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy } from '../utils/geometry';
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
-import { CollapsibleToggleControl } from './ui/CollapsibleToggleControl';
+import { ShapeModeToggle } from './ui/ShapeModeToggle';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
@@ -1607,36 +1607,47 @@ export function ShadeConfigurator() {
           </div>
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {openStep === 4 && !isMobile && (
-            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                Interactive Measurement Guide
-              </h4>
+          {openStep === 4 && !isMobile && (() => {
+            const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
+            const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
+            const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
+            const desktopProvidedDiagonals = desktopDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
+            const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals && desktopMinDiagonals > 0;
 
-              <div>
-                <ShapeCanvas
-                  config={config}
-                  updateConfig={updateConfig}
-                  readonly={false}
-                  snapToGrid={true}
-                  highlightedMeasurement={highlightedMeasurement}
-                  highlightedCorner={highlightedCorner}
-                  isMobile={isMobile}
-                  measurementOption={config.measurementOption}
-                  unit={config.unit}
-                />
+            return (
+              <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
+                <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                  Interactive Measurement Guide
+                </h4>
 
-                {/* Shape Mode Toggle Control Panel */}
-                <div className="mt-4 flex justify-center">
-                  <CollapsibleToggleControl
-                    isAutoMode={!config.hasManuallyAdjustedShape}
-                    onToggle={(isAuto) => handleToggleMode(isAuto)}
-                    isMobile={false}
+                <div>
+                  <ShapeCanvas
+                    config={config}
+                    updateConfig={updateConfig}
+                    readonly={false}
+                    snapToGrid={true}
+                    highlightedMeasurement={highlightedMeasurement}
+                    highlightedCorner={highlightedCorner}
+                    isMobile={isMobile}
+                    measurementOption={config.measurementOption}
+                    unit={config.unit}
                   />
+
+                  {config.corners >= 4 && (
+                    <div className="mt-3">
+                      <ShapeModeToggle
+                        isAutoMode={!config.hasManuallyAdjustedShape}
+                        onToggle={(isAuto) => handleToggleMode(isAuto)}
+                        corners={config.corners}
+                        hasEnoughDiagonals={desktopHasEnoughDiagonals}
+                        shapeAccuracy={desktopShapeAccuracy.accuracy}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
           {(openStep >= 5 && (!shouldSkipStep(5) || openStep === 6)) && (
