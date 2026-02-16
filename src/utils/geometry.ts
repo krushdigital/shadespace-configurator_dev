@@ -528,15 +528,28 @@ export function calculateTriangleArea(a: number, b: number, c: number): number {
  * @param a First side length
  * @param b Second side length
  * @param c Third side length
+ * @param allowCollinear If true, allows collinear points (diagonal = sum of two edges)
  * @returns Object with isValid boolean and error message if invalid
  */
-export function validateTriangle(a: number, b: number, c: number): { isValid: boolean; error?: string } {
+export function validateTriangle(a: number, b: number, c: number, allowCollinear: boolean = false): { isValid: boolean; error?: string } {
   if (a <= 0 || b <= 0 || c <= 0) {
     return { isValid: false, error: 'All sides must be positive' };
   }
 
-  // Check for degenerate triangles (where points would be collinear)
-  // Require at least 1% separation from degenerate state
+  if (allowCollinear) {
+    const tolerance = 1.02;
+    if (a + b < c / tolerance) {
+      return { isValid: false, error: `These measurements are geometrically impossible. The diagonal is too long.` };
+    }
+    if (a + c < b / tolerance) {
+      return { isValid: false, error: `These measurements are geometrically impossible. The diagonal is too long.` };
+    }
+    if (b + c < a / tolerance) {
+      return { isValid: false, error: `These measurements are geometrically impossible. The diagonal is too long.` };
+    }
+    return { isValid: true };
+  }
+
   const degenerateThreshold = 1.01;
 
   if (a + b < c * degenerateThreshold) {
@@ -556,14 +569,18 @@ export function validateTriangle(a: number, b: number, c: number): { isValid: bo
  * Calculate valid range for a triangle side given the other two sides
  * @param side1 First known side
  * @param side2 Second known side
+ * @param allowCollinear If true, allows collinear points (third side = sum of other two)
  * @returns Object with min and max valid values for the third side
  */
-export function calculateTriangleSideRange(side1: number, side2: number): { min: number; max: number } {
-  // For a valid non-degenerate triangle, the third side must satisfy:
-  // |side1 - side2| < side3 < side1 + side2
-  // With 1% buffer to avoid degenerate triangles
-  const degenerateThreshold = 1.01;
+export function calculateTriangleSideRange(side1: number, side2: number, allowCollinear: boolean = false): { min: number; max: number } {
+  if (allowCollinear) {
+    const tolerance = 1.02;
+    const min = Math.abs(side1 - side2) / tolerance;
+    const max = (side1 + side2) * tolerance;
+    return { min: Math.floor(min), max: Math.ceil(max) };
+  }
 
+  const degenerateThreshold = 1.01;
   const min = Math.abs(side1 - side2) * degenerateThreshold;
   const max = (side1 + side2) / degenerateThreshold;
 
@@ -778,84 +795,78 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const CE = measurements['CE'] || 0;
 
     // Pentagon ABCDE: Validate diagonals based on triangles they form
+    // Allow collinear points (true) since customers often have multiple fixing points along a single wall
 
     // Validate diagonal AC (A→C)
-    // AC forms a triangle with edges AB and BC (the short path)
     if (AC > 0 && AB > 0 && BC > 0) {
-      const triangleValidation = validateTriangle(AB, BC, AC);
+      const triangleValidation = validateTriangle(AB, BC, AC, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(AB, BC);
+        const range = calculateTriangleSideRange(AB, BC, true);
         errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
     // Validate diagonal AD (A→D)
-    // If we have diagonal AC, validate triangle ACD: AC + CD + AD
     if (AD > 0 && AC > 0 && CD > 0) {
-      const triangleValidation = validateTriangle(AC, CD, AD);
+      const triangleValidation = validateTriangle(AC, CD, AD, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(AC, CD);
+        const range = calculateTriangleSideRange(AC, CD, true);
         errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (AD > 0 && AB > 0 && BC > 0 && CD > 0) {
-      // Fallback: AD should be less than the path AB + BC + CD
       const pathLength = AB + BC + CD;
-      if (AD >= pathLength * 0.95) {
-        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
+      if (AD > pathLength * 1.02) {
+        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is too long. It cannot exceed the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
 
     // Validate diagonal BD (B→D)
-    // BD forms a triangle with edges BC and CD (the short path)
     if (BD > 0 && BC > 0 && CD > 0) {
-      const triangleValidation = validateTriangle(BC, CD, BD);
+      const triangleValidation = validateTriangle(BC, CD, BD, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(BC, CD);
+        const range = calculateTriangleSideRange(BC, CD, true);
         errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
     // Validate diagonal BE (B→E)
-    // If we have diagonal BD, validate triangle BDE: BD + DE + BE
     if (BE > 0 && BD > 0 && DE > 0) {
-      const triangleValidation = validateTriangle(BD, DE, BE);
+      const triangleValidation = validateTriangle(BD, DE, BE, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(BD, DE);
+        const range = calculateTriangleSideRange(BD, DE, true);
         errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is incompatible with diagonal BD and edge DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (BE > 0 && BC > 0 && CD > 0 && DE > 0) {
-      // Fallback: BE should be less than the path BC + CD + DE
       const pathLength = BC + CD + DE;
-      if (BE >= pathLength * 0.95) {
-        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
+      if (BE > pathLength * 1.02) {
+        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is too long. It cannot exceed the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
 
     // Validate diagonal CE (C→E)
-    // CE forms a triangle with edges CD and DE (the short path)
     if (CE > 0 && CD > 0 && DE > 0) {
-      const triangleValidation = validateTriangle(CD, DE, CE);
+      const triangleValidation = validateTriangle(CD, DE, CE, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(CD, DE);
+        const range = calculateTriangleSideRange(CD, DE, true);
         errors.push(`Diagonal CE (${CE.toFixed(0)}mm) is incompatible with edges CD and DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
-    // Validate triangles
+    // Validate triangles formed by diagonals (allow collinear for multi-point installations)
     if (AB > 0 && BC > 0 && AC > 0) {
-      const validation = validateTriangle(AB, BC, AC);
+      const validation = validateTriangle(AB, BC, AC, true);
       if (!validation.isValid) {
         errors.push(`Triangle ABC: ${validation.error}`);
       }
     }
     if (AC > 0 && CD > 0 && AD > 0) {
-      const validation = validateTriangle(AC, CD, AD);
+      const validation = validateTriangle(AC, CD, AD, true);
       if (!validation.isValid) {
         errors.push(`Triangle ACD: ${validation.error}`);
       }
     }
     if (AD > 0 && DE > 0 && EA > 0) {
-      const validation = validateTriangle(AD, DE, EA);
+      const validation = validateTriangle(AD, DE, EA, true);
       if (!validation.isValid) {
         errors.push(`Triangle ADE: ${validation.error}`);
       }
@@ -878,136 +889,125 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const DF = measurements['DF'] || 0;
 
     // Hexagon ABCDEF: For each diagonal, validate against the two chains it creates
+    // Allow collinear points (true) since customers often have multiple fixing points along a single wall
 
     // Validate diagonal AC (A→C)
-    // AC forms a triangle with edges AB and BC (the short path)
     if (AC > 0 && AB > 0 && BC > 0) {
-      const triangleValidation = validateTriangle(AB, BC, AC);
+      const triangleValidation = validateTriangle(AB, BC, AC, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(AB, BC);
+        const range = calculateTriangleSideRange(AB, BC, true);
         errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
     // Validate diagonal AD (A→D)
-    // If we have diagonal AC, validate triangle ACD: AC + CD + AD
     if (AD > 0 && AC > 0 && CD > 0) {
-      const triangleValidation = validateTriangle(AC, CD, AD);
+      const triangleValidation = validateTriangle(AC, CD, AD, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(AC, CD);
+        const range = calculateTriangleSideRange(AC, CD, true);
         errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (AD > 0 && AB > 0 && BC > 0 && CD > 0) {
-      // Fallback: AD should be less than the path AB + BC + CD
       const pathLength = AB + BC + CD;
-      if (AD >= pathLength * 0.95) {
-        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
+      if (AD > pathLength * 1.02) {
+        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is too long. It cannot exceed the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
 
     // Validate diagonal AE (A→E)
-    // AE forms a triangle with edges AF and FE (the short path around the hexagon)
     if (AE > 0 && EF > 0 && FA > 0) {
-      const triangleValidation = validateTriangle(FA, EF, AE);
+      const triangleValidation = validateTriangle(FA, EF, AE, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(FA, EF);
+        const range = calculateTriangleSideRange(FA, EF, true);
         errors.push(`Diagonal AE (${AE.toFixed(0)}mm) is incompatible with edges FA and EF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
     // Validate diagonal BD (B→D)
-    // BD forms a triangle with edges BC and CD (the short path)
     if (BD > 0 && BC > 0 && CD > 0) {
-      const triangleValidation = validateTriangle(BC, CD, BD);
+      const triangleValidation = validateTriangle(BC, CD, BD, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(BC, CD);
+        const range = calculateTriangleSideRange(BC, CD, true);
         errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
     // Validate diagonal BE (B→E)
-    // If we have diagonal BD, validate triangle BDE: BD + DE + BE
     if (BE > 0 && BD > 0 && DE > 0) {
-      const triangleValidation = validateTriangle(BD, DE, BE);
+      const triangleValidation = validateTriangle(BD, DE, BE, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(BD, DE);
+        const range = calculateTriangleSideRange(BD, DE, true);
         errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is incompatible with diagonal BD and edge DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (BE > 0 && BC > 0 && CD > 0 && DE > 0) {
-      // Fallback: BE should be less than the path BC + CD + DE
       const pathLength = BC + CD + DE;
-      if (BE >= pathLength * 0.95) {
-        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
+      if (BE > pathLength * 1.02) {
+        errors.push(`Diagonal BE (${BE.toFixed(0)}mm) is too long. It cannot exceed the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
 
     // Validate diagonal BF (B→F)
-    // BF forms a triangle with edges BA and AF (the short path)
     if (BF > 0 && AB > 0 && FA > 0) {
-      const triangleValidation = validateTriangle(AB, FA, BF);
+      const triangleValidation = validateTriangle(AB, FA, BF, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(AB, FA);
+        const range = calculateTriangleSideRange(AB, FA, true);
         errors.push(`Diagonal BF (${BF.toFixed(0)}mm) is incompatible with edges BA and AF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
     // Validate diagonal CE (C→E)
-    // CE forms a triangle with edges CD and DE (the short path)
     if (CE > 0 && CD > 0 && DE > 0) {
-      const triangleValidation = validateTriangle(CD, DE, CE);
+      const triangleValidation = validateTriangle(CD, DE, CE, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(CD, DE);
+        const range = calculateTriangleSideRange(CD, DE, true);
         errors.push(`Diagonal CE (${CE.toFixed(0)}mm) is incompatible with edges CD and DE. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
     // Validate diagonal CF (C→F)
-    // If we have diagonal CE, validate triangle CEF: CE + EF + CF
     if (CF > 0 && CE > 0 && EF > 0) {
-      const triangleValidation = validateTriangle(CE, EF, CF);
+      const triangleValidation = validateTriangle(CE, EF, CF, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(CE, EF);
+        const range = calculateTriangleSideRange(CE, EF, true);
         errors.push(`Diagonal CF (${CF.toFixed(0)}mm) is incompatible with diagonal CE and edge EF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     } else if (CF > 0 && CD > 0 && DE > 0 && EF > 0) {
-      // Fallback: CF should be less than the path CD + DE + EF
       const pathLength = CD + DE + EF;
-      if (CF >= pathLength * 0.95) {
-        errors.push(`Diagonal CF (${CF.toFixed(0)}mm) is too long. It should be shorter than the perimeter path (${pathLength.toFixed(0)}mm).`);
+      if (CF > pathLength * 1.02) {
+        errors.push(`Diagonal CF (${CF.toFixed(0)}mm) is too long. It cannot exceed the perimeter path (${pathLength.toFixed(0)}mm).`);
       }
     }
 
     // Validate diagonal DF (D→F)
-    // DF forms a triangle with edges DE and EF (the short path)
     if (DF > 0 && DE > 0 && EF > 0) {
-      const triangleValidation = validateTriangle(DE, EF, DF);
+      const triangleValidation = validateTriangle(DE, EF, DF, true);
       if (!triangleValidation.isValid) {
-        const range = calculateTriangleSideRange(DE, EF);
+        const range = calculateTriangleSideRange(DE, EF, true);
         errors.push(`Diagonal DF (${DF.toFixed(0)}mm) is incompatible with edges DE and EF. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
 
-    // Validate triangles
+    // Validate triangles formed by diagonals (allow collinear for multi-point installations)
     if (AB > 0 && BC > 0 && AC > 0) {
-      const validation = validateTriangle(AB, BC, AC);
+      const validation = validateTriangle(AB, BC, AC, true);
       if (!validation.isValid) {
         errors.push(`Triangle ABC: ${validation.error}`);
       }
     }
     if (AC > 0 && CD > 0 && AD > 0) {
-      const validation = validateTriangle(AC, CD, AD);
+      const validation = validateTriangle(AC, CD, AD, true);
       if (!validation.isValid) {
         errors.push(`Triangle ACD: ${validation.error}`);
       }
     }
     if (AD > 0 && DE > 0 && AE > 0) {
-      const validation = validateTriangle(AD, DE, AE);
+      const validation = validateTriangle(AD, DE, AE, true);
       if (!validation.isValid) {
         errors.push(`Triangle ADE: ${validation.error}`);
       }
     }
     if (AE > 0 && EF > 0 && FA > 0) {
-      const validation = validateTriangle(AE, EF, FA);
+      const validation = validateTriangle(AE, EF, FA, true);
       if (!validation.isValid) {
         errors.push(`Triangle AEF: ${validation.error}`);
       }
