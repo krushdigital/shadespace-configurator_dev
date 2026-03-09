@@ -268,62 +268,62 @@ export function ShadeConfigurator() {
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
   // PDF generation handler for unified modal with customer details
-const handleGeneratePDFWithDetails = async (
-  firstName: string,
-  lastName: string,
-  email: string,
-  quoteName: string,
-  customerReference: string | null
-): Promise<string | void> => {
-  try {
-    console.log('🔄 Starting PDF generation...');
-    const svgElement = canvasRef.current?.getSVGElement?.();
-    console.log('SVG element found:', !!svgElement);
-    
-    const customerDetails: CustomerDetails = {
-      firstName,
-      lastName,
-      email,
-      quoteName,
-      customerReference
-    };
-    
-    console.log('Calling generatePDF function...');
-    const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
-    
-    console.log('✅ PDF generated successfully');
-    console.log('PDF type:', typeof pdf);
-    console.log('Is Blob?', typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob);
-    console.log('Is string?', typeof pdf === 'string');
-    
-    if (typeof pdf === 'string') {
-      console.log('String length:', pdf.length);
-      console.log('First 100 chars:', pdf.substring(0, 100));
-    } else if (typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob) {
-      console.log('Blob size:', (pdf as any).size);
-      console.log('Blob type:', (pdf as any).type);
-    }
+  const handleGeneratePDFWithDetails = async (
+    firstName: string,
+    lastName: string,
+    email: string,
+    quoteName: string,
+    customerReference: string | null
+  ): Promise<string | void> => {
+    try {
+      console.log('🔄 Starting PDF generation...');
+      const svgElement = canvasRef.current?.getSVGElement?.();
+      console.log('SVG element found:', !!svgElement);
 
-    // Track PDF generation event
-    const quoteParams = getQuoteFromUrl();
-    eventTrackers.pdfDownload(
-      quoteReference || (quoteParams?.id || null),
-      email,
-      calculations.totalPrice,
-      config.currency
-    );
+      const customerDetails: CustomerDetails = {
+        firstName,
+        lastName,
+        email,
+        quoteName,
+        customerReference
+      };
 
-    return pdf;
-  } catch (error) {
-    console.error('❌ Error generating PDF:', error);
-    if (error instanceof Error) {
-      console.error('❌ Error stack:', error.stack);
+      console.log('Calling generatePDF function...');
+      const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
+
+      console.log('✅ PDF generated successfully');
+      console.log('PDF type:', typeof pdf);
+      console.log('Is Blob?', typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob);
+      console.log('Is string?', typeof pdf === 'string');
+
+      if (typeof pdf === 'string') {
+        console.log('String length:', pdf.length);
+        console.log('First 100 chars:', pdf.substring(0, 100));
+      } else if (typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob) {
+        console.log('Blob size:', (pdf as any).size);
+        console.log('Blob type:', (pdf as any).type);
+      }
+
+      // Track PDF generation event
+      const quoteParams = getQuoteFromUrl();
+      eventTrackers.pdfDownload(
+        quoteReference || (quoteParams?.id || null),
+        email,
+        calculations.totalPrice,
+        config.currency
+      );
+
+      return pdf;
+    } catch (error) {
+      console.error('❌ Error generating PDF:', error);
+      if (error instanceof Error) {
+        console.error('❌ Error stack:', error.stack);
+      }
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      showToast(`Failed to generate PDF: ${errorMessage}`, 'error');
+      return undefined;
     }
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    showToast(`Failed to generate PDF: ${errorMessage}`, 'error');
-    return undefined;
-  }
-};
+  };
 
   const convertSvgToPng = async (
     svgElement: SVGSVGElement,
@@ -386,79 +386,79 @@ const handleGeneratePDFWithDetails = async (
 
 
 
-// ============ ENHANCED DEBUGGING FOR UPLOAD FUNCTION ============
-const uploadImageToShopify = async (file: File | Blob, filename: string): Promise<string | null> => {
-  try {
-    console.log('📤 uploadImageToShopify called with:', { 
-      filename, 
-      fileType: file.type,
-      fileSize: file.size,
-      isFile: file instanceof File,
-      isBlob: file instanceof Blob 
-    });
-
-    // Ensure we have a proper File object
-    let fileToUpload: File;
-
-    if (file instanceof Blob && !(file instanceof File)) {
-      // Convert Blob to File
-      console.log('Converting Blob to File...');
-      fileToUpload = new File([file], filename, {
-        type: file.type || 'application/octet-stream'
+  // ============ ENHANCED DEBUGGING FOR UPLOAD FUNCTION ============
+  const uploadImageToShopify = async (file: File | Blob, filename: string): Promise<string | null> => {
+    try {
+      console.log('📤 uploadImageToShopify called with:', {
+        filename,
+        fileType: file.type,
+        fileSize: file.size,
+        isFile: file instanceof File,
+        isBlob: file instanceof Blob
       });
-      console.log('Converted to File:', { 
-        name: fileToUpload.name,
-        type: fileToUpload.type,
-        size: fileToUpload.size 
+
+      // Ensure we have a proper File object
+      let fileToUpload: File;
+
+      if (file instanceof Blob && !(file instanceof File)) {
+        // Convert Blob to File
+        console.log('Converting Blob to File...');
+        fileToUpload = new File([file], filename, {
+          type: file.type || 'application/octet-stream'
+        });
+        console.log('Converted to File:', {
+          name: fileToUpload.name,
+          type: fileToUpload.type,
+          size: fileToUpload.size
+        });
+      } else {
+        fileToUpload = file as File;
+        console.log('Already a File:', {
+          name: fileToUpload.name,
+          type: fileToUpload.type,
+          size: fileToUpload.size
+        });
+      }
+
+      const formData = new FormData();
+      formData.append('file', fileToUpload);
+
+      console.log('Sending request to upload API...');
+      const response = await fetch('/apps/shade_space/api/v1/public/file/upload', {
+        method: 'POST',
+        body: formData,
       });
-    } else {
-      fileToUpload = file as File;
-      console.log('Already a File:', { 
-        name: fileToUpload.name,
-        type: fileToUpload.type,
-        size: fileToUpload.size 
+
+      console.log('Upload API response status:', response.status, response.statusText);
+
+      if (!response.ok) {
+        console.error('❌ Upload failed with status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        throw new Error(`Failed to upload file to Shopify: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('📥 Upload API response:', result);
+
+      if (result.success && result.url) {
+        console.log(`✅ File uploaded successfully: ${filename} - URL: ${result.url}`);
+        return result.url;
+      } else {
+        console.error('❌ Shopify upload failed:', result.error || 'Unknown error');
+        console.error('❌ Full result:', result);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error uploading file to Shopify:', error);
+      console.error('❌ Error details:', {
+        message: typeof error === 'object' && error !== null && 'message' in error ? (error as any).message : String(error),
+        stack: typeof error === 'object' && error !== null && 'stack' in error ? (error as any).stack : '',
+        name: typeof error === 'object' && error !== null && 'name' in error ? (error as any).name : ''
       });
-    }
-
-    const formData = new FormData();
-    formData.append('file', fileToUpload);
-
-    console.log('Sending request to upload API...');
-    const response = await fetch('/apps/shade_space/api/v1/public/file/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    console.log('Upload API response status:', response.status, response.statusText);
-    
-    if (!response.ok) {
-      console.error('❌ Upload failed with status:', response.status);
-      const errorText = await response.text();
-      console.error('❌ Error response:', errorText);
-      throw new Error(`Failed to upload file to Shopify: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
-    console.log('📥 Upload API response:', result);
-
-    if (result.success && result.url) {
-      console.log(`✅ File uploaded successfully: ${filename} - URL: ${result.url}`);
-      return result.url;
-    } else {
-      console.error('❌ Shopify upload failed:', result.error || 'Unknown error');
-      console.error('❌ Full result:', result);
       return null;
     }
-  } catch (error) {
-    console.error('❌ Error uploading file to Shopify:', error);
-    console.error('❌ Error details:', {
-      message: typeof error === 'object' && error !== null && 'message' in error ? (error as any).message : String(error),
-      stack: typeof error === 'object' && error !== null && 'stack' in error ? (error as any).stack : '',
-      name: typeof error === 'object' && error !== null && 'name' in error ? (error as any).name : ''
-    });
-    return null;
-  }
-};
+  };
 
   // Email PDF Quote handler for unified modal
   const handleEmailPDFQuote = async (
@@ -764,8 +764,8 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
   const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
 
   const canAddToCart = allDiagonalsEntered &&
-                       allAcknowledgmentsChecked &&
-                       (!heightIsRequiredForCheckout || allHeightsProvided);
+    allAcknowledgmentsChecked &&
+    (!heightIsRequiredForCheckout || allHeightsProvided);
 
   // Calculate if all edge measurements are complete
   const hasAllEdgeMeasurements = useMemo(() => {
@@ -833,8 +833,7 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
     backendAnchorMeasurements: Record<string, string>;
     originalUnit: 'metric' | 'imperial';
   }
-
- const handleAddToCart = async (orderData: OrderData): Promise<void> => {
+  const handleAddToCart = async (orderData: OrderData): Promise<void> => {
     console.log('Product being created. Add to cart');
     setShowLoadingOverlay(true);
     setLoadingStep({ text: 'Starting order process...', progress: 10 });
@@ -860,15 +859,15 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
       // ============ UPDATED SECTION START: Generate and Upload PDF FIRST ============
       let pdfUrl = null;
       let technicalDrawingUrl = orderData.canvasImageUrl || null;
-      
+
       try {
         setLoadingStep({ text: 'Generating PDF documentation...', progress: 40 });
-        
+
         // Generate PDF with customer details
         const customerFirstName = quoteData?.customer_first_name || '';
         const customerLastName = quoteData?.customer_last_name || '';
         const customerEmail = quoteData?.customer_email || '';
-        
+
         console.log('Calling handleGeneratePDFWithDetails...');
         const pdfResult = await handleGeneratePDFWithDetails(
           customerFirstName,
@@ -877,12 +876,12 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
           'Custom Shade Sail Quote',
           quoteReference
         );
-        
+
         console.log('PDF result type:', typeof pdfResult, 'Result:', pdfResult);
-        
+
         if (pdfResult) {
           let pdfBlob: Blob | null = null;
-          
+
           if (typeof pdfResult === 'string' && pdfResult.startsWith('blob:')) {
             // If it's a blob URL, fetch the blob
             console.log('PDF is blob URL, fetching blob...');
@@ -910,27 +909,27 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
           } else {
             console.log('Unknown PDF result format:', pdfResult);
           }
-          
+
           // Upload PDF blob if we have one
           if (pdfBlob) {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
-            
+
             // Create proper File object
-            const pdfFile = new File([pdfBlob], pdfFilename, { 
-              type: 'application/pdf' 
+            const pdfFile = new File([pdfBlob], pdfFilename, {
+              type: 'application/pdf'
             });
-            
-            console.log('Uploading PDF to Shopify...', { 
-              filename: pdfFilename, 
+
+            console.log('Uploading PDF to Shopify...', {
+              filename: pdfFilename,
               size: pdfBlob.size,
-              type: pdfBlob.type 
+              type: pdfBlob.type
             });
-            
+
             try {
               const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
               console.log('Upload response:', uploadResponse);
-              
+
               if (uploadResponse) {
                 pdfUrl = uploadResponse;
                 console.log('PDF uploaded successfully, URL:', pdfUrl);
@@ -943,11 +942,10 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
           }
           else {
             // Upload base64 if we have one
-            // use pdfResult
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
             console.log('Uploading PDF to Shopify...', {
-              filename: pdfFilename, 
+              filename: pdfFilename,
               file: pdfResult
             });
 
@@ -957,75 +955,40 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
             }
             const pdfFile = await base64ToBlob(pdfResult);
             console.log('pdfFile', pdfFile)
-            
-            try {
 
+            try {
               const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
               console.log('Upload response:', uploadResponse);
-
               pdfUrl = uploadResponse
-
-              // console.log('Sending request to upload API...');
-              // const response = await fetch('/apps/shade_space/api/v1/public/file/upload', {
-              //   method: 'POST',
-              //   headers: { 'Content-Type': 'application/json' },
-              //   body: JSON.stringify({
-              //     filename: pdfFilename, 
-              //     file: pdfResult
-              //   })
-              // });
-
-              // console.log('Upload API response status:', response.status, response.statusText);
-              
-              // if (!response.ok) {
-              //   console.error('❌ Upload failed with status:', response.status);
-              //   const errorText = await response.text();
-              //   console.error('❌ Error response:', errorText);
-              //   throw new Error(`Failed to upload file to Shopify: ${response.status} ${response.statusText}`);
-              // }
-
-              // const result = await response.json();
-              // console.log('📥 Upload API response:', result);
-
-              // if (result.success && result.url) {
-              //   console.log(`✅ File uploaded successfully: URL: ${result.url}`);
-              //   return result.url;
-              // } else {
-              //   console.error('❌ Shopify upload failed:', result.error || 'Unknown error');
-              //   console.error('❌ Full result:', result);
-              // }
-
             } catch (error) {
               console.error('Something went wrong while uploading pdf file.');
-              
             }
-
           }
         } else {
           console.log('No PDF result returned from handleGeneratePDFWithDetails');
         }
-        
+
         // Also upload the technical drawing image if it exists
         if (orderData.canvasImageUrl && orderData.canvasImageUrl.startsWith('blob:')) {
           setLoadingStep({ text: 'Uploading technical drawing...', progress: 45 });
-          
+
           try {
             console.log('Fetching technical drawing from blob URL...');
             const response = await fetch(orderData.canvasImageUrl);
             const imageBlob = await response.blob();
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const imageFilename = `technical-drawing-${timestamp}.png`;
-            
-            const imageFile = new File([imageBlob], imageFilename, { 
-              type: 'image/png' 
+
+            const imageFile = new File([imageBlob], imageFilename, {
+              type: 'image/png'
             });
-            
-            console.log('Uploading technical drawing...', { 
-              filename: imageFilename, 
+
+            console.log('Uploading technical drawing...', {
+              filename: imageFilename,
               size: imageBlob.size,
-              type: imageBlob.type 
+              type: imageBlob.type
             });
-            
+
             const imageUploadResponse = await uploadImageToShopify(imageFile, imageFilename);
             if (imageUploadResponse) {
               technicalDrawingUrl = imageUploadResponse;
@@ -1041,7 +1004,7 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
         console.error('Failed to generate or upload PDF:', pdfError);
         // Continue even if PDF generation fails
       }
-      
+
       console.log('Final PDF URL for line item:', pdfUrl);
       console.log('Final technical drawing URL:', technicalDrawingUrl);
       // ============ UPDATED SECTION END ============
@@ -1127,7 +1090,14 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
           backendEdgeMeasurements,
           backendDiagonalMeasurements,
           backendAnchorMeasurements,
-          originalUnit: config.unit
+          originalUnit: config.unit,
+          // ========== CRITICAL FULFILLMENT METADATA ==========
+          // Always include PDF URL for admin fulfillment team
+          pdfUrl: pdfUrl || null,
+          // Include fabrication type (e.g., 'custom_dimensions' or 'fabricated_to_fit')
+          fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
+          // Include quote reference for tracking
+          quoteReference: quoteReference || null
         }),
       });
 
@@ -1205,7 +1175,7 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
           metafieldProperties[key] = value;
         });
 
-        // ============ CRITICAL FIX: Add PDF URL as line item property ============
+        // ============ CRITICAL FIX: Add PDF URL and Fabrication Type as line item properties ============
         // Add PDF URL as a line item property if available
         if (pdfUrl) {
           // Ensure it's a valid URL string
@@ -1214,10 +1184,10 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
             metafieldProperties['_quote_pdf_url'] = pdfUrlString;
             metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteReference || 'custom'}.pdf`;
             metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
-            
+
             // Also add a customer-facing property
             metafieldProperties['Technical Documentation'] = 'Included (PDF)';
-            
+
             console.log('✅ Added PDF URL to line item properties:', pdfUrlString);
           } else {
             console.log('❌ PDF URL is not a valid HTTP URL:', pdfUrlString);
@@ -1225,7 +1195,15 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
         } else {
           console.log('❌ No PDF URL available to add to line item');
         }
-        
+
+        // Add fabrication type (visible to fulfillment team in admin)
+        const fabricationType = config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit';
+        metafieldProperties['_fabrication_type'] = fabricationType;
+        metafieldProperties['Fabrication Method'] = config.measurementOption === 'adjust'
+          ? 'Custom dimensions provided by customer'
+          : 'Fabricated to fit customer\'s space';
+        console.log('✅ Added fabrication type:', fabricationType);
+
         // Add technical drawing URL if available
         if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http')) {
           metafieldProperties['_technical_drawing_url'] = technicalDrawingUrl;
@@ -1269,70 +1247,218 @@ const uploadImageToShopify = async (file: File | Blob, filename: string): Promis
 
           console.log('Add to cart in progress');
           console.log('Form data JSON:', JSON.stringify(formData, null, 2)); // Debug log
-          setLoadingStep({ text: 'Adding item to your cart...', progress: 85 });
 
-          const cartResponse = await fetch('/cart/add.js', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-          });
+          // ============ SOLUTION 3: ROBUST POLLING/RETRY LOGIC ============
+          setLoadingStep({ text: 'Preparing your item for cart...', progress: 80 });
 
-          console.log('Cart response status:', cartResponse.status);
+          // Helper function to wait
+          const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-          if (cartResponse.ok) {
-            console.log('✅ Added to cart successfully');
-            const cartData = await cartResponse.json();
-            console.log('Cart response data:', cartData);
-            
-            // Check if properties were added to cart
-            if (cartData.items && cartData.items[0] && cartData.items[0].properties) {
-              console.log('📦 Properties in cart item:', cartData.items[0].properties);
-              if (pdfUrl && cartData.items[0].properties['_quote_pdf_url']) {
-                console.log('✅ PDF URL successfully added to cart!');
-              } else {
-                console.log('❌ PDF URL NOT found in cart item properties');
+          // Function to check if variant is available
+          const isVariantAvailable = async (variantId: string | number): Promise<boolean> => {
+            try {
+              // Method 1: Check via variant API
+              const variantResponse = await fetch(`/variants/${variantId}.js`);
+              if (variantResponse.ok) {
+                const variant = await variantResponse.json();
+                if (variant.available === true) {
+                  return true;
+                }
               }
+
+              // Method 2: Try a test add (this is the most reliable check)
+              // We'll use a very small quantity and then remove it
+              const testResponse = await fetch('/cart/add.js', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  items: [{
+                    id: Number(variantId),
+                    quantity: 1,
+                    properties: { _test: 'true', _temp: Date.now().toString() }
+                  }]
+                })
+              });
+
+              if (testResponse.ok) {
+                // Success! Now we need to remove this test item
+                // First get current cart
+                const cartResponse = await fetch('/cart.js');
+                const cart = await cartResponse.json();
+
+                // Find and remove the test item
+                const testItem = cart.items.find((item: any) =>
+                  item.properties && item.properties._test === 'true'
+                );
+
+                if (testItem) {
+                  // Remove just the test item
+                  const updates: Record<number, number> = {};
+                  updates[testItem.key] = 0;
+
+                  await fetch('/cart/update.js', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ updates })
+                  });
+                }
+
+                return true;
+              }
+
+              return false;
+            } catch (error) {
+              console.log('Error checking variant availability:', error);
+              return false;
+            }
+          };
+
+          // Poll for availability with exponential backoff
+          let isAvailable = false;
+          let attempts = 0;
+          const maxAttempts = 12; // Will try for ~30 seconds total
+
+          while (!isAvailable && attempts < maxAttempts) {
+            attempts++;
+
+            // Update progress message
+            setLoadingStep({
+              text: attempts === 1
+                ? 'Making product available in store...'
+                : `Product is being prepared (attempt ${attempts}/${maxAttempts})...`,
+              progress: 80 + (attempts * 1.5) // Gradually increase progress up to ~98
+            });
+
+            console.log(`Checking variant availability - Attempt ${attempts}/${maxAttempts}`);
+
+            isAvailable = await isVariantAvailable(variantId);
+
+            if (isAvailable) {
+              console.log(`✅ Variant available after ${attempts} attempt(s)`);
+              break;
             }
 
-            // Track add to cart event for admin dashboard
-            eventTrackers.addToCart(
-              quoteReference || (quoteParams?.id || null),
-              email || null,
-              calculations.totalPrice,
-              config.currency,
-              true
+            if (attempts < maxAttempts) {
+              // Exponential backoff: 1s, 1.5s, 2.25s, 3.375s, etc.
+              const waitTime = Math.min(1000 * Math.pow(1.5, attempts - 1), 5000);
+              console.log(`⏳ Waiting ${waitTime}ms before next check...`);
+              await wait(waitTime);
+            }
+          }
+
+          if (!isAvailable) {
+            console.error('❌ Variant never became available after polling');
+            showToast(
+              'Your product was created but is taking a moment to become available. Please try adding to cart again in a few seconds.',
+              'error'
             );
-
-            // Track quote conversion if applicable
-            if (quoteData && quoteParams) {
-              try {
-                const createdAt = new Date(quoteData.created_at);
-                const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-
-                analytics.quoteConvertedToCart({
-                  quote_reference: quoteReference!,
-                  quote_age_hours: quoteAgeHours,
-                  time_from_save_to_cart_hours: quoteAgeHours,
-                  total_price: calculations.totalPrice,
-                  currency: config.currency,
-                  conversion_source: 'loaded_quote',
-                });
-
-                // Mark quote as converted
-                await markQuoteConverted(quoteParams.id, quoteParams.token);
-              } catch (error) {
-                console.error('Failed to track quote conversion:', error);
-              }
-            }
-
-            setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
-            window.location.href = '/cart';
-          } else {
-            const errorText = await cartResponse.text();
-            console.error('❌ Failed to add to cart. Status:', cartResponse.status, 'Error:', errorText);
             setShowLoadingOverlay(false);
             setLoading(false);
+            return;
           }
+
+          // Now that we know it's available, proceed with adding to cart
+          setLoadingStep({ text: 'Adding item to your cart...', progress: 95 });
+
+          // Final cart addition with retry logic
+          let cartResponse;
+          let cartAttempts = 0;
+          const maxCartAttempts = 3;
+          let cartSuccess = false;
+          let cartData = null;
+
+          while (!cartSuccess && cartAttempts < maxCartAttempts) {
+            cartAttempts++;
+
+            try {
+              console.log(`Cart addition attempt ${cartAttempts}/${maxCartAttempts}`);
+
+              cartResponse = await fetch('/cart/add.js', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+              });
+
+              if (cartResponse.ok) {
+                cartSuccess = true;
+                cartData = await cartResponse.json();
+                console.log(`✅ Added to cart successfully on attempt ${cartAttempts}`);
+                break;
+              }
+
+              const errorText = await cartResponse.text();
+              console.log(`Attempt ${cartAttempts} failed:`, cartResponse.status, errorText);
+
+              // Only retry on 422 sold out errors
+              if (cartResponse.status === 422 && errorText.includes('sold out')) {
+                if (cartAttempts < maxCartAttempts) {
+                  const waitTime = 1000 * cartAttempts; // 1s, 2s, 3s
+                  console.log(`Waiting ${waitTime}ms before retry...`);
+                  await wait(waitTime);
+                }
+              } else {
+                // Different error, don't retry
+                throw new Error(`Add to cart failed: ${cartResponse.status} ${errorText}`);
+              }
+            } catch (error) {
+              console.error('Error in cart addition attempt:', error);
+              if (cartAttempts >= maxCartAttempts) {
+                throw error;
+              }
+              await wait(1500);
+            }
+          }
+
+          if (!cartSuccess) {
+            throw new Error('Failed to add to cart after multiple attempts');
+          }
+          // ============ END SOLUTION 3 ============
+
+          console.log('Cart response data:', cartData);
+
+          // Check if properties were added to cart
+          if (cartData.items && cartData.items[0] && cartData.items[0].properties) {
+            console.log('📦 Properties in cart item:', cartData.items[0].properties);
+            if (pdfUrl && cartData.items[0].properties['_quote_pdf_url']) {
+              console.log('✅ PDF URL successfully added to cart!');
+            } else {
+              console.log('❌ PDF URL NOT found in cart item properties');
+            }
+          }
+
+          // Track add to cart event for admin dashboard
+          eventTrackers.addToCart(
+            quoteReference || (quoteParams?.id || null),
+            email || null,
+            calculations.totalPrice,
+            config.currency,
+            true
+          );
+
+          // Track quote conversion if applicable
+          if (quoteData && quoteParams) {
+            try {
+              const createdAt = new Date(quoteData.created_at);
+              const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+
+              analytics.quoteConvertedToCart({
+                quote_reference: quoteReference!,
+                quote_age_hours: quoteAgeHours,
+                time_from_save_to_cart_hours: quoteAgeHours,
+                total_price: calculations.totalPrice,
+                currency: config.currency,
+                conversion_source: 'loaded_quote',
+              });
+
+              // Mark quote as converted
+              await markQuoteConverted(quoteParams.id, quoteParams.token);
+            } catch (error) {
+              console.error('Failed to track quote conversion:', error);
+            }
+          }
+
+          setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
+          window.location.href = '/cart';
         } else {
           console.error('No variant found in product');
           setShowLoadingOverlay(false);
