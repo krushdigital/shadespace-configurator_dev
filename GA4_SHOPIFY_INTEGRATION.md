@@ -47,7 +47,7 @@ This guide provides comprehensive documentation for the integrated GA4 (Google A
 │                            ↓                                    │
 │  ┌──────────────────────────────────────────────────────────┐  │
 │  │  Analytics Utility (src/utils/analytics.ts)             │  │
-│  │  - 70+ tracked events                                    │  │
+│  │  - 100+ tracked events                                   │  │
 │  │  - Window.gtag() integration                             │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                            ↓                                    │
@@ -497,6 +497,8 @@ if (shopifyResult.success) {
 | `canvas_point_dragged` | Point moved | `point_label`, `new_x`, `new_y` | Interaction tracking |
 | `canvas_point_hover` | Point hovered | `point_label`, `x`, `y` | Hover behavior |
 | `canvas_edge_hover` | Edge hovered | `edge_key`, `measurement_value` | Edge interaction |
+| `canvas_snap_to_grid` | Point snapped to grid | `point_label`, `snap_x`, `snap_y` | Grid snapping behavior |
+| `canvas_svg_exported` | SVG exported | `corners`, `export_format`, `purpose` | Export tracking |
 
 #### 2.3.12 Error and Validation Events
 
@@ -516,6 +518,36 @@ if (shopifyResult.success) {
 |------------|---------|----------------|--------|
 | `mobile_view_detected` | Mobile layout active | `screen_width`, `screen_height`, `device_type` | Device tracking |
 | `mobile_step_navigation` | Mobile navigation | `current_step`, `interaction_type` | Mobile UX |
+
+#### 2.3.14 Acknowledgment Events
+
+**Purpose:** Track user acknowledgment of important terms and conditions in the review step
+
+| Event Name | Trigger | Key Properties | Usage |
+|------------|---------|----------------|--------|
+| `acknowledgment_checked` | User checks acknowledgment | `acknowledgment_key`, `acknowledgment_label` | Consent tracking |
+| `acknowledgment_unchecked` | User unchecks acknowledgment | `acknowledgment_key`, `acknowledgment_label` | Behavior tracking |
+| `all_acknowledgments_completed` | All acknowledgments checked | `total_count`, `time_to_complete_seconds` | Readiness tracking |
+
+**Implementation Example:**
+
+```typescript
+// In ReviewContent.tsx
+const handleAcknowledgmentChange = (key: string) => {
+  const newValue = !acknowledgments[key];
+
+  if (newValue) {
+    analytics.acknowledgmentChecked(key, getAcknowledgmentLabel(key));
+  } else {
+    analytics.acknowledgmentUnchecked(key, getAcknowledgmentLabel(key));
+  }
+
+  // Check if all are now complete
+  if (allAcknowledgmentsChecked) {
+    analytics.allAcknowledgmentsCompleted(acknowledgmentCount, timeElapsed);
+  }
+};
+```
 
 ### 2.4 Event Property Standards
 
@@ -582,6 +614,137 @@ Filter console for `📊 GA Event` to see all tracked events.
 - **Events:** `fabric_type_selected`, `fabric_color_selected`, `edge_type_selected`
 - **Metrics:** Selection counts, average price by fabric
 - **Dimensions:** Fabric type, color, edge type, corners
+
+### 2.7 Supabase Event Tracking (Admin Analytics)
+
+In addition to GA4 tracking, the configurator implements parallel event tracking to Supabase for admin dashboard analytics. This provides a second layer of data collection stored in your own database.
+
+**Location:** `src/utils/eventTracker.ts`
+
+#### Architecture
+
+```
+User Action
+    ↓
+┌─────────────────────────────────────────┐
+│  eventTracker.ts                        │
+│  - Sends to Supabase Edge Function      │
+│  - Fallback: Direct Supabase REST API   │
+└─────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────┐
+│  Supabase: track-event Edge Function    │
+│  - Stores in user_events table          │
+│  - Captures device_type, user_agent     │
+└─────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────┐
+│  Admin Dashboard                        │
+│  - View events in real-time             │
+│  - Filter by event type, date, customer │
+└─────────────────────────────────────────┘
+```
+
+#### Tracked Events
+
+| Event Name | Trigger | Key Data | Purpose |
+|------------|---------|----------|---------|
+| `pdf_download` | PDF generated | `totalPrice`, `currency`, `quoteId` | Track PDF engagement |
+| `email_summary` | Email sent | `totalPrice`, `currency`, `success` | Track email requests |
+| `add_to_cart` | Cart action | `totalPrice`, `currency`, `success` | Track cart conversions |
+| `quote_save` | Quote saved | `totalPrice`, `currency`, `quoteReference` | Track quote saves |
+
+#### Implementation Example
+
+```typescript
+import { eventTrackers } from '../utils/eventTracker';
+
+// Track PDF download
+eventTrackers.pdfDownload(quoteId, email, totalPrice, currency);
+
+// Track email summary
+eventTrackers.emailSummary(quoteId, email, totalPrice, currency, success);
+
+// Track add to cart
+eventTrackers.addToCart(quoteId, email, totalPrice, currency, success);
+
+// Track quote save
+eventTrackers.quoteSave(quoteId, email, totalPrice, currency, quoteReference);
+```
+
+#### Benefits Over GA4-Only Tracking
+
+- **Data Ownership:** Events stored in your Supabase database
+- **Admin Dashboard:** View events directly in the admin interface
+- **Customer Linking:** Events linked to customer emails and quote IDs
+- **No Sampling:** Unlike GA4, no data sampling limitations
+- **Custom Queries:** Run SQL queries on event data
+
+### 2.8 Google Ads Conversion Tracking Recommendations
+
+This section provides recommendations for which GA4 events to import into Google Ads as conversions and secondary conversions for campaign optimization.
+
+#### Primary Conversions (High Value)
+
+These events represent the highest-value user actions and should be imported as primary conversions:
+
+| Event | Conversion Value | Recommended Action |
+|-------|-----------------|-------------------|
+| `cart_add_success` | High | Import as **Primary Conversion** - User successfully added product to cart |
+| `quote_converted_to_cart` | High | Import as **Primary Conversion** - Saved quote became cart item |
+
+#### Secondary Conversions (Lead Indicators)
+
+These events indicate strong purchase intent and should be tracked as secondary conversions:
+
+| Event | Intent Level | Recommended Action |
+|-------|-------------|-------------------|
+| `quote_save_success` | High | **Secondary Conversion** - User saved quote (strong lead) |
+| `shopify_customer_created` | High | **Secondary Conversion** - New customer record created |
+| `email_summary_sent` | High | **Secondary Conversion** - User requested email summary |
+| `pdf_generated_success` | Medium-High | **Secondary Conversion** - User downloaded PDF quote |
+| `add_to_cart_clicked` | Medium | **Secondary Conversion** - User attempted cart action |
+
+#### Micro-Conversions (Audience Building)
+
+These events are useful for audience building and remarketing:
+
+| Event | Use Case |
+|-------|----------|
+| `step_7_completed` | Users who completed final review step |
+| `all_acknowledgments_completed` | Users ready to purchase |
+| `price_calculated` (with value filter) | Qualified leads above price threshold |
+| `quote_link_copied` | Users sharing quote with others |
+
+#### Setup Instructions for Google Ads
+
+1. **Import GA4 Conversions:**
+   - Go to Google Ads > Tools & Settings > Conversions
+   - Click "New conversion action" > "Import" > "Google Analytics 4 properties"
+   - Select the events listed above
+
+2. **Configure Conversion Values:**
+   - For `cart_add_success`: Use dynamic value from `total_price` parameter
+   - For `quote_save_success`: Set estimated value (e.g., 20% of avg quote value)
+
+3. **Set Conversion Windows:**
+   - Primary conversions: 30-day click, 7-day view
+   - Secondary conversions: 90-day click, 30-day view
+
+4. **Attribution Model:**
+   - Recommended: Data-driven attribution for primary conversions
+   - Last-click for secondary conversions
+
+#### Audience Recommendations
+
+Create these audiences for remarketing campaigns:
+
+| Audience Name | Event Criteria | Use Case |
+|--------------|----------------|----------|
+| High-Value Prospects | `price_calculated` where `total_price > 3000` | Target high-value leads |
+| Cart Abandoners | `add_to_cart_clicked` but no `cart_add_success` | Recovery campaigns |
+| Quote Savers | `quote_save_success` in last 30 days | Follow-up campaigns |
+| Configurator Completers | `step_7_completed` but no `quote_save_success` | Encourage save/purchase |
 
 ---
 
