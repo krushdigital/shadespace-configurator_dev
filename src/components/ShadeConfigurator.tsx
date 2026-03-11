@@ -604,6 +604,13 @@ export function ShadeConfigurator() {
           : calculations?.wireThickness !== undefined
             ? `${calculations.wireThickness}mm`
             : 'N/A',
+        Webbing_Edge_Width: config.unit === 'imperial'
+          ? calculations?.webbingWidth !== undefined
+            ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}"`
+            : 'N/A'
+          : calculations?.webbingWidth !== undefined
+            ? `${calculations.webbingWidth}mm`
+            : 'N/A',
         Area: formatArea(calculations.area * 1000000, config.unit),
         Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
         canvasImage: canvasImageUrl,
@@ -823,6 +830,7 @@ export function ShadeConfigurator() {
     Shade_Factor: string;
     Edge_Type: string;
     Wire_Thickness: string;
+    Webbing_Edge_Width: string;
     Area: string;
     Perimeter: string;
     createdAt: string;
@@ -1145,7 +1153,14 @@ export function ShadeConfigurator() {
         metafieldProperties['Fabric Color'] = orderData.selectedColor?.name || '';
         metafieldProperties['Fabric Certification Type'] = orderData.Fabric_Type || orderData.selectedFabric?.label || '';
         metafieldProperties['Edge Type'] = orderData.Edge_Type || 'Cabled Edge';
-        metafieldProperties['Wire Thickness'] = orderData.Wire_Thickness || '0.16"';
+        
+        // Conditionally add Wire Thickness or Webbing Edge Width based on Edge Type
+        if (orderData.Edge_Type === 'Webbing Reinforced') {
+          metafieldProperties['Webbing Edge Width'] = orderData.Webbing_Edge_Width || 'N/A';
+        } else {
+          metafieldProperties['Wire Thickness'] = orderData.Wire_Thickness || '0.16"';
+        }
+        
         metafieldProperties['Corners'] = orderData.corners?.toString() || '4';
         metafieldProperties['Area'] = orderData.Area || '0 in²';
         metafieldProperties['Perimeter'] = orderData.Perimeter || '40\'';
