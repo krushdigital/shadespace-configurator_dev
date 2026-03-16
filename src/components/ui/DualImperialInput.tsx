@@ -10,6 +10,22 @@ interface ImperialValue {
   format: 'feet-inches' | 'inches-only';
 }
 
+const useIsSmallScreen = () => {
+  const [isSmall, setIsSmall] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsSmall(window.innerWidth < 400);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  return isSmall;
+};
+
 interface DualImperialInputProps {
   value: number;
   onChange: (value: number) => void;
@@ -48,14 +64,24 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
   const [totalInchesInput, setTotalInchesInput] = useState('');
   const [inchesError, setInchesError] = useState('');
   const [isUserTyping, setIsUserTyping] = useState(false);
+  const isSmallScreen = useIsSmallScreen();
 
-  // Load saved preference from localStorage
   useEffect(() => {
+    if (isSmallScreen && unit === 'imperial') {
+      setDisplayMode('inches-only');
+      if (value > 0) {
+        setTotalInchesInput(String(Math.round(value * 100) / 100));
+      }
+    }
+  }, [isSmallScreen, unit, value]);
+
+  useEffect(() => {
+    if (isSmallScreen) return;
     const savedPreference = localStorage.getItem('imperialInputFormat');
     if (savedPreference === 'inches-only' || savedPreference === 'feet-inches') {
       setDisplayMode(savedPreference);
     }
-  }, []);
+  }, [isSmallScreen]);
 
   // Initialize from prop value
   useEffect(() => {
@@ -214,14 +240,14 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
           onFocus={onFocus}
           onBlur={onBlur}
           placeholder=""
-          className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
+          className={`${className} ${isSuccess ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'}`}
           isSuccess={isSuccess}
           error={error}
           errorKey={errorKey}
           label={label}
           secondaryValue={secondaryValue}
         />
-        <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
+        <span className={`absolute ${isSuccess ? 'right-6 sm:right-10' : 'right-2 sm:right-3'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
           mm
         </span>
       </div>
@@ -229,17 +255,17 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1 sm:space-y-2">
       {label && (
-        <label className="block text-sm font-medium text-[#01312D] mb-1">
+        <label className="block text-xs sm:text-sm font-medium text-[#01312D] mb-0.5 sm:mb-1">
           {label}
         </label>
       )}
 
       <div className="relative">
         {displayMode === 'feet-inches' ? (
-          <div className="flex items-start gap-2">
-            <div className="flex-1 flex items-center gap-2">
+          <div className="flex items-start gap-1 sm:gap-2">
+            <div className="flex-1 flex items-center gap-1 sm:gap-2">
               <div className="flex-1 relative">
                 <Input
                   type="text"
@@ -248,12 +274,12 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   placeholder=""
-                  className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                  className={`${className} ${isSuccess ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'}`}
                   isSuccess={isSuccess}
                   error={error}
                   errorKey={errorKey}
                 />
-                <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
+                <span className={`absolute ${isSuccess ? 'right-6 sm:right-10' : 'right-2 sm:right-3'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                   ft
                 </span>
               </div>
@@ -266,17 +292,17 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   placeholder=""
-                  className={`${className} ${(isSuccess && !inchesError && !error) ? 'pr-16' : 'pr-12'} ${error ? '!border-red-500 !bg-red-50 focus:!ring-red-500 focus:!border-red-500' : ''}`}
+                  className={`${className} ${(isSuccess && !inchesError && !error) ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'} ${error ? '!border-red-500 !bg-red-50 focus:!ring-red-500 focus:!border-red-500' : ''}`}
                   isSuccess={isSuccess && !inchesError && !error}
                   error={inchesError}
                 />
-                <span className={`absolute ${(isSuccess && !inchesError && !error) ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
+                <span className={`absolute ${(isSuccess && !inchesError && !error) ? 'right-6 sm:right-10' : 'right-2 sm:right-3'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                   in
                 </span>
               </div>
             </div>
 
-            {allowFormatSwitch && (
+            {allowFormatSwitch && !isSmallScreen && (
               <button
                 type="button"
                 onClick={toggleDisplayMode}
@@ -288,7 +314,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
             )}
           </div>
         ) : (
-          <div className="flex items-start gap-2">
+          <div className="flex items-start gap-1 sm:gap-2">
             <div className="flex-1 relative">
               <Input
                 type="text"
@@ -297,17 +323,17 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 onFocus={onFocus}
                 onBlur={onBlur}
                 placeholder=""
-                className={`${className} ${isSuccess ? 'pr-16' : 'pr-12'}`}
+                className={`${className} ${isSuccess ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'}`}
                 isSuccess={isSuccess}
                 error={error}
                 errorKey={errorKey}
               />
-              <span className={`absolute ${isSuccess ? 'right-10' : 'right-3'} top-1/2 -translate-y-1/2 text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
+              <span className={`absolute ${isSuccess ? 'right-6 sm:right-10' : 'right-2 sm:right-3'} top-1/2 -translate-y-1/2 text-[10px] sm:text-xs text-[#01312D]/60 font-medium pointer-events-none`}>
                 in
               </span>
             </div>
 
-            {allowFormatSwitch && (
+            {allowFormatSwitch && !isSmallScreen && (
               <button
                 type="button"
                 onClick={toggleDisplayMode}
