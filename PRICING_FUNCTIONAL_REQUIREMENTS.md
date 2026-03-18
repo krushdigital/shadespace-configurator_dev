@@ -85,7 +85,7 @@ Final Price = Round UP to nearest whole number
 
 | Currency | Market Markup | Zonos/DHL Markup | Exchange Rate | Combined Factor |
 |----------|--------------|------------------|---------------|-----------------|
-| NZD      | 1.0000 (0%)    | 1.00 (0%)   | 1.0000        | 1.0000          |
+| NZD      | 1.0000 (0%)    | 1.05 (5%)   | 1.0000        | 1.0500          |
 | USD      | 1.0833 (8.3%)  | 1.20 (20%)  | 0.5800        | 0.7540          |
 | AUD      | 0.7500 (-25%)  | 1.20 (20%)  | 0.8800        | 0.7920          |
 | GBP      | 1.4000 (40%)   | 1.20 (20%)  | 0.4300        | 0.7224          |
@@ -95,7 +95,7 @@ Final Price = Round UP to nearest whole number
 
 **Note:** All international currencies include a 20% Zonos/DHL markup to cover international shipping, duties, and tariffs. This 20% was redistributed from the market markup so that customer-facing prices remain unchanged. The combined factor (market markup x Zonos/DHL markup) for each currency is identical to the previous values.
 
-**NZD:** Domestic orders have no market markup, no Zonos/DHL markup, and a 1:1 exchange rate. NZD customers see the base product cost.
+**NZD:** Domestic orders have no market markup and a 1:1 exchange rate. A 5% Zonos/DHL markup covers domestic DHL delivery costs. NZD customers pay 5% above the base product cost.
 
 ---
 
@@ -225,7 +225,7 @@ The Shopify app does not need to call the pricing settings API. The configurator
 ## 11. Business Rules
 
 1. All markups and exchange rates must be positive numbers (> 0)
-2. NZD always has market_markup = 1.0, zonos_dhl_markup = 1.0, exchange_rate = 1.0 (domestic)
+2. NZD always has market_markup = 1.0, zonos_dhl_markup = 1.05 (5% domestic DHL delivery), exchange_rate = 1.0
 3. Final prices are always rounded UP to the nearest whole number
 4. All prices are all-inclusive -- what the customer sees is what they pay
 5. Zonos/DHL costs are baked into the price via the zonos_dhl_markup multiplier, NOT calculated at checkout
