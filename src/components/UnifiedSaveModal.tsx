@@ -122,6 +122,7 @@ export function UnifiedSaveModal({
   };
 
   const handleSaveProgress = async () => {
+    console.log('Initiating save progress...');
     setIsSubmitting(true);
     try {
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : undefined;
@@ -137,6 +138,8 @@ export function UnifiedSaveModal({
         totalSteps,
         pricingSnapshot
       );
+
+      console.log('Save quote result:', result);
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
       const modalDuration = (Date.now() - modalOpenTime) / 1000;
@@ -174,6 +177,8 @@ export function UnifiedSaveModal({
                 email: email,
                 quoteReference: result.reference,
                 quoteUrl: quoteUrl,
+                quoteName: result.quoteName,
+                quoteId: result.id,
                 expiresAt: result.expiresAt,
                 firstName: firstName.trim(),
                 lastName: lastName.trim()
