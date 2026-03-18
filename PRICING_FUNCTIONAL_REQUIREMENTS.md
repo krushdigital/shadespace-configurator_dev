@@ -85,15 +85,15 @@ Final Price = Round UP to nearest whole number
 
 | Currency | Market Markup | Zonos/DHL Markup | Exchange Rate | Combined Factor |
 |----------|--------------|------------------|---------------|-----------------|
-| NZD      | 1.000 (0%)   | 1.000 (0%)       | 1.0000        | 1.0000          |
-| USD      | 1.300 (30%)  | 1.000 (0%)       | 0.5800        | 0.7540          |
-| AUD      | 0.900 (-10%) | 1.000 (0%)       | 0.8800        | 0.7920          |
-| GBP      | 1.680 (68%)  | 1.000 (0%)       | 0.4300        | 0.7224          |
-| EUR      | 1.652 (65.2%)| 1.000 (0%)       | 0.5000        | 0.8260          |
-| CAD      | 1.300 (30%)  | 1.000 (0%)       | 0.8100        | 1.0530          |
-| AED      | 2.100 (110%) | 1.000 (0%)       | 2.1900        | 4.5990          |
+| NZD      | 1.0000 (0%)    | 1.00 (0%)   | 1.0000        | 1.0000          |
+| USD      | 1.0833 (8.3%)  | 1.20 (20%)  | 0.5800        | 0.7540          |
+| AUD      | 0.7500 (-25%)  | 1.20 (20%)  | 0.8800        | 0.7920          |
+| GBP      | 1.4000 (40%)   | 1.20 (20%)  | 0.4300        | 0.7224          |
+| EUR      | 1.3767 (37.7%) | 1.20 (20%)  | 0.5000        | 0.8260          |
+| CAD      | 1.0833 (8.3%)  | 1.20 (20%)  | 0.8100        | 1.0530          |
+| AED      | 1.7500 (75%)   | 1.20 (20%)  | 2.1900        | 4.5990          |
 
-**Note:** Zonos/DHL markups are currently set to 1.0 (no markup) for all currencies. These values should be configured by the business team based on actual Zonos/DHL cost data per region. Once set, the Zonos/DHL charges will be seamlessly baked into the all-inclusive price.
+**Note:** All international currencies include a 20% Zonos/DHL markup to cover international shipping, duties, and tariffs. This 20% was redistributed from the market markup so that customer-facing prices remain unchanged. The combined factor (market markup x Zonos/DHL markup) for each currency is identical to the previous values.
 
 **NZD:** Domestic orders have no market markup, no Zonos/DHL markup, and a 1:1 exchange rate. NZD customers see the base product cost.
 
@@ -103,40 +103,31 @@ Final Price = Round UP to nearest whole number
 
 For a shade sail with a base NZD price of **NZ$2,500**:
 
-### USD Customer (current settings -- Zonos/DHL not yet configured):
+### USD Customer:
 ```
 Base NZD:       NZ$2,500.00
-Market Markup:  NZ$2,500.00 x 1.30  = NZ$3,250.00
-Zonos/DHL:      NZ$3,250.00 x 1.00  = NZ$3,250.00  (not yet configured)
-Exchange Rate:  NZ$3,250.00 x 0.58  = US$1,885.00
+Market Markup:  NZ$2,500.00 x 1.0833 = NZ$2,708.25
+Zonos/DHL:      NZ$2,708.25 x 1.20   = NZ$3,249.90
+Exchange Rate:  NZ$3,249.90 x 0.58   = US$1,885.00
 Final Price:    US$1,885 (all-inclusive, rounded up)
 ```
 
-### USD Customer (once Zonos/DHL set to 22%):
+### AUD Customer:
 ```
 Base NZD:       NZ$2,500.00
-Market Markup:  NZ$2,500.00 x 1.30  = NZ$3,250.00
-Zonos/DHL:      NZ$3,250.00 x 1.22  = NZ$3,965.00
-Exchange Rate:  NZ$3,965.00 x 0.58  = US$2,300.00
-Final Price:    US$2,300 (all-inclusive, rounded up)
+Market Markup:  NZ$2,500.00 x 0.75   = NZ$1,875.00
+Zonos/DHL:      NZ$1,875.00 x 1.20   = NZ$2,250.00
+Exchange Rate:  NZ$2,250.00 x 0.88   = AU$1,980.00
+Final Price:    AU$1,980 (all-inclusive, rounded up)
 ```
 
-### AUD Customer (once Zonos/DHL set to 10%):
+### GBP Customer:
 ```
 Base NZD:       NZ$2,500.00
-Market Markup:  NZ$2,500.00 x 0.90  = NZ$2,250.00
-Zonos/DHL:      NZ$2,250.00 x 1.10  = NZ$2,475.00
-Exchange Rate:  NZ$2,475.00 x 0.88  = AU$2,178.00
-Final Price:    AU$2,178 (all-inclusive, rounded up)
-```
-
-### GBP Customer (once Zonos/DHL set to 25%):
-```
-Base NZD:       NZ$2,500.00
-Market Markup:  NZ$2,500.00 x 1.68  = NZ$4,200.00
-Zonos/DHL:      NZ$4,200.00 x 1.25  = NZ$5,250.00
-Exchange Rate:  NZ$5,250.00 x 0.43  = £2,258.00
-Final Price:    £2,258 (all-inclusive, rounded up)
+Market Markup:  NZ$2,500.00 x 1.40   = NZ$3,500.00
+Zonos/DHL:      NZ$3,500.00 x 1.20   = NZ$4,200.00
+Exchange Rate:  NZ$4,200.00 x 0.43   = £1,806.00
+Final Price:    £1,806 (all-inclusive, rounded up)
 ```
 
 ---

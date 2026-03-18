@@ -132,8 +132,8 @@ A new `pricing_snapshot` field (JSONB) has been added to the `saved_quotes` tabl
 ```json
 {
   "USD": {
-    "market_markup": 1.3,
-    "zonos_dhl_markup": 1.0,
+    "market_markup": 1.0833,
+    "zonos_dhl_markup": 1.20,
     "exchange_rate": 0.58,
     "currency_symbol": "US$"
   },
@@ -266,4 +266,4 @@ To verify nothing has changed from the Shopify app's perspective:
 4. Verify the cart line item properties display correctly
 5. Complete a test checkout flow and **confirm no Zonos duties/tariffs are added on top** of the all-inclusive price
 
-The configurator prices should be identical to what they were before this change, since the existing combined markup values were preserved and Zonos/DHL markups default to 1.0.
+The configurator prices should be identical to what they were before, since the combined factor (market markup x Zonos/DHL markup) for each currency is unchanged. The 20% Zonos/DHL markup was redistributed from the market markup, not added on top.
