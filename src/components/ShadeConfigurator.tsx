@@ -254,40 +254,14 @@ export function ShadeConfigurator() {
   }, []);
 
 
-  /*
-  // IP-based currency detection effect
-  // useEffect(() => {
-  //   const detectCurrency = async () => {
-  //     try {
-  //       const response = await fetch('https://ipapi.co/json/');
-  //       const data = await response.json();
-  //       console.log('Full ipapi.co response:', data);
-  //       
-  //       if (data.currency) {
-  //         const detectedCurrency = data.currency;
-  //         console.log('EXCHANGE_RATES object:', EXCHANGE_RATES);
-  //         console.log('EXCHANGE_RATES[detectedCurrency]:', EXCHANGE_RATES[detectedCurrency]);
-  //         console.log('Boolean check EXCHANGE_RATES[detectedCurrency]:', !!EXCHANGE_RATES[detectedCurrency]);
-  //         
-  //         if (EXCHANGE_RATES[detectedCurrency]) {
-  //           updateConfig({ currency: detectedCurrency });
-  //         } else {
-  //           console.warn(`❌ Detected currency ${detectedCurrency} is not supported in EXCHANGE_RATES.`);
-  //           console.warn('Available currencies in EXCHANGE_RATES:', Object.keys(EXCHANGE_RATES));
-  //           updateConfig({ currency: 'USD' }); // Fallback to USD
-  //         }
-  //       } else {
-  //         console.warn('❌ No currency field in ipapi.co response');
-  //         updateConfig({ currency: 'USD' }); // Fallback to USD
-  //       }
-  //     } catch (error) {
-  //       updateConfig({ currency: 'USD' }); // Fallback to USD on network error
-  //     }
-  //   };
-  //
-  //   detectCurrency();
-  // }, []); // Empty dependency array ensures this runs only once on mount
-  */
+  useEffect(() => {
+    const shopifyCurrency = window.Shopify?.currency?.active;
+    if (shopifyCurrency && EXCHANGE_RATES[shopifyCurrency]) {
+      setConfig(prev => ({ ...prev, currency: shopifyCurrency }));
+    } else if (shopifyCurrency) {
+      setConfig(prev => ({ ...prev, currency: 'USD' }));
+    }
+  }, []);
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -605,21 +579,17 @@ export function ShadeConfigurator() {
         });
       }
 
-      const userCurrency = window.Shopify?.currency?.active || 'USD';
-      const exchangeRate = parseFloat(window.Shopify?.currency?.rate || '1');
-      const convertedAmount = calculations?.totalPrice * exchangeRate;
-
       const orderData = {
         fabricType: config.fabricType,
         fabricColor: config.fabricColor,
         edgeType: config.edgeType,
         corners: config.corners,
         unit: config.unit,
-        currency: userCurrency,
+        currency: config.currency,
         measurements: config.measurements,
         area: calculations.area,
         perimeter: calculations.perimeter,
-        totalPrice: convertedAmount.toFixed(2),
+        totalPrice: calculations.totalPrice.toFixed(2),
         selectedFabric: selectedFabricLocal,
         selectedColor,
         warranty: selectedFabricLocal?.warrantyYears || "",
