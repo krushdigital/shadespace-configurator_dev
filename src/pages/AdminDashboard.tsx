@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SavedQuotesTable } from '../components/admin/SavedQuotesTable';
@@ -6,6 +6,7 @@ import { EventsTable } from '../components/admin/EventsTable';
 import { AnalyticsSummary } from '../components/admin/AnalyticsSummary';
 import { EventsChart } from '../components/admin/EventsChart';
 import { PricingManager } from '../components/admin/PricingManager';
+import { ChangePasswordModal } from '../components/admin/ChangePasswordModal';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -15,6 +16,7 @@ type TabType = 'overview' | 'quotes' | 'events' | 'pricing' | 'exports';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
@@ -38,9 +40,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <h1 className="text-2xl font-bold text-forest-900">ShadeSpace Admin</h1>
               <span className="text-sm text-gray-500">Analytics Dashboard</span>
             </div>
-            <Button onClick={onLogout} variant="outline" size="sm">
-              Logout
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setShowChangePassword(true)} variant="outline" size="sm">
+                Change Password
+              </Button>
+              <Button onClick={onLogout} variant="outline" size="sm">
+                Logout
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -145,6 +152,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </Card>
         )}
       </div>
+
+      {showChangePassword && (
+        <ChangePasswordModal onClose={() => setShowChangePassword(false)} />
+      )}
     </div>
   );
 };

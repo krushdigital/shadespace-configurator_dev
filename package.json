@@ -24,6 +24,7 @@
     "@shopify/shopify-app-remix": "^3.7.0",
     "@shopify/shopify-app-session-storage-mongodb": "^4.0.20",
     "@shopify/shopify-app-session-storage-prisma": "^6.0.0",
+    "@supabase/supabase-js": "^2.99.2",
     "@types/node": "^24.2.1",
     "currency-converter-lt": "^2.0.1",
     "dotenv": "^17.2.2",

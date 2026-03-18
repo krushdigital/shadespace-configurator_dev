@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { supabase } from '../../lib/supabase';
 
 interface PricingSetting {
   id: string;
@@ -46,7 +47,6 @@ export const PricingManager: React.FC = () => {
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || '';
 
   useEffect(() => {
     fetchSettings();
@@ -149,10 +149,13 @@ export const PricingManager: React.FC = () => {
     setErrorMessage(null);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || supabaseKey;
+
       const response = await fetch(`${supabaseUrl}/functions/v1/pricing-settings`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -162,7 +165,6 @@ export const PricingManager: React.FC = () => {
             zonos_dhl_markup: zonosDhlMarkup,
             exchange_rate: exchangeRate,
           },
-          admin_password: adminPassword,
         }),
       });
 

@@ -14,6 +14,27 @@ function jsonResponse(data: unknown, status = 200) {
   });
 }
 
+async function getAuthenticatedUser(req: Request) {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return null;
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -21,10 +42,11 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
     if (req.method === "GET") {
+      const supabase = createClient(supabaseUrl, anonKey);
       const url = new URL(req.url);
       const includeInactive = url.searchParams.get("all") === "true";
 
@@ -46,13 +68,15 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, settings: data });
     }
 
-    if (req.method === "PUT") {
-      const { currency_code, updates, admin_password } = await req.json();
+    const user = await getAuthenticatedUser(req);
+    if (!user) {
+      return jsonResponse({ error: "Unauthorized" }, 401);
+    }
 
-      const expectedPassword = Deno.env.get("ADMIN_PASSWORD");
-      if (!expectedPassword || admin_password !== expectedPassword) {
-        return jsonResponse({ error: "Unauthorized" }, 401);
-      }
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    if (req.method === "PUT") {
+      const { currency_code, updates } = await req.json();
 
       if (!currency_code || !updates) {
         return jsonResponse(
@@ -107,7 +131,7 @@ Deno.serve(async (req: Request) => {
             field_changed: field,
             old_value: String(oldValue),
             new_value: String(newValue),
-            changed_by: "admin",
+            changed_by: user.email || "admin",
           });
         }
       }
@@ -143,12 +167,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (req.method === "POST") {
-      const { currency_code, currency_name, currency_symbol, market_markup, zonos_dhl_markup, exchange_rate, display_order, admin_password } = await req.json();
-
-      const expectedPassword = Deno.env.get("ADMIN_PASSWORD");
-      if (!expectedPassword || admin_password !== expectedPassword) {
-        return jsonResponse({ error: "Unauthorized" }, 401);
-      }
+      const { currency_code, currency_name, currency_symbol, market_markup, zonos_dhl_markup, exchange_rate, display_order } = await req.json();
 
       if (!currency_code || !currency_name || !currency_symbol) {
         return jsonResponse(
@@ -183,7 +202,7 @@ Deno.serve(async (req: Request) => {
           field_changed: "created",
           old_value: "n/a",
           new_value: JSON.stringify({ currency_name, currency_symbol, market_markup, zonos_dhl_markup, exchange_rate }),
-          changed_by: "admin",
+          changed_by: user.email || "admin",
         });
 
       if (historyError) {
