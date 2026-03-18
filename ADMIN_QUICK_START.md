@@ -50,6 +50,12 @@ Enter your admin password to access the dashboard.
 - Device type breakdown
 - Export to CSV
 
+### Pricing Tab
+- View and edit market markup, Zonos/DHL markup, and exchange rate per currency
+- See combined factor and example price calculations
+- Full audit trail of all pricing changes
+- Changes take effect immediately for new configurator sessions
+
 ### Data Export Tab
 - Download all quotes (CSV)
 - Download all events (CSV)
@@ -79,6 +85,13 @@ Enter your admin password to access the dashboard.
 2. Check "Add to Cart" metric
 3. Go to "User Events" tab
 4. Filter by "Add to Cart" to see details
+
+### Update Currency Pricing
+1. Go to "Pricing" tab
+2. Click the edit icon next to any currency
+3. Adjust market markup, Zonos/DHL markup, or exchange rate
+4. Click "Save" -- changes take effect immediately
+5. View the "Change History" section to see all past changes
 
 ## Date Range Filtering
 

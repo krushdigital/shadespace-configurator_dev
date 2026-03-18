@@ -217,33 +217,33 @@ export const WEBBING_FEATURES = [
   { minPerimeter: 35, maxPerimeter: 50, width: 63 }   // 63mm webbing
 ];
 
-// Currency conversion rates (NZD base)
+// DEPRECATED: Currency markups, exchange rates, symbols, and names are now
+// managed via the database (pricing_settings table). These fallback constants
+// are kept only for backward compatibility if the database is unreachable.
+// See usePricingSettings.ts for the primary source of truth.
+
 export const EXCHANGE_RATES: { [key: string]: number } = {
-  'NZD': 1.0,    // Base currency
+  'NZD': 1.0,
   'USD': 0.58,
   'AUD': 0.88,
   'GBP': 0.43,
   'EUR': 0.50,
   'CAD': 0.81,
-  'AED': 2.19    // UAE Dirham
+  'AED': 2.19
 };
 
-// Currency-specific markups (consolidated from base markup + currency markup)
-// These values now include the former 40% base markup
 export const CURRENCY_MARKUPS: { [key: string]: number } = {
-  'NZD': 1.00,   // 0% markup
-  'USD': 1.30,   // 30% markup 
-  'AUD': 0.90,   // -10% markup 
-  'GBP': 1.68,   // 68% markup 
-  'EUR': 1.652,  // 65.2% markup 
-  'CAD': 1.30,  // 30.0% markup 
-  'AED': 2.10    // 210% markup 
+  'NZD': 1.00,
+  'USD': 1.30,
+  'AUD': 0.90,
+  'GBP': 1.68,
+  'EUR': 1.652,
+  'CAD': 1.30,
+  'AED': 2.10
 };
 
-// Base pricing markup percentage (set to 0% - markups now in CURRENCY_MARKUPS)
-export const BASE_PRICING_MARKUP = 1.0; // 0% base markup
+export const BASE_PRICING_MARKUP = 1.0;
 
-// Currency symbols mapping
 export const CURRENCY_SYMBOLS: { [key: string]: string } = {
   'NZD': 'NZ$',
   'USD': 'US$',
@@ -254,7 +254,6 @@ export const CURRENCY_SYMBOLS: { [key: string]: string } = {
   'AED': 'AED'
 };
 
-// Currency display names
 export const CURRENCY_NAMES: { [key: string]: string } = {
   'NZD': 'New Zealand Dollar',
   'USD': 'US Dollar',

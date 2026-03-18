@@ -41,11 +41,14 @@ FROM_EMAIL=<ask project owner>
 
 ## 3. Verify Edge Functions Are Deployed
 
-Check that these 4 functions exist in Supabase:
+Check that these 7 functions exist in Supabase:
 - ✅ save-quote
 - ✅ add-shopify-customer
 - ✅ send-email-summary
 - ✅ generate-pdf
+- ✅ pricing-settings
+- ✅ search-quotes
+- ✅ track-event
 
 **How to check:** Supabase Dashboard → Edge Functions section
 
@@ -58,8 +61,12 @@ supabase functions deploy
 
 ## 4. Verify Database Tables
 
-Check that the `saved_quotes` table exists:
-- **Location:** Supabase Dashboard → Table Editor → saved_quotes
+Check that these tables exist in Supabase:
+- **saved_quotes** -- Supabase Dashboard → Table Editor → saved_quotes
+- **pricing_settings** -- Per-currency markup and exchange rate settings
+- **pricing_history** -- Audit trail of pricing changes
+- **user_events** -- Analytics event tracking
+- **analytics_cache** -- Pre-computed analytics
 
 If missing, apply migrations:
 ```bash

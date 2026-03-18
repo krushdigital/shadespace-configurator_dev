@@ -37,7 +37,14 @@ The ShadeSpace Admin Dashboard provides comprehensive analytics and insights int
 - View daily aggregated data
 - See peak usage days and averages
 
-### 5. Data Export
+### 5. Pricing Management
+- View all currencies with current market markup, Zonos/DHL markup, exchange rate, and combined factor
+- Inline editing of pricing parameters per currency
+- Example calculation panel showing what a base NZD price converts to in each currency
+- Full audit trail of all pricing changes with timestamps and old/new values
+- Changes take effect immediately for new configurator sessions
+
+### 6. Data Export
 - Export all quotes as CSV
 - Export user events as CSV
 - Download comprehensive analytics reports as JSON
@@ -88,14 +95,16 @@ The admin dashboard requires the following database infrastructure (already migr
 1. **admin_users** table - For future multi-admin support
 2. **user_events** table - Stores all tracked events
 3. **analytics_cache** table - Pre-computed analytics for fast loading
+4. **pricing_settings** table - Per-currency markup and exchange rate settings
+5. **pricing_history** table - Audit trail of all pricing changes
 
 ### Edge Functions
 
-The `track-event` Edge Function is deployed to capture user events:
-- PDF downloads
-- Email summary requests
-- Add to cart actions
-- Quote saves
+The admin dashboard uses these Edge Functions:
+
+- **track-event** - Captures user events (PDF downloads, email sends, cart additions, quote saves)
+- **pricing-settings** - Reads and updates per-currency pricing settings
+- **search-quotes** - Searches saved quotes by reference, email, or name
 
 ## Usage Guide
 
@@ -119,6 +128,15 @@ The `track-event` Edge Function is deployed to capture user events:
 2. **Filter by Type**: Select specific event types (PDF, Email, Cart)
 3. **View Success Rate**: Monitor success/failure status of events
 4. **Export Data**: Download event data as CSV for further analysis
+
+### Managing Pricing
+
+1. **Navigate to Pricing Tab**: Click "Pricing" in the navigation
+2. **View Settings**: See all currencies with their current markups and exchange rates
+3. **Edit a Currency**: Click the edit icon next to any currency row
+4. **Modify Values**: Adjust market markup, Zonos/DHL markup, or exchange rate
+5. **Save Changes**: Click "Save" to apply immediately, or "Cancel" to discard
+6. **View History**: Scroll to the "Change History" section to see all past pricing changes
 
 ### Exporting Data
 

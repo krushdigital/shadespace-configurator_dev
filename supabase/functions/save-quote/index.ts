@@ -59,7 +59,7 @@ Deno.serve(async (req: Request) => {
 
     if (req.method === 'POST') {
       // Save a new quote
-      const { config, calculations, email, quoteName, customerReference, currentStep, totalSteps } = await req.json();
+      const { config, calculations, email, quoteName, customerReference, currentStep, totalSteps, pricingSnapshot } = await req.json();
 
       if (!config || !calculations) {
         return new Response(
@@ -141,6 +141,7 @@ Deno.serve(async (req: Request) => {
           current_step: currentStep ?? null,
           total_steps: totalSteps ?? 7,
           status: quoteStatus,
+          pricing_snapshot: pricingSnapshot ?? null,
         })
         .select()
         .single();

@@ -1,44 +1,42 @@
 import { useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { 
-  WEBBING_FABRIC_PRICING, 
+import {
+  WEBBING_FABRIC_PRICING,
   CABLED_FABRIC_PRICING,
-  CORNER_COSTS, 
+  CORNER_COSTS,
   CABLED_CORNER_COSTS,
-  HARDWARE_COSTS, 
+  HARDWARE_COSTS,
   CABLED_HARDWARE_COSTS,
-  EXCHANGE_RATES, 
-  CURRENCY_MARKUPS, 
-  BASE_PRICING_MARKUP,
   getFabricPriceFromPerimeter,
   getWebbingWidth,
   getWireThickness
 } from '../data/pricing';
 import { FABRICS } from '../data/fabrics';
 import { calculatePolygonArea } from '../utils/geometry';
+import { PricingSetting, getPricingForCurrency } from './usePricingSettings';
 
-export function useShadeCalculations(config: ConfiguratorState): ShadeCalculations {
+export function useShadeCalculations(
+  config: ConfiguratorState,
+  pricingSettingsMap?: Record<string, PricingSetting>
+): ShadeCalculations {
   return useMemo(() => {
-    // Calculate perimeter from measurements
     let perimeterMM = 0;
     const edgeKeys = [];
-    
-    // Get edge measurements in mm
+
     for (let i = 0; i < config.corners; i++) {
       const nextIndex = (i + 1) % config.corners;
       const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
       edgeKeys.push(edgeKey);
-      
+
       if (config.measurements[edgeKey]) {
         perimeterMM += config.measurements[edgeKey];
       }
     }
-    
-    // Only calculate pricing if all edge measurements are present
-    const hasAllEdgeMeasurements = edgeKeys.every(key => 
+
+    const hasAllEdgeMeasurements = edgeKeys.every(key =>
       config.measurements[key] && config.measurements[key] > 0
     );
-    
+
     if (!hasAllEdgeMeasurements) {
       return {
         area: 0,
@@ -51,99 +49,70 @@ export function useShadeCalculations(config: ConfiguratorState): ShadeCalculatio
         totalWeightGrams: 0
       };
     }
-    
-    // Convert to meters
+
     const perimeterM = perimeterMM / 1000;
-    
-    // Adjusted perimeter (rounded to 0.5m increments)
     const adjustedPerimeter = Math.round(perimeterM / 0.5) * 0.5;
-    
-    // Calculate accurate area using triangulation
     const area = calculatePolygonArea(config.measurements, config.corners);
-    
-    // Get webbing width based on perimeter
     const webbingWidth = getWebbingWidth(adjustedPerimeter);
     const wireThickness = getWireThickness(adjustedPerimeter);
-    
-    // Calculate costs based on edge type
+
     let fabricCostNZD = 0;
     let edgeCostNZD = 0;
     let cornerCostNZD = 0;
     let hardwareCostNZD = 0;
-    
+
     if (config.edgeType === 'webbing') {
-      // Use new webbing pricing logic
       fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'webbing');
-      
-      // Edge cost is now included in fabric cost for webbing
       edgeCostNZD = 0;
-      
-      // Corner cost based on number of corners
       cornerCostNZD = CORNER_COSTS[config.corners as keyof typeof CORNER_COSTS] || 0;
-      
-      // Hardware cost - only for 'adjust' measurement option
       if (config.measurementOption === 'adjust') {
         hardwareCostNZD = HARDWARE_COSTS[config.corners as keyof typeof HARDWARE_COSTS] || 0;
       }
     } else if (config.edgeType === 'cabled') {
-      // Use new cabled edge pricing logic
       fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'cabled');
-      
-      // Edge cost is now included in fabric cost for cabled edge
       edgeCostNZD = 0;
-      
-      // Corner cost based on number of corners for cabled edge
       cornerCostNZD = CABLED_CORNER_COSTS[config.corners as keyof typeof CABLED_CORNER_COSTS] || 0;
-      
-      // Hardware cost - only for 'adjust' measurement option
       if (config.measurementOption === 'adjust') {
         hardwareCostNZD = CABLED_HARDWARE_COSTS[config.corners as keyof typeof CABLED_HARDWARE_COSTS] || 0;
       }
     }
-    
-    // Calculate total in NZD (base pricing at BAR rates)
-    const totalNZD = fabricCostNZD + edgeCostNZD + cornerCostNZD + hardwareCostNZD;
 
-    // Apply currency-specific markup (includes all pricing adjustments)
-    const currencyMarkup = CURRENCY_MARKUPS[config.currency] || CURRENCY_MARKUPS['USD'];
-    const totalNZDWithMarkup = totalNZD * currencyMarkup;
+    const baseNZD = fabricCostNZD + edgeCostNZD + cornerCostNZD + hardwareCostNZD;
 
-    // Convert to user's currency
-    const exchangeRate = EXCHANGE_RATES[config.currency] || EXCHANGE_RATES['USD'];
+    const pricing = pricingSettingsMap
+      ? getPricingForCurrency(pricingSettingsMap, config.currency)
+      : { marketMarkup: 1.0, zonosDhlMarkup: 1.0, exchangeRate: 1.0, symbol: 'NZ$' };
 
-    const fabricCost = fabricCostNZD * currencyMarkup * exchangeRate;
-    const edgeCost = edgeCostNZD * currencyMarkup * exchangeRate;
-    const hardwareCost = (cornerCostNZD + hardwareCostNZD) * currencyMarkup * exchangeRate;
-    const totalPriceRaw = totalNZDWithMarkup * exchangeRate;
-    const totalPrice = Math.ceil(totalPriceRaw); // Round up to nearest dollar
-    
-    // Calculate weight
+    const afterMarketMarkup = baseNZD * pricing.marketMarkup;
+    const afterZonosDhl = afterMarketMarkup * pricing.zonosDhlMarkup;
+    const convertedTotal = afterZonosDhl * pricing.exchangeRate;
+
+    const markupFactor = pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate;
+    const fabricCost = fabricCostNZD * markupFactor;
+    const edgeCost = edgeCostNZD * markupFactor;
+    const hardwareCost = (cornerCostNZD + hardwareCostNZD) * markupFactor;
+    const totalPrice = Math.ceil(convertedTotal);
+
     const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
-    const fabricWeightPerSqm = selectedFabric?.weightPerSqm || 370; // Default to Monotec 370 if not found
-    
-    // Use actual calculated area (already in m²)
+    const fabricWeightPerSqm = selectedFabric?.weightPerSqm || 370;
     const areaSqm = area;
-    
-    // Calculate total sail weight
-    const totalSailWeightGrams = 
-      (fabricWeightPerSqm * areaSqm) + // Fabric weight based on actual area
-      (config.corners * 200); // Fixing points weight
-    
-    // Calculate perimeter weight based on edge type
-    const perimeterWeightPerMeter = config.edgeType === 'cabled' ? 140 : 100; // Wire: 140g/m, Webbing: 100g/m
-    const perimeterWeightGrams = (Math.round(perimeterM) * perimeterWeightPerMeter) + 0; // Buffer weight
-    
-    // Calculate hardware weight (only if "adjust" option is selected)
-    const hardwareWeightGrams = config.measurementOption === 'adjust' 
-      ? config.corners * 380 
+
+    const totalSailWeightGrams =
+      (fabricWeightPerSqm * areaSqm) +
+      (config.corners * 200);
+
+    const perimeterWeightPerMeter = config.edgeType === 'cabled' ? 140 : 100;
+    const perimeterWeightGrams = (Math.round(perimeterM) * perimeterWeightPerMeter) + 0;
+
+    const hardwareWeightGrams = config.measurementOption === 'adjust'
+      ? config.corners * 380
       : 0;
-    
-    // Total weight
+
     const totalWeightGrams = totalSailWeightGrams + perimeterWeightGrams + hardwareWeightGrams;
-    
+
     return {
-      area, // This is in m²
-      perimeter: perimeterM, // This is in m
+      area,
+      perimeter: perimeterM,
       fabricCost,
       edgeCost,
       hardwareCost,
@@ -159,6 +128,7 @@ export function useShadeCalculations(config: ConfiguratorState): ShadeCalculatio
     config.fabricType,
     config.measurementOption,
     config.currency,
-    config.unit
+    config.unit,
+    pricingSettingsMap
   ]);
 }

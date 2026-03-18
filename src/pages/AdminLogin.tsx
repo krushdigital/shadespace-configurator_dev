@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { supabase } from '../lib/supabase';
 
 interface AdminLoginProps {
-  onLogin: (password: string) => void;
+  onLogin: () => void;
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,16 +20,18 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // Simple password check - in production, this would validate against Supabase
-      // For now, check against environment variable
-      const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123';
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (password === adminPassword) {
-        onLogin(password);
-      } else {
-        setError('Invalid password');
+      if (authError) {
+        setError('Invalid email or password');
+        return;
       }
-    } catch (err) {
+
+      onLogin();
+    } catch {
       setError('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -42,22 +46,35 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
           <p className="text-gray-600">Analytics Dashboard</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-          <input type="text" name="username" autoComplete="username" style={{ display: 'none' }} value="admin" readOnly />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@shadespace.com"
+              required
+              autoFocus
+              autoComplete="email"
+            />
+          </div>
+
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Admin Password
+              Password
             </label>
             <Input
               id="password"
-              name="admin-auth-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password"
+              placeholder="Enter your password"
               required
-              autoFocus
-              autoComplete="new-password"
+              autoComplete="current-password"
             />
           </div>
 
@@ -69,10 +86,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLogin }) => {
 
           <Button
             type="submit"
-            disabled={loading || !password}
+            disabled={loading || !email || !password}
             className="w-full"
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
 

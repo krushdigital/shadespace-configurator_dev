@@ -1,30 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLogin } from './AdminLogin';
 import { AdminDashboard } from './AdminDashboard';
+import { supabase } from '../lib/supabase';
 
 export const Admin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if already authenticated (session stored in sessionStorage)
-    const sessionAuth = sessionStorage.getItem('admin_auth');
-    if (sessionAuth) {
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+      setIsLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin = (password: string) => {
-    // Store authentication in session (not persistent after browser close)
-    sessionStorage.setItem('admin_auth', 'true');
-    sessionStorage.setItem('admin_login_time', new Date().toISOString());
+  const handleLogin = () => {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_auth');
-    sessionStorage.removeItem('admin_login_time');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     setIsAuthenticated(false);
   };
 
