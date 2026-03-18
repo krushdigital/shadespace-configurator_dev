@@ -27,6 +27,7 @@ export interface QuoteData {
   customer_email?: string;
   config_data: ConfiguratorState;
   calculations_data: ShadeCalculations;
+  pricing_snapshot?: Record<string, unknown> | null;
   created_at: string;
   expires_at: string;
   status: string;

@@ -43,6 +43,7 @@ interface UnifiedSaveModalProps {
     customerReference: string | null,
     pdfBase64: string
   ) => Promise<boolean>;
+  onSaveComplete?: () => void;
 }
 
 export function UnifiedSaveModal({
@@ -56,6 +57,7 @@ export function UnifiedSaveModal({
   pricingSnapshot,
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
+  onSaveComplete,
 }: UnifiedSaveModalProps) {
   const [selectedAction, setSelectedAction] = useState<ActionType>(null);
   const [modalStep, setModalStep] = useState<ModalStep>('select');
@@ -230,6 +232,7 @@ export function UnifiedSaveModal({
         }
 
       setModalStep('success');
+      onSaveComplete?.();
       showToast('Quote saved! Check your email for the link.', 'success');
     } catch (error: any) {
       console.error('Failed to save quote:', error);
