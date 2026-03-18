@@ -50,13 +50,13 @@ FROM_EMAIL=sails@shadespace.com
 
 ## Supabase Edge Functions Verification
 
-The configurator uses 4 Supabase Edge Functions. Verify they are deployed:
+The configurator uses 7 Supabase Edge Functions. Verify they are deployed:
 
 ### Check Deployment Status
 
 **Option A:** Via Supabase Dashboard
 - Navigate to: Edge Functions section
-- Verify all 4 functions are listed and active
+- Verify all 7 functions are listed and active
 
 **Option B:** Via Supabase CLI
 ```bash
@@ -81,6 +81,18 @@ supabase functions list
    - Location: `supabase/functions/generate-pdf/index.ts`
    - Purpose: Creates downloadable quote PDFs
 
+5. **pricing-settings** - Manages per-currency pricing settings
+   - Location: `supabase/functions/pricing-settings/index.ts`
+   - Purpose: CRUD operations for market markup, Zonos/DHL markup, and exchange rates
+
+6. **search-quotes** - Searches saved quotes
+   - Location: `supabase/functions/search-quotes/index.ts`
+   - Purpose: Search quotes by reference, email, or customer name
+
+7. **track-event** - Captures analytics events
+   - Location: `supabase/functions/track-event/index.ts`
+   - Purpose: Records user events (PDF downloads, email sends, cart additions)
+
 ### Deploy Edge Functions (If Missing)
 
 If any functions are missing, deploy them using:
@@ -91,6 +103,9 @@ supabase functions deploy save-quote
 supabase functions deploy add-shopify-customer
 supabase functions deploy send-email-summary
 supabase functions deploy generate-pdf
+supabase functions deploy pricing-settings
+supabase functions deploy search-quotes
+supabase functions deploy track-event
 
 # Or deploy all at once
 supabase functions deploy
@@ -104,26 +119,41 @@ supabase functions deploy
 
 The database should have these tables:
 
-1. **saved_quotes** - Stores customer quote configurations
+1. **saved_quotes** - Stores customer quote configurations (with pricing snapshots)
    - Migration: `20251013204352_create_saved_quotes_table.sql`
-   - Columns: id, quote_reference, customer_email, config_data, calculations_data, etc.
+   - Columns: id, quote_reference, customer_email, config_data, calculations_data, pricing_snapshot, etc.
 
 2. **Shopify customer tracking fields** - Extends saved_quotes table
    - Migration: `20251014001500_add_shopify_customer_tracking.sql`
    - Adds: shopify_customer_id, shopify_customer_created columns
 
+3. **pricing_settings** - Per-currency markup and exchange rate settings
+   - Migration: `20260318012839_create_pricing_settings_and_history.sql`
+   - Columns: currency_code, market_markup, zonos_dhl_markup, exchange_rate, is_active, display_order
+
+4. **pricing_history** - Audit trail for pricing changes
+   - Migration: `20260318012839_create_pricing_settings_and_history.sql`
+   - Columns: currency_code, field_changed, old_value, new_value, changed_by, change_reason
+
+5. **user_events** - Analytics event tracking
+   - Migration: `20251124013201_create_admin_analytics_infrastructure.sql`
+   - Columns: event type, quote reference, customer details, device info, success status
+
+6. **analytics_cache** - Pre-computed analytics for fast dashboard loading
+   - Migration: `20251124013201_create_admin_analytics_infrastructure.sql`
+
 ### Verify Tables Exist
 
 **Option A:** Via Supabase Dashboard
 - Navigate to: Table Editor
-- Check for `saved_quotes` table
+- Check for `saved_quotes`, `pricing_settings`, `pricing_history`, `user_events` tables
 
 **Option B:** Via SQL Editor
 ```sql
 SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
-AND table_name = 'saved_quotes';
+AND table_name IN ('saved_quotes', 'pricing_settings', 'pricing_history', 'user_events', 'analytics_cache');
 ```
 
 ### Apply Migrations (If Missing)
@@ -229,7 +259,7 @@ Use this checklist to verify each component:
 - [ ] Both values match your Supabase project
 
 ### ✅ Supabase Edge Functions
-- [ ] All 4 functions are deployed (save-quote, add-shopify-customer, send-email-summary, generate-pdf)
+- [ ] All 7 functions are deployed (save-quote, add-shopify-customer, send-email-summary, generate-pdf, pricing-settings, search-quotes, track-event)
 - [ ] Functions are accessible (test by visiting function URL)
 - [ ] Function logs show no errors (check in Supabase Dashboard)
 
@@ -243,7 +273,10 @@ Use this checklist to verify each component:
 - [ ] `FROM_EMAIL` is configured
 
 ### ✅ Database Setup
-- [ ] `saved_quotes` table exists
+- [ ] `saved_quotes` table exists (with `pricing_snapshot` column)
+- [ ] `pricing_settings` table exists (with all 7 currencies seeded)
+- [ ] `pricing_history` table exists
+- [ ] `user_events` table exists
 - [ ] Shopify tracking columns exist
 - [ ] `generate_quote_reference()` function exists
 - [ ] RLS policies are configured
@@ -308,6 +341,10 @@ Once all configuration is complete, test the Save Quote feature:
 ### Issue: Database Errors
 **Cause:** Migrations not applied
 **Solution:** Run `supabase db push` or apply migrations manually
+
+### Issue: Pricing Shows Fallback Defaults
+**Cause:** `pricing_settings` table empty or `pricing-settings` Edge Function not deployed
+**Solution:** Verify the table has all 7 currencies seeded (migration seeds them automatically) and deploy the `pricing-settings` Edge Function
 
 ---
 
@@ -378,5 +415,5 @@ If you encounter issues not covered in this guide:
 
 ---
 
-**Last Updated:** 2025-10-14
-**Version:** 1.0
+**Last Updated:** 2026-03-18
+**Version:** 1.1
