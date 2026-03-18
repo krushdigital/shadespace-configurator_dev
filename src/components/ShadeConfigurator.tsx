@@ -25,7 +25,8 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
-import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted } from '../utils/quoteManager';
+import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted, QuoteData } from '../utils/quoteManager';
+import { PricingSetting } from '../hooks/usePricingSettings';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
 import { eventTrackers } from '../utils/eventTracker';
@@ -84,6 +85,7 @@ export function ShadeConfigurator() {
   // Quote management state
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const [loadedPricingSnapshot, setLoadedPricingSnapshot] = useState<Record<string, PricingSetting> | null>(null);
 
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
@@ -102,7 +104,8 @@ export function ShadeConfigurator() {
   const canvasRef = useRef<any>(null);
 
   const { settingsMap: pricingSettingsMap } = usePricingSettings();
-  const calculations = useShadeCalculations(config, pricingSettingsMap);
+  const activePricingMap = loadedPricingSnapshot || pricingSettingsMap;
+  const calculations = useShadeCalculations(config, activePricingMap);
 
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({
@@ -143,6 +146,39 @@ export function ShadeConfigurator() {
     }
   }, [isMobile, quoteReference, isLoadingQuote]);
 
+  const applyPricingSnapshot = (
+    quote: QuoteData,
+    quoteAgeDays: number,
+    validityDays: number
+  ) => {
+    const snapshot = quote.pricing_snapshot as Record<string, PricingSetting> | null;
+
+    if (!snapshot || Object.keys(snapshot).length === 0) {
+      return;
+    }
+
+    if (quoteAgeDays <= validityDays) {
+      setLoadedPricingSnapshot(snapshot);
+      return;
+    }
+
+    const currency = quote.config_data.currency;
+    const snapshotEntry = snapshot[currency];
+    const liveEntry = pricingSettingsMap[currency];
+
+    if (snapshotEntry && liveEntry) {
+      const snapshotFactor = snapshotEntry.market_markup * snapshotEntry.zonos_dhl_markup * snapshotEntry.exchange_rate;
+      const liveFactor = liveEntry.market_markup * liveEntry.zonos_dhl_markup * liveEntry.exchange_rate;
+
+      if (Math.abs(snapshotFactor - liveFactor) > 0.001) {
+        showToast(
+          'Pricing has been updated since this quote was saved. The price shown reflects current rates.',
+          'info'
+        );
+      }
+    }
+  };
+
   // Load saved quote from URL if present
   useEffect(() => {
     const loadQuoteFromUrl = async () => {
@@ -170,19 +206,19 @@ export function ShadeConfigurator() {
           quote.customer_email || undefined
         );
 
-        // Calculate quote age
         const createdAt = new Date(quote.created_at);
         const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+        const quoteAgeDays = quoteAgeHours / 24;
+        const SNAPSHOT_VALIDITY_DAYS = 30;
 
-        // Restore configuration
         setConfig(quote.config_data);
         setQuoteReference(quote.quote_reference);
 
-        // Jump to the saved step, or step 4 if no step was saved (legacy quotes)
+        applyPricingSnapshot(quote, quoteAgeDays, SNAPSHOT_VALIDITY_DAYS);
+
         const resumeStep = quote.current_step ?? 4;
         setOpenStep(resumeStep);
 
-        // Track successful load
         analytics.quoteLoadSuccess({
           quote_reference: quote.quote_reference,
           quote_age_hours: quoteAgeHours,
@@ -192,7 +228,6 @@ export function ShadeConfigurator() {
           currency: quote.config_data.currency,
         });
 
-        // Show appropriate message based on status
         const statusMessage = quote.status === 'quote_ready'
           ? `Quote ${quote.quote_reference} loaded successfully!`
           : `Configuration ${quote.quote_reference} loaded. Continue where you left off!`;
@@ -2316,6 +2351,7 @@ export function ShadeConfigurator() {
         totalSteps={7}
         shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
         pricingSnapshot={pricingSettingsMap}
+        onSaveComplete={() => setLoadedPricingSnapshot(null)}
         onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
         onEmailPDFQuote={handleEmailPDFQuote}
       />
