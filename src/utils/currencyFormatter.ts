@@ -13,30 +13,21 @@ declare global {
 }
 
 export function formatCurrency(amount: number, currencyCode?: string): string {
-  // Use user's browser currency if available, fallback to provided currency
-  const userCurrency = window.Shopify?.currency?.active || currencyCode || 'USD';
-  const exchangeRate = parseFloat(window.Shopify?.currency?.rate || '1');
-  
-  // Convert amount using Shopify's rate
-  const convertedAmount = amount * exchangeRate;
-  
-  const symbol = CURRENCY_SYMBOLS[userCurrency] || userCurrency;
-  return `${symbol}${convertedAmount.toFixed(2)}`;
+  const displayCurrency = currencyCode || window.Shopify?.currency?.active || 'USD';
+  const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
+  return `${symbol}${amount.toFixed(2)}`;
 }
 
 export function formatCurrencyCompact(amount: number, currencyCode?: string): string {
-  const userCurrency = window.Shopify?.currency?.active || currencyCode || 'USD';
-  const exchangeRate = parseFloat(window.Shopify?.currency?.rate || '1');
-  
-  const convertedAmount = amount * exchangeRate;
-  const symbol = CURRENCY_SYMBOLS[userCurrency] || userCurrency;
-  
-  if (convertedAmount >= 1000000) {
-    return `${symbol}${(convertedAmount / 1000000).toFixed(1)}M`;
-  } else if (convertedAmount >= 1000) {
-    return `${symbol}${(convertedAmount / 1000).toFixed(1)}K`;
+  const displayCurrency = currencyCode || window.Shopify?.currency?.active || 'USD';
+  const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
+
+  if (amount >= 1000000) {
+    return `${symbol}${(amount / 1000000).toFixed(1)}M`;
+  } else if (amount >= 1000) {
+    return `${symbol}${(amount / 1000).toFixed(1)}K`;
   } else {
-    return `${symbol}${convertedAmount.toFixed(0)}`;
+    return `${symbol}${amount.toFixed(0)}`;
   }
 }
 
