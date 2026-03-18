@@ -8,7 +8,21 @@
 
 ## Overview of Changes
 
-The ShadeSpace configurator has been updated to use **database-driven pricing** instead of hardcoded currency markups and exchange rates. This document explains what changed, what impacts the Shopify app, and what (if anything) needs to be updated on the Shopify side.
+The ShadeSpace configurator has been updated to use **database-driven pricing** instead of hardcoded currency markups and exchange rates. This document explains what changed, what impacts the Shopify app, and what needs to be updated on the Shopify side.
+
+---
+
+## All-Inclusive Pricing -- Key Concept
+
+ShadeSpace uses **all-inclusive pricing**. The price the customer sees in the configurator is the final price they pay at checkout. All costs are baked in:
+
+- Product cost
+- Market margins
+- International shipping (Zonos/DHL)
+- Import duties and tariffs
+- Currency conversion
+
+**There must be no additional charges at Shopify checkout.** See the mandatory action item in the "Zonos" section below.
 
 ---
 
@@ -23,7 +37,7 @@ The ShadeSpace configurator has been updated to use **database-driven pricing** 
 - Currency pricing settings are stored in a **Supabase database table** (`pricing_settings`)
 - Three separate multipliers per currency:
   1. **Market Markup** -- Business margin per market
-  2. **Zonos/DHL Markup** -- Shipping, duties, tariffs per region
+  2. **Zonos/DHL Markup** -- Shipping, duties, tariffs baked into the all-inclusive price
   3. **Exchange Rate** -- NZD to foreign currency conversion
 - Admin dashboard has a new **"Pricing" tab** for managing these values
 - All changes are logged in a `pricing_history` audit table
@@ -37,29 +51,45 @@ x Market Markup (per currency, e.g., 1.30 for USD = 30% margin)
     |
     v
 x Zonos/DHL Markup (per currency, e.g., 1.22 for USD = 22% shipping/duties)
-    |
+    |                 (baked into price -- all-inclusive)
     v
 x Exchange Rate (NZD -> customer currency, e.g., 0.58 for USD)
     |
     v
-= Final Customer Price (rounded UP to nearest whole number)
+= Final All-Inclusive Customer Price (rounded UP to nearest whole number)
 ```
 
 ---
 
 ## Impact on the Shopify App
 
-### SHORT ANSWER: Minimal impact. The price arriving at your endpoints is already fully calculated.
+### SHORT ANSWER: Minimal code impact. One mandatory configuration change for Zonos.
 
-The configurator calculates the final customer-facing price (including all markups and currency conversion) **before** sending it to the Shopify app. This means:
+The configurator calculates the final customer-facing price (including all markups, duties, and currency conversion) **before** sending it to the Shopify app. This means:
 
-1. **`/api/v1/public/product/create` endpoint** -- The `totalPrice` field in the request body is already the final price in the customer's currency. No changes needed.
+1. **`/api/v1/public/product/create` endpoint** -- The `totalPrice` field in the request body is already the final all-inclusive price in the customer's currency. No changes needed.
 
-2. **`/api/v1/public/email-summary-send` endpoint** -- The `totalPrice` field is already the final converted price. No changes needed.
+2. **`/api/v1/public/email-summary-send` endpoint** -- The `totalPrice` field is already the final all-inclusive price. No changes needed.
 
 3. **`/api/v1/public/file/upload` endpoint** -- No pricing data involved. No changes needed.
 
 4. **`/api/v1/customers/subscribe` endpoint** -- No pricing data involved. No changes needed.
+
+---
+
+## MANDATORY: Disable Zonos at Checkout
+
+**This is the single most important action item for the Shopify app developer.**
+
+Because all Zonos/DHL duties, tariffs, and shipping costs are now pre-baked into the configurator's product price, Zonos **must be disabled** at Shopify checkout for products created by the ShadeSpace configurator.
+
+If Zonos remains active at checkout, customers will be **double-charged** for duties and tariffs:
+1. Once via the Zonos/DHL markup already included in the product price
+2. Again via Zonos calculating duties at checkout
+
+**Required action:** Ensure that Zonos does not apply additional duty/tariff/shipping charges at Shopify checkout for ShadeSpace configurator products. The all-inclusive price from the configurator IS the final price.
+
+**Customer-facing messaging:** "All taxes, duties & shipping included"
 
 ---
 
@@ -83,7 +113,7 @@ The only difference is HOW `totalPrice` is calculated internally (now using data
 
 ### Email Summary Request Body
 
-Same as above -- `totalPrice` is already the final customer-facing price:
+Same as above -- `totalPrice` is already the final all-inclusive customer-facing price:
 
 ```json
 {
@@ -117,26 +147,6 @@ A new `pricing_snapshot` field (JSONB) has been added to the `saved_quotes` tabl
 ```
 
 If the Shopify app reads from `saved_quotes` directly, this new field is available but optional. Existing quotes will have `NULL` for this field.
-
----
-
-## Zonos Integration -- IMPORTANT DISCUSSION POINT
-
-The new system includes a **Zonos/DHL Markup** multiplier per currency. This is designed to pre-calculate and include international shipping duties and tariffs in the product price.
-
-### If Zonos is currently applied at Shopify checkout:
-
-There is a risk of **double-charging** duties/tariffs:
-1. Once via the Zonos/DHL Markup in the configurator price
-2. Again via Zonos at Shopify checkout
-
-### Recommended resolution:
-
-**Option A (Recommended):** Disable Zonos duty calculation at checkout for ShadeSpace products. The configurator price already includes all duties via the Zonos/DHL markup. This gives customers a single "all-inclusive" price throughout their journey.
-
-**Option B:** Keep Zonos/DHL markup at 1.0 (no markup) in the configurator and let Zonos handle duties at checkout. Customers will see a lower price in the configurator that increases at checkout.
-
-**Current state:** All Zonos/DHL markups are set to 1.0 (no effect) pending this decision. The existing combined market markup values have been preserved so customer prices remain identical to what they were before this change.
 
 ---
 
@@ -234,12 +244,15 @@ For reference, these are the files modified in the configurator codebase:
 
 ---
 
-## Action Items for Shopify App Developer
+## Action Items Summary
 
-1. **No code changes required** for product creation, email summary, or file upload endpoints
-2. **Discuss with ShadeSpace team**: Zonos duty calculation at checkout -- should it be disabled for ShadeSpace products? (See Zonos section above)
-3. **Optional**: If the Shopify app reads `saved_quotes` directly, be aware of the new `pricing_snapshot` JSONB column (nullable, NULL for existing quotes)
-4. **Optional**: If the Shopify app displays pricing breakdowns anywhere, the configurator now passes the final all-inclusive price -- no additional conversion should be applied
+| # | Action | Priority | Status |
+|---|--------|----------|--------|
+| 1 | **Disable Zonos duty/tariff calculation at Shopify checkout** for ShadeSpace configurator products | MANDATORY | Pending |
+| 2 | No code changes needed for product creation endpoint | Info | N/A |
+| 3 | No code changes needed for email summary endpoint | Info | N/A |
+| 4 | If reading `saved_quotes` directly, be aware of new `pricing_snapshot` column (nullable) | Optional | N/A |
+| 5 | If displaying pricing breakdowns, the configurator price is all-inclusive -- no additional conversion | Optional | N/A |
 
 ---
 
@@ -251,6 +264,6 @@ To verify nothing has changed from the Shopify app's perspective:
 2. Add to cart
 3. Verify the product price matches what was shown in the configurator
 4. Verify the cart line item properties display correctly
-5. Complete a test checkout flow and verify no duplicate duty/tariff charges
+5. Complete a test checkout flow and **confirm no Zonos duties/tariffs are added on top** of the all-inclusive price
 
 The configurator prices should be identical to what they were before this change, since the existing combined markup values were preserved and Zonos/DHL markups default to 1.0.

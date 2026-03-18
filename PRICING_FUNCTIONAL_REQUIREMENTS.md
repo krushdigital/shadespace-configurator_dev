@@ -1,6 +1,6 @@
 # Functional Requirements: Database-Driven Currency Pricing System
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Date:** 18 March 2026
 **Prepared For:** CFO & Shopify App Developer
 **System:** ShadeSpace Shade Sail Configurator
@@ -11,11 +11,13 @@
 
 This document outlines the functional requirements for a new database-driven pricing system that replaces previously hardcoded currency markups and exchange rates. The system allows ShadeSpace administrators to adjust pricing parameters per currency through an admin dashboard without requiring code deployments.
 
-The key change is the introduction of a **per-currency Zonos/DHL markup** that is separate from the existing market markup. This gives the business independent control over:
+The system uses a **three-factor pricing model** per currency, giving the business independent control over:
 
 - **Market Markup** -- Margin adjustments per market/region
-- **Zonos/DHL Markup** -- International shipping, duties, and tariff costs per currency/region
+- **Zonos/DHL Markup** -- International shipping, duties, and tariff costs baked into the product price
 - **Exchange Rate** -- NZD to foreign currency conversion rate
+
+**All pricing is all-inclusive.** The price the customer sees in the configurator is the price they pay at checkout. All Zonos/DHL shipping costs, duties, and tariffs are pre-calculated and baked into the displayed price. There are no surprise charges at checkout.
 
 ---
 
@@ -30,7 +32,25 @@ Previously, all pricing adjustments (market margins, shipping costs, tariffs, cu
 
 ---
 
-## 3. Pricing Calculation Flow
+## 3. All-Inclusive Pricing Strategy
+
+ShadeSpace operates on an **all-inclusive pricing model**. The price displayed to the customer at every stage -- from the configurator through to Shopify checkout -- includes:
+
+- Product cost (fabric, corners, hardware)
+- Market-specific margin adjustments
+- International shipping costs (Zonos/DHL)
+- Import duties and tariffs
+- Currency conversion
+
+**This means:**
+- Customers see one consistent price from configurator to checkout
+- No additional duties, tariffs, or shipping surcharges are added at Shopify checkout
+- Zonos duty/tariff calculation must be **disabled** at Shopify checkout for ShadeSpace products to avoid double-charging
+- The customer-facing messaging is: **"All taxes, duties & shipping included"**
+
+---
+
+## 4. Pricing Calculation Flow
 
 All base product costs (fabric, corners, hardware) are maintained in **New Zealand Dollars (NZD)**.
 
@@ -47,7 +67,8 @@ Step 2: Market Markup (per currency)
 
 Step 3: Zonos/DHL Markup (per currency)
         = Step 2 x zonos_dhl_markup
-        Purpose: Covers international shipping, duties, and tariffs
+        Purpose: Pre-bakes international shipping, duties, and tariffs
+        into the product price (all-inclusive pricing)
 
 Step 4: Currency Conversion
         = Step 3 x exchange_rate
@@ -60,7 +81,7 @@ Final Price = Round UP to nearest whole number
 
 ---
 
-## 4. Current Pricing Settings
+## 5. Current Pricing Settings
 
 | Currency | Market Markup | Zonos/DHL Markup | Exchange Rate | Combined Factor |
 |----------|--------------|------------------|---------------|-----------------|
@@ -72,67 +93,78 @@ Final Price = Round UP to nearest whole number
 | CAD      | 1.300 (30%)  | 1.000 (0%)       | 0.8100        | 1.0530          |
 | AED      | 2.100 (110%) | 1.000 (0%)       | 2.1900        | 4.5990          |
 
-**Note:** Zonos/DHL markups are currently set to 1.0 (no markup) for all currencies. These are ready to be configured by the business team once Zonos/DHL cost data is available per region.
+**Note:** Zonos/DHL markups are currently set to 1.0 (no markup) for all currencies. These values should be configured by the business team based on actual Zonos/DHL cost data per region. Once set, the Zonos/DHL charges will be seamlessly baked into the all-inclusive price.
+
+**NZD:** Domestic orders have no market markup, no Zonos/DHL markup, and a 1:1 exchange rate. NZD customers see the base product cost.
 
 ---
 
-## 5. Example Pricing Calculation
+## 6. Example Pricing Calculations
 
 For a shade sail with a base NZD price of **NZ$2,500**:
 
-### USD Customer (current settings):
+### USD Customer (current settings -- Zonos/DHL not yet configured):
 ```
 Base NZD:       NZ$2,500.00
 Market Markup:  NZ$2,500.00 x 1.30  = NZ$3,250.00
-Zonos/DHL:      NZ$3,250.00 x 1.00  = NZ$3,250.00
+Zonos/DHL:      NZ$3,250.00 x 1.00  = NZ$3,250.00  (not yet configured)
 Exchange Rate:  NZ$3,250.00 x 0.58  = US$1,885.00
-Final Price:    US$1,885 (rounded up)
+Final Price:    US$1,885 (all-inclusive, rounded up)
 ```
 
-### USD Customer (with hypothetical 22% Zonos/DHL markup):
+### USD Customer (once Zonos/DHL set to 22%):
 ```
 Base NZD:       NZ$2,500.00
 Market Markup:  NZ$2,500.00 x 1.30  = NZ$3,250.00
 Zonos/DHL:      NZ$3,250.00 x 1.22  = NZ$3,965.00
 Exchange Rate:  NZ$3,965.00 x 0.58  = US$2,300.00
-Final Price:    US$2,300 (rounded up)
+Final Price:    US$2,300 (all-inclusive, rounded up)
 ```
 
-### AUD Customer (with hypothetical 10% Zonos/DHL markup):
+### AUD Customer (once Zonos/DHL set to 10%):
 ```
 Base NZD:       NZ$2,500.00
 Market Markup:  NZ$2,500.00 x 0.90  = NZ$2,250.00
 Zonos/DHL:      NZ$2,250.00 x 1.10  = NZ$2,475.00
 Exchange Rate:  NZ$2,475.00 x 0.88  = AU$2,178.00
-Final Price:    AU$2,178 (rounded up)
+Final Price:    AU$2,178 (all-inclusive, rounded up)
+```
+
+### GBP Customer (once Zonos/DHL set to 25%):
+```
+Base NZD:       NZ$2,500.00
+Market Markup:  NZ$2,500.00 x 1.68  = NZ$4,200.00
+Zonos/DHL:      NZ$4,200.00 x 1.25  = NZ$5,250.00
+Exchange Rate:  NZ$5,250.00 x 0.43  = £2,258.00
+Final Price:    £2,258 (all-inclusive, rounded up)
 ```
 
 ---
 
-## 6. Admin Dashboard - Pricing Management
+## 7. Admin Dashboard - Pricing Management
 
 A new "Pricing" tab has been added to the ShadeSpace admin dashboard at `/admin`. This provides:
 
-### 6.1 View Pricing Settings
+### 7.1 View Pricing Settings
 - Table showing all currencies with their current market markup, Zonos/DHL markup, exchange rate, and combined factor
 - Example calculation panel showing what a NZ$1,000 base price converts to in each currency
 - Last updated timestamp per currency
 
-### 6.2 Edit Pricing Settings
+### 7.2 Edit Pricing Settings
 - Inline editing of market markup, Zonos/DHL markup, and exchange rate per currency
 - Input validation (all values must be positive numbers)
 - Save/Cancel actions per row
 - Changes take effect immediately for new configurator sessions
 
-### 6.3 Change History / Audit Trail
+### 7.3 Change History / Audit Trail
 - Logs every pricing change with: date, currency, field changed, old value, new value, and who made the change
 - Provides full accountability for pricing decisions
 
 ---
 
-## 7. Data Architecture
+## 8. Data Architecture
 
-### 7.1 Database Table: `pricing_settings`
+### 8.1 Database Table: `pricing_settings`
 
 | Column           | Type     | Description                                          |
 |------------------|----------|------------------------------------------------------|
@@ -141,14 +173,14 @@ A new "Pricing" tab has been added to the ShadeSpace admin dashboard at `/admin`
 | currency_name    | TEXT     | Display name (e.g., "US Dollar")                     |
 | currency_symbol  | TEXT     | Display symbol (e.g., "US$", "AU$")                  |
 | market_markup    | NUMERIC  | Market margin multiplier (e.g., 1.30 = 30% markup)  |
-| zonos_dhl_markup | NUMERIC  | Shipping/duties multiplier (e.g., 1.22 = 22%)       |
+| zonos_dhl_markup | NUMERIC  | Shipping/duties multiplier baked into all-inclusive price (e.g., 1.22 = 22%) |
 | exchange_rate    | NUMERIC  | NZD to this currency (e.g., 0.58 for USD)           |
 | is_active        | BOOLEAN  | Whether currency is available in configurator        |
 | display_order    | INTEGER  | Sort order in currency selector                      |
 | updated_at       | TIMESTAMP| Last modification time                               |
 | created_at       | TIMESTAMP| Creation time                                        |
 
-### 7.2 Database Table: `pricing_history`
+### 8.2 Database Table: `pricing_history`
 
 | Column        | Type     | Description                              |
 |---------------|----------|------------------------------------------|
@@ -161,7 +193,7 @@ A new "Pricing" tab has been added to the ShadeSpace admin dashboard at `/admin`
 | change_reason | TEXT     | Optional reason (nullable)               |
 | created_at    | TIMESTAMP| When the change was made                 |
 
-### 7.3 Quote Pricing Snapshot
+### 8.3 Quote Pricing Snapshot
 
 When a quote is saved, the pricing settings active at that moment are captured in the `pricing_snapshot` column (JSONB) of `saved_quotes`. This ensures:
 
@@ -171,39 +203,25 @@ When a quote is saved, the pricing settings active at that moment are captured i
 
 ---
 
-## 8. Shopify App Integration Impact
+## 9. Shopify App Integration -- Mandatory Requirements
 
-### 8.1 What Changes for the Shopify App
+### 9.1 All-Inclusive Price is the Final Price
 
-The Shopify app's pricing display needs to be aware that the ShadeSpace configurator now uses database-driven pricing. Key considerations:
+The price sent from the configurator to the Shopify product creation endpoint already includes ALL costs: product, market markup, Zonos/DHL duties/tariffs, and currency conversion. The Shopify app receives the final customer-facing price. No additional processing is required.
 
-1. **Product Creation Price**: The price sent from the configurator to the Shopify product creation endpoint already includes all markups and currency conversion. No change is needed to the product creation flow -- the price arriving is the final customer-facing price.
+### 9.2 Zonos Must Be Disabled at Checkout
 
-2. **Currency Display**: The configurator handles all currency conversion internally before passing the price to Shopify. The Shopify app receives the final price in the customer's selected currency.
+Because all duties and tariffs are pre-baked into the product price, Zonos duty/tariff calculation **must be disabled** at Shopify checkout for ShadeSpace products. If Zonos is left active, customers will be double-charged for duties and tariffs.
 
-3. **Price Consistency**: If Zonos is also applied at the Shopify checkout level, there could be double-application of duties/tariffs. The Zonos/DHL markup in this system is designed to be a **pre-calculated estimate** baked into the product price. Coordination is required to determine whether Zonos should be disabled at checkout for ShadeSpace products, or whether the Zonos/DHL markup in this system should be set to 1.0 (no markup) and Zonos handles it at checkout.
+**Required action:** The Shopify app developer must ensure Zonos does not apply additional duty/tariff charges at checkout for products created by the ShadeSpace configurator.
 
-### 8.2 Recommended Approach for Zonos/DHL
-
-**Option A - Pre-baked (Recommended):**
-- Zonos/DHL markup is applied in the configurator (this system)
-- Zonos is DISABLED at Shopify checkout for ShadeSpace products
-- Customer sees one price throughout the entire journey
-- Marketing message: "All taxes & duties included"
-
-**Option B - Checkout-calculated:**
-- Zonos/DHL markup is set to 1.0 in this system (no markup)
-- Zonos calculates duties/tariffs at Shopify checkout
-- Customer sees a lower price in configurator, then duties added at checkout
-- May cause cart abandonment due to price increase
-
-### 8.3 No API Changes Required
+### 9.3 No API Changes Required
 
 The Shopify app does not need to call the pricing settings API. The configurator frontend handles all pricing calculations and sends the final price when creating products. The Shopify app receives the same data format as before.
 
 ---
 
-## 9. Security Requirements
+## 10. Security Requirements
 
 - Pricing settings can only be modified by authenticated admin users
 - All changes are logged in the pricing_history audit table
@@ -213,18 +231,20 @@ The Shopify app does not need to call the pricing settings API. The configurator
 
 ---
 
-## 10. Business Rules
+## 11. Business Rules
 
 1. All markups and exchange rates must be positive numbers (> 0)
 2. NZD always has market_markup = 1.0, zonos_dhl_markup = 1.0, exchange_rate = 1.0 (domestic)
 3. Final prices are always rounded UP to the nearest whole number
-4. Changes to pricing settings take effect immediately for new configurator sessions
-5. Existing saved quotes retain their original pricing via the pricing snapshot
-6. Exchange rates are manually updated by the ShadeSpace team (no automatic feeds)
+4. All prices are all-inclusive -- what the customer sees is what they pay
+5. Zonos/DHL costs are baked into the price via the zonos_dhl_markup multiplier, NOT calculated at checkout
+6. Changes to pricing settings take effect immediately for new configurator sessions
+7. Existing saved quotes retain their original pricing via the pricing snapshot
+8. Exchange rates are manually updated by the ShadeSpace team (no automatic feeds)
 
 ---
 
-## 11. Future Considerations
+## 12. Future Considerations
 
 1. **Automatic Exchange Rate Updates**: Integration with a currency API (e.g., Open Exchange Rates) for daily automatic exchange rate updates while keeping market and Zonos/DHL markups as manual admin-controlled values
 2. **Pricing Tiers**: Different markups based on order value ranges
