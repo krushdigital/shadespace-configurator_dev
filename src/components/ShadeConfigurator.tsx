@@ -11,6 +11,7 @@ import { DimensionsContent } from './steps/DimensionsContent';
 import { FixingPointsContent } from './steps/FixingPointsContent';
 import { ReviewContent } from './steps/ReviewContent';
 import { useShadeCalculations } from '../hooks/useShadeCalculations';
+import { usePricingSettings } from '../hooks/usePricingSettings';
 import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
@@ -19,6 +20,7 @@ import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, forma
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
+
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
@@ -99,7 +101,8 @@ export function ShadeConfigurator() {
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
 
-  const calculations = useShadeCalculations(config);
+  const { settingsMap: pricingSettingsMap } = usePricingSettings();
+  const calculations = useShadeCalculations(config, pricingSettingsMap);
 
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({
@@ -1697,6 +1700,7 @@ export function ShadeConfigurator() {
         currentStep={openStep}
         totalSteps={7}
         shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
+        pricingSnapshot={pricingSettingsMap}
         onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
         onEmailPDFQuote={handleEmailPDFQuote}
       />

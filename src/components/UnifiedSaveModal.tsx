@@ -27,6 +27,7 @@ interface UnifiedSaveModalProps {
   currentStep?: number;
   totalSteps?: number;
   shouldShowEmailOption?: boolean;
+  pricingSnapshot?: Record<string, unknown> | null;
   onGeneratePDFWithDetails?: (
     firstName: string,
     lastName: string,
@@ -52,6 +53,7 @@ export function UnifiedSaveModal({
   currentStep,
   totalSteps = 7,
   shouldShowEmailOption = true,
+  pricingSnapshot,
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
 }: UnifiedSaveModalProps) {
@@ -133,8 +135,7 @@ export function UnifiedSaveModal({
         sanitizedReference,
         currentStep,
         totalSteps,
-        firstName.trim(),
-        lastName.trim()
+        pricingSnapshot
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
