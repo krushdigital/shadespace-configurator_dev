@@ -234,10 +234,3 @@ The Shopify app does not need to call the pricing settings API. The configurator
 8. Exchange rates are manually updated by the ShadeSpace team (no automatic feeds)
 
 ---
-
-## 12. Future Considerations
-
-1. **Automatic Exchange Rate Updates**: Integration with a currency API (e.g., Open Exchange Rates) for daily automatic exchange rate updates while keeping market and Zonos/DHL markups as manual admin-controlled values
-2. **Pricing Tiers**: Different markups based on order value ranges
-3. **Promotional Pricing**: Time-limited discount multipliers per currency
-4. **New Currencies**: Adding new currencies through the admin dashboard (POST endpoint already supports this)
