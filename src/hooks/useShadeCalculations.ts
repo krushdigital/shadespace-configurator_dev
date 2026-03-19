@@ -1,8 +1,6 @@
 import { useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../types';
 import {
-  WEBBING_FABRIC_PRICING,
-  CABLED_FABRIC_PRICING,
   CORNER_COSTS,
   CABLED_CORNER_COSTS,
   HARDWARE_COSTS,
@@ -14,10 +12,18 @@ import {
 import { FABRICS } from '../data/fabrics';
 import { calculatePolygonArea } from '../utils/geometry';
 import { PricingSetting, getPricingForCurrency } from './usePricingSettings';
+import {
+  BasePricingData,
+  getFabricPriceFromDB,
+  getCornerCostFromDB,
+  getHardwareCostFromDB,
+  getEdgeFeatureFromDB
+} from './useBasePricing';
 
 export function useShadeCalculations(
   config: ConfiguratorState,
-  pricingSettingsMap?: Record<string, PricingSetting>
+  pricingSettingsMap?: Record<string, PricingSetting>,
+  basePricingData?: BasePricingData | null
 ): ShadeCalculations {
   return useMemo(() => {
     let perimeterMM = 0;
@@ -53,27 +59,46 @@ export function useShadeCalculations(
     const perimeterM = perimeterMM / 1000;
     const adjustedPerimeter = Math.round(perimeterM / 0.5) * 0.5;
     const area = calculatePolygonArea(config.measurements, config.corners);
-    const webbingWidth = getWebbingWidth(adjustedPerimeter);
-    const wireThickness = getWireThickness(adjustedPerimeter);
+    const edgeType = config.edgeType as 'webbing' | 'cabled';
+
+    let webbingWidth: number;
+    let wireThickness: number;
+
+    if (basePricingData) {
+      webbingWidth = getEdgeFeatureFromDB(basePricingData, adjustedPerimeter, 'webbing', 'webbing_width') || 50;
+      wireThickness = getEdgeFeatureFromDB(basePricingData, adjustedPerimeter, 'cabled', 'wire_thickness') || 4;
+    } else {
+      webbingWidth = getWebbingWidth(adjustedPerimeter);
+      wireThickness = getWireThickness(adjustedPerimeter);
+    }
 
     let fabricCostNZD = 0;
     let edgeCostNZD = 0;
     let cornerCostNZD = 0;
     let hardwareCostNZD = 0;
 
-    if (config.edgeType === 'webbing') {
-      fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'webbing');
+    if (basePricingData) {
+      fabricCostNZD = getFabricPriceFromDB(basePricingData, adjustedPerimeter, config.fabricType, edgeType);
       edgeCostNZD = 0;
-      cornerCostNZD = CORNER_COSTS[config.corners as keyof typeof CORNER_COSTS] || 0;
+      cornerCostNZD = getCornerCostFromDB(basePricingData, config.corners, edgeType);
       if (config.measurementOption === 'adjust') {
-        hardwareCostNZD = HARDWARE_COSTS[config.corners as keyof typeof HARDWARE_COSTS] || 0;
+        hardwareCostNZD = getHardwareCostFromDB(basePricingData, config.corners, edgeType);
       }
-    } else if (config.edgeType === 'cabled') {
-      fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'cabled');
-      edgeCostNZD = 0;
-      cornerCostNZD = CABLED_CORNER_COSTS[config.corners as keyof typeof CABLED_CORNER_COSTS] || 0;
-      if (config.measurementOption === 'adjust') {
-        hardwareCostNZD = CABLED_HARDWARE_COSTS[config.corners as keyof typeof CABLED_HARDWARE_COSTS] || 0;
+    } else {
+      if (config.edgeType === 'webbing') {
+        fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'webbing');
+        edgeCostNZD = 0;
+        cornerCostNZD = CORNER_COSTS[config.corners as keyof typeof CORNER_COSTS] || 0;
+        if (config.measurementOption === 'adjust') {
+          hardwareCostNZD = HARDWARE_COSTS[config.corners as keyof typeof HARDWARE_COSTS] || 0;
+        }
+      } else if (config.edgeType === 'cabled') {
+        fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'cabled');
+        edgeCostNZD = 0;
+        cornerCostNZD = CABLED_CORNER_COSTS[config.corners as keyof typeof CABLED_CORNER_COSTS] || 0;
+        if (config.measurementOption === 'adjust') {
+          hardwareCostNZD = CABLED_HARDWARE_COSTS[config.corners as keyof typeof CABLED_HARDWARE_COSTS] || 0;
+        }
       }
     }
 
@@ -83,40 +108,18 @@ export function useShadeCalculations(
       ? getPricingForCurrency(pricingSettingsMap, config.currency)
       : { marketMarkup: 1.0, zonosDhlMarkup: 1.0, exchangeRate: 1.0, symbol: 'NZ$' };
 
-          // ========== ADD THIS DEBUG BLOCK ==========
-    console.log('🔍 PRICING DEBUG - Raw values:');
-    console.log('  - config.currency:', config.currency);
-    console.log('  - pricingSettingsMap exists?', !!pricingSettingsMap);
-    console.log('  - pricing object:', pricing);
-    console.log('  - marketMarkup:', pricing.marketMarkup);
-    console.log('  - zonosDhlMarkup:', pricing.zonosDhlMarkup);
-    console.log('  - exchangeRate:', pricing.exchangeRate);
+    const markedUpNZD = baseNZD * pricing.marketMarkup;
+    const zonosDhlCostNZD = baseNZD * (pricing.zonosDhlMarkup - 1);
+    const totalNZD = markedUpNZD + zonosDhlCostNZD;
+    const convertedTotal = totalNZD * pricing.exchangeRate;
 
-    console.log('💰 CALCULATION DEBUG:');
-    console.log('  - baseNZD:', baseNZD);
-    console.log('  - afterMarketMarkup:', baseNZD * pricing.marketMarkup);
-    console.log('  - afterZonosDhl:', baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup);
-    console.log('  - convertedTotal:', baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate);
-    console.log('  - final totalPrice:', Math.ceil(baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate));
-    // ========== END DEBUG ==========
+    const markedUpFactor = pricing.marketMarkup * pricing.exchangeRate;
+    const zonosFactor = (pricing.zonosDhlMarkup - 1) * pricing.exchangeRate;
+    const combinedFactor = markedUpFactor + zonosFactor;
 
-    // DEBUG BLOCK - Add this temporarily
-    console.log('🔍 PRICING DEBUG:', {
-      currency: config.currency,
-      marketMarkup: pricing.marketMarkup,
-      zonosDhlMarkup: pricing.zonosDhlMarkup,
-      exchangeRate: pricing.exchangeRate,
-      baseNZD,
-      calculatedPrice: Math.ceil(baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate)
-    });
-    const afterMarketMarkup = baseNZD * pricing.marketMarkup;
-    const afterZonosDhl = afterMarketMarkup * pricing.zonosDhlMarkup;
-    const convertedTotal = afterZonosDhl * pricing.exchangeRate;
-
-    const markupFactor = pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate;
-    const fabricCost = fabricCostNZD * markupFactor;
-    const edgeCost = edgeCostNZD * markupFactor;
-    const hardwareCost = (cornerCostNZD + hardwareCostNZD) * markupFactor;
+    const fabricCost = fabricCostNZD * combinedFactor;
+    const edgeCost = edgeCostNZD * combinedFactor;
+    const hardwareCost = (cornerCostNZD + hardwareCostNZD) * combinedFactor;
     const totalPrice = Math.ceil(convertedTotal);
 
     const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
@@ -128,35 +131,13 @@ export function useShadeCalculations(
       (config.corners * 200);
 
     const perimeterWeightPerMeter = config.edgeType === 'cabled' ? 140 : 100;
-    const perimeterWeightGrams = (Math.round(perimeterM) * perimeterWeightPerMeter) + 0;
+    const perimeterWeightGrams = Math.round(perimeterM) * perimeterWeightPerMeter;
 
     const hardwareWeightGrams = config.measurementOption === 'adjust'
       ? config.corners * 380
       : 0;
 
     const totalWeightGrams = totalSailWeightGrams + perimeterWeightGrams + hardwareWeightGrams;
-
-    console.log('🎯 FINAL CHECK:', {
-  currency: config.currency,
-  baseNZD,
-  marketMarkup: pricing.marketMarkup,
-  zonosDhlMarkup: pricing.zonosDhlMarkup,
-  exchangeRate: pricing.exchangeRate,
-  calculatedTotal: Math.ceil(baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate),
-  returningTotal: totalPrice
-});
-
-return {
-  area,
-  perimeter: perimeterM,
-  fabricCost,
-  edgeCost,
-  hardwareCost,
-  totalPrice,
-  webbingWidth,
-  wireThickness,
-  totalWeightGrams
-};
 
     return {
       area,
@@ -177,6 +158,7 @@ return {
     config.measurementOption,
     config.currency,
     config.unit,
-    pricingSettingsMap
+    pricingSettingsMap,
+    basePricingData
   ]);
 }

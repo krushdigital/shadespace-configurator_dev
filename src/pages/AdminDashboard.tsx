@@ -6,13 +6,14 @@ import { EventsTable } from '../components/admin/EventsTable';
 import { AnalyticsSummary } from '../components/admin/AnalyticsSummary';
 import { EventsChart } from '../components/admin/EventsChart';
 import { PricingManager } from '../components/admin/PricingManager';
+import { BasePricingManager } from '../components/admin/BasePricingManager';
 import { ChangePasswordModal } from '../components/admin/ChangePasswordModal';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'pricing' | 'exports';
+type TabType = 'overview' | 'quotes' | 'events' | 'pricing' | 'base-pricing' | 'exports';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -26,7 +27,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     { id: 'overview', label: 'Overview' },
     { id: 'quotes', label: 'Saved Quotes' },
     { id: 'events', label: 'User Events' },
-    { id: 'pricing', label: 'Pricing' },
+    { id: 'pricing', label: 'Currency Pricing' },
+    { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
   ];
 
@@ -122,6 +124,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {activeTab === 'events' && <EventsTable dateRange={dateRange} />}
 
         {activeTab === 'pricing' && <PricingManager />}
+
+        {activeTab === 'base-pricing' && <BasePricingManager />}
 
         {activeTab === 'exports' && (
           <Card>
