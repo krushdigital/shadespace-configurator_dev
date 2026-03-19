@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
+import { getAdminAuthHeaders } from '../../utils/adminAuth';
 
 interface AnalyticsSummaryProps {
   dateRange: { start: string; end: string };
@@ -29,19 +30,18 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange })
     try {
       setLoading(true);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (!supabaseUrl || !supabaseKey) {
-        console.error('Supabase credentials not found');
+      if (!supabaseUrl) {
+        console.error('Supabase URL not found');
         return;
       }
 
+      const authHeaders = await getAdminAuthHeaders();
       const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_analytics_summary`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
+          ...authHeaders,
           'Content-Type': 'application/json',
-          'apikey': supabaseKey,
         },
         body: JSON.stringify({
           p_start_date: new Date(dateRange.start).toISOString(),

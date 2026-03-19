@@ -54,8 +54,8 @@ Deno.serve(async (req: Request) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     if (req.method === 'POST') {
       // Save a new quote
@@ -161,7 +161,7 @@ Deno.serve(async (req: Request) => {
             {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${supabaseKey}`,
+                'Authorization': `Bearer ${serviceRoleKey}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({

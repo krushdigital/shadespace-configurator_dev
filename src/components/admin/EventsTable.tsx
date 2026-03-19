@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
+import { getAdminAuthHeaders } from '../../utils/adminAuth';
 
 interface EventsTableProps {
   dateRange: { start: string; end: string };
@@ -32,10 +33,9 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
     try {
       setLoading(true);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (!supabaseUrl || !supabaseKey) {
-        console.error('Supabase credentials not found');
+      if (!supabaseUrl) {
+        console.error('Supabase URL not found');
         return;
       }
 
@@ -45,12 +45,8 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
         query += `&event_type=eq.${eventTypeFilter}`;
       }
 
-      const response = await fetch(query, {
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'apikey': supabaseKey,
-        },
-      });
+      const headers = await getAdminAuthHeaders();
+      const response = await fetch(query, { headers });
 
       if (response.ok) {
         const data = await response.json();
