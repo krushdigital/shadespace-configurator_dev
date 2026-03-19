@@ -83,6 +83,32 @@ export function useShadeCalculations(
       ? getPricingForCurrency(pricingSettingsMap, config.currency)
       : { marketMarkup: 1.0, zonosDhlMarkup: 1.0, exchangeRate: 1.0, symbol: 'NZ$' };
 
+          // ========== ADD THIS DEBUG BLOCK ==========
+    console.log('🔍 PRICING DEBUG - Raw values:');
+    console.log('  - config.currency:', config.currency);
+    console.log('  - pricingSettingsMap exists?', !!pricingSettingsMap);
+    console.log('  - pricing object:', pricing);
+    console.log('  - marketMarkup:', pricing.marketMarkup);
+    console.log('  - zonosDhlMarkup:', pricing.zonosDhlMarkup);
+    console.log('  - exchangeRate:', pricing.exchangeRate);
+
+    console.log('💰 CALCULATION DEBUG:');
+    console.log('  - baseNZD:', baseNZD);
+    console.log('  - afterMarketMarkup:', baseNZD * pricing.marketMarkup);
+    console.log('  - afterZonosDhl:', baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup);
+    console.log('  - convertedTotal:', baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate);
+    console.log('  - final totalPrice:', Math.ceil(baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate));
+    // ========== END DEBUG ==========
+
+    // DEBUG BLOCK - Add this temporarily
+    console.log('🔍 PRICING DEBUG:', {
+      currency: config.currency,
+      marketMarkup: pricing.marketMarkup,
+      zonosDhlMarkup: pricing.zonosDhlMarkup,
+      exchangeRate: pricing.exchangeRate,
+      baseNZD,
+      calculatedPrice: Math.ceil(baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate)
+    });
     const afterMarketMarkup = baseNZD * pricing.marketMarkup;
     const afterZonosDhl = afterMarketMarkup * pricing.zonosDhlMarkup;
     const convertedTotal = afterZonosDhl * pricing.exchangeRate;
@@ -109,6 +135,28 @@ export function useShadeCalculations(
       : 0;
 
     const totalWeightGrams = totalSailWeightGrams + perimeterWeightGrams + hardwareWeightGrams;
+
+    console.log('🎯 FINAL CHECK:', {
+  currency: config.currency,
+  baseNZD,
+  marketMarkup: pricing.marketMarkup,
+  zonosDhlMarkup: pricing.zonosDhlMarkup,
+  exchangeRate: pricing.exchangeRate,
+  calculatedTotal: Math.ceil(baseNZD * pricing.marketMarkup * pricing.zonosDhlMarkup * pricing.exchangeRate),
+  returningTotal: totalPrice
+});
+
+return {
+  area,
+  perimeter: perimeterM,
+  fabricCost,
+  edgeCost,
+  hardwareCost,
+  totalPrice,
+  webbingWidth,
+  wireThickness,
+  totalWeightGrams
+};
 
     return {
       area,

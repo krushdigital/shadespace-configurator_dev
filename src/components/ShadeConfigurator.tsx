@@ -107,6 +107,15 @@ export function ShadeConfigurator() {
   const activePricingMap = loadedPricingSnapshot || pricingSettingsMap;
   const calculations = useShadeCalculations(config, activePricingMap);
 
+
+// ===== ADD THIS DEBUG =====
+console.log('📊 DEBUG 1 - INITIAL calculations.totalPrice:', {
+  value: calculations.totalPrice,
+  currency: config.currency,
+  type: typeof calculations.totalPrice
+});
+// ===== END DEBUG =====
+
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({
     isMobile,
@@ -796,6 +805,14 @@ export function ShadeConfigurator() {
     return edgeCount === config.corners;
   }, [config.corners, config.measurements]);
 
+  // ===== ADD THIS DEBUG =====
+console.log('📦 DEBUG 3 - BEFORE orderData creation:', {
+  totalPrice: calculations.totalPrice,
+  currency: config.currency
+});
+// ===== END DEBUG =====
+
+
   interface OrderData {
     fabricType: string;
     fabricColor: string;
@@ -850,6 +867,13 @@ export function ShadeConfigurator() {
     originalUnit: 'metric' | 'imperial';
   }
   const handleAddToCart = async (orderData: OrderData): Promise<void> => {
+    // ===== ADD THIS DEBUG =====
+  console.log('🛒 DEBUG 2 - START handleAddToCartFromConfigurator:', {
+    totalPrice: calculations.totalPrice,
+    currency: config.currency,
+    type: typeof calculations.totalPrice
+  });
+  // ===== END DEBUG =====
     console.log('Product being created. Add to cart');
     setShowLoadingOverlay(true);
     setLoadingStep({ text: 'Starting order process...', progress: 10 });
@@ -1087,6 +1111,19 @@ export function ShadeConfigurator() {
       const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
       const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes ?? [], 'Fixing Type') : {};
 
+// ===== ADD THIS DEBUG =====
+console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
+  totalPrice: orderData.totalPrice,
+  currency: orderData.currency,
+  type: typeof orderData.totalPrice,
+  fullPayload: {
+    totalPrice: orderData.totalPrice,
+    currency: orderData.currency
+    // Don't log the whole payload, it's huge
+  }
+});
+// ===== END DEBUG =====
+      
       const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
         method: 'POST',
         headers: {
@@ -2095,6 +2132,14 @@ export function ShadeConfigurator() {
     const hardwareIncluded = config.measurementOption === 'adjust';
     const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
 
+    // ===== ADD THIS DEBUG =====
+console.log('📦 DEBUG 3 - BEFORE orderData creation:', {
+  totalPrice: calculations.totalPrice,
+  currency: config.currency
+});
+// ===== END DEBUG =====
+
+
     // Create the order data
     const orderData: any = {
       fabricType: config.fabricType,
@@ -2137,6 +2182,13 @@ export function ShadeConfigurator() {
       originalUnit: config.unit
     };
 
+    // ===== ADD THIS DEBUG =====
+console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
+  totalPrice: orderData.totalPrice,
+  currency: orderData.currency,
+  type: typeof orderData.totalPrice
+});
+// ===== END DEBUG =====
     // Add to cart immediately (without waiting for image upload)
     await handleAddToCart(orderData);
   };
