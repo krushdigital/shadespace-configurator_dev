@@ -58,7 +58,6 @@ function getDefaultSettingsArray(): PricingSetting[] {
 export function usePricingSettings(): PricingSettingsState & { refetch: () => Promise<void> } {
   const [state, setState] = useState<PricingSettingsState>(() => {
     if (cachedSettings && cacheTimestamp && Date.now() - cacheTimestamp < CACHE_DURATION_MS) {
-      console.log('📦 Using cached pricing settings:', cachedSettings); // ADDED
       return {
         settings: cachedSettings,
         settingsMap: cachedSettingsMap!,
@@ -68,7 +67,6 @@ export function usePricingSettings(): PricingSettingsState & { refetch: () => Pr
       };
     }
     const defaults = getDefaultSettingsArray();
-    console.log('⚠️ No cache, using defaults:', defaults); // ADDED
     return {
       settings: defaults,
       settingsMap: buildSettingsMap(defaults),
@@ -87,8 +85,6 @@ export function usePricingSettings(): PricingSettingsState & { refetch: () => Pr
         throw new Error('Supabase configuration missing');
       }
 
-      console.log('🌐 Fetching pricing settings from:', `${supabaseUrl}/functions/v1/pricing-settings`); // ADDED
-
       const response = await fetch(`${supabaseUrl}/functions/v1/pricing-settings`, {
         headers: {
           'Authorization': `Bearer ${supabaseKey}`,
@@ -101,7 +97,6 @@ export function usePricingSettings(): PricingSettingsState & { refetch: () => Pr
       }
 
       const data = await response.json();
-      console.log('📥 API Response:', data); // ADDED
 
       if (data.success && data.settings?.length > 0) {
         const settings = data.settings.map((s: PricingSetting) => ({
@@ -111,9 +106,6 @@ export function usePricingSettings(): PricingSettingsState & { refetch: () => Pr
           exchange_rate: Number(s.exchange_rate),
         }));
         const settingsMap = buildSettingsMap(settings);
-
-        console.log('✅ Processed settings:', settings); // ADDED
-        console.log('✅ Settings map:', settingsMap); // ADDED
 
         cachedSettings = settings;
         cachedSettingsMap = settingsMap;
@@ -130,7 +122,6 @@ export function usePricingSettings(): PricingSettingsState & { refetch: () => Pr
         throw new Error('No pricing settings returned');
       }
     } catch (err) {
-      console.error('❌ Failed to fetch pricing settings, using defaults:', err);
       const defaults = getDefaultSettingsArray();
       setState((prev) => ({
         ...prev,
@@ -144,7 +135,6 @@ export function usePricingSettings(): PricingSettingsState & { refetch: () => Pr
 
   useEffect(() => {
     if (cachedSettings && cacheTimestamp && Date.now() - cacheTimestamp < CACHE_DURATION_MS) {
-      console.log('📦 Using cached settings in useEffect'); // ADDED
       setState({
         settings: cachedSettings,
         settingsMap: cachedSettingsMap!,
@@ -154,7 +144,6 @@ export function usePricingSettings(): PricingSettingsState & { refetch: () => Pr
       });
       return;
     }
-    console.log('🔄 Fetching fresh settings'); // ADDED
     fetchSettings();
   }, []);
 
@@ -165,23 +154,16 @@ export function getPricingForCurrency(
   settingsMap: Record<string, PricingSetting>,
   currencyCode: string
 ): { marketMarkup: number; zonosDhlMarkup: number; exchangeRate: number; symbol: string } {
-  console.log('🎯 getPricingForCurrency called with:', { currencyCode, settingsMapKeys: Object.keys(settingsMap) }); // ADDED
-  
   const setting = settingsMap[currencyCode] || settingsMap['USD'];
-  console.log('📦 Selected setting:', setting); // ADDED
-  
+
   if (!setting) {
-    console.log('⚠️ No setting found, using fallback'); // ADDED
     return { marketMarkup: 1.30, zonosDhlMarkup: 1.00, exchangeRate: 0.58, symbol: 'US$' };
   }
-  
-  const result = {
+
+  return {
     marketMarkup: setting.market_markup,
     zonosDhlMarkup: setting.zonos_dhl_markup,
     exchangeRate: setting.exchange_rate,
     symbol: setting.currency_symbol,
   };
-  
-  console.log('✅ Returning:', result); // ADDED
-  return result;
 }

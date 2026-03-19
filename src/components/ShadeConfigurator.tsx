@@ -12,6 +12,7 @@ import { FixingPointsContent } from './steps/FixingPointsContent';
 import { ReviewContent } from './steps/ReviewContent';
 import { useShadeCalculations } from '../hooks/useShadeCalculations';
 import { usePricingSettings } from '../hooks/usePricingSettings';
+import { useBasePricing } from '../hooks/useBasePricing';
 import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, FabricType, EdgeType } from '../types';
 import { FABRICS } from '../data/fabrics';
@@ -56,8 +57,6 @@ const INITIAL_STATE: ConfiguratorState = {
   hasManuallyAdjustedShape: false
 };
 
-console.log('🚀 ShadeConfigurator component is loading - this should appear in console');
-
 export function ShadeConfigurator() {
   const [config, setConfig] = useState<ConfiguratorState>(INITIAL_STATE);
   const [openStep, setOpenStep] = useState<number>(0);
@@ -65,7 +64,6 @@ export function ShadeConfigurator() {
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 1024);
-  console.log('isMobile: ', isMobile);
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
   const { showToast } = useToast();
@@ -104,17 +102,9 @@ export function ShadeConfigurator() {
   const canvasRef = useRef<any>(null);
 
   const { settingsMap: pricingSettingsMap } = usePricingSettings();
+  const { data: basePricingData } = useBasePricing();
   const activePricingMap = loadedPricingSnapshot || pricingSettingsMap;
-  const calculations = useShadeCalculations(config, activePricingMap);
-
-
-// ===== ADD THIS DEBUG =====
-console.log('📊 DEBUG 1 - INITIAL calculations.totalPrice:', {
-  value: calculations.totalPrice,
-  currency: config.currency,
-  type: typeof calculations.totalPrice
-});
-// ===== END DEBUG =====
+  const calculations = useShadeCalculations(config, activePricingMap, basePricingData);
 
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({

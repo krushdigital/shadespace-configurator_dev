@@ -3,6 +3,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
 import { getAdminAuthHeaders } from '../../utils/adminAuth';
+import { CsvUploadModal } from './CsvUploadModal';
 
 interface PricingSetting {
   id: string;
@@ -45,9 +46,40 @@ export const PricingManager: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showCsvUpload, setShowCsvUpload] = useState(false);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  const handleCsvExport = async () => {
+    const authHeaders = await getAdminAuthHeaders();
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/base-pricing/csv-export?table=pricing_settings`,
+      { headers: { ...authHeaders } }
+    );
+    const csv = await response.text();
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pricing_settings.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCsvUpload = async (csvData: string, mode: 'replace' | 'merge') => {
+    const authHeaders = await getAdminAuthHeaders();
+    const response = await fetch(`${supabaseUrl}/functions/v1/base-pricing/csv-upload`, {
+      method: 'POST',
+      headers: { ...authHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'pricing_settings', csv_data: csvData, mode }),
+    });
+    const data = await response.json();
+    if (!data.success) throw new Error(data.error || 'Upload failed');
+    setSuccessMessage(`CSV ${mode} completed: ${data.rows_processed} rows`);
+    setTimeout(() => setSuccessMessage(null), 4000);
+    await fetchSettings();
+  };
 
   useEffect(() => {
     fetchSettings();
@@ -206,7 +238,9 @@ export const PricingManager: React.FC = () => {
   };
 
   const calculateFinalPrice = (baseNZD: number, setting: PricingSetting) => {
-    return baseNZD * setting.market_markup * setting.zonos_dhl_markup * setting.exchange_rate;
+    const markedUp = baseNZD * setting.market_markup;
+    const zonosCost = baseNZD * (setting.zonos_dhl_markup - 1);
+    return (markedUp + zonosCost) * setting.exchange_rate;
   };
 
   if (loading) {
@@ -250,12 +284,23 @@ export const PricingManager: React.FC = () => {
             <div>
               <h2 className="text-xl font-bold text-gray-900">Currency Pricing Settings</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Pricing flow: Base NZD &rarr; Market Markup &rarr; Zonos/DHL Markup &rarr; Currency Conversion
+                Pricing flow: Base NZD &rarr; (Market Markup + Zonos/DHL on base) &rarr; Currency Conversion
               </p>
             </div>
-            <Button size="sm" variant="outline" onClick={fetchSettings}>
-              Refresh
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={handleCsvExport}>
+                Export CSV
+              </Button>
+              <button
+                onClick={() => setShowCsvUpload(true)}
+                className="px-3 py-1.5 text-xs font-semibold bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors"
+              >
+                Upload CSV
+              </button>
+              <Button size="sm" variant="outline" onClick={fetchSettings}>
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -295,7 +340,7 @@ export const PricingManager: React.FC = () => {
                   const isEditing = !!editing[setting.currency_code];
                   const editValues = editing[setting.currency_code];
                   const isSaving = saving === setting.currency_code;
-                  const combinedFactor = setting.market_markup * setting.zonos_dhl_markup * setting.exchange_rate;
+                  const combinedFactor = (setting.market_markup + setting.zonos_dhl_markup - 1) * setting.exchange_rate;
 
                   return (
                     <tr
@@ -482,6 +527,16 @@ export const PricingManager: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {showCsvUpload && (
+        <CsvUploadModal
+          title="Upload Currency Pricing CSV"
+          tableName="pricing_settings"
+          expectedHeaders="currency_code,currency_name,currency_symbol,market_markup,zonos_dhl_markup,exchange_rate,is_active,display_order"
+          onUpload={handleCsvUpload}
+          onClose={() => setShowCsvUpload(false)}
+        />
+      )}
     </div>
   );
 };
