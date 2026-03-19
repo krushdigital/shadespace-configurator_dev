@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
+import { getAdminAuthHeaders } from '../../utils/adminAuth';
 
 interface PricingSetting {
   id: string;
@@ -56,9 +57,10 @@ export const PricingManager: React.FC = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
+      const authHeaders = await getAdminAuthHeaders();
       const response = await fetch(`${supabaseUrl}/functions/v1/pricing-settings?all=true`, {
         headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
+          ...authHeaders,
           'Content-Type': 'application/json',
         },
       });
@@ -85,12 +87,12 @@ export const PricingManager: React.FC = () => {
 
   const fetchHistory = async () => {
     try {
+      const authHeaders = await getAdminAuthHeaders();
       const response = await fetch(
         `${supabaseUrl}/rest/v1/pricing_history?order=created_at.desc&limit=50`,
         {
           headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
-            'apikey': supabaseKey,
+            ...authHeaders,
             'Content-Type': 'application/json',
           },
         }

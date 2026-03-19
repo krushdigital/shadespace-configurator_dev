@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/Card';
+import { getAdminAuthHeaders } from '../../utils/adminAuth';
 
 interface EventsChartProps {
   dateRange: { start: string; end: string };
@@ -23,24 +24,22 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange }) => {
     try {
       setLoading(true);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (!supabaseUrl || !supabaseKey) {
-        console.error('Supabase credentials not found');
+      if (!supabaseUrl) {
+        console.error('Supabase URL not found');
         return;
       }
 
       const eventTypes = ['pdf_download', 'email_summary', 'add_to_cart', 'quote_save'];
       const data: Record<string, TimelineData[]> = {};
+      const authHeaders = await getAdminAuthHeaders();
 
-      // Fetch timeline for each event type
       for (const eventType of eventTypes) {
         const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_event_timeline`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
+            ...authHeaders,
             'Content-Type': 'application/json',
-            'apikey': supabaseKey,
           },
           body: JSON.stringify({
             p_event_type: eventType,
