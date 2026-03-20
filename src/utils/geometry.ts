@@ -220,11 +220,6 @@ export function validateMeasurements(measurements: {[key: string]: number}, corn
           typoSuggestions[key] = (valueInInches / 10) * INCHES_TO_MM;
           hasTypoSuggestion = true;
         }
-        // Small values (51-78") that might need multiplication by 10
-        else if (valueInInches >= 51 && valueInInches <= 78 && valueInInches * 10 >= TYPICAL_MIN_INCHES && valueInInches * 10 <= TYPICAL_MAX_INCHES) {
-          typoSuggestions[key] = (valueInInches * 10) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
       }
       
       // Only show range errors if no typo suggestion was made
@@ -362,11 +357,6 @@ export function validateHeights(heights: number[], unit: 'metric' | 'imperial'):
         // Medium values (316-499") -> divide by 10 (e.g., 360" -> 36")
         else if (heightInInches >= 316 && heightInInches <= 499 && heightInInches / 10 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches / 10 <= TYPICAL_HEIGHT_MAX_INCHES) {
           typoSuggestions[heightKey] = (heightInInches / 10) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
-        // Small values (31-78") that might need multiplication by 10
-        else if (heightInInches >= 31 && heightInInches <= 78 && heightInInches * 10 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches * 10 <= TYPICAL_HEIGHT_MAX_INCHES) {
-          typoSuggestions[heightKey] = (heightInInches * 10) * INCHES_TO_MM;
           hasTypoSuggestion = true;
         }
       }
