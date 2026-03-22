@@ -314,7 +314,7 @@ Deno.serve(async (req: Request) => {
     const SMTP_PASS = Deno.env.get('SMTP_PASS');
     const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'sails@shadespace.com';
 
-    console.log({SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL})
+    // console.log({SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL})
 
     if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
       console.error('SMTP credentials not configured');
