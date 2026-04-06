@@ -46,6 +46,14 @@ interface UnifiedSaveModalProps {
     quoteUrl?: string
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
+  onSendSaveProgressEmail?: (
+    firstName: string,
+    lastName: string,
+    email: string,
+    quoteName: string,
+    customerReference: string | null,
+    quoteUrl: string
+  ) => Promise<boolean>;
 }
 
 export function UnifiedSaveModal({
@@ -60,6 +68,7 @@ export function UnifiedSaveModal({
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
   onSaveComplete,
+  onSendSaveProgressEmail,
 }: UnifiedSaveModalProps) {
   const [selectedAction, setSelectedAction] = useState<ActionType>(null);
   const [modalStep, setModalStep] = useState<ModalStep>('select');
@@ -79,6 +88,7 @@ export function UnifiedSaveModal({
     accessToken: string;
   } | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [saveEmailSent, setSaveEmailSent] = useState(false);
   const [copied, setCopied] = useState(false);
   const { showToast } = useToast();
   const [defaultQuoteName, setDefaultQuoteName] = useState('');
@@ -171,33 +181,24 @@ export function UnifiedSaveModal({
         accessToken: result.accessToken,
       });
 
-      if (email) {
+      if (email && onSendSaveProgressEmail) {
         try {
-          const emailResponse = await fetch(
-            '/apps/shade_space/api/v1/public/quote-save-email',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                email: email,
-                quoteReference: result.reference,
-                quoteUrl: quoteUrl,
-                quoteName: result.quoteName,
-                quoteId: result.id,
-                pricingLockedUntil: result.pricingLockedUntil,
-                firstName: firstName.trim(),
-                lastName: lastName.trim()
-              }),
-            }
+          const finalName = quoteName.trim() ? sanitizeQuoteName(quoteName) : result.quoteName;
+          const emailSuccess = await onSendSaveProgressEmail(
+            firstName.trim(),
+            lastName.trim(),
+            email.trim(),
+            finalName,
+            result.customerReference || null,
+            quoteUrl
           );
-          const emailData = await emailResponse.json();
-          if (!emailData.success) {
-            console.warn('Quote confirmation email failed:', emailData.error);
+          setSaveEmailSent(emailSuccess);
+          if (!emailSuccess) {
+            console.warn('Save progress confirmation email failed');
           }
         } catch (emailError) {
-          console.error('Error sending quote confirmation email:', emailError);
+          console.error('Error sending save progress email:', emailError);
+          setSaveEmailSent(false);
         }
       }
 
@@ -238,7 +239,6 @@ export function UnifiedSaveModal({
 
       setModalStep('success');
       onSaveComplete?.();
-      showToast('Quote saved! Check your email for the link.', 'success');
     } catch (error: any) {
       console.error('Failed to save quote:', error);
       analytics.quoteSaveFailed({
@@ -260,47 +260,44 @@ export function UnifiedSaveModal({
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : defaultQuoteName;
       const sanitizedReference = customerReference.trim() ? sanitizeCustomerReference(customerReference) : null;
 
-      let quoteUrl: string | undefined;
-      let savedRef = sanitizedReference || 'no-ref';
+      const result = await saveQuote(
+        config,
+        calculations,
+        email.trim(),
+        finalQuoteName,
+        sanitizedReference || undefined,
+        currentStep,
+        totalSteps,
+        pricingSnapshot,
+        firstName.trim(),
+        lastName.trim()
+      );
 
-      try {
-        const result = await saveQuote(
-          config,
-          calculations,
-          email.trim(),
-          finalQuoteName,
-          sanitizedReference || undefined,
-          currentStep,
-          totalSteps,
-          pricingSnapshot,
-          firstName.trim(),
-          lastName.trim()
-        );
+      const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
+      const savedRef = result.reference;
 
-        quoteUrl = generateQuoteUrl(result.id, result.accessToken);
-        savedRef = result.reference;
+      addQuoteToken(
+        result.id,
+        result.accessToken,
+        result.quoteName,
+        result.reference,
+        result.expiresAt,
+        email.trim(),
+        result.pricingLockedUntil
+      );
 
-        addQuoteToken(
-          result.id,
-          result.accessToken,
-          result.quoteName,
-          result.reference,
-          result.expiresAt,
-          email.trim(),
-          result.pricingLockedUntil
-        );
+      setSavedQuote({
+        id: result.id,
+        reference: result.reference,
+        quoteName: result.quoteName,
+        customerReference: result.customerReference || null,
+        url: quoteUrl,
+        pricingLockedUntil: result.pricingLockedUntil,
+        accessToken: result.accessToken,
+      });
 
-        setSavedQuote({
-          id: result.id,
-          reference: result.reference,
-          quoteName: result.quoteName,
-          customerReference: result.customerReference || null,
-          url: quoteUrl,
-          pricingLockedUntil: result.pricingLockedUntil,
-          accessToken: result.accessToken,
-        });
-      } catch (saveError) {
-        console.warn('Failed to save quote before email, proceeding without quote URL:', saveError);
+      if (!quoteUrl) {
+        throw new Error('Failed to generate quote URL');
       }
 
       if (onGeneratePDFWithDetails && onEmailPDFQuote) {
@@ -345,8 +342,8 @@ export function UnifiedSaveModal({
               area_sqm: calculations.area,
               perimeter_m: calculations.perimeter,
               modal_duration_seconds: (Date.now() - modalOpenTime) / 1000,
-              has_shopify_customer: false,
-              shopify_customer_id: null,
+              has_shopify_customer: !!result.shopifyCustomerId,
+              shopify_customer_id: result.shopifyCustomerId || null,
             });
           } else {
             throw new Error('Failed to send email');
@@ -410,6 +407,7 @@ export function UnifiedSaveModal({
     setCustomerReference('');
     setSavedQuote(null);
     setEmailSent(false);
+    setSaveEmailSent(false);
     setCopied(false);
     onClose();
   };
@@ -703,16 +701,29 @@ export function UnifiedSaveModal({
                   </div>
                 </div>
 
-                <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-[#307C31] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p className="text-sm text-[#01312D]">
-                      We've sent an email to <strong>{email}</strong> with your configuration details and access link.
-                    </p>
+                {saveEmailSent ? (
+                  <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-[#307C31] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-[#01312D]">
+                        We've sent an email to <strong>{email}</strong> with your configuration details and access link.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <div className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-slate-700">
+                        Your configuration has been saved. Copy the link above to return to it anytime.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-[#01312D] rounded-lg p-4">
                   <h4 className="text-sm font-bold text-[#BFF102] mb-2">Your ShadeSpace Account is Ready</h4>
@@ -776,19 +787,82 @@ export function UnifiedSaveModal({
                     Shade Sail Name
                   </div>
                   <div className="text-lg font-bold text-[#01312D]">
-                    {quoteName.trim() || defaultQuoteName}
+                    {savedQuote?.quoteName || quoteName.trim() || defaultQuoteName}
                   </div>
-                  {customerReference && (
+                  {(savedQuote?.customerReference || customerReference) && (
                     <div className="mt-2 pt-2 border-t border-[#BFF102]/40">
                       <div className="text-xs font-medium text-[#307C31]">
                         Customer Reference
                       </div>
                       <div className="text-sm font-semibold text-[#01312D] mt-1">
-                        {customerReference}
+                        {savedQuote?.customerReference || customerReference}
                       </div>
                     </div>
                   )}
                 </div>
+
+                {savedQuote && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <div className="text-xs font-medium text-slate-600 mb-1">
+                      System Reference
+                    </div>
+                    <div className="text-sm font-bold text-[#01312D] font-mono">
+                      {savedQuote.reference}
+                    </div>
+                  </div>
+                )}
+
+                {savedQuote && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <div className="text-xs font-medium text-slate-600 mb-1">
+                      Price Locked Until
+                    </div>
+                    <div className="text-sm font-semibold text-[#01312D]">
+                      {formatDate(savedQuote.pricingLockedUntil)}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Your link never expires. After this date, live pricing applies.
+                    </p>
+                  </div>
+                )}
+
+                {savedQuote && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <div className="text-xs font-medium text-slate-600 mb-2">
+                      Shareable Link
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={savedQuote.url}
+                        readOnly
+                        className="flex-1 text-xs bg-white border border-slate-300 rounded px-3 py-2 font-mono text-slate-700"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyLink}
+                        className="flex-shrink-0"
+                      >
+                        {copied ? (
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Copied
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Copy
+                          </span>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
                   <div className="flex items-start gap-2">
