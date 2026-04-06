@@ -50,7 +50,9 @@ export async function saveQuote(
   customerReference?: string,
   currentStep?: number,
   totalSteps?: number,
-  pricingSnapshot?: Record<string, unknown> | null
+  pricingSnapshot?: Record<string, unknown> | null,
+  firstName?: string,
+  lastName?: string
 ): Promise<SavedQuote> {
   const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
     method: 'POST',
@@ -67,6 +69,8 @@ export async function saveQuote(
       currentStep: currentStep ?? null,
       totalSteps: totalSteps ?? 7,
       pricingSnapshot: pricingSnapshot ?? null,
+      firstName: firstName || null,
+      lastName: lastName || null,
     }),
   });
 

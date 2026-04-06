@@ -140,7 +140,9 @@ export function UnifiedSaveModal({
         sanitizedReference,
         currentStep,
         totalSteps,
-        pricingSnapshot
+        pricingSnapshot,
+        firstName.trim(),
+        lastName.trim()
       );
 
       console.log('Save quote result:', result);
@@ -270,7 +272,9 @@ export function UnifiedSaveModal({
           sanitizedReference || undefined,
           currentStep,
           totalSteps,
-          pricingSnapshot
+          pricingSnapshot,
+          firstName.trim(),
+          lastName.trim()
         );
 
         quoteUrl = generateQuoteUrl(result.id, result.accessToken);
