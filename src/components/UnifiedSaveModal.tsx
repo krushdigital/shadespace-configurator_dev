@@ -46,14 +46,6 @@ interface UnifiedSaveModalProps {
     quoteUrl?: string
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
-  onSendSaveProgressEmail?: (
-    firstName: string,
-    lastName: string,
-    email: string,
-    quoteName: string,
-    customerReference: string | null,
-    quoteUrl: string
-  ) => Promise<boolean>;
 }
 
 export function UnifiedSaveModal({
@@ -68,7 +60,6 @@ export function UnifiedSaveModal({
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
   onSaveComplete,
-  onSendSaveProgressEmail,
 }: UnifiedSaveModalProps) {
   const [selectedAction, setSelectedAction] = useState<ActionType>(null);
   const [modalStep, setModalStep] = useState<ModalStep>('select');
@@ -181,20 +172,29 @@ export function UnifiedSaveModal({
         accessToken: result.accessToken,
       });
 
-      if (email && onSendSaveProgressEmail) {
+      if (email) {
         try {
-          const finalName = quoteName.trim() ? sanitizeQuoteName(quoteName) : result.quoteName;
-          const emailSuccess = await onSendSaveProgressEmail(
-            firstName.trim(),
-            lastName.trim(),
-            email.trim(),
-            finalName,
-            result.customerReference || null,
-            quoteUrl
+          const emailResponse = await fetch(
+            '/apps/shade_space/api/v1/public/quote-save-email',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: email.trim(),
+                quoteReference: result.reference,
+                quoteUrl,
+                quoteName: result.quoteName,
+                quoteId: result.id,
+                pricingLockedUntil: result.pricingLockedUntil,
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+              }),
+            }
           );
-          setSaveEmailSent(emailSuccess);
-          if (!emailSuccess) {
-            console.warn('Save progress confirmation email failed');
+          const emailData = await emailResponse.json();
+          setSaveEmailSent(!!emailData.success);
+          if (!emailData.success) {
+            console.warn('Save progress confirmation email failed:', emailData.error);
           }
         } catch (emailError) {
           console.error('Error sending save progress email:', emailError);
