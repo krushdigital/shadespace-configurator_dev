@@ -8,12 +8,14 @@ import { EventsChart } from '../components/admin/EventsChart';
 import { PricingManager } from '../components/admin/PricingManager';
 import { BasePricingManager } from '../components/admin/BasePricingManager';
 import { ChangePasswordModal } from '../components/admin/ChangePasswordModal';
+import { FunnelAnalysis } from '../components/admin/FunnelAnalysis';
+import { DataExport } from '../components/admin/DataExport';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'pricing' | 'base-pricing' | 'exports';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'pricing' | 'base-pricing' | 'exports';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -27,6 +29,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     { id: 'overview', label: 'Overview' },
     { id: 'quotes', label: 'Saved Quotes' },
     { id: 'events', label: 'User Events' },
+    { id: 'funnel', label: 'Funnel & Insights' },
     { id: 'pricing', label: 'Currency Pricing' },
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
@@ -34,7 +37,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -54,15 +56,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav className="flex gap-8">
+          <nav className="flex gap-8 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-lime-500 text-lime-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -75,7 +76,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* Date Range Filter */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Card className="mb-6 border border-gray-200 shadow-sm">
           <div className="flex flex-wrap items-center gap-4">
@@ -111,7 +111,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
         </Card>
 
-        {/* Content */}
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <AnalyticsSummary dateRange={dateRange} />
@@ -123,38 +122,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
         {activeTab === 'events' && <EventsTable dateRange={dateRange} />}
 
+        {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} />}
+
         {activeTab === 'pricing' && <PricingManager />}
 
         {activeTab === 'base-pricing' && <BasePricingManager />}
 
-        {activeTab === 'exports' && (
-          <Card>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Data Export</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded">
-                <div>
-                  <h3 className="font-medium text-gray-900">Export All Quotes</h3>
-                  <p className="text-sm text-gray-500">Download all saved quotes as CSV</p>
-                </div>
-                <Button size="sm">Download CSV</Button>
-              </div>
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded">
-                <div>
-                  <h3 className="font-medium text-gray-900">Export User Events</h3>
-                  <p className="text-sm text-gray-500">Download all tracked events as CSV</p>
-                </div>
-                <Button size="sm">Download CSV</Button>
-              </div>
-              <div className="flex items-center justify-between p-4 border border-gray-200 rounded">
-                <div>
-                  <h3 className="font-medium text-gray-900">Export Analytics Report</h3>
-                  <p className="text-sm text-gray-500">Generate comprehensive report (JSON)</p>
-                </div>
-                <Button size="sm">Download JSON</Button>
-              </div>
-            </div>
-          </Card>
-        )}
+        {activeTab === 'exports' && <DataExport dateRange={dateRange} />}
       </div>
 
       {showChangePassword && (

@@ -124,14 +124,27 @@ export const eventTrackers = {
     });
   },
 
-  addToCart: (quoteId: string | null, email: string | null, totalPrice: number, currency: string, success: boolean) => {
+  addToCart: (quoteId: string | null, email: string | null, totalPrice: number, currency: string, success: boolean, customerName?: string, fabricType?: string, corners?: number) => {
     trackEvent({
       eventType: 'add_to_cart',
-      eventData: { totalPrice, currency },
+      eventData: { totalPrice, currency, customerName, fabricType, corners },
       quoteId,
       customerEmail: email,
       success,
     });
   },
 
+  stepChange: (stepIndex: number, stepName: string, direction: 'forward' | 'back' | 'jump', selections?: Record<string, unknown>) => {
+    trackEvent({
+      eventType: 'step_change',
+      eventData: { stepIndex, stepName, direction, ...(selections || {}) },
+    });
+  },
+
+  optionSelected: (optionType: string, optionValue: string, stepIndex: number) => {
+    trackEvent({
+      eventType: 'option_selected',
+      eventData: { optionType, optionValue, stepIndex },
+    });
+  },
 };

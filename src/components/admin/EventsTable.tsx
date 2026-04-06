@@ -24,6 +24,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -33,11 +34,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
     try {
       setLoading(true);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-      if (!supabaseUrl) {
-        console.error('Supabase URL not found');
-        return;
-      }
+      if (!supabaseUrl) return;
 
       let query = `${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=200`;
 
@@ -61,55 +58,77 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
 
   const filteredEvents = events.filter((event) => {
     const searchLower = search.toLowerCase();
+    const customerName = event.event_data?.customerName?.toLowerCase() || '';
     return (
       event.event_type?.toLowerCase().includes(searchLower) ||
-      event.customer_email?.toLowerCase().includes(searchLower)
+      event.customer_email?.toLowerCase().includes(searchLower) ||
+      customerName.includes(searchLower)
     );
   });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
   };
 
   const getEventTypeBadge = (eventType: string) => {
     const eventStyles: Record<string, string> = {
-      pdf_download: 'bg-purple-100 text-purple-800',
+      pdf_download: 'bg-blue-100 text-blue-800',
       email_summary: 'bg-orange-100 text-orange-800',
       add_to_cart: 'bg-red-100 text-red-800',
       quote_save: 'bg-green-100 text-green-800',
+      step_change: 'bg-teal-100 text-teal-800',
+      option_selected: 'bg-cyan-100 text-cyan-800',
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${eventStyles[eventType] || 'bg-gray-100 text-gray-800'}`}>
-        {eventType.replace('_', ' ')}
+        {eventType.replace(/_/g, ' ')}
       </span>
     );
   };
 
-  const getSuccessBadge = (success: boolean) => {
-    return success ? (
-      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">✓ Success</span>
-    ) : (
-      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">✗ Failed</span>
-    );
+  const getEventDetail = (event: UserEvent) => {
+    const d = event.event_data;
+    if (!d) return null;
+    if (event.event_type === 'add_to_cart' || event.event_type === 'pdf_download' || event.event_type === 'email_summary') {
+      const price = d.totalPrice ? `${d.currency || ''}${Number(d.totalPrice).toFixed(2)}` : null;
+      return price;
+    }
+    if (event.event_type === 'step_change') {
+      return d.stepName ? `${d.direction || ''} -> ${d.stepName}` : null;
+    }
+    if (event.event_type === 'option_selected') {
+      return `${d.optionType}: ${d.optionValue}`;
+    }
+    return null;
+  };
+
+  const getCustomerDisplay = (event: UserEvent) => {
+    const name = event.event_data?.customerName;
+    if (name && event.customer_email) return <><div className="font-medium text-gray-900 text-xs">{name}</div><div className="text-xs text-gray-500">{event.customer_email}</div></>;
+    if (name) return <span className="text-xs text-gray-900">{name}</span>;
+    if (event.customer_email) return <span className="text-xs text-gray-600">{event.customer_email}</span>;
+    return <span className="text-xs text-gray-400">Anonymous</span>;
   };
 
   const exportToCSV = () => {
-    const headers = ['Event Type', 'Customer Email', 'Device Type', 'Success', 'Created At'];
+    const csvHeaders = [
+      'Event Type', 'Customer Email', 'Customer Name', 'Device Type', 'Success',
+      'Detail', 'Event Data', 'Created At',
+    ];
     const rows = filteredEvents.map(e => [
       e.event_type,
       e.customer_email || '',
+      e.event_data?.customerName || '',
       e.device_type,
       e.success ? 'Success' : 'Failed',
+      getEventDetail(e) || '',
+      JSON.stringify(e.event_data || {}),
       e.created_at,
     ]);
 
-    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const csv = [csvHeaders, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -135,27 +154,18 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
     <Card className="p-6">
       <div className="mb-6 flex items-center justify-between gap-4">
         <div className="flex-1 flex gap-4">
-          <Input
-            placeholder="Search events..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-md"
-          />
-          <select
-            value={eventTypeFilter}
-            onChange={(e) => setEventTypeFilter(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2"
-          >
+          <Input placeholder="Search events..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+          <select value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)} className="border border-gray-300 rounded px-3 py-2">
             <option value="all">All Event Types</option>
             <option value="pdf_download">PDF Downloads</option>
             <option value="email_summary">Email Summaries</option>
             <option value="add_to_cart">Add to Cart</option>
             <option value="quote_save">Quote Saves</option>
+            <option value="step_change">Step Changes</option>
+            <option value="option_selected">Option Selected</option>
           </select>
         </div>
-        <Button onClick={exportToCSV} size="sm" variant="outline">
-          Export CSV
-        </Button>
+        <Button onClick={exportToCSV} size="sm" variant="outline">Export CSV</Button>
       </div>
 
       <div className="overflow-x-auto">
@@ -163,39 +173,63 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
           <thead>
             <tr className="border-b border-gray-200 text-left">
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Event Type</th>
-              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer Email</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer</th>
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Device</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Detail</th>
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Status</th>
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Created</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700 w-10"></th>
             </tr>
           </thead>
           <tbody>
             {filteredEvents.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
-                  No events found
-                </td>
-              </tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">No events found</td></tr>
             ) : (
               filteredEvents.map((event) => (
-                <tr key={event.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-4">{getEventTypeBadge(event.event_type)}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600">
-                    {event.customer_email || <span className="text-gray-400">Anonymous</span>}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-900 capitalize">{event.device_type}</td>
-                  <td className="px-4 py-4">{getSuccessBadge(event.success)}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600">{formatDate(event.created_at)}</td>
-                </tr>
+                <React.Fragment key={event.id}>
+                  <tr className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedRow(expandedRow === event.id ? null : event.id)}>
+                    <td className="px-4 py-3">{getEventTypeBadge(event.event_type)}</td>
+                    <td className="px-4 py-3">{getCustomerDisplay(event)}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900 capitalize">{event.device_type}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{getEventDetail(event) || '-'}</td>
+                    <td className="px-4 py-3">
+                      {event.success ? (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Success</span>
+                      ) : (
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Failed</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{formatDate(event.created_at)}</td>
+                    <td className="px-4 py-3 text-gray-400">
+                      <svg className={`w-4 h-4 transition-transform ${expandedRow === event.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </td>
+                  </tr>
+                  {expandedRow === event.id && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={7} className="px-4 py-4">
+                        <div className="text-xs font-mono bg-white border border-gray-200 rounded p-3 max-h-48 overflow-auto">
+                          <pre className="whitespace-pre-wrap break-all text-gray-700">
+                            {JSON.stringify(event.event_data, null, 2)}
+                          </pre>
+                        </div>
+                        {event.error_message && (
+                          <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                            Error: {event.error_message}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-4 text-sm text-gray-600">
-        Showing {filteredEvents.length} of {events.length} events
-      </div>
+      <div className="mt-4 text-sm text-gray-600">Showing {filteredEvents.length} of {events.length} events</div>
     </Card>
   );
 };

@@ -3,6 +3,8 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { getAdminAuthHeaders } from '../../utils/adminAuth';
+import { generatePDF, CustomerDetails } from '../../utils/pdfGenerator';
+import { ConfiguratorState, ShadeCalculations } from '../../types';
 
 interface SavedQuotesTableProps {
   dateRange: { start: string; end: string };
@@ -14,18 +16,15 @@ interface Quote {
   quote_name: string;
   customer_email: string | null;
   customer_reference: string | null;
+  customer_first_name: string | null;
+  customer_last_name: string | null;
   status: string;
   created_at: string;
   access_token: string;
-  calculations_data: {
-    totalPrice: number;
-  };
-  config_data: {
-    currency: string;
-    corners: number;
-    fabricType: string;
-    fabricColor: string;
-  };
+  current_step: number | null;
+  total_steps: number | null;
+  calculations_data: ShadeCalculations;
+  config_data: ConfiguratorState;
 }
 
 export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange }) => {
@@ -37,6 +36,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
   const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuotes();
@@ -46,13 +46,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
     try {
       setLoading(true);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) return;
 
-      if (!supabaseUrl) {
-        console.error('Supabase URL not found');
-        return;
-      }
-
-      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,status,created_at,access_token,calculations_data,config_data&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
+      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,status,created_at,access_token,calculations_data,config_data,current_step,total_steps&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
 
       if (statusFilter !== 'all') {
         query += `&status=eq.${statusFilter}`;
@@ -74,33 +70,24 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
 
   const filteredQuotes = quotes.filter((quote) => {
     const searchLower = search.toLowerCase();
+    const customerName = [quote.customer_first_name, quote.customer_last_name].filter(Boolean).join(' ').toLowerCase();
     return (
       quote.quote_name?.toLowerCase().includes(searchLower) ||
       quote.quote_reference?.toLowerCase().includes(searchLower) ||
       quote.customer_email?.toLowerCase().includes(searchLower) ||
-      quote.customer_reference?.toLowerCase().includes(searchLower)
+      quote.customer_reference?.toLowerCase().includes(searchLower) ||
+      customerName.includes(searchLower)
     );
   });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
     });
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    const symbols: Record<string, string> = {
-      NZD: 'NZ$',
-      USD: 'US$',
-      AUD: 'AU$',
-      GBP: '£',
-      EUR: '€',
-      CAD: 'CA$',
-    };
+    const symbols: Record<string, string> = { NZD: 'NZ$', USD: 'US$', AUD: 'AU$', GBP: '\u00a3', EUR: '\u20ac', CAD: 'CA$' };
     return `${symbols[currency] || currency}${amount.toFixed(2)}`;
   };
 
@@ -118,28 +105,45 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
     );
   };
 
+  const getCustomerDisplay = (quote: Quote) => {
+    const name = [quote.customer_first_name, quote.customer_last_name].filter(Boolean).join(' ');
+    if (name && quote.customer_email) return <><div className="font-medium text-gray-900">{name}</div><div className="text-xs text-gray-500">{quote.customer_email}</div></>;
+    if (name) return <span className="text-gray-900">{name}</span>;
+    if (quote.customer_email) return <span className="text-gray-600">{quote.customer_email}</span>;
+    return <span className="text-gray-400">No contact info</span>;
+  };
+
+  const handleDownloadPDF = async (quote: Quote) => {
+    try {
+      setGeneratingPdf(quote.id);
+      const customerDetails: CustomerDetails = {
+        firstName: quote.customer_first_name || undefined,
+        lastName: quote.customer_last_name || undefined,
+        email: quote.customer_email || undefined,
+        quoteName: quote.quote_name,
+        customerReference: quote.customer_reference,
+      };
+      await generatePDF(quote.config_data, quote.calculations_data, undefined, false, customerDetails);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      alert('Failed to generate PDF. The quote may have incomplete configuration data.');
+    } finally {
+      setGeneratingPdf(null);
+    }
+  };
+
   const handleDeleteQuote = async () => {
     if (!quoteToDelete) return;
-
     try {
       setIsDeleting(true);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-      if (!supabaseUrl) {
-        console.error('Supabase URL not found');
-        return;
-      }
+      if (!supabaseUrl) return;
 
       const headers = await getAdminAuthHeaders();
       const response = await fetch(`${supabaseUrl}/rest/v1/rpc/delete_saved_quote`, {
         method: 'POST',
-        headers: {
-          ...headers,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          p_quote_id: quoteToDelete.id,
-        }),
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_quote_id: quoteToDelete.id }),
       });
 
       if (response.ok) {
@@ -149,7 +153,6 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
         setSelectedQuote(null);
         setTimeout(() => setDeleteSuccess(false), 3000);
       } else {
-        console.error('Failed to delete quote');
         alert('Failed to delete quote. Please try again.');
       }
     } catch (error) {
@@ -166,24 +169,34 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
   };
 
   const copyQuoteUrl = (quote: Quote) => {
-    const url = getQuoteUrl(quote);
-    navigator.clipboard.writeText(url);
+    navigator.clipboard.writeText(getQuoteUrl(quote));
     alert('Quote link copied to clipboard!');
   };
 
   const exportToCSV = () => {
-    const headers = ['Quote Reference', 'Quote Name', 'Customer Email', 'Status', 'Total Price', 'Currency', 'Created At'];
+    const csvHeaders = [
+      'Quote Reference', 'Quote Name', 'Customer Name', 'Customer Email', 'Customer Reference',
+      'Status', 'Total Price', 'Currency', 'Corners', 'Fabric Type', 'Fabric Color',
+      'Edge Type', 'Step Progress', 'Created At',
+    ];
     const rows = filteredQuotes.map(q => [
       q.quote_reference,
       q.quote_name,
+      [q.customer_first_name, q.customer_last_name].filter(Boolean).join(' '),
       q.customer_email || '',
+      q.customer_reference || '',
       q.status,
-      q.calculations_data.totalPrice,
-      q.config_data.currency,
+      q.calculations_data?.totalPrice ?? '',
+      q.config_data?.currency ?? '',
+      q.config_data?.corners ?? '',
+      q.config_data?.fabricType ?? '',
+      q.config_data?.fabricColor ?? '',
+      q.config_data?.edgeType ?? '',
+      q.current_step != null && q.total_steps ? `${q.current_step + 1}/${q.total_steps}` : '',
       q.created_at,
     ]);
 
-    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const csv = [csvHeaders, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -210,17 +223,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
       <Card className="p-6">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="flex-1 flex gap-4">
-            <Input
-              placeholder="Search quotes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="max-w-md"
-            />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2"
-            >
+            <Input placeholder="Search quotes..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-gray-300 rounded px-3 py-2">
               <option value="all">All Statuses</option>
               <option value="in_progress">In Progress</option>
               <option value="quote_ready">Quote Ready</option>
@@ -228,75 +232,47 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
               <option value="expired">Expired</option>
             </select>
           </div>
-          <Button onClick={exportToCSV} size="sm" variant="outline">
-            Export CSV
-          </Button>
+          <Button onClick={exportToCSV} size="sm" variant="outline">Export CSV</Button>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 text-left">
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Reference</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Reference</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Name</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Status</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Total Price</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Created</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Link</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredQuotes.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                    No quotes found
-                  </td>
-                </tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">No quotes found</td></tr>
               ) : (
                 filteredQuotes.map((quote) => (
                   <tr key={quote.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-4">
-                      <button
-                        onClick={() => setSelectedQuote(quote)}
-                        className="text-lime-600 hover:text-lime-700 font-medium"
-                      >
+                      <button onClick={() => setSelectedQuote(quote)} className="text-lime-600 hover:text-lime-700 font-medium">
                         {quote.quote_reference}
                       </button>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-900">{quote.quote_name}</td>
-                    <td className="px-4 py-4 text-sm text-gray-600">
-                      {quote.customer_email || <span className="text-gray-400">No email</span>}
-                    </td>
+                    <td className="px-4 py-4 text-sm">{getCustomerDisplay(quote)}</td>
                     <td className="px-4 py-4">{getStatusBadge(quote.status)}</td>
                     <td className="px-4 py-4 text-sm font-medium text-gray-900">
-                      {formatCurrency(quote.calculations_data.totalPrice, quote.config_data.currency)}
+                      {formatCurrency(quote.calculations_data?.totalPrice ?? 0, quote.config_data?.currency ?? 'NZD')}
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-600">{formatDate(quote.created_at)}</td>
                     <td className="px-4 py-4">
-                      <Button
-                        onClick={() => copyQuoteUrl(quote)}
-                        size="sm"
-                        variant="outline"
-                        className="text-xs"
-                      >
-                        Copy Link
-                      </Button>
-                    </td>
-                    <td className="px-4 py-4">
                       <div className="flex gap-2">
-                        <Button onClick={() => setSelectedQuote(quote)} size="sm" variant="outline">
-                          View
+                        <Button onClick={() => handleDownloadPDF(quote)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === quote.id}>
+                          {generatingPdf === quote.id ? 'Generating...' : 'PDF'}
                         </Button>
-                        <Button
-                          onClick={() => setQuoteToDelete(quote)}
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:bg-red-50 border-red-200"
-                        >
-                          Delete
-                        </Button>
+                        <Button onClick={() => copyQuoteUrl(quote)} size="sm" variant="outline" className="text-xs">Link</Button>
+                        <Button onClick={() => setSelectedQuote(quote)} size="sm" variant="outline" className="text-xs">View</Button>
                       </div>
                     </td>
                   </tr>
@@ -306,12 +282,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
           </table>
         </div>
 
-        <div className="mt-4 text-sm text-gray-600">
-          Showing {filteredQuotes.length} of {quotes.length} quotes
-        </div>
+        <div className="mt-4 text-sm text-gray-600">Showing {filteredQuotes.length} of {quotes.length} quotes</div>
       </Card>
 
-      {/* Quote Detail Modal */}
       {selectedQuote && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8">
@@ -320,17 +293,18 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                 <h2 className="text-2xl font-bold text-gray-900">{selectedQuote.quote_name}</h2>
                 <p className="text-sm text-gray-600 mt-1">{selectedQuote.quote_reference}</p>
               </div>
-              <button
-                onClick={() => setSelectedQuote(null)}
-                className="text-gray-400 hover:text-gray-600 text-2xl"
-              >
-                ×
-              </button>
+              <button onClick={() => setSelectedQuote(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
-                <label className="text-sm font-medium text-gray-600">Customer Email</label>
+                <label className="text-sm font-medium text-gray-600">Customer</label>
+                <p className="text-gray-900">
+                  {[selectedQuote.customer_first_name, selectedQuote.customer_last_name].filter(Boolean).join(' ') || 'Not provided'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Email</label>
                 <p className="text-gray-900">{selectedQuote.customer_email || 'Not provided'}</p>
               </div>
               <div>
@@ -345,6 +319,14 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                 <label className="text-sm font-medium text-gray-600">Created</label>
                 <p className="text-gray-900">{formatDate(selectedQuote.created_at)}</p>
               </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Step Progress</label>
+                <p className="text-gray-900">
+                  {selectedQuote.current_step != null && selectedQuote.total_steps
+                    ? `Step ${selectedQuote.current_step + 1} of ${selectedQuote.total_steps}`
+                    : 'Not tracked'}
+                </p>
+              </div>
             </div>
 
             <div className="border-t border-gray-200 pt-6">
@@ -352,24 +334,50 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">Corners</label>
-                  <p className="text-gray-900">{selectedQuote.config_data.corners}</p>
+                  <p className="text-gray-900">{selectedQuote.config_data?.corners}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Fabric Type</label>
-                  <p className="text-gray-900">{selectedQuote.config_data.fabricType}</p>
+                  <p className="text-gray-900">{selectedQuote.config_data?.fabricType}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Fabric Color</label>
-                  <p className="text-gray-900">{selectedQuote.config_data.fabricColor}</p>
+                  <p className="text-gray-900">{selectedQuote.config_data?.fabricColor}</p>
                 </div>
                 <div>
+                  <label className="text-sm font-medium text-gray-600">Edge Type</label>
+                  <p className="text-gray-900">{selectedQuote.config_data?.edgeType}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Measurement Option</label>
+                  <p className="text-gray-900">{selectedQuote.config_data?.measurementOption}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Units</label>
+                  <p className="text-gray-900">{selectedQuote.config_data?.unit}</p>
+                </div>
+                <div className="col-span-2">
                   <label className="text-sm font-medium text-gray-600">Total Price</label>
                   <p className="text-gray-900 text-xl font-bold">
-                    {formatCurrency(selectedQuote.calculations_data.totalPrice, selectedQuote.config_data.currency)}
+                    {formatCurrency(selectedQuote.calculations_data?.totalPrice ?? 0, selectedQuote.config_data?.currency ?? 'NZD')}
                   </p>
                 </div>
               </div>
             </div>
+
+            {selectedQuote.config_data?.measurements && Object.keys(selectedQuote.config_data.measurements).length > 0 && (
+              <div className="border-t border-gray-200 pt-6 mt-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Measurements</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {Object.entries(selectedQuote.config_data.measurements).map(([key, value]) => (
+                    <div key={key} className="bg-gray-50 rounded p-3">
+                      <label className="text-xs font-medium text-gray-500">{key}</label>
+                      <p className="text-sm font-medium text-gray-900">{value}mm</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="border-t border-gray-200 pt-6 mt-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -378,32 +386,17 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                   <code className="flex-1 text-xs bg-white p-2 rounded border border-blue-200 text-blue-900 overflow-x-auto">
                     {getQuoteUrl(selectedQuote)}
                   </code>
-                  <Button
-                    onClick={() => copyQuoteUrl(selectedQuote)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    Copy Link
-                  </Button>
-                  <Button
-                    onClick={() => window.open(getQuoteUrl(selectedQuote), '_blank')}
-                    size="sm"
-                  >
-                    Open Quote
-                  </Button>
+                  <Button onClick={() => copyQuoteUrl(selectedQuote)} size="sm" variant="outline">Copy</Button>
+                  <Button onClick={() => window.open(getQuoteUrl(selectedQuote), '_blank')} size="sm">Open</Button>
                 </div>
-                <p className="text-xs text-blue-700 mt-2">
-                  Share this link with the customer to allow them to continue their quote configuration.
-                </p>
               </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <Button
-                onClick={() => setQuoteToDelete(selectedQuote)}
-                variant="outline"
-                className="text-red-600 hover:bg-red-50 border-red-200"
-              >
+              <Button onClick={() => handleDownloadPDF(selectedQuote)} variant="outline" disabled={generatingPdf === selectedQuote.id}>
+                {generatingPdf === selectedQuote.id ? 'Generating PDF...' : 'Download PDF'}
+              </Button>
+              <Button onClick={() => setQuoteToDelete(selectedQuote)} variant="outline" className="text-red-600 hover:bg-red-50 border-red-200">
                 Delete Quote
               </Button>
               <Button onClick={() => setSelectedQuote(null)}>Close</Button>
@@ -412,7 +405,6 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {quoteToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <Card className="max-w-md w-full p-6">
@@ -423,22 +415,12 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
             </p>
             <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-6">
               <p className="text-sm text-yellow-800">
-                <strong>Warning:</strong> This action is permanent. The quote and all related data will be removed from the database and analytics.
+                <strong>Warning:</strong> This action is permanent.
               </p>
             </div>
             <div className="flex justify-end gap-3">
-              <Button
-                onClick={() => setQuoteToDelete(null)}
-                variant="outline"
-                disabled={isDeleting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleDeleteQuote}
-                disabled={isDeleting}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
+              <Button onClick={() => setQuoteToDelete(null)} variant="outline" disabled={isDeleting}>Cancel</Button>
+              <Button onClick={handleDeleteQuote} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
                 {isDeleting ? 'Deleting...' : 'Delete Quote'}
               </Button>
             </div>
@@ -446,7 +428,6 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
         </div>
       )}
 
-      {/* Success Notification */}
       {deleteSuccess && (
         <div className="fixed top-4 right-4 z-50">
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg">

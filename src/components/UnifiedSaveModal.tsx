@@ -46,6 +46,7 @@ interface UnifiedSaveModalProps {
     quoteUrl?: string
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
+  onCustomerDetailsCaptured?: (details: { firstName: string; lastName: string; email: string; quoteReference?: string }) => void;
 }
 
 export function UnifiedSaveModal({
@@ -60,6 +61,7 @@ export function UnifiedSaveModal({
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
   onSaveComplete,
+  onCustomerDetailsCaptured,
 }: UnifiedSaveModalProps) {
   const [selectedAction, setSelectedAction] = useState<ActionType>(null);
   const [modalStep, setModalStep] = useState<ModalStep>('select');
@@ -243,6 +245,13 @@ export function UnifiedSaveModal({
           showToast(error, 'error')
         }
 
+      onCustomerDetailsCaptured?.({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        quoteReference: result.reference,
+      });
+
       setModalStep('success');
       onSaveComplete?.();
     } catch (error: any) {
@@ -328,6 +337,13 @@ export function UnifiedSaveModal({
           );
 
           if (success) {
+            onCustomerDetailsCaptured?.({
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
+              email: email.trim(),
+              quoteReference: savedRef,
+            });
+
             setEmailSent(true);
             setModalStep('success');
             showToast('PDF quote sent to your email!', 'success');

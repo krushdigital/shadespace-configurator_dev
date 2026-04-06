@@ -74,6 +74,9 @@ export function ShadeConfigurator() {
     installationNotIncluded: false,
     structuralResponsibility: false
   });
+  const [capturedCustomerDetails, setCapturedCustomerDetails] = useState<{
+    firstName: string; lastName: string; email: string; quoteReference?: string;
+  } | null>(null);
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
   const [loadingStep, setLoadingStep] = useState({
     text: 'Preparing your order...',
@@ -876,7 +879,7 @@ export function ShadeConfigurator() {
       }
     }
 
-    const email: string | null = quoteData?.customer_email ?? null;
+    const email: string | null = quoteData?.customer_email ?? capturedCustomerDetails?.email ?? null;
 
     try {
       setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
@@ -889,9 +892,9 @@ export function ShadeConfigurator() {
         setLoadingStep({ text: 'Generating PDF documentation...', progress: 40 });
 
         // Generate PDF with customer details
-        const customerFirstName = quoteData?.customer_first_name || '';
-        const customerLastName = quoteData?.customer_last_name || '';
-        const customerEmail = quoteData?.customer_email || '';
+        const customerFirstName = quoteData?.customer_first_name || capturedCustomerDetails?.firstName || '';
+        const customerLastName = quoteData?.customer_last_name || capturedCustomerDetails?.lastName || '';
+        const customerEmail = quoteData?.customer_email || capturedCustomerDetails?.email || '';
 
         console.log('Calling handleGeneratePDFWithDetails...');
         const pdfResult = await handleGeneratePDFWithDetails(
@@ -1469,12 +1472,21 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
           }
 
           // Track add to cart event for admin dashboard
+          const customerName = capturedCustomerDetails
+            ? `${capturedCustomerDetails.firstName} ${capturedCustomerDetails.lastName}`.trim()
+            : quoteData?.customer_first_name
+              ? `${quoteData.customer_first_name} ${quoteData.customer_last_name || ''}`.trim()
+              : undefined;
+
           eventTrackers.addToCart(
             quoteReference || (quoteParams?.id || null),
             email || null,
             calculations.totalPrice,
             config.currency,
-            true
+            true,
+            customerName,
+            config.fabricType || undefined,
+            config.corners
           );
 
           // Track quote conversion if applicable
@@ -1789,6 +1801,14 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
 
     // If no validation errors, proceed to next step
     const nextStepIndex = getActualNextStep(openStep);
+
+    const stepNames = ['Fabric & Color', 'Style', 'Fixing Points', 'Measurement Options', 'Dimensions', 'Heights & Anchor Points', 'Review & Purchase'];
+    eventTrackers.stepChange(nextStepIndex, stepNames[nextStepIndex] || `Step ${nextStepIndex}`, 'forward', {
+      fabricType: config.fabricType,
+      fabricColor: config.fabricColor,
+      corners: config.corners,
+      edgeType: config.edgeType,
+    });
 
     // Auto-center shape when moving to next step
     const centeredPoints = centerShape(config.points);
@@ -2348,6 +2368,7 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
         shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
         pricingSnapshot={pricingSettingsMap}
         onSaveComplete={() => setLoadedPricingSnapshot(null)}
+        onCustomerDetailsCaptured={setCapturedCustomerDetails}
         onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
         onEmailPDFQuote={handleEmailPDFQuote}
       />

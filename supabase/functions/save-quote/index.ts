@@ -142,6 +142,8 @@ Deno.serve(async (req: Request) => {
           total_steps: totalSteps ?? 7,
           status: quoteStatus,
           pricing_snapshot: pricingSnapshot ?? null,
+          customer_first_name: firstName || null,
+          customer_last_name: lastName || null,
         })
         .select()
         .single();
