@@ -73,7 +73,7 @@ export function UnifiedSaveModal({
     quoteName: string;
     customerReference: string | null;
     url: string;
-    expiresAt: string;
+    pricingLockedUntil: string;
     accessToken: string;
   } | null>(null);
   const [emailSent, setEmailSent] = useState(false);
@@ -153,7 +153,8 @@ export function UnifiedSaveModal({
         result.quoteName,
         result.reference,
         result.expiresAt,
-        email
+        email,
+        result.pricingLockedUntil
       );
 
       setSavedQuote({
@@ -162,7 +163,7 @@ export function UnifiedSaveModal({
         quoteName: result.quoteName,
         customerReference: result.customerReference || null,
         url: quoteUrl,
-        expiresAt: result.expiresAt,
+        pricingLockedUntil: result.pricingLockedUntil,
         accessToken: result.accessToken,
       });
 
@@ -181,7 +182,7 @@ export function UnifiedSaveModal({
                 quoteUrl: quoteUrl,
                 quoteName: result.quoteName,
                 quoteId: result.id,
-                expiresAt: result.expiresAt,
+                pricingLockedUntil: result.pricingLockedUntil,
                 firstName: firstName.trim(),
                 lastName: lastName.trim()
               }),
@@ -409,7 +410,7 @@ export function UnifiedSaveModal({
                         Save Progress
                       </h4>
                       <p className="text-sm text-slate-600">
-                        Save your configuration and return anytime within 30 days to continue
+                        Save your configuration and return anytime to continue. Your quoted price is locked for 30 days.
                       </p>
                     </div>
                   </div>
@@ -448,7 +449,7 @@ export function UnifiedSaveModal({
               </h3>
               <p className="text-sm text-slate-600 mb-6">
                 {selectedAction === 'save'
-                  ? 'Enter your details to save your configuration and return anytime within 30 days.'
+                  ? 'Enter your details to save your configuration. Your price is locked for 30 days.'
                   : 'Enter your details to receive a detailed PDF quote via email.'}
               </p>
 
@@ -607,11 +608,14 @@ export function UnifiedSaveModal({
 
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                   <div className="text-xs font-medium text-slate-600 mb-1">
-                    Valid Until
+                    Price Locked Until
                   </div>
                   <div className="text-sm font-semibold text-[#01312D]">
-                    {formatDate(savedQuote.expiresAt)}
+                    {formatDate(savedQuote.pricingLockedUntil)}
                   </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Your link never expires. After this date, live pricing applies.
+                  </p>
                 </div>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">

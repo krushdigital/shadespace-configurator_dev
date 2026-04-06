@@ -152,6 +152,7 @@ function generateEmailHTML(data: any): string {
             <li>✓ Express freight to your door included</li>
             <li>✓ All taxes & duties included</li>
             <li>✓ No hidden costs or tariffs</li>
+            <li>✓ Price locked for 30 days from quote date</li>
           </ul>
         </div>
       </td>

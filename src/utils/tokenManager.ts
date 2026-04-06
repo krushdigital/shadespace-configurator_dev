@@ -1,5 +1,4 @@
 const TOKEN_STORAGE_KEY = 'shade_configurator_quote_tokens';
-const TOKEN_EXPIRY_DAYS = 31;
 
 export interface QuoteToken {
   quoteId: string;
@@ -9,6 +8,7 @@ export interface QuoteToken {
   email?: string;
   savedAt: string;
   expiresAt: string;
+  pricingLockedUntil?: string;
 }
 
 export interface TokenStore {
@@ -48,7 +48,8 @@ export function addQuoteToken(
   quoteName: string,
   quoteReference: string,
   expiresAt: string,
-  email?: string
+  email?: string,
+  pricingLockedUntil?: string
 ): void {
   const store = getTokenStore();
 
@@ -62,6 +63,7 @@ export function addQuoteToken(
     email,
     savedAt: new Date().toISOString(),
     expiresAt,
+    pricingLockedUntil,
   };
 
   if (existingIndex >= 0) {
@@ -70,29 +72,17 @@ export function addQuoteToken(
     store.tokens.push(newToken);
   }
 
-  cleanupExpiredTokens(store);
   saveTokenStore(store);
 }
 
 export function getQuoteToken(quoteId: string): QuoteToken | null {
   const store = getTokenStore();
   const token = store.tokens.find(t => t.quoteId === quoteId);
-
-  if (!token) {
-    return null;
-  }
-
-  if (new Date(token.expiresAt) < new Date()) {
-    removeQuoteToken(quoteId);
-    return null;
-  }
-
-  return token;
+  return token || null;
 }
 
 export function getAllQuoteTokens(email?: string): QuoteToken[] {
   const store = getTokenStore();
-  cleanupExpiredTokens(store);
 
   let tokens = store.tokens;
 
@@ -119,19 +109,7 @@ export function clearAllTokens(): void {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
-export function cleanupExpiredTokens(store?: TokenStore): void {
-  const tokenStore = store || getTokenStore();
-  const now = new Date();
-
-  const originalLength = tokenStore.tokens.length;
-  tokenStore.tokens = tokenStore.tokens.filter(t => {
-    const expiryDate = new Date(t.expiresAt);
-    return expiryDate > now;
-  });
-
-  if (tokenStore.tokens.length !== originalLength && !store) {
-    saveTokenStore(tokenStore);
-  }
+export function cleanupExpiredTokens(_store?: TokenStore): void {
 }
 
 export function importQuoteFromUrl(url: string): { quoteId: string; accessToken: string } | null {
@@ -157,6 +135,5 @@ export function hasTokenForEmail(email: string): boolean {
 
 export function getTokenCount(): number {
   const store = getTokenStore();
-  cleanupExpiredTokens(store);
   return store.tokens.length;
 }

@@ -146,9 +146,7 @@ export function ShadeConfigurator() {
   }, [isMobile, quoteReference, isLoadingQuote]);
 
   const applyPricingSnapshot = (
-    quote: QuoteData,
-    quoteAgeDays: number,
-    validityDays: number
+    quote: QuoteData
   ) => {
     const snapshot = quote.pricing_snapshot as Record<string, PricingSetting> | null;
 
@@ -156,7 +154,7 @@ export function ShadeConfigurator() {
       return;
     }
 
-    if (quoteAgeDays <= validityDays) {
+    if (quote.pricing_status === 'locked') {
       setLoadedPricingSnapshot(snapshot);
       return;
     }
@@ -195,25 +193,23 @@ export function ShadeConfigurator() {
       try {
         const quote = await getQuoteById(quoteData.id, quoteData.token);
 
-        // Store the token locally for future access
         addQuoteToken(
           quote.id,
           quoteData.token,
           quote.quote_name,
           quote.quote_reference,
           quote.expires_at,
-          quote.customer_email || undefined
+          quote.customer_email || undefined,
+          quote.pricing_locked_until
         );
 
         const createdAt = new Date(quote.created_at);
         const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
-        const quoteAgeDays = quoteAgeHours / 24;
-        const SNAPSHOT_VALIDITY_DAYS = 30;
 
         setConfig(quote.config_data);
         setQuoteReference(quote.quote_reference);
 
-        applyPricingSnapshot(quote, quoteAgeDays, SNAPSHOT_VALIDITY_DAYS);
+        applyPricingSnapshot(quote);
 
         const resumeStep = quote.current_step ?? 4;
         setOpenStep(resumeStep);
@@ -241,7 +237,7 @@ export function ShadeConfigurator() {
         });
 
         showToast(
-          'Failed to load quote. It may have expired, been deleted, or you may not have access.',
+          'Failed to load quote. It may have been deleted, or you may not have access.',
           'error'
         );
       } finally {

@@ -137,11 +137,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Create new customer
     const customerPayload: any = {
       customer: {
         email: email,
-        tags: tags.join(", "),
+        first_name: payload.firstName || undefined,
+        last_name: payload.lastName || undefined,
+        tags: [...tags, "account_invited"].join(", "),
         verified_email: false,
         email_marketing_consent: {
           state: "not_subscribed",
@@ -205,12 +206,37 @@ Deno.serve(async (req: Request) => {
     }
 
     const createdCustomer = await createResponse.json();
+    const newCustomerId = createdCustomer.customer.id;
+
+    try {
+      const inviteUrl = `https://${SHOPIFY_SHOP_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/customers/${newCustomerId}/send_invite.json`;
+      const inviteResponse = await fetch(inviteUrl, {
+        method: "POST",
+        headers: {
+          "X-Shopify-Access-Token": SHOPIFY_ADMIN_API_TOKEN,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer_invite: {
+            subject: "Welcome to ShadeSpace - Set Up Your Account",
+            custom_message: "Thank you for designing your custom shade sail! Your account has been created so you can track your quotes and orders. Click the link below to set your password and access your account.",
+          },
+        }),
+      });
+
+      if (!inviteResponse.ok) {
+        const inviteError = await inviteResponse.text();
+        console.error("Failed to send account invite:", inviteError);
+      }
+    } catch (inviteError) {
+      console.error("Error sending account invite:", inviteError);
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         customer: {
-          id: String(createdCustomer.customer.id),
+          id: String(newCustomerId),
           email: email,
           isNew: true,
           tags: tags,

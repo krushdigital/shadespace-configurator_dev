@@ -47,7 +47,7 @@ export function SaveQuoteModal({
     quoteName: string;
     customerReference: string | null;
     url: string;
-    expiresAt: string;
+    pricingLockedUntil: string;
     accessToken: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -109,7 +109,8 @@ export function SaveQuoteModal({
         result.quoteName,
         result.reference,
         result.expiresAt,
-        saveMethod === 'email' ? email : undefined
+        saveMethod === 'email' ? email : undefined,
+        result.pricingLockedUntil
       );
 
       setSavedQuote({
@@ -118,7 +119,7 @@ export function SaveQuoteModal({
         quoteName: result.quoteName,
         customerReference: result.customerReference || null,
         url: quoteUrl,
-        expiresAt: result.expiresAt,
+        pricingLockedUntil: result.pricingLockedUntil,
         accessToken: result.accessToken,
       });
 
@@ -127,14 +128,12 @@ export function SaveQuoteModal({
    // Send confirmation email if user chose email method
 if (saveMethod === 'email' && email) {
   try {
-    // Validate that we have all required data
-    if (!result.reference || !quoteUrl || !result.expiresAt) {
+    if (!result.reference || !quoteUrl) {
       console.warn('Missing required quote data for email:', {
         reference: result.reference,
         quoteUrl: quoteUrl,
-        expiresAt: result.expiresAt
       });
-      return; // Don't attempt to send email without required data
+      return;
     }
 
     const emailResponse = await fetch(
@@ -148,7 +147,7 @@ if (saveMethod === 'email' && email) {
           email: email,
           quoteReference: result.reference,
           quoteUrl: quoteUrl,
-          expiresAt: result.expiresAt,
+          pricingLockedUntil: result.pricingLockedUntil,
         }),
       }
     );
@@ -189,16 +188,15 @@ if (saveMethod === 'email' && email) {
         shopify_customer_id: result.shopifyCustomerId,
       });
 
-      // Track link generation
-      const expiresDate = new Date(result.expiresAt);
-      const daysUntilExpiration = Math.ceil(
-        (expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+      const lockDate = new Date(result.pricingLockedUntil);
+      const daysUntilPricingUnlock = Math.ceil(
+        (lockDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       );
 
       analytics.quoteLinkGenerated({
         quote_reference: result.reference,
-        expires_at: result.expiresAt,
-        days_until_expiration: daysUntilExpiration,
+        expires_at: result.pricingLockedUntil,
+        days_until_expiration: daysUntilPricingUnlock,
       });
 
       // Track Shopify customer creation if it happened
@@ -339,7 +337,7 @@ if (saveMethod === 'email' && email) {
                 Save Your Progress
               </h3>
               <p className="text-sm text-slate-600 mb-6">
-                Save your configuration and return anytime within 30 days to continue where you left off.
+                Save your configuration and return anytime to continue. Your quoted price is locked for 30 days.
               </p>
 
               <div className="space-y-4 mb-6">
@@ -521,11 +519,14 @@ if (saveMethod === 'email' && email) {
 
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                   <div className="text-xs font-medium text-slate-600 mb-1">
-                    Valid Until
+                    Price Locked Until
                   </div>
                   <div className="text-sm font-semibold text-[#01312D]">
-                    {formatDate(savedQuote.expiresAt)}
+                    {formatDate(savedQuote.pricingLockedUntil)}
                   </div>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Your link never expires. After this date, live pricing applies.
+                  </p>
                 </div>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
