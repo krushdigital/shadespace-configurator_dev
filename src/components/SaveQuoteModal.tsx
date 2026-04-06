@@ -140,9 +140,6 @@ if (saveMethod === 'email' && email) {
       '/apps/shade_space/api/v1/public/quote-save-email',
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email: email,
           quoteReference: result.reference,
@@ -152,13 +149,16 @@ if (saveMethod === 'email' && email) {
       }
     );
 
-    const emailData = await emailResponse.json();
-    
-    if (!emailData.success) {
-      console.warn('Quote confirmation email failed:', emailData.error);
-      // Don't throw error here - quote is saved successfully regardless of email
+    if (!emailResponse.ok) {
+      const rawText = await emailResponse.text();
+      console.warn('Quote save email HTTP error:', emailResponse.status, rawText.substring(0, 500));
     } else {
-      console.log('Quote confirmation email sent successfully');
+      const emailData = await emailResponse.json();
+      if (!emailData.success) {
+        console.warn('Quote confirmation email failed:', emailData.error);
+      } else {
+        console.log('Quote confirmation email sent successfully');
+      }
     }
   } catch (emailError) {
     console.error('Error sending quote confirmation email:', emailError);

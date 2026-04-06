@@ -178,7 +178,6 @@ export function UnifiedSaveModal({
             '/apps/shade_space/api/v1/public/quote-save-email',
             {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 email: email.trim(),
                 quoteReference: result.reference,
@@ -191,10 +190,16 @@ export function UnifiedSaveModal({
               }),
             }
           );
-          const emailData = await emailResponse.json();
-          setSaveEmailSent(!!emailData.success);
-          if (!emailData.success) {
-            console.warn('Save progress confirmation email failed:', emailData.error);
+          if (!emailResponse.ok) {
+            const rawText = await emailResponse.text();
+            console.warn('Save progress email HTTP error:', emailResponse.status, rawText.substring(0, 500));
+            setSaveEmailSent(false);
+          } else {
+            const emailData = await emailResponse.json();
+            setSaveEmailSent(!!emailData.success);
+            if (!emailData.success) {
+              console.warn('Save progress confirmation email failed:', emailData.error);
+            }
           }
         } catch (emailError) {
           console.error('Error sending save progress email:', emailError);

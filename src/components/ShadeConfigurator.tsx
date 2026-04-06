@@ -1111,9 +1111,6 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
       
       const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           ...orderData,
           // Pass updated canvas image URL (might be uploaded version)
