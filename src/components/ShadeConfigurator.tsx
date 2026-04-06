@@ -274,42 +274,27 @@ export function ShadeConfigurator() {
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
-  // PDF generation handler for unified modal with customer details
   const handleGeneratePDFWithDetails = async (
     firstName: string,
     lastName: string,
     email: string,
     quoteName: string,
-    customerReference: string | null
+    customerReference: string | null,
+    quoteUrl?: string
   ): Promise<string | void> => {
     try {
-      console.log('🔄 Starting PDF generation...');
       const svgElement = canvasRef.current?.getSVGElement?.();
-      console.log('SVG element found:', !!svgElement);
 
       const customerDetails: CustomerDetails = {
         firstName,
         lastName,
         email,
         quoteName,
-        customerReference
+        customerReference,
+        quoteUrl
       };
 
-      console.log('Calling generatePDF function...');
       const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
-
-      console.log('✅ PDF generated successfully');
-      console.log('PDF type:', typeof pdf);
-      console.log('Is Blob?', typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob);
-      console.log('Is string?', typeof pdf === 'string');
-
-      if (typeof pdf === 'string') {
-        console.log('String length:', pdf.length);
-        console.log('First 100 chars:', pdf.substring(0, 100));
-      } else if (typeof Blob !== "undefined" && typeof Blob === "function" && (pdf as any) instanceof Blob) {
-        console.log('Blob size:', (pdf as any).size);
-        console.log('Blob type:', (pdf as any).type);
-      }
 
       // Track PDF generation event
       const quoteParams = getQuoteFromUrl();
@@ -467,20 +452,16 @@ export function ShadeConfigurator() {
     }
   };
 
-  // Email PDF Quote handler for unified modal
   const handleEmailPDFQuote = async (
     firstName: string,
     lastName: string,
     email: string,
     quoteName: string,
     customerReference: string | null,
-    pdfBase64: string
+    pdfBase64: string,
+    quoteUrl?: string
   ): Promise<boolean> => {
     try {
-
-      console.log(firstName, lastName, email, quoteName, customerReference, 'kkkkkkkkkkkkk');
-
-      console.log('Preparing to send email with PDF quote to:', email);
 
       // Get the SVG element and upload preview
       const svgElement = canvasRef.current?.getSVGElement();
@@ -632,7 +613,7 @@ export function ShadeConfigurator() {
         '/apps/shade_space/api/v1/public/email-summary-send',
         {
           method: "POST",
-          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email, firstName, lastName }),
+          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email, firstName, lastName, quoteUrl }),
         }
       );
 
@@ -791,13 +772,33 @@ export function ShadeConfigurator() {
     return edgeCount === config.corners;
   }, [config.corners, config.measurements]);
 
-  // ===== ADD THIS DEBUG =====
-console.log('📦 DEBUG 3 - BEFORE orderData creation:', {
-  totalPrice: calculations.totalPrice,
-  currency: config.currency
-});
-// ===== END DEBUG =====
+  const orderReadyFiredRef = useRef(false);
 
+  useEffect(() => {
+    if (orderReadyFiredRef.current) return;
+    if (!config.corners || !config.fabricType || !hasAllEdgeMeasurements) return;
+
+    const isReady = config.corners === 3
+      ? hasAllEdgeMeasurements && openStep >= 6
+      : allDiagonalsEntered;
+
+    if (!isReady) return;
+
+    orderReadyFiredRef.current = true;
+    const diagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
+    analytics.orderReady({
+      corners: config.corners,
+      fabric_type: config.fabricType,
+      fabric_color: config.fabricColor,
+      edge_type: config.edgeType,
+      total_price: calculations.totalPrice,
+      currency: config.currency,
+      area_sqm: calculations.area,
+      perimeter_m: calculations.perimeter,
+      diagonal_count: diagonalKeys.length,
+      measurement_unit: config.unit,
+    });
+  }, [allDiagonalsEntered, hasAllEdgeMeasurements, config.corners, openStep]);
 
   interface OrderData {
     fabricType: string;
@@ -2117,14 +2118,6 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
     const selectedColorLocal = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
     const hardwareIncluded = config.measurementOption === 'adjust';
     const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
-
-    // ===== ADD THIS DEBUG =====
-console.log('📦 DEBUG 3 - BEFORE orderData creation:', {
-  totalPrice: calculations.totalPrice,
-  currency: config.currency
-});
-// ===== END DEBUG =====
-
 
     // Create the order data
     const orderData: any = {

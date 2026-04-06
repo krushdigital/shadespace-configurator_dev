@@ -33,7 +33,8 @@ interface UnifiedSaveModalProps {
     lastName: string,
     email: string,
     quoteName: string,
-    customerReference: string | null
+    customerReference: string | null,
+    quoteUrl?: string
   ) => Promise<string | void>;
   onEmailPDFQuote?: (
     firstName: string,
@@ -41,7 +42,8 @@ interface UnifiedSaveModalProps {
     email: string,
     quoteName: string,
     customerReference: string | null,
-    pdfBase64: string
+    pdfBase64: string,
+    quoteUrl?: string
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
 }
@@ -256,13 +258,55 @@ export function UnifiedSaveModal({
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : defaultQuoteName;
       const sanitizedReference = customerReference.trim() ? sanitizeCustomerReference(customerReference) : null;
 
+      let quoteUrl: string | undefined;
+      let savedRef = sanitizedReference || 'no-ref';
+
+      try {
+        const result = await saveQuote(
+          config,
+          calculations,
+          email.trim(),
+          finalQuoteName,
+          sanitizedReference || undefined,
+          currentStep,
+          totalSteps,
+          pricingSnapshot
+        );
+
+        quoteUrl = generateQuoteUrl(result.id, result.accessToken);
+        savedRef = result.reference;
+
+        addQuoteToken(
+          result.id,
+          result.accessToken,
+          result.quoteName,
+          result.reference,
+          result.expiresAt,
+          email.trim(),
+          result.pricingLockedUntil
+        );
+
+        setSavedQuote({
+          id: result.id,
+          reference: result.reference,
+          quoteName: result.quoteName,
+          customerReference: result.customerReference || null,
+          url: quoteUrl,
+          pricingLockedUntil: result.pricingLockedUntil,
+          accessToken: result.accessToken,
+        });
+      } catch (saveError) {
+        console.warn('Failed to save quote before email, proceeding without quote URL:', saveError);
+      }
+
       if (onGeneratePDFWithDetails && onEmailPDFQuote) {
         const pdfBase64 = await onGeneratePDFWithDetails(
           firstName.trim(),
           lastName.trim(),
           email.trim(),
           finalQuoteName,
-          sanitizedReference
+          sanitizedReference,
+          quoteUrl
         );
 
         if (pdfBase64) {
@@ -272,7 +316,8 @@ export function UnifiedSaveModal({
             email.trim(),
             finalQuoteName,
             sanitizedReference,
-            pdfBase64
+            pdfBase64,
+            quoteUrl
           );
 
           if (success) {
@@ -281,7 +326,7 @@ export function UnifiedSaveModal({
             showToast('PDF quote sent to your email!', 'success');
 
             analytics.quoteSaveSuccess({
-              quote_reference: sanitizedReference || 'no-ref',
+              quote_reference: savedRef,
               quote_name: finalQuoteName,
               has_custom_name: !!quoteName.trim(),
               has_customer_reference: !!sanitizedReference,

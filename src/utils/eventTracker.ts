@@ -134,12 +134,4 @@ export const eventTrackers = {
     });
   },
 
-  quoteSave: (quoteId: string, email: string | null, totalPrice: number, currency: string, quoteReference: string) => {
-    trackEvent({
-      eventType: 'quote_save',
-      eventData: { totalPrice, currency, quoteReference },
-      quoteId,
-      customerEmail: email,
-    });
-  },
 };

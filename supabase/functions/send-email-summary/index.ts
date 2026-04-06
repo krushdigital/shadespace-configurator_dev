@@ -67,7 +67,8 @@ function generateEmailHTML(data: any): string {
     quoteName,
     customerReference,
     firstName,
-    lastName
+    lastName,
+    quoteUrl
   } = data;
 
   const formattedPrice = formatCurrency(totalPrice, currency);
@@ -268,17 +269,36 @@ function generateEmailHTML(data: any): string {
       </td>
     </tr>
 
+    ${quoteUrl ? `
+    <!-- Resume Your Quote -->
+    <tr>
+      <td style="padding: 0 20px 30px 20px;">
+        <div style="background-color: #307C31; border-radius: 10px; padding: 25px; text-align: center;">
+          <h3 style="color: #ffffff; margin: 0 0 8px 0; font-size: 18px; font-weight: bold;">Resume Your Quote & Add to Cart</h3>
+          <p style="color: #ffffff; margin: 0 0 18px 0; font-size: 13px; opacity: 0.9;">
+            Click below to return to your saved configuration, review your details, and add to cart when you are ready.
+          </p>
+          <a href="${quoteUrl}" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">Resume & Add to Cart</a>
+          <p style="color: #ffffff; margin: 12px 0 0 0; font-size: 11px; opacity: 0.7;">
+            Your price is locked for 30 days from the quote date.
+          </p>
+        </div>
+      </td>
+    </tr>
+    ` : `
     <!-- CTA Button -->
     <tr>
       <td style="padding: 0 20px 30px 20px; text-align: center;">
         <a href="https://shadespace.com" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">Complete Your Order</a>
       </td>
     </tr>
-    
+    `}
+
     <!-- Footer -->
     <tr>
       <td style="background-color: #F8FAFC; padding: 20px; text-align: center; font-size: 12px; color: #64748B;">
         <p style="margin: 0 0 10px 0;">Your detailed PDF quote is attached to this email.</p>
+        ${quoteUrl ? `<p style="margin: 0 0 10px 0;"><a href="${quoteUrl}" style="color: #307C31; text-decoration: underline;">Click here to resume your quote</a></p>` : ''}
         <p style="margin: 0;">Questions? Visit <a href="https://shadespace.com" style="color: #307C31; text-decoration: none;">shadespace.com</a></p>
       </td>
     </tr>

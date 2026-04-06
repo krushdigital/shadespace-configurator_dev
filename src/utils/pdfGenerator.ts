@@ -424,6 +424,7 @@ export interface CustomerDetails {
   email?: string;
   quoteName?: string;
   customerReference?: string | null;
+  quoteUrl?: string;
 }
 
 export async function generatePDF(
@@ -1053,6 +1054,36 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     
     // Update yPos to account for the tallest column
     yPos += maxColumnHeight + 15;
+
+    // Resume Your Quote section (with clickable link)
+    if (customerDetails?.quoteUrl) {
+      const quoteBoxHeight = 28;
+      pdf.setFillColor(...primaryGreen);
+      pdf.rect(leftColX, yPos - 5, pageWidth - 30, quoteBoxHeight, 'F');
+
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Resume Your Quote & Add to Cart', leftColX + 5, yPos + 2);
+
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Click the link below to return to your saved configuration at any time:', leftColX + 5, yPos + 9);
+
+      pdf.setTextColor(...accentGreen);
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      const linkY = yPos + 16;
+      const linkText = customerDetails.quoteUrl;
+      pdf.textWithLink(linkText, leftColX + 5, linkY, { url: customerDetails.quoteUrl });
+
+      const linkWidth = pdf.getTextWidth(linkText);
+      pdf.setDrawColor(...accentGreen);
+      pdf.setLineWidth(0.2);
+      pdf.line(leftColX + 5, linkY + 0.5, leftColX + 5 + linkWidth, linkY + 0.5);
+
+      yPos += quoteBoxHeight + 10;
+    }
 
     // Your ShadeSpace Account section
     const accountBoxHeight = 48;
