@@ -184,6 +184,7 @@ export function UnifiedSaveModal({
                 quoteUrl,
                 quoteName: result.quoteName,
                 quoteId: result.id,
+                expiresAt: result.pricingLockedUntil,
                 pricingLockedUntil: result.pricingLockedUntil,
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
