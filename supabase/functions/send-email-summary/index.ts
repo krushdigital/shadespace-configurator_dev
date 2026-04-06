@@ -216,6 +216,58 @@ function generateEmailHTML(data: any): string {
       </td>
     </tr>
     
+    <!-- Your Account -->
+    <tr>
+      <td style="padding: 0 20px 30px 20px;">
+        <div style="background-color: #01312D; border-radius: 10px; padding: 25px;">
+          <h3 style="color: #BFF102; margin: 0 0 12px 0; font-size: 18px; font-weight: bold;">Your ShadeSpace Account is Ready</h3>
+          <p style="color: #ffffff; margin: 0 0 15px 0; font-size: 14px; line-height: 1.6;">
+            We have created an account for you so you can view your quotes and track your orders. Logging in is simple and secure -- no password needed.
+          </p>
+          <div style="background-color: #ffffff; border-radius: 8px; padding: 18px; margin-bottom: 15px;">
+            <p style="color: #01312D; margin: 0 0 12px 0; font-size: 13px; font-weight: bold;">How to log in:</p>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding: 6px 0; vertical-align: top; width: 30px;">
+                  <span style="background-color: #BFF102; color: #01312D; font-weight: bold; font-size: 12px; border-radius: 50%; display: inline-block; width: 22px; height: 22px; text-align: center; line-height: 22px;">1</span>
+                </td>
+                <td style="padding: 6px 0; color: #334155; font-size: 13px; line-height: 1.5;">
+                  Go to <a href="https://account.shadespace.com" style="color: #307C31; font-weight: bold; text-decoration: none;">account.shadespace.com</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; vertical-align: top; width: 30px;">
+                  <span style="background-color: #BFF102; color: #01312D; font-weight: bold; font-size: 12px; border-radius: 50%; display: inline-block; width: 22px; height: 22px; text-align: center; line-height: 22px;">2</span>
+                </td>
+                <td style="padding: 6px 0; color: #334155; font-size: 13px; line-height: 1.5;">
+                  Enter the email address you used for this quote
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; vertical-align: top; width: 30px;">
+                  <span style="background-color: #BFF102; color: #01312D; font-weight: bold; font-size: 12px; border-radius: 50%; display: inline-block; width: 22px; height: 22px; text-align: center; line-height: 22px;">3</span>
+                </td>
+                <td style="padding: 6px 0; color: #334155; font-size: 13px; line-height: 1.5;">
+                  Check your inbox for a one-time login code (arrives within seconds)
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 6px 0; vertical-align: top; width: 30px;">
+                  <span style="background-color: #BFF102; color: #01312D; font-weight: bold; font-size: 12px; border-radius: 50%; display: inline-block; width: 22px; height: 22px; text-align: center; line-height: 22px;">4</span>
+                </td>
+                <td style="padding: 6px 0; color: #334155; font-size: 13px; line-height: 1.5;">
+                  Enter the code and you are in -- no password to remember!
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div style="text-align: center;">
+            <a href="https://account.shadespace.com" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-size: 14px; font-weight: bold;">Log In to Your Account</a>
+          </div>
+        </div>
+      </td>
+    </tr>
+
     <!-- CTA Button -->
     <tr>
       <td style="padding: 0 20px 30px 20px; text-align: center;">

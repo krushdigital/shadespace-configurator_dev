@@ -664,6 +664,34 @@ export function UnifiedSaveModal({
                     </p>
                   </div>
                 </div>
+
+                <div className="bg-[#01312D] rounded-lg p-4">
+                  <h4 className="text-sm font-bold text-[#BFF102] mb-2">Your ShadeSpace Account is Ready</h4>
+                  <p className="text-xs text-white/90 mb-3 leading-relaxed">
+                    We have created an account for you so you can view your quotes and track orders. Logging in is simple -- no password needed.
+                  </p>
+                  <div className="bg-white rounded-md p-3">
+                    <p className="text-xs font-semibold text-[#01312D] mb-2">How to log in:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">1</span>
+                        <p className="text-xs text-slate-700">Go to <a href="https://account.shadespace.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#307C31] underline">account.shadespace.com</a></p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">2</span>
+                        <p className="text-xs text-slate-700">Enter the email address you used here</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">3</span>
+                        <p className="text-xs text-slate-700">Check your inbox for a one-time login code (arrives within seconds)</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">4</span>
+                        <p className="text-xs text-slate-700">Enter the code and you are in -- no password to remember!</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <Button
@@ -752,6 +780,34 @@ export function UnifiedSaveModal({
                       Pricing and warranty details
                     </li>
                   </ul>
+                </div>
+
+                <div className="bg-[#01312D] rounded-lg p-4">
+                  <h4 className="text-sm font-bold text-[#BFF102] mb-2">Your ShadeSpace Account is Ready</h4>
+                  <p className="text-xs text-white/90 mb-3 leading-relaxed">
+                    We have created an account for you so you can view your quotes and track orders. Logging in is simple -- no password needed.
+                  </p>
+                  <div className="bg-white rounded-md p-3">
+                    <p className="text-xs font-semibold text-[#01312D] mb-2">How to log in:</p>
+                    <div className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">1</span>
+                        <p className="text-xs text-slate-700">Go to <a href="https://account.shadespace.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#307C31] underline">account.shadespace.com</a></p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">2</span>
+                        <p className="text-xs text-slate-700">Enter the email address you used here</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">3</span>
+                        <p className="text-xs text-slate-700">Check your inbox for a one-time login code (arrives within seconds)</p>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 bg-[#BFF102] rounded-full flex items-center justify-center text-[10px] font-bold text-[#01312D]">4</span>
+                        <p className="text-xs text-slate-700">Enter the code and you are in -- no password to remember!</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 

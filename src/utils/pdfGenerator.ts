@@ -1053,7 +1053,49 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     
     // Update yPos to account for the tallest column
     yPos += maxColumnHeight + 15;
-    
+
+    // Your ShadeSpace Account section
+    const accountBoxHeight = 48;
+    pdf.setFillColor(...primaryDark);
+    pdf.rect(leftColX, yPos - 5, pageWidth - 30, accountBoxHeight, 'F');
+
+    pdf.setTextColor(191, 241, 2);
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Your ShadeSpace Account', leftColX + 5, yPos + 2);
+
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('An account has been created for you. Log in anytime to view quotes and track orders.', leftColX + 5, yPos + 10);
+
+    const accountInnerY = yPos + 14;
+    const accountInnerWidth = pageWidth - 40;
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(leftColX + 5, accountInnerY, accountInnerWidth, 24, 'F');
+
+    pdf.setTextColor(...primaryDark);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('How to log in:', leftColX + 8, accountInnerY + 5);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(51, 65, 133);
+    pdf.setFontSize(7);
+    const accountSteps = [
+      '1. Go to account.shadespace.com',
+      '2. Enter the email address you used for this quote',
+      '3. Check your inbox for a one-time login code',
+      '4. Enter the code and you are in -- no password to remember',
+    ];
+    let accountStepY = accountInnerY + 10;
+    accountSteps.forEach(step => {
+      pdf.text(step, leftColX + 8, accountStepY);
+      accountStepY += 4;
+    });
+
+    yPos += accountBoxHeight + 10;
+
     // Footer
     pdf.setFillColor(...backgroundLight);
     pdf.rect(0, pageHeight - 20, pageWidth, 20, 'F');
