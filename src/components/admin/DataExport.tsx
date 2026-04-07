@@ -5,9 +5,10 @@ import { getAdminAuthHeaders } from '../../utils/adminAuth';
 
 interface DataExportProps {
   dateRange: { start: string; end: string };
+  excludeInternal?: boolean;
 }
 
-export const DataExport: React.FC<DataExportProps> = ({ dateRange }) => {
+export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeInternal }) => {
   const [exporting, setExporting] = useState<string | null>(null);
 
   const downloadCSV = (filename: string, csv: string) => {
@@ -32,8 +33,9 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange }) => {
       if (!supabaseUrl) return;
 
       const headers = await getAdminAuthHeaders();
+      const exclusionFilter = excludeInternal ? '&is_excluded=eq.false' : '';
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/saved_quotes?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=5000`,
+        `${supabaseUrl}/rest/v1/saved_quotes?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=5000${exclusionFilter}`,
         { headers }
       );
       if (!res.ok) return;
@@ -81,8 +83,9 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange }) => {
       if (!supabaseUrl) return;
 
       const headers = await getAdminAuthHeaders();
+      const exclusionFilter = excludeInternal ? '&is_excluded=eq.false' : '';
       const res = await fetch(
-        `${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=5000`,
+        `${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=5000${exclusionFilter}`,
         { headers }
       );
       if (!res.ok) return;
@@ -117,9 +120,10 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange }) => {
       if (!supabaseUrl) return;
 
       const headers = await getAdminAuthHeaders();
+      const exclusionFilter = excludeInternal ? '&is_excluded=eq.false' : '';
       const [quotesRes, eventsRes] = await Promise.all([
-        fetch(`${supabaseUrl}/rest/v1/saved_quotes?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&limit=5000`, { headers }),
-        fetch(`${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&limit=5000`, { headers }),
+        fetch(`${supabaseUrl}/rest/v1/saved_quotes?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&limit=5000${exclusionFilter}`, { headers }),
+        fetch(`${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&limit=5000${exclusionFilter}`, { headers }),
       ]);
 
       const quotes = quotesRes.ok ? await quotesRes.json() : [];
@@ -197,7 +201,12 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange }) => {
 
   return (
     <Card className="p-6">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Data Export</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Data Export</h2>
+      {excludeInternal && (
+        <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-sm text-amber-800">
+          "Exclude Internal" is active -- exports will not include records flagged as internal traffic.
+        </div>
+      )}
       <div className="space-y-4">
         {exports.map(exp => (
           <div key={exp.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">

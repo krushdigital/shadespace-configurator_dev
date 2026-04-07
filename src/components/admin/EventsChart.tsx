@@ -4,6 +4,7 @@ import { getAdminAuthHeaders } from '../../utils/adminAuth';
 
 interface EventsChartProps {
   dateRange: { start: string; end: string };
+  excludeInternal?: boolean;
 }
 
 interface TimelineData {
@@ -11,14 +12,14 @@ interface TimelineData {
   event_count: number;
 }
 
-export const EventsChart: React.FC<EventsChartProps> = ({ dateRange }) => {
+export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInternal }) => {
   const [timelineData, setTimelineData] = useState<Record<string, TimelineData[]>>({});
   const [loading, setLoading] = useState(true);
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
 
   useEffect(() => {
     fetchTimelineData();
-  }, [dateRange]);
+  }, [dateRange, excludeInternal]);
 
   const fetchTimelineData = async () => {
     try {
@@ -46,6 +47,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange }) => {
             p_start_date: new Date(dateRange.start).toISOString(),
             p_end_date: new Date(dateRange.end + 'T23:59:59').toISOString(),
             p_interval: 'day',
+            p_exclude_internal: excludeInternal || false,
           }),
         });
 

@@ -18,6 +18,10 @@ interface Quote {
   customer_reference: string | null;
   customer_first_name: string | null;
   customer_last_name: string | null;
+  customer_ip: string | null;
+  customer_country: string | null;
+  customer_country_code: string | null;
+  is_excluded: boolean;
   status: string;
   created_at: string;
   access_token: string;
@@ -27,7 +31,7 @@ interface Quote {
   config_data: ConfiguratorState;
 }
 
-export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange }) => {
+export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean }> = ({ dateRange, excludeInternal }) => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -37,10 +41,11 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
+  const [togglingExclusion, setTogglingExclusion] = useState(false);
 
   useEffect(() => {
     fetchQuotes();
-  }, [dateRange, statusFilter]);
+  }, [dateRange, statusFilter, excludeInternal]);
 
   const fetchQuotes = async () => {
     try {
@@ -48,10 +53,14 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       if (!supabaseUrl) return;
 
-      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,status,created_at,access_token,calculations_data,config_data,current_step,total_steps&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
+      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
 
       if (statusFilter !== 'all') {
         query += `&status=eq.${statusFilter}`;
+      }
+
+      if (excludeInternal) {
+        query += '&is_excluded=eq.false';
       }
 
       const headers = await getAdminAuthHeaders();
@@ -164,6 +173,31 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
     }
   };
 
+  const toggleExclusion = async (quote: Quote) => {
+    try {
+      setTogglingExclusion(true);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) return;
+
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`${supabaseUrl}/rest/v1/saved_quotes?id=eq.${quote.id}`, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ is_excluded: !quote.is_excluded }),
+      });
+
+      if (res.ok) {
+        const updated = { ...quote, is_excluded: !quote.is_excluded };
+        setQuotes(quotes.map(q => q.id === quote.id ? updated : q));
+        if (selectedQuote?.id === quote.id) setSelectedQuote(updated);
+      }
+    } catch (error) {
+      console.error('Failed to toggle exclusion:', error);
+    } finally {
+      setTogglingExclusion(false);
+    }
+  };
+
   const getQuoteUrl = (quote: Quote) => {
     const baseUrl = window.location.origin;
     return `${baseUrl}/pages/shade-sail-configurator?quote=${quote.id}&token=${encodeURIComponent(quote.access_token)}`;
@@ -177,6 +211,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
   const exportToCSV = () => {
     const csvHeaders = [
       'Quote Reference', 'Quote Name', 'Customer Name', 'Customer Email', 'Customer Reference',
+      'IP Address', 'Country', 'Internal',
       'Status', 'Total Price', 'Currency', 'Corners', 'Fabric Type', 'Fabric Color',
       'Edge Type', 'Step Progress', 'Created At',
     ];
@@ -186,6 +221,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
       [q.customer_first_name, q.customer_last_name].filter(Boolean).join(' '),
       q.customer_email || '',
       q.customer_reference || '',
+      q.customer_ip || '',
+      q.customer_country || '',
+      q.is_excluded ? 'Yes' : 'No',
       q.status,
       q.calculations_data?.totalPrice ?? '',
       q.config_data?.currency ?? '',
@@ -243,6 +281,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Reference</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Name</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer</th>
+                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">IP / Country</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Status</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Total Price</th>
                 <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Created</th>
@@ -251,17 +290,28 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
             </thead>
             <tbody>
               {filteredQuotes.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">No quotes found</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No quotes found</td></tr>
               ) : (
                 filteredQuotes.map((quote) => (
-                  <tr key={quote.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={quote.id} className={`border-b border-gray-100 hover:bg-gray-50 ${quote.is_excluded ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-4">
-                      <button onClick={() => setSelectedQuote(quote)} className="text-lime-600 hover:text-lime-700 font-medium">
-                        {quote.quote_reference}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => setSelectedQuote(quote)} className="text-lime-600 hover:text-lime-700 font-medium">
+                          {quote.quote_reference}
+                        </button>
+                        {quote.is_excluded && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600">INT</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 text-sm text-gray-900">{quote.quote_name}</td>
                     <td className="px-4 py-4 text-sm">{getCustomerDisplay(quote)}</td>
+                    <td className="px-4 py-4">
+                      <div className="text-xs font-mono text-gray-600">{quote.customer_ip && quote.customer_ip !== 'unknown' ? quote.customer_ip.split(',')[0].trim() : '-'}</div>
+                      {quote.customer_country && (
+                        <div className="text-xs text-gray-500">{quote.customer_country_code ? `${quote.customer_country_code} - ` : ''}{quote.customer_country}</div>
+                      )}
+                    </td>
                     <td className="px-4 py-4">{getStatusBadge(quote.status)}</td>
                     <td className="px-4 py-4 text-sm font-medium text-gray-900">
                       {formatCurrency(quote.calculations_data?.totalPrice ?? 0, quote.config_data?.currency ?? 'NZD')}
@@ -328,7 +378,28 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
                     : 'Not tracked'}
                 </p>
               </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">IP Address</label>
+                <p className="text-gray-900 font-mono text-sm">
+                  {selectedQuote.customer_ip && selectedQuote.customer_ip !== 'unknown'
+                    ? selectedQuote.customer_ip.split(',')[0].trim()
+                    : 'Not recorded'}
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-600">Country</label>
+                <p className="text-gray-900">
+                  {selectedQuote.customer_country
+                    ? `${selectedQuote.customer_country}${selectedQuote.customer_country_code ? ` (${selectedQuote.customer_country_code})` : ''}`
+                    : 'Unknown'}
+                </p>
+              </div>
             </div>
+            {selectedQuote.is_excluded && (
+              <div className="mt-4 bg-gray-100 border border-gray-300 rounded-lg p-3">
+                <p className="text-sm text-gray-700 font-medium">This quote is flagged as internal/test traffic and excluded from analytics.</p>
+              </div>
+            )}
 
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration Details</h3>
@@ -394,6 +465,14 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
+              <Button
+                onClick={() => toggleExclusion(selectedQuote)}
+                variant="outline"
+                disabled={togglingExclusion}
+                className={selectedQuote.is_excluded ? 'text-green-600 hover:bg-green-50 border-green-200' : 'text-gray-600 hover:bg-gray-50 border-gray-300'}
+              >
+                {togglingExclusion ? 'Updating...' : selectedQuote.is_excluded ? 'Unmark Internal' : 'Mark as Internal'}
+              </Button>
               <Button onClick={() => handleDownloadPDF(selectedQuote)} variant="outline" disabled={generatingPdf === selectedQuote.id}>
                 {generatingPdf === selectedQuote.id ? 'Generating PDF...' : 'Download PDF'}
               </Button>

@@ -13,13 +13,17 @@ interface UserEvent {
   event_type: string;
   event_data: Record<string, any>;
   customer_email: string | null;
+  customer_ip: string | null;
+  customer_country: string | null;
+  customer_country_code: string | null;
   device_type: string;
   success: boolean;
   error_message: string | null;
+  is_excluded: boolean;
   created_at: string;
 }
 
-export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
+export const EventsTable: React.FC<EventsTableProps & { excludeInternal?: boolean }> = ({ dateRange, excludeInternal }) => {
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -28,7 +32,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
 
   useEffect(() => {
     fetchEvents();
-  }, [dateRange, eventTypeFilter]);
+  }, [dateRange, eventTypeFilter, excludeInternal]);
 
   const fetchEvents = async () => {
     try {
@@ -36,10 +40,14 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       if (!supabaseUrl) return;
 
-      let query = `${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=200`;
+      let query = `${supabaseUrl}/rest/v1/user_events?select=id,event_type,event_data,customer_email,customer_ip,customer_country,customer_country_code,device_type,success,error_message,is_excluded,created_at&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=200`;
 
       if (eventTypeFilter !== 'all') {
         query += `&event_type=eq.${eventTypeFilter}`;
+      }
+
+      if (excludeInternal) {
+        query += '&is_excluded=eq.false';
       }
 
       const headers = await getAdminAuthHeaders();
@@ -114,15 +122,18 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
 
   const exportToCSV = () => {
     const csvHeaders = [
-      'Event Type', 'Customer Email', 'Customer Name', 'Device Type', 'Success',
-      'Detail', 'Event Data', 'Created At',
+      'Event Type', 'Customer Email', 'Customer Name', 'IP Address', 'Country',
+      'Device Type', 'Success', 'Internal', 'Detail', 'Event Data', 'Created At',
     ];
     const rows = filteredEvents.map(e => [
       e.event_type,
       e.customer_email || '',
       e.event_data?.customerName || '',
+      e.customer_ip || '',
+      e.customer_country || '',
       e.device_type,
       e.success ? 'Success' : 'Failed',
+      e.is_excluded ? 'Yes' : 'No',
       getEventDetail(e) || '',
       JSON.stringify(e.event_data || {}),
       e.created_at,
@@ -174,6 +185,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
             <tr className="border-b border-gray-200 text-left">
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Event Type</th>
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer</th>
+              <th className="px-4 pb-3 text-sm font-semibold text-gray-700">IP / Country</th>
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Device</th>
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Detail</th>
               <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Status</th>
@@ -183,13 +195,26 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
           </thead>
           <tbody>
             {filteredEvents.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">No events found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No events found</td></tr>
             ) : (
               filteredEvents.map((event) => (
                 <React.Fragment key={event.id}>
-                  <tr className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedRow(expandedRow === event.id ? null : event.id)}>
-                    <td className="px-4 py-3">{getEventTypeBadge(event.event_type)}</td>
+                  <tr className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${event.is_excluded ? 'opacity-50' : ''}`} onClick={() => setExpandedRow(expandedRow === event.id ? null : event.id)}>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        {getEventTypeBadge(event.event_type)}
+                        {event.is_excluded && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600">INT</span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">{getCustomerDisplay(event)}</td>
+                    <td className="px-4 py-3">
+                      <div className="text-xs font-mono text-gray-600">{event.customer_ip && event.customer_ip !== 'unknown' ? event.customer_ip.split(',')[0].trim() : '-'}</div>
+                      {event.customer_country && (
+                        <div className="text-xs text-gray-500">{event.customer_country_code ? `${event.customer_country_code} - ` : ''}{event.customer_country}</div>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-900 capitalize">{event.device_type}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{getEventDetail(event) || '-'}</td>
                     <td className="px-4 py-3">
@@ -208,7 +233,7 @@ export const EventsTable: React.FC<EventsTableProps> = ({ dateRange }) => {
                   </tr>
                   {expandedRow === event.id && (
                     <tr className="bg-gray-50">
-                      <td colSpan={7} className="px-4 py-4">
+                      <td colSpan={8} className="px-4 py-4">
                         <div className="text-xs font-mono bg-white border border-gray-200 rounded p-3 max-h-48 overflow-auto">
                           <pre className="whitespace-pre-wrap break-all text-gray-700">
                             {JSON.stringify(event.event_data, null, 2)}

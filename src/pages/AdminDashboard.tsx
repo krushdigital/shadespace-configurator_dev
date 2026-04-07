@@ -10,20 +10,30 @@ import { BasePricingManager } from '../components/admin/BasePricingManager';
 import { ChangePasswordModal } from '../components/admin/ChangePasswordModal';
 import { FunnelAnalysis } from '../components/admin/FunnelAnalysis';
 import { DataExport } from '../components/admin/DataExport';
+import { ExclusionManager } from '../components/admin/ExclusionManager';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'pricing' | 'base-pricing' | 'exports';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [excludeInternal, setExcludeInternal] = useState(() => {
+    try { return localStorage.getItem('admin_exclude_internal') === 'true'; } catch { return false; }
+  });
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
   });
+
+  const handleToggleExclude = () => {
+    const next = !excludeInternal;
+    setExcludeInternal(next);
+    try { localStorage.setItem('admin_exclude_internal', String(next)); } catch { /* noop */ }
+  };
 
   const tabs: { id: TabType; label: string }[] = [
     { id: 'overview', label: 'Overview' },
@@ -33,6 +43,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     { id: 'pricing', label: 'Currency Pricing' },
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
+    { id: 'exclusions', label: 'Exclusion Settings' },
   ];
 
   return (
@@ -94,6 +105,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-colors"
             />
             <Button size="sm" className="bg-lime-600 hover:bg-lime-700 text-white">Apply</Button>
+
+            <div className="h-8 w-px bg-gray-300 mx-1"></div>
+
+            <button
+              onClick={handleToggleExclude}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                excludeInternal
+                  ? 'bg-amber-50 border-amber-300 text-amber-800'
+                  : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <div className={`w-8 h-4 rounded-full relative transition-colors ${excludeInternal ? 'bg-amber-500' : 'bg-gray-300'}`}>
+                <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${excludeInternal ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </div>
+              Exclude Internal
+            </button>
+
             <div className="ml-auto flex gap-2">
               <Button size="sm" variant="outline" onClick={() => setDateRange({
                 start: new Date().toISOString().split('T')[0],
@@ -113,22 +141,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            <AnalyticsSummary dateRange={dateRange} />
-            <EventsChart dateRange={dateRange} />
+            <AnalyticsSummary dateRange={dateRange} excludeInternal={excludeInternal} />
+            <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} />
           </div>
         )}
 
-        {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} />}
+        {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} />}
 
-        {activeTab === 'events' && <EventsTable dateRange={dateRange} />}
+        {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} />}
 
-        {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} />}
+        {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} excludeInternal={excludeInternal} />}
 
         {activeTab === 'pricing' && <PricingManager />}
 
         {activeTab === 'base-pricing' && <BasePricingManager />}
 
-        {activeTab === 'exports' && <DataExport dateRange={dateRange} />}
+        {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} />}
+
+        {activeTab === 'exclusions' && <ExclusionManager />}
       </div>
 
       {showChangePassword && (

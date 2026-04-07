@@ -38,6 +38,24 @@ function generateDefaultQuoteName(config: any): string {
   return quoteName;
 }
 
+async function lookupGeo(ip: string): Promise<{ country: string; countryCode: string } | null> {
+  if (!ip || ip === 'unknown') return null;
+  const cleanIp = ip.split(',')[0].trim();
+  if (!cleanIp || cleanIp === '127.0.0.1' || cleanIp === '::1') return null;
+
+  try {
+    const res = await fetch(`http://ip-api.com/json/${cleanIp}?fields=status,country,countryCode`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.status === 'success') {
+      return { country: data.country, countryCode: data.countryCode };
+    }
+  } catch {
+    // geo lookup failure should never block quote saving
+  }
+  return null;
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -125,7 +143,9 @@ Deno.serve(async (req: Request) => {
       const isComplete = currentStep === 6 || currentStep === totalSteps - 1;
       const quoteStatus = isComplete ? 'quote_ready' : 'in_progress';
 
-      // Insert the quote
+      const customerIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+      const geo = await lookupGeo(customerIp);
+
       const { data: quote, error: insertError } = await supabase
         .from('saved_quotes')
         .insert({
@@ -144,6 +164,9 @@ Deno.serve(async (req: Request) => {
           pricing_snapshot: pricingSnapshot ?? null,
           customer_first_name: firstName || null,
           customer_last_name: lastName || null,
+          customer_ip: customerIp,
+          customer_country: geo?.country || null,
+          customer_country_code: geo?.countryCode || null,
         })
         .select()
         .single();
