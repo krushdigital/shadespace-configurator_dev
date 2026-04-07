@@ -122,6 +122,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps> = ({ dateRange })
         email: quote.customer_email || undefined,
         quoteName: quote.quote_name,
         customerReference: quote.customer_reference,
+        quoteUrl: getQuoteUrl(quote),
       };
       await generatePDF(quote.config_data, quote.calculations_data, undefined, false, customerDetails);
     } catch (error) {
