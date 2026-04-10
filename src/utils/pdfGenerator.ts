@@ -1,8 +1,10 @@
 import jsPDF from 'jspdf';
-import { ConfiguratorState, ShadeCalculations, Point } from '../types';
+import { ConfiguratorState, ShadeCalculations } from '../types';
 import { FABRICS } from '../data/fabrics';
-import { formatMeasurement, formatArea, getDiagonalKeysForCorners, scalePolygonToCanvas, calculateCentroid } from './geometry';
+import { formatMeasurement, formatArea, getDiagonalKeysForCorners } from './geometry';
 import { formatCurrency } from './currencyFormatter';
+import { captureSvgToBase64Png } from './svgCapture';
+import { renderSailSvgOffscreen } from './renderSvgOffscreen';
 
 /**
  * Format measurement for PDF display with metric conversion in brackets for imperial
@@ -122,301 +124,7 @@ async function getImageDimensions(base64: string): Promise<{ width: number; heig
   });
 }
 
-// Function to convert SVG element to base64 PNG image
-async function convertSvgToBase64Png(
-  svgElement: SVGElement,
-  width: number = 800,
-  height: number = 800
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    try {
-      const svgString = new XMLSerializer().serializeToString(svgElement);
-      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-      const svgUrl = URL.createObjectURL(svgBlob);
 
-      const img = new Image();
-      img.onload = function () {
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.fillStyle = 'white';
-          ctx.fillRect(0, 0, width, height);
-          ctx.drawImage(img, 0, 0, width, height);
-
-          const pngDataUrl = canvas.toDataURL('image/png');
-          URL.revokeObjectURL(svgUrl);
-          resolve(pngDataUrl);
-        } else {
-          URL.revokeObjectURL(svgUrl);
-          reject(new Error('Failed to get canvas context'));
-        }
-      };
-
-      img.onerror = function () {
-        URL.revokeObjectURL(svgUrl);
-        reject(new Error('Failed to load SVG image'));
-      };
-
-      img.src = svgUrl;
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-async function drawShadeSailDiagram(
-  pdf: jsPDF,
-  config: ConfiguratorState,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  fabricSwatchBase64?: string
-): Promise<void> {
-  const points = config.points;
-  if (!points || points.length < 3) return;
-
-  const scaledPoints = scalePolygonToCanvas(points, width, height, 15);
-  const centroid = calculateCentroid(scaledPoints);
-
-  const pdfPoints = scaledPoints.map(p => ({
-    x: x + p.x,
-    y: y + p.y
-  }));
-  const pdfCentroid = { x: x + centroid.x, y: y + centroid.y };
-
-  const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
-  const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
-
-  // Default to a visible green color
-  let fillColor: [number, number, number] = [48, 124, 49];
-  if (selectedColor?.hex) {
-    const hex = selectedColor.hex.replace('#', '');
-    fillColor = [
-      parseInt(hex.substring(0, 2), 16),
-      parseInt(hex.substring(2, 4), 16),
-      parseInt(hex.substring(4, 6), 16)
-    ];
-  }
-
-  // If we have a fabric swatch, use it as a tiled texture within the shape
-  if (fabricSwatchBase64) {
-    // First, draw the shape filled with a semi-transparent version of the color
-    pdf.setFillColor(...fillColor);
-    pdf.setDrawColor(48, 124, 49);
-    pdf.setLineWidth(0.5);
-
-    const lines: { op: string; c: number[] }[] = [];
-    pdfPoints.forEach((point, index) => {
-      if (index === 0) {
-        lines.push({ op: 'm', c: [point.x, point.y] });
-      } else {
-        lines.push({ op: 'l', c: [point.x, point.y] });
-      }
-    });
-    lines.push({ op: 'h', c: [] });
-
-    // Draw filled shape
-    (pdf as any).path(lines, 'FD');
-
-    // Now overlay the fabric texture using addImage with clipping
-    // Calculate bounding box of the shape
-    const minX = Math.min(...pdfPoints.map(p => p.x));
-    const maxX = Math.max(...pdfPoints.map(p => p.x));
-    const minY = Math.min(...pdfPoints.map(p => p.y));
-    const maxY = Math.max(...pdfPoints.map(p => p.y));
-    const shapeWidth = maxX - minX;
-    const shapeHeight = maxY - minY;
-
-    // Add the fabric texture as an overlay within the shape bounds
-    // Using a semi-transparent overlay effect
-    try {
-      // Create a clipping path
-      pdf.saveGraphicsState();
-      const clipLines: { op: string; c: number[] }[] = [];
-      pdfPoints.forEach((point, index) => {
-        if (index === 0) {
-          clipLines.push({ op: 'm', c: [point.x, point.y] });
-        } else {
-          clipLines.push({ op: 'l', c: [point.x, point.y] });
-        }
-      });
-      clipLines.push({ op: 'h', c: [] });
-      clipLines.push({ op: 'W', c: [] }); // Clip
-      clipLines.push({ op: 'n', c: [] }); // End path without drawing
-
-      (pdf as any).path(clipLines);
-
-      // Add texture with slight transparency to show the fabric pattern
-      pdf.addImage(fabricSwatchBase64, 'JPEG', minX, minY, shapeWidth, shapeHeight, undefined, 'FAST');
-
-      pdf.restoreGraphicsState();
-    } catch (error) {
-      console.warn('Failed to add fabric texture to PDF:', error);
-    }
-  } else {
-    // No fabric texture, just fill with solid color
-    pdf.setFillColor(...fillColor);
-    pdf.setDrawColor(48, 124, 49);
-    pdf.setLineWidth(0.5);
-
-    const lines: { op: string; c: number[] }[] = [];
-    pdfPoints.forEach((point, index) => {
-      if (index === 0) {
-        lines.push({ op: 'm', c: [point.x, point.y] });
-      } else {
-        lines.push({ op: 'l', c: [point.x, point.y] });
-      }
-    });
-    lines.push({ op: 'h', c: [] });
-
-    // Draw filled shape
-    (pdf as any).path(lines, 'FD');
-  }
-
-  for (let i = 0; i < config.corners; i++) {
-    const nextIndex = (i + 1) % config.corners;
-    const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-    const measurement = config.measurements[edgeKey];
-
-    if (measurement) {
-      const from = pdfPoints[i];
-      const to = pdfPoints[nextIndex];
-      const midX = (from.x + to.x) / 2;
-      const midY = (from.y + to.y) / 2;
-
-      const edgeX = to.x - from.x;
-      const edgeY = to.y - from.y;
-      const perpX = -edgeY;
-      const perpY = edgeX;
-      const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
-
-      if (perpLength > 0) {
-        const normalizedPerpX = perpX / perpLength;
-        const normalizedPerpY = perpY / perpLength;
-
-        const toCentroidX = pdfCentroid.x - midX;
-        const toCentroidY = pdfCentroid.y - midY;
-        const dotProduct = normalizedPerpX * toCentroidX + normalizedPerpY * toCentroidY;
-        const direction = dotProduct > 0 ? -1 : 1;
-
-        const labelOffset = 5;
-        const labelX = midX + normalizedPerpX * labelOffset * direction;
-        const labelY = midY + normalizedPerpY * labelOffset * direction;
-
-        pdf.setFontSize(6);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(5, 150, 105);
-        pdf.text(formatMeasurementForPDF(measurement, config.unit), labelX, labelY, { align: 'center' });
-      }
-    }
-  }
-
-  if (config.corners >= 4) {
-    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-    pdf.setDrawColor(59, 130, 246);
-    pdf.setLineWidth(0.3);
-
-    diagonalKeys.forEach(key => {
-      const measurement = config.measurements[key];
-      if (measurement) {
-        const fromIndex = key.charCodeAt(0) - 65;
-        const toIndex = key.charCodeAt(1) - 65;
-
-        if (fromIndex < pdfPoints.length && toIndex < pdfPoints.length) {
-          const from = pdfPoints[fromIndex];
-          const to = pdfPoints[toIndex];
-
-          pdf.setLineDashPattern([1, 1], 0);
-          pdf.line(from.x, from.y, to.x, to.y);
-          pdf.setLineDashPattern([], 0);
-
-          const midX = (from.x + to.x) / 2;
-          const midY = (from.y + to.y) / 2;
-
-          const edgeX = to.x - from.x;
-          const edgeY = to.y - from.y;
-          const perpX = -edgeY;
-          const perpY = edgeX;
-          const perpLength = Math.sqrt(perpX * perpX + perpY * perpY);
-
-          if (perpLength > 0) {
-            const normalizedPerpX = perpX / perpLength;
-            const normalizedPerpY = perpY / perpLength;
-
-            const toCentroidX = pdfCentroid.x - midX;
-            const toCentroidY = pdfCentroid.y - midY;
-            const dotProduct = normalizedPerpX * toCentroidX + normalizedPerpY * toCentroidY;
-            const direction = dotProduct > 0 ? -1 : 1;
-
-            const labelOffset = 4;
-            const labelX = midX + normalizedPerpX * labelOffset * direction;
-            const labelY = midY + normalizedPerpY * labelOffset * direction;
-
-            pdf.setFontSize(5);
-            pdf.setFont('helvetica', 'normal');
-            pdf.setTextColor(59, 130, 246);
-            pdf.text(formatMeasurementForPDF(measurement, config.unit), labelX, labelY, { align: 'center' });
-          }
-        }
-      }
-    });
-  }
-
-  const cornerRadius = 2;
-  pdf.setFillColor(48, 124, 49);
-  pdf.setDrawColor(255, 255, 255);
-  pdf.setLineWidth(0.3);
-
-  pdfPoints.forEach((point, index) => {
-    pdf.circle(point.x, point.y, cornerRadius, 'FD');
-
-    const dx = point.x - pdfCentroid.x;
-    const dy = point.y - pdfCentroid.y;
-    const length = Math.sqrt(dx * dx + dy * dy);
-
-    let labelX = point.x;
-    let labelY = point.y;
-    if (length > 0) {
-      const normalizedX = dx / length;
-      const normalizedY = dy / length;
-      const labelOffset = 5;
-      labelX = point.x + normalizedX * labelOffset;
-      labelY = point.y + normalizedY * labelOffset;
-    }
-
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(30, 41, 59);
-    pdf.text(String.fromCharCode(65 + index), labelX, labelY + 0.5, { align: 'center' });
-  });
-
-  if (config.measurementOption === 'adjust') {
-    pdfPoints.forEach((point, index) => {
-      const dx = pdfCentroid.x - point.x;
-      const dy = pdfCentroid.y - point.y;
-      const length = Math.sqrt(dx * dx + dy * dy);
-
-      if (length > 0) {
-        const normalizedX = dx / length;
-        const normalizedY = dy / length;
-        const turnbuckleLength = 3;
-
-        const startX = point.x + normalizedX * cornerRadius;
-        const startY = point.y + normalizedY * cornerRadius;
-        const endX = startX + normalizedX * turnbuckleLength;
-        const endY = startY + normalizedY * turnbuckleLength;
-
-        pdf.setDrawColor(220, 38, 38);
-        pdf.setLineWidth(0.5);
-        pdf.line(startX, startY, endX, endY);
-      }
-    });
-  }
-}
 
 export interface CustomerDetails {
   firstName?: string;
@@ -515,16 +223,19 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       }
     }
 
-    // Convert SVG canvas to PNG for diagram if available
     let canvasDiagramBase64: string | undefined;
     if (svgElement) {
-      console.log('🎨 Converting SVG canvas to PNG for diagram...');
       try {
-        canvasDiagramBase64 = await convertSvgToBase64Png(svgElement, 800, 800);
-        console.log('✅ SVG canvas converted to PNG successfully');
+        canvasDiagramBase64 = await captureSvgToBase64Png(svgElement as SVGSVGElement, 800, 800);
       } catch (error) {
-        console.warn('⚠️ SVG canvas conversion failed, will use manual drawing:', error);
-        // SVG conversion failed - will fall back to manual drawing
+        console.warn('SVG capture failed, trying offscreen render:', error);
+      }
+    }
+    if (!canvasDiagramBase64 && config.points && config.points.length >= 3) {
+      try {
+        canvasDiagramBase64 = await renderSailSvgOffscreen(config, 800, 800);
+      } catch (error) {
+        console.warn('Offscreen render also failed:', error);
       }
     }
 
@@ -941,36 +652,22 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     pdf.setLineWidth(0.2);
     pdf.rect(rightColX, diagramCardY, colWidth, diagramHeight + 10, 'S');
 
-    if (config.points && config.points.length >= 3) {
-      if (canvasDiagramBase64) {
-        console.log('📸 Using SVG canvas screenshot for diagram');
-        const padding = 2;
-        const availableWidth = colWidth - (padding * 2);
-        const availableHeight = diagramHeight;
-        const diagramSize = Math.min(availableWidth, availableHeight);
-        const centerX = rightColX + padding + (availableWidth - diagramSize) / 2;
-        const centerY = diagramCardY + padding + (availableHeight - diagramSize) / 2;
+    if (config.points && config.points.length >= 3 && canvasDiagramBase64) {
+      const padding = 2;
+      const availableWidth = colWidth - (padding * 2);
+      const availableHeight = diagramHeight;
+      const diagramSize = Math.min(availableWidth, availableHeight);
+      const centerX = rightColX + padding + (availableWidth - diagramSize) / 2;
+      const centerY = diagramCardY + padding + (availableHeight - diagramSize) / 2;
 
-        pdf.addImage(
-          canvasDiagramBase64,
-          'PNG',
-          centerX,
-          centerY,
-          diagramSize,
-          diagramSize
-        );
-      } else {
-        console.log('✏️ Using manual drawing for diagram (SVG not available)');
-        await drawShadeSailDiagram(
-          pdf,
-          config,
-          rightColX + 2,
-          diagramCardY + 2,
-          colWidth - 4,
-          diagramHeight,
-          fabricSwatchBase64
-        );
-      }
+      pdf.addImage(
+        canvasDiagramBase64,
+        'PNG',
+        centerX,
+        centerY,
+        diagramSize,
+        diagramSize
+      );
     }
 
     pdf.setTextColor(...textMedium);
