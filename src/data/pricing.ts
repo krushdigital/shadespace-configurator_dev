@@ -82,7 +82,27 @@ export const WEBBING_FABRIC_PRICING = [
   { perimeter: 48.5, monotec370: 6198.50, extrablock330: 5763.79, shadetec320: 4785.44 },
   { perimeter: 49.0, monotec370: 6306.02, extrablock330: 5862.30, shadetec320: 4863.68 },
   { perimeter: 49.5, monotec370: 6414.46, extrablock330: 5961.63, shadetec320: 4942.52 },
-  { perimeter: 50.0, monotec370: 6523.83, extrablock330: 6061.81, shadetec320: 5022.01 }
+  { perimeter: 50.0, monotec370: 6523.83, extrablock330: 6061.81, shadetec320: 5022.01 },
+  { perimeter: 50.5, monotec370: 6633.20, extrablock330: 6161.32, shadetec320: 5101.50 },
+  { perimeter: 51.0, monotec370: 6742.57, extrablock330: 6260.83, shadetec320: 5180.99 },
+  { perimeter: 51.5, monotec370: 6851.94, extrablock330: 6360.34, shadetec320: 5260.48 },
+  { perimeter: 52.0, monotec370: 6961.31, extrablock330: 6459.85, shadetec320: 5339.97 },
+  { perimeter: 52.5, monotec370: 7070.68, extrablock330: 6559.36, shadetec320: 5419.46 },
+  { perimeter: 53.0, monotec370: 7180.05, extrablock330: 6658.87, shadetec320: 5498.95 },
+  { perimeter: 53.5, monotec370: 7289.42, extrablock330: 6758.38, shadetec320: 5578.44 },
+  { perimeter: 54.0, monotec370: 7398.79, extrablock330: 6857.89, shadetec320: 5657.93 },
+  { perimeter: 54.5, monotec370: 7508.16, extrablock330: 6957.40, shadetec320: 5737.42 },
+  { perimeter: 55.0, monotec370: 7617.53, extrablock330: 7056.91, shadetec320: 5816.91 },
+  { perimeter: 55.5, monotec370: 7726.90, extrablock330: 7156.42, shadetec320: 5896.40 },
+  { perimeter: 56.0, monotec370: 7836.27, extrablock330: 7255.93, shadetec320: 5975.89 },
+  { perimeter: 56.5, monotec370: 7945.64, extrablock330: 7355.44, shadetec320: 6055.38 },
+  { perimeter: 57.0, monotec370: 8055.01, extrablock330: 7454.95, shadetec320: 6134.87 },
+  { perimeter: 57.5, monotec370: 8164.38, extrablock330: 7554.46, shadetec320: 6214.36 },
+  { perimeter: 58.0, monotec370: 8273.75, extrablock330: 7653.97, shadetec320: 6293.85 },
+  { perimeter: 58.5, monotec370: 8383.12, extrablock330: 7753.48, shadetec320: 6373.34 },
+  { perimeter: 59.0, monotec370: 8492.49, extrablock330: 7852.99, shadetec320: 6452.83 },
+  { perimeter: 59.5, monotec370: 8601.86, extrablock330: 7952.50, shadetec320: 6532.32 },
+  { perimeter: 60.0, monotec370: 8711.23, extrablock330: 8052.01, shadetec320: 6611.81 }
 ];
 
 // Cabled Edge Fabric Pricing (NZD) - Based on Perimeter Length
@@ -169,7 +189,27 @@ export const CABLED_FABRIC_PRICING = [
   { perimeter: 48.5, monotec370: 6179.64, extrablock330: 5744.93, shadetec320: 4766.58 },
   { perimeter: 49.0, monotec370: 6286.85, extrablock330: 5843.13, shadetec320: 4844.51 },
   { perimeter: 49.5, monotec370: 6394.98, extrablock330: 5942.15, shadetec320: 4923.04 },
-  { perimeter: 50.0, monotec370: 6504.03, extrablock330: 6042.01, shadetec320: 5002.21 }
+  { perimeter: 50.0, monotec370: 6504.03, extrablock330: 6042.01, shadetec320: 5002.21 },
+  { perimeter: 50.5, monotec370: 6613.08, extrablock330: 6141.87, shadetec320: 5081.38 },
+  { perimeter: 51.0, monotec370: 6722.13, extrablock330: 6241.73, shadetec320: 5160.55 },
+  { perimeter: 51.5, monotec370: 6831.18, extrablock330: 6341.59, shadetec320: 5239.72 },
+  { perimeter: 52.0, monotec370: 6940.23, extrablock330: 6441.45, shadetec320: 5318.89 },
+  { perimeter: 52.5, monotec370: 7049.28, extrablock330: 6541.31, shadetec320: 5398.06 },
+  { perimeter: 53.0, monotec370: 7158.33, extrablock330: 6641.17, shadetec320: 5477.23 },
+  { perimeter: 53.5, monotec370: 7267.38, extrablock330: 6741.03, shadetec320: 5556.40 },
+  { perimeter: 54.0, monotec370: 7376.43, extrablock330: 6840.89, shadetec320: 5635.57 },
+  { perimeter: 54.5, monotec370: 7485.48, extrablock330: 6940.75, shadetec320: 5714.74 },
+  { perimeter: 55.0, monotec370: 7594.53, extrablock330: 7040.61, shadetec320: 5793.91 },
+  { perimeter: 55.5, monotec370: 7703.58, extrablock330: 7140.47, shadetec320: 5873.08 },
+  { perimeter: 56.0, monotec370: 7812.63, extrablock330: 7240.33, shadetec320: 5952.25 },
+  { perimeter: 56.5, monotec370: 7921.68, extrablock330: 7340.19, shadetec320: 6031.42 },
+  { perimeter: 57.0, monotec370: 8030.73, extrablock330: 7440.05, shadetec320: 6110.59 },
+  { perimeter: 57.5, monotec370: 8139.78, extrablock330: 7539.91, shadetec320: 6189.76 },
+  { perimeter: 58.0, monotec370: 8248.83, extrablock330: 7639.77, shadetec320: 6268.93 },
+  { perimeter: 58.5, monotec370: 8357.88, extrablock330: 7739.63, shadetec320: 6348.10 },
+  { perimeter: 59.0, monotec370: 8466.93, extrablock330: 7839.49, shadetec320: 6427.27 },
+  { perimeter: 59.5, monotec370: 8575.98, extrablock330: 7939.35, shadetec320: 6506.44 },
+  { perimeter: 60.0, monotec370: 8685.03, extrablock330: 8039.21, shadetec320: 6585.61 }
 ];
 
 // Cabled Edge Corner Costs (NZD) - Based on Number of Corners
@@ -177,7 +217,9 @@ export const CABLED_CORNER_COSTS = {
   3: 329.00,
   4: 438.67,
   5: 548.33,
-  6: 658.00
+  6: 658.00,
+  7: 767.67,
+  8: 877.33
 };
 
 // Cabled Edge Hardware Costs (NZD) - Only for "Adjust to fit space" option
@@ -185,14 +227,16 @@ export const CABLED_HARDWARE_COSTS = {
   3: 222.52,
   4: 291.04,
   5: 359.57,
-  6: 428.09
+  6: 428.09,
+  7: 496.61,
+  8: 565.14
 };
 
 // Cabled Edge Features based on Perimeter Length
 export const CABLED_FEATURES = [
   { minPerimeter: 0, maxPerimeter: 29.5, wireThickness: 4 },    // 4mm wire
   { minPerimeter: 30, maxPerimeter: 40, wireThickness: 5 },     // 5mm wire
-  { minPerimeter: 40, maxPerimeter: 50, wireThickness: 6 }      // 6mm wire
+  { minPerimeter: 40, maxPerimeter: 60, wireThickness: 6 }      // 6mm wire
 ];
 
 // Corner Costs (NZD) - Based on Number of Corners
@@ -200,7 +244,9 @@ export const CORNER_COSTS = {
   3: 268.74,
   4: 358.32,
   5: 447.90,
-  6: 537.48
+  6: 537.48,
+  7: 627.06,
+  8: 716.64
 };
 
 // Hardware Costs (NZD) - Only for "Adjust to fit space" option
@@ -208,13 +254,15 @@ export const HARDWARE_COSTS = {
   3: 222.52,
   4: 291.04,
   5: 359.57,
-  6: 428.09
+  6: 428.09,
+  7: 496.61,
+  8: 565.14
 };
 
 // Webbing Features based on Perimeter Length
 export const WEBBING_FEATURES = [
   { minPerimeter: 0, maxPerimeter: 34.5, width: 50 }, // 50mm webbing
-  { minPerimeter: 35, maxPerimeter: 50, width: 63 }   // 63mm webbing
+  { minPerimeter: 35, maxPerimeter: 60, width: 63 }   // 63mm webbing
 ];
 
 // DEPRECATED: Currency markups, exchange rates, symbols, and names are now

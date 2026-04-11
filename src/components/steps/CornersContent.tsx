@@ -2,7 +2,7 @@ import React from 'react';
 import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { Triangle, Square, Pentagon, Hexagon } from 'lucide-react';
+import { Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 
 interface CornersContentProps {
@@ -27,7 +27,9 @@ const SHAPE_OPTIONS = [
   { corners: 3, label: '3 Fixing Points', icon: Triangle, description: 'Classic triangular shade' },
   { corners: 4, label: '4 Fixing Points', icon: Square, description: 'Most popular choice' },
   { corners: 5, label: '5 Fixing Points', icon: Pentagon, description: 'Unique five-sided design' },
-  { corners: 6, label: '6 Fixing Points', icon: Hexagon, description: 'Modern hexagonal shape' }
+  { corners: 6, label: '6 Fixing Points', icon: Hexagon, description: 'Modern hexagonal shape' },
+  { corners: 7, label: '7 Fixing Points', icon: Hexagon, description: 'Extended multi-point design' },
+  { corners: 8, label: '8 Fixing Points', icon: Octagon, description: 'Maximum coverage layout' }
 ];
 
 export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: CornersContentProps) {
@@ -65,9 +67,6 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     }
 
     if (corners === 6) {
-      // 6-point concave shade sail shape (scaled down for better padding)
-      // Top edge: A (left), B (center), C (right)
-      // Bottom edge: F (left), E (center), D (right)
       points.push(
         { x: 156, y: 156 },  // A - top-left
         { x: 300, y: 140 },  // B - top-center
@@ -75,6 +74,33 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
         { x: 444, y: 444 },  // D - bottom-right
         { x: 300, y: 460 },  // E - bottom-center
         { x: 156, y: 444 }   // F - bottom-left
+      );
+      return points;
+    }
+
+    if (corners === 7) {
+      points.push(
+        { x: 156, y: 170 },  // A - top-left
+        { x: 300, y: 140 },  // B - top-center
+        { x: 444, y: 170 },  // C - top-right
+        { x: 460, y: 310 },  // D - right
+        { x: 400, y: 440 },  // E - bottom-right
+        { x: 200, y: 440 },  // F - bottom-left
+        { x: 140, y: 310 }   // G - left
+      );
+      return points;
+    }
+
+    if (corners === 8) {
+      points.push(
+        { x: 180, y: 150 },  // A - top-left
+        { x: 300, y: 140 },  // B - top-center
+        { x: 420, y: 150 },  // C - top-right
+        { x: 460, y: 270 },  // D - right-upper
+        { x: 460, y: 390 },  // E - right-lower
+        { x: 370, y: 460 },  // F - bottom-right
+        { x: 230, y: 460 },  // G - bottom-left
+        { x: 140, y: 350 }   // H - left
       );
       return points;
     }
@@ -124,7 +150,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How many fixing points will your shade sail have?
         </h4>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {SHAPE_OPTIONS.map((shape) => {
             const Icon = shape.icon;
             const hasError = validationErrors.corners && !config.corners;

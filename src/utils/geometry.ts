@@ -396,6 +396,8 @@ export function getDiagonalKeysForCorners(corners: number): string[] {
     diagonals.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
   } else if (corners === 7) {
     diagonals.push('AC', 'AD', 'AE', 'AF', 'BD', 'BE', 'BF', 'BG', 'CE', 'CF', 'CG', 'DF', 'DG', 'EG');
+  } else if (corners === 8) {
+    diagonals.push('AC', 'AD', 'AE', 'AF', 'AG', 'BD', 'BE', 'BF', 'BG', 'BH', 'CE', 'CF', 'CG', 'CH', 'DF', 'DG', 'DH', 'EG', 'EH', 'FH');
   }
 
   return diagonals;
@@ -426,7 +428,7 @@ export function getShapeAccuracy(
     };
   }
 
-  if (corners >= 4 && corners <= 7) {
+  if (corners >= 4 && corners <= 8) {
     let edgeCount = 0;
     for (let i = 0; i < corners; i++) {
       const nextIndex = (i + 1) % corners;
@@ -703,7 +705,7 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
 } {
   const errors: string[] = [];
 
-  if (corners < 3 || corners > 6) {
+  if (corners < 3 || corners > 8) {
     return { isValid: false, errors: ['Invalid number of corners'] };
   }
 
@@ -1002,6 +1004,143 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
         errors.push(`Triangle AEF: ${validation.error}`);
       }
     }
+  } else if (corners === 7) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CD = measurements['CD'] || 0;
+    const DE = measurements['DE'] || 0;
+    const EF = measurements['EF'] || 0;
+    const FG = measurements['FG'] || 0;
+    const GA = measurements['GA'] || 0;
+    const AC = measurements['AC'] || 0;
+    const AD = measurements['AD'] || 0;
+    const AE = measurements['AE'] || 0;
+    const AF = measurements['AF'] || 0;
+
+    if (AC > 0 && AB > 0 && BC > 0) {
+      const v = validateTriangle(AB, BC, AC, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AB, BC, true);
+        errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+    if (AD > 0 && AC > 0 && CD > 0) {
+      const v = validateTriangle(AC, CD, AD, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AC, CD, true);
+        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+    if (AE > 0 && AD > 0 && DE > 0) {
+      const v = validateTriangle(AD, DE, AE, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AD, DE, true);
+        errors.push(`Diagonal AE (${AE.toFixed(0)}mm) is incompatible with diagonal AD and edge DE. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+    if (AF > 0 && AE > 0 && EF > 0) {
+      const v = validateTriangle(AE, EF, AF, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AE, EF, true);
+        errors.push(`Diagonal AF (${AF.toFixed(0)}mm) is incompatible with diagonal AE and edge EF. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+
+    if (AB > 0 && BC > 0 && AC > 0) {
+      const v = validateTriangle(AB, BC, AC, true);
+      if (!v.isValid) errors.push(`Triangle ABC: ${v.error}`);
+    }
+    if (AC > 0 && CD > 0 && AD > 0) {
+      const v = validateTriangle(AC, CD, AD, true);
+      if (!v.isValid) errors.push(`Triangle ACD: ${v.error}`);
+    }
+    if (AD > 0 && DE > 0 && AE > 0) {
+      const v = validateTriangle(AD, DE, AE, true);
+      if (!v.isValid) errors.push(`Triangle ADE: ${v.error}`);
+    }
+    if (AE > 0 && EF > 0 && AF > 0) {
+      const v = validateTriangle(AE, EF, AF, true);
+      if (!v.isValid) errors.push(`Triangle AEF: ${v.error}`);
+    }
+    if (AF > 0 && FG > 0 && GA > 0) {
+      const v = validateTriangle(AF, FG, GA, true);
+      if (!v.isValid) errors.push(`Triangle AFG: ${v.error}`);
+    }
+  } else if (corners === 8) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CD = measurements['CD'] || 0;
+    const DE = measurements['DE'] || 0;
+    const EF = measurements['EF'] || 0;
+    const FG = measurements['FG'] || 0;
+    const GH = measurements['GH'] || 0;
+    const HA = measurements['HA'] || 0;
+    const AC = measurements['AC'] || 0;
+    const AD = measurements['AD'] || 0;
+    const AE = measurements['AE'] || 0;
+    const AF = measurements['AF'] || 0;
+    const AG = measurements['AG'] || 0;
+
+    if (AC > 0 && AB > 0 && BC > 0) {
+      const v = validateTriangle(AB, BC, AC, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AB, BC, true);
+        errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+    if (AD > 0 && AC > 0 && CD > 0) {
+      const v = validateTriangle(AC, CD, AD, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AC, CD, true);
+        errors.push(`Diagonal AD (${AD.toFixed(0)}mm) is incompatible with diagonal AC and edge CD. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+    if (AE > 0 && AD > 0 && DE > 0) {
+      const v = validateTriangle(AD, DE, AE, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AD, DE, true);
+        errors.push(`Diagonal AE (${AE.toFixed(0)}mm) is incompatible with diagonal AD and edge DE. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+    if (AF > 0 && AE > 0 && EF > 0) {
+      const v = validateTriangle(AE, EF, AF, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AE, EF, true);
+        errors.push(`Diagonal AF (${AF.toFixed(0)}mm) is incompatible with diagonal AE and edge EF. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+    if (AG > 0 && AF > 0 && FG > 0) {
+      const v = validateTriangle(AF, FG, AG, true);
+      if (!v.isValid) {
+        const range = calculateTriangleSideRange(AF, FG, true);
+        errors.push(`Diagonal AG (${AG.toFixed(0)}mm) is incompatible with diagonal AF and edge FG. Valid range: ${range.min}mm to ${range.max}mm.`);
+      }
+    }
+
+    if (AB > 0 && BC > 0 && AC > 0) {
+      const v = validateTriangle(AB, BC, AC, true);
+      if (!v.isValid) errors.push(`Triangle ABC: ${v.error}`);
+    }
+    if (AC > 0 && CD > 0 && AD > 0) {
+      const v = validateTriangle(AC, CD, AD, true);
+      if (!v.isValid) errors.push(`Triangle ACD: ${v.error}`);
+    }
+    if (AD > 0 && DE > 0 && AE > 0) {
+      const v = validateTriangle(AD, DE, AE, true);
+      if (!v.isValid) errors.push(`Triangle ADE: ${v.error}`);
+    }
+    if (AE > 0 && EF > 0 && AF > 0) {
+      const v = validateTriangle(AE, EF, AF, true);
+      if (!v.isValid) errors.push(`Triangle AEF: ${v.error}`);
+    }
+    if (AF > 0 && FG > 0 && AG > 0) {
+      const v = validateTriangle(AF, FG, AG, true);
+      if (!v.isValid) errors.push(`Triangle AFG: ${v.error}`);
+    }
+    if (AG > 0 && GH > 0 && HA > 0) {
+      const v = validateTriangle(AG, GH, HA, true);
+      if (!v.isValid) errors.push(`Triangle AGH: ${v.error}`);
+    }
   }
 
   return { isValid: errors.length === 0, errors };
@@ -1014,7 +1153,7 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
  * @returns Area in square meters
  */
 export function calculatePolygonArea(measurements: { [key: string]: number }, corners: number): number {
-  if (corners < 3 || corners > 6) return 0;
+  if (corners < 3 || corners > 8) return 0;
 
   let totalAreaMm2 = 0;
 
@@ -1084,8 +1223,47 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
     if (AE > 0 && EF > 0 && FA > 0) {
       totalAreaMm2 += calculateTriangleArea(AE, EF, FA);
     }
+  } else if (corners === 7) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CD = measurements['CD'] || 0;
+    const DE = measurements['DE'] || 0;
+    const EF = measurements['EF'] || 0;
+    const FG = measurements['FG'] || 0;
+    const GA = measurements['GA'] || 0;
+    const AC = measurements['AC'] || 0;
+    const AD = measurements['AD'] || 0;
+    const AE = measurements['AE'] || 0;
+    const AF = measurements['AF'] || 0;
+
+    if (AB > 0 && BC > 0 && AC > 0) totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
+    if (AC > 0 && CD > 0 && AD > 0) totalAreaMm2 += calculateTriangleArea(AC, CD, AD);
+    if (AD > 0 && DE > 0 && AE > 0) totalAreaMm2 += calculateTriangleArea(AD, DE, AE);
+    if (AE > 0 && EF > 0 && AF > 0) totalAreaMm2 += calculateTriangleArea(AE, EF, AF);
+    if (AF > 0 && FG > 0 && GA > 0) totalAreaMm2 += calculateTriangleArea(AF, FG, GA);
+  } else if (corners === 8) {
+    const AB = measurements['AB'] || 0;
+    const BC = measurements['BC'] || 0;
+    const CD = measurements['CD'] || 0;
+    const DE = measurements['DE'] || 0;
+    const EF = measurements['EF'] || 0;
+    const FG = measurements['FG'] || 0;
+    const GH = measurements['GH'] || 0;
+    const HA = measurements['HA'] || 0;
+    const AC = measurements['AC'] || 0;
+    const AD = measurements['AD'] || 0;
+    const AE = measurements['AE'] || 0;
+    const AF = measurements['AF'] || 0;
+    const AG = measurements['AG'] || 0;
+
+    if (AB > 0 && BC > 0 && AC > 0) totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
+    if (AC > 0 && CD > 0 && AD > 0) totalAreaMm2 += calculateTriangleArea(AC, CD, AD);
+    if (AD > 0 && DE > 0 && AE > 0) totalAreaMm2 += calculateTriangleArea(AD, DE, AE);
+    if (AE > 0 && EF > 0 && AF > 0) totalAreaMm2 += calculateTriangleArea(AE, EF, AF);
+    if (AF > 0 && FG > 0 && AG > 0) totalAreaMm2 += calculateTriangleArea(AF, FG, AG);
+    if (AG > 0 && GH > 0 && HA > 0) totalAreaMm2 += calculateTriangleArea(AG, GH, HA);
   }
-  
+
   // Convert from mm² to m²
   return totalAreaMm2 / 1000000;
 }
@@ -1223,9 +1401,12 @@ export function hasRequiredMeasurements(
     const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE']);
     return edges && minDiagonals;
   } else if (corners === 7) {
-    // For 7 corners, we need all edges AND minimum 4 diagonals (AC, AD, AE, and AF) for reconstruction
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GA']);
     const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF']);
+    return edges && minDiagonals;
+  } else if (corners === 8) {
+    const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GH'] && measurements['HA']);
+    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF'] && measurements['AG']);
     return edges && minDiagonals;
   }
   return false;
@@ -1606,6 +1787,43 @@ export function reconstructPolygonFromMeasurements(
     if (!G) return null;
 
     points = [A, B, C, D, E, F, G];
+  } else if (corners === 8) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EF = measurements['EF'];
+    const FG = measurements['FG'];
+    const GH = measurements['GH'];
+    const HA = measurements['HA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const AE = measurements['AE'];
+    const AF = measurements['AF'];
+    const AG = measurements['AG'];
+
+    const A: Point = { x: 0, y: 0 };
+    const B: Point = { x: AB, y: 0 };
+
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+
+    const D = trilateratePoint(A, C, AD, CD);
+    if (!D) return null;
+
+    const E = trilateratePoint(A, D, AE, DE);
+    if (!E) return null;
+
+    const F = trilateratePoint(A, E, AF, EF);
+    if (!F) return null;
+
+    const G = trilateratePoint(A, F, AG, FG);
+    if (!G) return null;
+
+    const H = trilateratePoint(A, G, HA, GH);
+    if (!H) return null;
+
+    points = [A, B, C, D, E, F, G, H];
   }
 
   // Scale and center the polygon to fit canvas

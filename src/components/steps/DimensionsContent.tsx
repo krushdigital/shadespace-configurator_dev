@@ -692,7 +692,7 @@ export function DimensionsContent({
               })}
 
               {/* Diagonal measurements for 4+ corners */}
-              {config.corners >= 4 && config.corners <= 6 && (() => {
+              {config.corners >= 4 && config.corners <= 8 && (() => {
                 const shapeAccuracyInfo = getShapeAccuracy(config.measurements, config.corners);
                 const isApproximate = shapeAccuracyInfo.accuracy === 'approximate';
 

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, forwardRef } from 'react';
 import { ConfiguratorState, Point } from '../types';
-import { formatMeasurement, getShapeAccuracy, ShapeAccuracy } from '../utils/geometry';
+import { formatMeasurement, getShapeAccuracy, ShapeAccuracy, getDiagonalKeysForCorners } from '../utils/geometry';
 import { FABRICS } from '../data/fabrics';
 
 interface ShadeSVGCoreProps {
@@ -270,36 +270,13 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
 
   // Get diagonal measurements to show
   const getDiagonalMeasurements = useCallback(() => {
-    const diagonals = [];
-    
-    if (config.corners === 4) {
-      diagonals.push(
-        { key: 'AC', from: 0, to: 2, hasValue: !!config.measurements['AC'] },
-        { key: 'BD', from: 1, to: 3, hasValue: !!config.measurements['BD'] }
-      );
-    } else if (config.corners === 5) {
-      diagonals.push(
-        { key: 'AC', from: 0, to: 2, hasValue: !!config.measurements['AC'] },
-        { key: 'AD', from: 0, to: 3, hasValue: !!config.measurements['AD'] },
-        { key: 'CE', from: 2, to: 4, hasValue: !!config.measurements['CE'] },
-        { key: 'BD', from: 1, to: 3, hasValue: !!config.measurements['BD'] },
-        { key: 'BE', from: 1, to: 4, hasValue: !!config.measurements['BE'] }
-      );
-    } else if (config.corners === 6) {
-      diagonals.push(
-        { key: 'AC', from: 0, to: 2, hasValue: !!config.measurements['AC'] },
-        { key: 'AD', from: 0, to: 3, hasValue: !!config.measurements['AD'] },
-        { key: 'AE', from: 0, to: 4, hasValue: !!config.measurements['AE'] },
-        { key: 'BD', from: 1, to: 3, hasValue: !!config.measurements['BD'] },
-        { key: 'BE', from: 1, to: 4, hasValue: !!config.measurements['BE'] },
-        { key: 'BF', from: 1, to: 5, hasValue: !!config.measurements['BF'] },
-        { key: 'CE', from: 2, to: 4, hasValue: !!config.measurements['CE'] },
-        { key: 'CF', from: 2, to: 5, hasValue: !!config.measurements['CF'] },
-        { key: 'DF', from: 3, to: 5, hasValue: !!config.measurements['DF'] }
-      );
-    }
-    
-    return diagonals;
+    const keys = getDiagonalKeysForCorners(config.corners);
+    return keys.map(key => ({
+      key,
+      from: key.charCodeAt(0) - 65,
+      to: key.charCodeAt(1) - 65,
+      hasValue: !!config.measurements[key]
+    }));
   }, [config.corners, config.measurements]);
 
   const edgeMeasurements = useMemo(() => getEdgeMeasurements(), [getEdgeMeasurements]);

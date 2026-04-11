@@ -500,11 +500,7 @@ export function ShadeConfigurator() {
         }
       }
 
-      const diagonalKeys =
-        config.corners === 4 ? ['AC', 'BD'] :
-          config.corners === 5 ? ['AC', 'AD', 'CE', 'BD', 'BE'] :
-            config.corners === 6 ? ['AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF'] :
-              [];
+      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
 
       const diagonalMeasurementsObj: Record<string, { unit: string; formatted: string }> = {};
       diagonalKeys.forEach(key => {
@@ -697,36 +693,11 @@ export function ShadeConfigurator() {
 
   // Calculate derived state for order process
   const getDiagonalMeasurements = useMemo(() => {
-    const diagonals = [];
-
-    if (config.corners === 4) {
-      diagonals.push(
-        { key: 'AC', hasValue: !!config.measurements['AC'] },
-        { key: 'BD', hasValue: !!config.measurements['BD'] }
-      );
-    } else if (config.corners === 5) {
-      diagonals.push(
-        { key: 'AC', hasValue: !!config.measurements['AC'] },
-        { key: 'AD', hasValue: !!config.measurements['AD'] },
-        { key: 'AE', hasValue: !!config.measurements['AE'] },
-        { key: 'BD', hasValue: !!config.measurements['BD'] },
-        { key: 'BE', hasValue: !!config.measurements['BE'] }
-      );
-    } else if (config.corners === 6) {
-      diagonals.push(
-        { key: 'AC', hasValue: !!config.measurements['AC'] },
-        { key: 'AD', hasValue: !!config.measurements['AD'] },
-        { key: 'AE', hasValue: !!config.measurements['AE'] },
-        { key: 'BD', hasValue: !!config.measurements['BD'] },
-        { key: 'BE', hasValue: !!config.measurements['BE'] },
-        { key: 'BF', hasValue: !!config.measurements['BF'] },
-        { key: 'CE', hasValue: !!config.measurements['CE'] },
-        { key: 'CF', hasValue: !!config.measurements['CF'] },
-        { key: 'DF', hasValue: !!config.measurements['DF'] }
-      );
-    }
-
-    return diagonals;
+    const keys = getDiagonalKeysForCorners(config.corners);
+    return keys.map(key => ({
+      key,
+      hasValue: !!config.measurements[key]
+    }));
   }, [config.corners, config.measurements]);
 
   const diagonalMeasurements = getDiagonalMeasurements;
@@ -1605,7 +1576,7 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
       case 1: // Style (Edge Type)
         return !!config.edgeType;
       case 2: // Number of Fixing Points
-        return config.corners >= 3 && config.corners <= 6;
+        return config.corners >= 3 && config.corners <= 8;
       case 3: // Measurement Options (Combined)
         return (config.unit === 'metric' || config.unit === 'imperial') && (config.measurementOption === 'adjust' || config.measurementOption === 'exact');
       case 4: // Dimensions
@@ -1716,8 +1687,8 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
         }
         break;
       case 2: // Number of Fixing Points
-        if (config.corners < 3 || config.corners > 6) {
-          errors.corners = 'Please select the number of fixing points (3-6)';
+        if (config.corners < 3 || config.corners > 8) {
+          errors.corners = 'Please select the number of fixing points (3-8)';
         }
         break;
       case 3: // Measurement Options
@@ -1737,14 +1708,13 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
         // Update the flag to track if diagonals were initially provided on this step
         updateConfig({ diagonalsInitiallyProvided: allDiagonalsProvided });
 
-        // Check perimeter limit (50m maximum)
-        if (calculations.perimeter > 50) {
+        if (calculations.perimeter > 60) {
           if (config.unit === 'imperial') {
-            const perimeterFt = calculations.perimeter * 3.28084; // Convert meters to feet
-            const maxPerimeterFt = 50 * 3.28084; // 164.0 feet
+            const perimeterFt = calculations.perimeter * 3.28084;
+            const maxPerimeterFt = 60 * 3.28084;
             errors.perimeterTooLarge = `Shade sail is too large (${perimeterFt.toFixed(1)}ft perimeter). Maximum allowed is ${maxPerimeterFt.toFixed(0)}ft. Please re-check your measurements.`;
           } else {
-            errors.perimeterTooLarge = `Shade sail is too large (${calculations.perimeter.toFixed(1)}m perimeter). Maximum allowed is 50m. Please re-check your measurements.`;
+            errors.perimeterTooLarge = `Shade sail is too large (${calculations.perimeter.toFixed(1)}m perimeter). Maximum allowed is 60m. Please re-check your measurements.`;
           }
         }
 

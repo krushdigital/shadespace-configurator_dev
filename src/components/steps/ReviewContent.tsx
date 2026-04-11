@@ -135,36 +135,12 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   };
 
   const getDiagonalMeasurements = () => {
-    const diagonals = [];
-
-    if (config.corners === 4) {
-      diagonals.push(
-        { key: 'AC', label: 'Diagonal A → C', hasValue: !!config.measurements['AC'] },
-        { key: 'BD', label: 'Diagonal B → D', hasValue: !!config.measurements['BD'] }
-      );
-    } else if (config.corners === 5) {
-      diagonals.push(
-        { key: 'AC', label: 'Diagonal A → C', hasValue: !!config.measurements['AC'] },
-        { key: 'AD', label: 'Diagonal A → D', hasValue: !!config.measurements['AD'] },
-        { key: 'CE', label: 'Diagonal C → E', hasValue: !!config.measurements['CE'] },
-        { key: 'BD', label: 'Diagonal B → D', hasValue: !!config.measurements['BD'] },
-        { key: 'BE', label: 'Diagonal B → E', hasValue: !!config.measurements['BE'] }
-      );
-    } else if (config.corners === 6) {
-      diagonals.push(
-        { key: 'AC', label: 'Diagonal A → C', hasValue: !!config.measurements['AC'] },
-        { key: 'AD', label: 'Diagonal A → D', hasValue: !!config.measurements['AD'] },
-        { key: 'AE', label: 'Diagonal A → E', hasValue: !!config.measurements['AE'] },
-        { key: 'BD', label: 'Diagonal B → D', hasValue: !!config.measurements['BD'] },
-        { key: 'BE', label: 'Diagonal B → E', hasValue: !!config.measurements['BE'] },
-        { key: 'BF', label: 'Diagonal B → F', hasValue: !!config.measurements['BF'] },
-        { key: 'CE', label: 'Diagonal C → E', hasValue: !!config.measurements['CE'] },
-        { key: 'CF', label: 'Diagonal C → F', hasValue: !!config.measurements['CF'] },
-        { key: 'DF', label: 'Diagonal D → F', hasValue: !!config.measurements['DF'] }
-      );
-    }
-
-    return diagonals;
+    const keys = getDiagonalKeysForCorners(config.corners);
+    return keys.map(key => ({
+      key,
+      label: `Diagonal ${key[0]} → ${key[1]}`,
+      hasValue: !!config.measurements[key]
+    }));
   };
 
   const diagonalMeasurements = getDiagonalMeasurements();
@@ -764,6 +740,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
                           5: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/5_Corner_Sails.jpg?v=1724717405',
                           6: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
+                          7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
+                          8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
                         };
                         const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
                         return hardwarePackImageUrl ? (
