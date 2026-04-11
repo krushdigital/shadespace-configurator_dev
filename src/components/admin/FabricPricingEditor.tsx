@@ -17,6 +17,8 @@ interface FabricPricingRow {
 interface FabricPricingEditorProps {
   fabricTypes: FabricType[];
   fabricPricing: FabricPricingRow[];
+  edgeFilter: 'webbing' | 'cabled';
+  onEdgeFilterChange: (edge: 'webbing' | 'cabled') => void;
   onSave: (id: string, prices: Record<string, number>) => Promise<void>;
   onError: (msg: string) => void;
 }
@@ -24,10 +26,11 @@ interface FabricPricingEditorProps {
 export const FabricPricingEditor: React.FC<FabricPricingEditorProps> = ({
   fabricTypes,
   fabricPricing,
+  edgeFilter,
+  onEdgeFilterChange,
   onSave,
   onError,
 }) => {
-  const [edgeFilter, setEdgeFilter] = useState<'webbing' | 'cabled'>('webbing');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrices, setEditPrices] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -88,7 +91,7 @@ export const FabricPricingEditor: React.FC<FabricPricingEditorProps> = ({
         </div>
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           <button
-            onClick={() => { setEdgeFilter('webbing'); setEditingId(null); }}
+            onClick={() => { onEdgeFilterChange('webbing'); setEditingId(null); }}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
               edgeFilter === 'webbing' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -96,7 +99,7 @@ export const FabricPricingEditor: React.FC<FabricPricingEditorProps> = ({
             Webbing Edge
           </button>
           <button
-            onClick={() => { setEdgeFilter('cabled'); setEditingId(null); }}
+            onClick={() => { onEdgeFilterChange('cabled'); setEditingId(null); }}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
               edgeFilter === 'cabled' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}

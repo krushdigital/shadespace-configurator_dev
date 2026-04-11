@@ -50,6 +50,7 @@ export const BasePricingManager: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCsvUpload, setShowCsvUpload] = useState<string | null>(null);
+  const [fabricEdgeFilter, setFabricEdgeFilter] = useState<'webbing' | 'cabled'>('webbing');
   const [newFabricId, setNewFabricId] = useState('');
   const [newFabricLabel, setNewFabricLabel] = useState('');
 
@@ -123,23 +124,30 @@ export const BasePricingManager: React.FC = () => {
 
   const handleCsvUpload = async (csvData: string, mode: 'replace' | 'merge') => {
     if (!showCsvUpload) return;
-    await apiCall('csv-upload', 'POST', { table: showCsvUpload, csv_data: csvData, mode });
+    const body: Record<string, string> = { table: showCsvUpload, csv_data: csvData, mode };
+    if (showCsvUpload === 'fabric_pricing') {
+      body.edge_type = fabricEdgeFilter;
+    }
+    await apiCall('csv-upload', 'POST', body);
     showSuccess(`CSV ${mode} completed successfully`);
     await fetchAll();
   };
 
   const handleCsvExport = async (table: string) => {
     const authHeaders = await getAdminAuthHeaders();
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/base-pricing/csv-export?table=${table}`,
-      { headers: { ...authHeaders } }
-    );
+    let exportUrl = `${supabaseUrl}/functions/v1/base-pricing/csv-export?table=${table}`;
+    let filename = `${table}.csv`;
+    if (table === 'fabric_pricing') {
+      exportUrl += `&edge_type=${fabricEdgeFilter}`;
+      filename = `fabric_pricing_${fabricEdgeFilter}.csv`;
+    }
+    const response = await fetch(exportUrl, { headers: { ...authHeaders } });
     const csv = await response.text();
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${table}.csv`;
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -182,7 +190,7 @@ export const BasePricingManager: React.FC = () => {
   const getCsvHeaders = () => {
     if (subTab === 'fabric') {
       const typeIds = fabricTypes.filter((ft) => ft.is_active).map((ft) => ft.id);
-      return `edge_type,perimeter,${typeIds.join(',')}`;
+      return `perimeter,${typeIds.join(',')}`;
     }
     if (subTab === 'corners' || subTab === 'hardware') return 'edge_type,corners,cost_nzd';
     if (subTab === 'features') return 'edge_type,feature_name,min_perimeter,max_perimeter,feature_value';
@@ -294,6 +302,8 @@ export const BasePricingManager: React.FC = () => {
             <FabricPricingEditor
               fabricTypes={fabricTypes}
               fabricPricing={fabricPricing}
+              edgeFilter={fabricEdgeFilter}
+              onEdgeFilterChange={setFabricEdgeFilter}
               onSave={async (id, prices) => {
                 await apiCall('fabric-pricing', 'PUT', { id, prices });
                 showSuccess('Fabric pricing updated');
@@ -462,8 +472,10 @@ export const BasePricingManager: React.FC = () => {
 
       {showCsvUpload && (
         <CsvUploadModal
-          title={`Upload ${showCsvUpload.replace(/_/g, ' ')} CSV`}
-          tableName={showCsvUpload}
+          title={showCsvUpload === 'fabric_pricing'
+            ? `Upload ${fabricEdgeFilter === 'webbing' ? 'Webbing Edge' : 'Cabled Edge'} Fabric Pricing CSV`
+            : `Upload ${showCsvUpload.replace(/_/g, ' ')} CSV`}
+          tableName={showCsvUpload === 'fabric_pricing' ? `fabric_pricing (${fabricEdgeFilter})` : showCsvUpload}
           expectedHeaders={getCsvHeaders()}
           onUpload={handleCsvUpload}
           onClose={() => setShowCsvUpload(null)}

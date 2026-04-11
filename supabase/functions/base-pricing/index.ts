@@ -96,22 +96,25 @@ Deno.serve(async (req: Request) => {
       const supabase = createClient(supabaseUrl, anonKey);
 
       if (table === "fabric_pricing") {
+        const edgeType = url.searchParams.get("edge_type");
         const { data: fabricTypes } = await supabase
           .from("fabric_types")
           .select("id, label")
           .order("display_order");
-        const { data: rows } = await supabase
-          .from("fabric_pricing")
-          .select("*")
-          .order("perimeter");
+        let query = supabase.from("fabric_pricing").select("*").order("perimeter");
+        if (edgeType && ["webbing", "cabled"].includes(edgeType)) {
+          query = query.eq("edge_type", edgeType);
+        }
+        const { data: rows } = await query;
 
         const typeIds = (fabricTypes || []).map((t: { id: string }) => t.id);
-        const csvHeader = ["edge_type", "perimeter", ...typeIds].join(",");
+        const csvHeader = ["perimeter", ...typeIds].join(",");
         const csvRows = (rows || []).map((r: { edge_type: string; perimeter: number; prices: Record<string, number> }) => {
           const prices = typeIds.map((id: string) => r.prices[id] ?? "");
-          return [r.edge_type, r.perimeter, ...prices].join(",");
+          return [r.perimeter, ...prices].join(",");
         });
-        return csvResponse([csvHeader, ...csvRows].join("\n"), "fabric_pricing.csv");
+        const filename = edgeType ? `fabric_pricing_${edgeType}.csv` : "fabric_pricing.csv";
+        return csvResponse([csvHeader, ...csvRows].join("\n"), filename);
       }
 
       if (table === "corner_costs" || table === "hardware_costs") {
@@ -320,7 +323,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (req.method === "POST" && subPath === "csv-upload") {
-      const { table, csv_data, mode } = await req.json();
+      const { table, csv_data, mode, edge_type } = await req.json();
       if (!table || !csv_data) return jsonResponse({ error: "Missing table or csv_data" }, 400);
       if (!["replace", "merge"].includes(mode)) return jsonResponse({ error: "Mode must be 'replace' or 'merge'" }, 400);
 
@@ -328,31 +331,34 @@ Deno.serve(async (req: Request) => {
       if (rows.length === 0) return jsonResponse({ error: "CSV contains no data rows" }, 400);
 
       if (table === "fabric_pricing") {
-        const { data: currentData } = await supabase.from("fabric_pricing").select("*");
-        const fabricTypeIds = headers.slice(2);
-
-        if (headers.length < 3 || headers[0] !== "edge_type" || headers[1] !== "perimeter") {
-          return jsonResponse({ error: "CSV must have headers: edge_type,perimeter,<fabric_type_ids...>" }, 400);
+        if (!edge_type || !["webbing", "cabled"].includes(edge_type)) {
+          return jsonResponse({ error: "edge_type must be 'webbing' or 'cabled'" }, 400);
         }
+
+        if (headers.length < 2 || headers[0] !== "perimeter") {
+          return jsonResponse({ error: "CSV must have headers: perimeter,<fabric_type_ids...>" }, 400);
+        }
+
+        const fabricTypeIds = headers.slice(1);
+        const currentQuery = supabase.from("fabric_pricing").select("*").eq("edge_type", edge_type);
+        const { data: currentData } = await currentQuery;
 
         const newRows = rows.map((row) => {
           const prices: Record<string, number> = {};
           fabricTypeIds.forEach((ftId, i) => {
-            const val = parseFloat(row[i + 2]);
+            const val = parseFloat(row[i + 1]);
             if (!isNaN(val)) prices[ftId] = val;
           });
           return {
-            edge_type: row[0],
-            perimeter: parseFloat(row[1]),
+            edge_type,
+            perimeter: parseFloat(row[0]),
             prices,
           };
         });
 
-        const invalidRows = newRows.filter(
-          (r) => !["webbing", "cabled"].includes(r.edge_type) || isNaN(r.perimeter) || r.perimeter <= 0
-        );
+        const invalidRows = newRows.filter((r) => isNaN(r.perimeter) || r.perimeter <= 0);
         if (invalidRows.length > 0) {
-          return jsonResponse({ error: `Invalid rows found. edge_type must be 'webbing' or 'cabled', perimeter must be positive.` }, 400);
+          return jsonResponse({ error: "Invalid rows found. perimeter must be a positive number." }, 400);
         }
 
         await supabase.from("pricing_change_log").insert({
@@ -361,11 +367,11 @@ Deno.serve(async (req: Request) => {
           previous_data: currentData,
           new_data: newRows,
           changed_by: changedBy,
-          description: `CSV ${mode}: ${newRows.length} fabric pricing rows`,
+          description: `CSV ${mode} (${edge_type}): ${newRows.length} fabric pricing rows`,
         });
 
         if (mode === "replace") {
-          await supabase.from("fabric_pricing").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+          await supabase.from("fabric_pricing").delete().eq("edge_type", edge_type);
           const { error } = await supabase.from("fabric_pricing").insert(
             newRows.map((r) => ({ edge_type: r.edge_type, perimeter: r.perimeter, prices: r.prices }))
           );
@@ -381,7 +387,7 @@ Deno.serve(async (req: Request) => {
           }
         }
 
-        return jsonResponse({ success: true, rows_processed: newRows.length, mode });
+        return jsonResponse({ success: true, rows_processed: newRows.length, mode, edge_type });
       }
 
       if (table === "corner_costs" || table === "hardware_costs") {
