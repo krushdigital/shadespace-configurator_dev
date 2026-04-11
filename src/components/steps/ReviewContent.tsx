@@ -520,7 +520,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           diagonalMeasurementsObj: diagonalMeasurementsObj,
           anchorPointMeasurements: anchorPointMeasurements,
           // Additional metadata
-          Fabric_Type: config.fabricType === 'extrablock330' && config.fabricColor && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor) ?
+          Fabric_Type: selectedFabric?.isFireRetardant && selectedColor && !selectedColor.isFireRetardant ?
             'Not FR Certified' : selectedFabric?.label,
           Shade_Factor: selectedColor?.shadeFactor,
           Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
@@ -659,9 +659,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                         className="w-6 h-6 rounded-full border border-slate-300 shadow-sm object-cover"
                       />
                     )}
-                    {config.fabricType === 'extrablock330' &&
-                      config.fabricColor &&
-                      ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor) && (
+                    {selectedFabric?.isFireRetardant && selectedColor && !selectedColor.isFireRetardant && (
                         <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
                           Not FR Certified
                         </span>

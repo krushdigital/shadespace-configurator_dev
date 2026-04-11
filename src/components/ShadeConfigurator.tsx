@@ -14,8 +14,8 @@ import { useShadeCalculations } from '../hooks/useShadeCalculations';
 import { usePricingSettings } from '../hooks/usePricingSettings';
 import { useBasePricing } from '../hooks/useBasePricing';
 import { useMobileGuidance } from '../hooks/useMobileGuidance';
-import { ConfiguratorState, FabricType, EdgeType } from '../types';
-import { FABRICS } from '../data/fabrics';
+import { ConfiguratorState, EdgeType } from '../types';
+import { useFabricCatalog } from '../hooks/useFabricCatalog';
 import { Point } from '../types';
 import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy } from '../utils/geometry';
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
@@ -35,7 +35,7 @@ import { toast } from 'react-toastify';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
-  fabricType: '' as FabricType,
+  fabricType: '',
   fabricColor: '',
   edgeType: '' as EdgeType,
   corners: 0,
@@ -82,6 +82,8 @@ export function ShadeConfigurator() {
     text: 'Preparing your order...',
     progress: 0
   });
+
+  const { fabrics: FABRICS } = useFabricCatalog();
 
   // Quote management state
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
@@ -575,7 +577,7 @@ export function ShadeConfigurator() {
         edgeMeasurements,
         diagonalMeasurementsObj,
         anchorPointMeasurements,
-        Fabric_Type: config.fabricType === 'extrablock330' && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor)
+        Fabric_Type: selectedFabricLocal?.isFireRetardant && selectedColor && !selectedColor.isFireRetardant
           ? 'Not FR Certified'
           : selectedFabricLocal?.label,
         Shade_Factor: selectedColor?.shadeFactor,
@@ -2130,7 +2132,7 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
       edgeMeasurements: edgeMeasurements,
       diagonalMeasurementsObj: diagonalMeasurementsObj,
       anchorPointMeasurements: anchorPointMeasurements,
-      Fabric_Type: config.fabricType === 'extrablock330' && config.fabricColor && ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor) ?
+      Fabric_Type: selectedFabricLocal?.isFireRetardant && selectedColorLocal && !selectedColorLocal.isFireRetardant ?
         'Not FR Certified' : selectedFabricLocal?.label,
       Shade_Factor: selectedColorLocal?.shadeFactor,
       Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
@@ -2245,6 +2247,7 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
                     setHighlightedCorner={setHighlightedCorner}
                     canvasRef={canvasRef}
                     ref={index === 6 ? reviewContentRef : undefined}
+                    fabrics={FABRICS}
                     loading={loading}
                     setLoading={setLoading}
                     setShowLoadingOverlay={setShowLoadingOverlay}
@@ -2314,6 +2317,7 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
                 canAddToCart={openStep === 6 ? canAddToCart : false}
                 handleAddToCart={handleAddToCartFromConfigurator}
                 loading={loading}
+                fabrics={FABRICS}
               />
             </div>
           )}

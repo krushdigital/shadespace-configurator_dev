@@ -357,15 +357,8 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       yPos += 3;
     }
 
-    // Determine if fabric color is fire retardant
-    const isFireRetardant = selectedFabric?.id === 'extrablock330' && 
-      config.fabricColor && 
-      !['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor);
-    
-    // Determine if it's ExtraBlock with non-FR color
-    const isExtrablockNonFRColor = selectedFabric?.id === 'extrablock330' && 
-      config.fabricColor && 
-      ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor);
+    const isFireRetardant = selectedFabric?.isFireRetardant && selectedColor?.isFireRetardant;
+    const isExtrablockNonFRColor = selectedFabric?.isFireRetardant && selectedColor && !selectedColor.isFireRetardant;
     
     const configDetails = [
       ['Fabric Material:', selectedFabric?.label || 'Not selected'],

@@ -1,8 +1,8 @@
 import React from 'react';
-import { ConfiguratorState, ShadeCalculations } from '../types';
+import { ConfiguratorState, ShadeCalculations, Fabric } from '../types';
 import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
-import { FABRICS } from '../data/fabrics';
+import { FABRICS as FALLBACK_FABRICS } from '../data/fabrics';
 import { formatCurrency } from '../utils/currencyFormatter';
 
 // Hardware pack image mapping
@@ -24,6 +24,7 @@ interface PriceSummaryDisplayProps {
   canAddToCart?: boolean;
   handleAddToCart?: () => void;
   loading?: boolean;
+  fabrics?: Fabric[];
 }
 
 export function PriceSummaryDisplay({
@@ -35,7 +36,9 @@ export function PriceSummaryDisplay({
   canAddToCart = false,
   handleAddToCart,
   loading = false,
+  fabrics,
 }: PriceSummaryDisplayProps) {
+  const FABRICS = fabrics && fabrics.length > 0 ? fabrics : FALLBACK_FABRICS;
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
 
   return (

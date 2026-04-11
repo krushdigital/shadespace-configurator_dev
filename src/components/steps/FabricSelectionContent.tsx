@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { ConfiguratorState } from '../../types';
-import { FABRICS } from '../../data/fabrics';
+import { ConfiguratorState, Fabric } from '../../types';
+import { FABRICS as FALLBACK_FABRICS } from '../../data/fabrics';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
@@ -18,6 +18,7 @@ interface FabricSelectionContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
+  fabrics?: Fabric[];
   mobileGuidance?: {
     isGuidanceActive: boolean;
     currentHighlightTarget: string | null;
@@ -27,7 +28,8 @@ interface FabricSelectionContentProps {
   };
 }
 
-export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, mobileGuidance }: FabricSelectionContentProps) {
+export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, fabrics, mobileGuidance }: FabricSelectionContentProps) {
+  const FABRICS = fabrics && fabrics.length > 0 ? fabrics : FALLBACK_FABRICS;
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
 
@@ -105,7 +107,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     <h5 className="font-semibold text-[#01312D]">
                       {fabric.label}
                     </h5>
-                    {fabric.id === 'extrablock330' && (
+                    {fabric.isFireRetardant && (
                       <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded shadow-md">
                         FR
                       </span>
@@ -155,7 +157,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                               {fabric.detailedDescription}
                             </p>
 
-                            {fabric.id === 'extrablock330' && (
+                            {fabric.isFireRetardant && (
                               <div className="flex items-center justify-center mb-3">
                                 <img
                                   src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Fire_Retardant.png?v=1755470964"
@@ -207,19 +209,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     </Tooltip>
                   </div>
                   <div className="mb-2">
-                    {fabric.id === 'monotec370' && (
+                    {fabric.badgeText && (
                       <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
-                        Premium
-                      </span>
-                    )}
-                    {fabric.id === 'extrablock330' && (
-                      <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
-                        Good Value
-                      </span>
-                    )}
-                    {fabric.id === 'shadetec320' && (
-                      <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
-                        Best Value
+                        {fabric.badgeText}
                       </span>
                     )}
                   </div>
@@ -304,12 +296,12 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
             </Tooltip>
           </div>
           {/* Dynamic Info Message for Extrablock 330 */}
-          {selectedFabric.id === 'extrablock330' && (
+          {selectedFabric.isFireRetardant && (
             <div className="mb-4 p-3 bg-[#F3FFE3] border border-[#307C31] rounded-lg">
               <div className="flex items-center gap-2">
                 <Info className="w-4 h-4 text-[#307C31] flex-shrink-0" />
                 <p className="text-sm text-[#01312D]">
-                  <strong>Important:</strong> Not all Extrablock 330 colors are fire retardant. Look for the <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">FR Fabric</span> badge for certified colors, or the <span className="bg-slate-300 text-slate-700 text-xs font-bold px-1.5 py-0.5 rounded">Standard</span> badge for non-FR colors.
+                  <strong>Important:</strong> Not all {selectedFabric.label} colors are fire retardant. Look for the <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">FR Fabric</span> badge for certified colors, or the <span className="bg-slate-300 text-slate-700 text-xs font-bold px-1.5 py-0.5 rounded">Standard</span> badge for non-FR colors.
                 </p>
               </div>
             </div>
@@ -349,7 +341,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         />
                         
                         {/* Shade Factor overlay - only for Monotec 370 */}
-                        {(selectedFabric.id === 'monotec370' || selectedFabric.id === 'extrablock330' || selectedFabric.id === 'shadetec320') && color.shadeFactor && (
+                        {color.shadeFactor && (
                           <div className="absolute bottom-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <span className="text-xs font-thin text-white bg-black bg-opacity-50 px-1 py-0.5 rounded backdrop-blur-sm">
                               SF {color.shadeFactor}%
@@ -360,17 +352,15 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     </div>
                     
                     {/* FR Fabric Banner for ExtraBlock */}
-                    {selectedFabric.id === 'extrablock330' && (
+                    {selectedFabric.isFireRetardant && (
                       <div className="absolute top-1 right-1">
-                        {['Yellow', 'Red', 'Cream', 'Beige'].includes(color.name) ? (
-                          // Non-FR colors
-                          <span className="bg-[#F3FFE3] text-[#01312D] text-xs font-bold px-1.5 py-0.5 rounded shadow-md">
-                            Standard
-                          </span>
-                        ) : (
-                          // FR colors
+                        {color.isFireRetardant ? (
                           <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded shadow-md">
                             FR Fabric
+                          </span>
+                        ) : (
+                          <span className="bg-[#F3FFE3] text-[#01312D] text-xs font-bold px-1.5 py-0.5 rounded shadow-md">
+                            Standard
                           </span>
                         )}
                       </div>

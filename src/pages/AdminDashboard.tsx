@@ -11,12 +11,13 @@ import { ChangePasswordModal } from '../components/admin/ChangePasswordModal';
 import { FunnelAnalysis } from '../components/admin/FunnelAnalysis';
 import { DataExport } from '../components/admin/DataExport';
 import { ExclusionManager } from '../components/admin/ExclusionManager';
+import { FabricColorManager } from '../components/admin/FabricColorManager';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
@@ -40,6 +41,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     { id: 'quotes', label: 'Saved Quotes' },
     { id: 'events', label: 'User Events' },
     { id: 'funnel', label: 'Funnel & Insights' },
+    { id: 'fabrics', label: 'Fabrics & Colors' },
     { id: 'pricing', label: 'Currency Pricing' },
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
@@ -151,6 +153,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} />}
 
         {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} excludeInternal={excludeInternal} />}
+
+        {activeTab === 'fabrics' && <FabricColorManager />}
 
         {activeTab === 'pricing' && <PricingManager />}
 

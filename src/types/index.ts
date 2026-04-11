@@ -5,7 +5,7 @@ export interface Point {
 
 export interface ConfiguratorState {
   step: number;
-  fabricType: FabricType | '';
+  fabricType: string;
   fabricColor: string;
   edgeType: EdgeType | '';
   corners: number;
@@ -38,11 +38,11 @@ export interface ShadeCalculations {
   totalWeightGrams: number;
 }
 
-export type FabricType = 'monotec370' | 'extrablock330' | 'otherFabricId'; 
-export type EdgeType = 'webbing' | 'cabled' | 'none'; 
+export type FabricType = string;
+export type EdgeType = 'webbing' | 'cabled' | 'none';
 
 export interface Fabric {
-  id: FabricType;
+  id: string;
   label: string;
   description: string;
   detailedDescription: string;
@@ -54,6 +54,8 @@ export interface Fabric {
   warrantyYears: number;
   madeIn: string;
   weightPerSqm: number;
+  badgeText?: string;
+  isFireRetardant?: boolean;
 }
 
 export interface FabricColor {
@@ -61,4 +63,5 @@ export interface FabricColor {
   imageUrl: string;
   textColor: string;
   shadeFactor?: number;
+  isFireRetardant?: boolean;
 }
