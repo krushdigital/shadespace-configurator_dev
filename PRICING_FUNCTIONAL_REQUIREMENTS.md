@@ -1,7 +1,7 @@
 # Functional Requirements: Database-Driven Currency Pricing System
 
-**Document Version:** 1.1
-**Date:** 18 March 2026
+**Document Version:** 1.2
+**Date:** 14 April 2026
 **Prepared For:** CFO & Shopify App Developer
 **System:** ShadeSpace Shade Sail Configurator
 
@@ -54,30 +54,36 @@ ShadeSpace operates on an **all-inclusive pricing model**. The price displayed t
 
 All base product costs (fabric, corners, hardware) are maintained in **New Zealand Dollars (NZD)**.
 
-The customer-facing price is calculated in four sequential steps:
+The customer-facing price is calculated using an **additive model** where market markup and Zonos/DHL markup are applied **independently to the base rate**, then summed before currency conversion:
 
 ```
 Step 1: Base NZD Price
         = Fabric Cost + Corner Cost + Hardware Cost
         (All sourced from NZD product cost tables)
 
-Step 2: Market Markup (per currency)
+Step 2: Market Markup (applied to base)
         = Step 1 x market_markup
         Purpose: Adjusts margins per market/region
 
-Step 3: Zonos/DHL Markup (per currency)
-        = Step 2 x zonos_dhl_markup
+Step 3: Zonos/DHL Cost (applied independently to base)
+        = Step 1 x (zonos_dhl_markup - 1)
         Purpose: Pre-bakes international shipping, duties, and tariffs
         into the product price (all-inclusive pricing)
 
-Step 4: Currency Conversion
-        = Step 3 x exchange_rate
+Step 4: Combined NZD Total
+        = Step 2 + Step 3
+        = Base NZD x (market_markup + zonos_dhl_markup - 1)
+
+Step 5: Currency Conversion
+        = Step 4 x exchange_rate
         Purpose: Converts from NZD to customer's currency
 
 Final Price = Round UP to nearest whole number
 ```
 
-**Important:** Currency conversion happens LAST. All internal calculations remain in NZD until the final display step.
+**Important:** Both uplifts are calculated as independent percentages of the base NZD price -- they do not compound on each other. Currency conversion happens LAST. All internal calculations remain in NZD until the final display step.
+
+**Combined Factor Formula:** `(market_markup + zonos_dhl_markup - 1) x exchange_rate`
 
 ---
 
@@ -86,14 +92,14 @@ Final Price = Round UP to nearest whole number
 | Currency | Market Markup | Zonos/DHL Markup | Exchange Rate | Combined Factor |
 |----------|--------------|------------------|---------------|-----------------|
 | NZD      | 1.0000 (0%)    | 1.05 (5%)   | 1.0000        | 1.0500          |
-| USD      | 1.0833 (8.3%)  | 1.20 (20%)  | 0.5800        | 0.7540          |
-| AUD      | 0.7500 (-25%)  | 1.20 (20%)  | 0.8800        | 0.7920          |
-| GBP      | 1.4000 (40%)   | 1.20 (20%)  | 0.4300        | 0.7224          |
-| EUR      | 1.3767 (37.7%) | 1.20 (20%)  | 0.5000        | 0.8260          |
-| CAD      | 1.0833 (8.3%)  | 1.20 (20%)  | 0.8100        | 1.0530          |
-| AED      | 1.7500 (75%)   | 1.20 (20%)  | 2.1900        | 4.5990          |
+| USD      | 1.0833 (8.3%)  | 1.20 (20%)  | 0.5800        | 0.7443          |
+| AUD      | 0.7500 (-25%)  | 1.20 (20%)  | 0.8800        | 0.8360          |
+| GBP      | 1.4000 (40%)   | 1.20 (20%)  | 0.4300        | 0.6880          |
+| EUR      | 1.3767 (37.7%) | 1.20 (20%)  | 0.5000        | 0.7884          |
+| CAD      | 1.0833 (8.3%)  | 1.20 (20%)  | 0.8100        | 1.0395          |
+| AED      | 1.7500 (75%)   | 1.20 (20%)  | 2.1900        | 4.2705          |
 
-**Note:** All international currencies include a 20% Zonos/DHL markup to cover international shipping, duties, and tariffs. This 20% was redistributed from the market markup so that customer-facing prices remain unchanged. The combined factor (market markup x Zonos/DHL markup) for each currency is identical to the previous values.
+**Combined Factor** = `(market_markup + zonos_dhl_markup - 1) x exchange_rate`. Both uplifts are applied independently to the base NZD rate and summed -- they do not compound.
 
 **NZD:** Domestic orders have no market markup and a 1:1 exchange rate. A 5% Zonos/DHL markup covers domestic DHL delivery costs. NZD customers pay 5% above the base product cost.
 
@@ -105,29 +111,32 @@ For a shade sail with a base NZD price of **NZ$2,500**:
 
 ### USD Customer:
 ```
-Base NZD:       NZ$2,500.00
-Market Markup:  NZ$2,500.00 x 1.0833 = NZ$2,708.25
-Zonos/DHL:      NZ$2,708.25 x 1.20   = NZ$3,249.90
-Exchange Rate:  NZ$3,249.90 x 0.58   = US$1,885.00
-Final Price:    US$1,885 (all-inclusive, rounded up)
+Base NZD:           NZ$2,500.00
+Market Markup:      NZ$2,500.00 x 1.0833       = NZ$2,708.25  (on base)
+Zonos/DHL Cost:     NZ$2,500.00 x (1.20 - 1)   = NZ$  500.00  (on base)
+Combined NZD:       NZ$2,708.25 + NZ$500.00     = NZ$3,208.25
+Exchange Rate:      NZ$3,208.25 x 0.58          = US$1,860.79
+Final Price:        US$1,861 (all-inclusive, rounded up)
 ```
 
 ### AUD Customer:
 ```
-Base NZD:       NZ$2,500.00
-Market Markup:  NZ$2,500.00 x 0.75   = NZ$1,875.00
-Zonos/DHL:      NZ$1,875.00 x 1.20   = NZ$2,250.00
-Exchange Rate:  NZ$2,250.00 x 0.88   = AU$1,980.00
-Final Price:    AU$1,980 (all-inclusive, rounded up)
+Base NZD:           NZ$2,500.00
+Market Markup:      NZ$2,500.00 x 0.75         = NZ$1,875.00  (on base)
+Zonos/DHL Cost:     NZ$2,500.00 x (1.20 - 1)   = NZ$  500.00  (on base)
+Combined NZD:       NZ$1,875.00 + NZ$500.00     = NZ$2,375.00
+Exchange Rate:      NZ$2,375.00 x 0.88          = AU$2,090.00
+Final Price:        AU$2,090 (all-inclusive, rounded up)
 ```
 
 ### GBP Customer:
 ```
-Base NZD:       NZ$2,500.00
-Market Markup:  NZ$2,500.00 x 1.40   = NZ$3,500.00
-Zonos/DHL:      NZ$3,500.00 x 1.20   = NZ$4,200.00
-Exchange Rate:  NZ$4,200.00 x 0.43   = £1,806.00
-Final Price:    £1,806 (all-inclusive, rounded up)
+Base NZD:           NZ$2,500.00
+Market Markup:      NZ$2,500.00 x 1.40         = NZ$3,500.00  (on base)
+Zonos/DHL Cost:     NZ$2,500.00 x (1.20 - 1)   = NZ$  500.00  (on base)
+Combined NZD:       NZ$3,500.00 + NZ$500.00     = NZ$4,000.00
+Exchange Rate:      NZ$4,000.00 x 0.43          = £1,720.00
+Final Price:        £1,720 (all-inclusive, rounded up)
 ```
 
 ---
