@@ -16,8 +16,7 @@ import {
   MAX_REFERENCE_LENGTH
 } from '../utils/quoteNaming';
 
-type ActionType = 'save' | 'email' | null;
-type ModalStep = 'select' | 'form' | 'success';
+type ModalStep = 'form' | 'success';
 
 interface UnifiedSaveModalProps {
   isOpen: boolean;
@@ -56,15 +55,15 @@ export function UnifiedSaveModal({
   calculations,
   currentStep,
   totalSteps = 7,
-  shouldShowEmailOption = true,
+  shouldShowEmailOption = false,
   pricingSnapshot,
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
   onSaveComplete,
   onCustomerDetailsCaptured,
 }: UnifiedSaveModalProps) {
-  const [selectedAction, setSelectedAction] = useState<ActionType>(null);
-  const [modalStep, setModalStep] = useState<ModalStep>('select');
+  const isEmailMode = shouldShowEmailOption;
+  const [modalStep, setModalStep] = useState<ModalStep>('form');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -103,22 +102,17 @@ export function UnifiedSaveModal({
         corners: config.corners,
         fabric_type: config.fabricType,
       });
+
+      analytics.quoteSaveMethodSelected({
+        method: shouldShowEmailOption ? 'email_pdf_quote' : 'save_progress',
+        total_price: calculations.totalPrice,
+        currency: config.currency,
+        time_to_select_seconds: 0,
+      });
     }
-  }, [isOpen, calculations.totalPrice, config.currency, config.corners, config.fabricType]);
+  }, [isOpen, calculations.totalPrice, config.currency, config.corners, config.fabricType, shouldShowEmailOption]);
 
   if (!isOpen) return null;
-
-  const handleActionSelect = (action: ActionType) => {
-    setSelectedAction(action);
-    setModalStep('form');
-
-    analytics.quoteSaveMethodSelected({
-      method: action === 'save' ? 'save_progress' : 'email_pdf_quote',
-      total_price: calculations.totalPrice,
-      currency: config.currency,
-      time_to_select_seconds: (Date.now() - modalOpenTime) / 1000,
-    });
-  };
 
   const isFormValid = () => {
     return firstName.trim() !== '' &&
@@ -390,10 +384,10 @@ export function UnifiedSaveModal({
   const handleSubmit = async () => {
     if (!isFormValid()) return;
 
-    if (selectedAction === 'save') {
-      await handleSaveProgress();
-    } else if (selectedAction === 'email') {
+    if (isEmailMode) {
       await handleEmailPDFQuote();
+    } else {
+      await handleSaveProgress();
     }
   };
 
@@ -415,13 +409,12 @@ export function UnifiedSaveModal({
       const modalDuration = (Date.now() - modalOpenTime) / 1000;
       analytics.quoteSaveModalCancelled({
         modal_duration_seconds: modalDuration,
-        had_selected_method: !!selectedAction,
+        had_selected_method: true,
         had_entered_email: !!email,
       });
     }
 
-    setSelectedAction(null);
-    setModalStep('select');
+    setModalStep('form');
     setFirstName('');
     setLastName('');
     setEmail('');
@@ -432,13 +425,6 @@ export function UnifiedSaveModal({
     setSaveEmailSent(false);
     setCopied(false);
     onClose();
-  };
-
-  const handleBack = () => {
-    if (modalStep === 'form') {
-      setModalStep('select');
-      setSelectedAction(null);
-    }
   };
 
   const formatDate = (dateString: string) => {
@@ -454,73 +440,27 @@ export function UnifiedSaveModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          {modalStep === 'select' && (
-            <>
-              <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                Save Your Configuration
-              </h3>
-              <p className="text-sm text-slate-600 mb-6">
-                Choose how you'd like to save your shade sail configuration.
-              </p>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => handleActionSelect('save')}
-                  className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-[#BFF102] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <svg className="w-5 h-5 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-[#01312D] mb-1">
-                        Save Progress
-                      </h4>
-                      <p className="text-sm text-slate-600">
-                        Save your configuration and return anytime to continue. Your quoted price is locked for 30 days.
-                      </p>
-                    </div>
-                  </div>
-                </button>
-
-                {shouldShowEmailOption && (
-                  <button
-                    onClick={() => handleActionSelect('email')}
-                    className="w-full p-4 border-2 border-slate-200 rounded-lg hover:border-[#307C31] hover:bg-[#BFF102]/10 transition-all duration-200 text-left group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-[#BFF102] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <svg className="w-5 h-5 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-[#01312D] mb-1">
-                          Email PDF Quote
-                        </h4>
-                        <p className="text-sm text-slate-600">
-                          Receive a detailed PDF quote with your shade sail specifications via email
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-
           {modalStep === 'form' && (
             <>
               <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                {selectedAction === 'save' ? 'Save Your Progress' : 'Email PDF Quote'}
+                {isEmailMode ? 'Save & Email PDF Quote' : 'Save Your Progress'}
               </h3>
               <p className="text-sm text-slate-600 mb-6">
-                {selectedAction === 'save'
-                  ? 'Enter your details to save your configuration. Your price is locked for 30 days.'
-                  : 'Enter your details to receive a detailed PDF quote via email.'}
+                {isEmailMode
+                  ? 'Enter your details to save your configuration and receive a detailed PDF quote via email.'
+                  : 'Enter your details to save your configuration. You can return anytime to continue.'}
               </p>
+
+              {isEmailMode && (
+                <div className="flex items-start gap-2 bg-[#BFF102]/10 border border-[#BFF102]/40 rounded-lg p-3 mb-5">
+                  <svg className="w-5 h-5 text-[#307C31] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-xs text-[#01312D]">
+                    A detailed PDF quote with your specifications, pricing, and a link to resume will be emailed to you.
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-4 mb-6">
                 <div className="grid grid-cols-2 gap-3">
@@ -605,32 +545,21 @@ export function UnifiedSaveModal({
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBack}
-                  className="flex-1"
-                  disabled={isSubmitting}
-                >
-                  Back
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSubmit}
-                  className="flex-1"
-                  disabled={isSubmitting || !isFormValid()}
-                >
-                  {isSubmitting
-                    ? (selectedAction === 'save' ? 'Saving...' : 'Sending...')
-                    : (selectedAction === 'save' ? 'Save Progress' : 'Send PDF Quote')}
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleSubmit}
+                className="w-full"
+                disabled={isSubmitting || !isFormValid()}
+              >
+                {isSubmitting
+                  ? (isEmailMode ? 'Saving & Sending...' : 'Saving...')
+                  : (isEmailMode ? 'Save & Email Quote' : 'Save Progress')}
+              </Button>
             </>
           )}
 
-          {modalStep === 'success' && selectedAction === 'save' && savedQuote && (
+          {modalStep === 'success' && savedQuote && (
             <>
               <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-[#BFF102] rounded-full flex items-center justify-center mx-auto mb-4">
@@ -639,10 +568,12 @@ export function UnifiedSaveModal({
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                  Progress Saved!
+                  {emailSent ? 'Saved & PDF Quote Sent!' : 'Progress Saved!'}
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Your configuration has been saved successfully. You can return anytime to continue.
+                  {emailSent
+                    ? 'Your configuration has been saved and a detailed PDF quote has been sent to your email.'
+                    : 'Your configuration has been saved successfully. You can return anytime to continue.'}
                 </p>
               </div>
 
@@ -723,7 +654,49 @@ export function UnifiedSaveModal({
                   </div>
                 </div>
 
-                {saveEmailSent ? (
+                {emailSent ? (
+                  <>
+                    <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-[#307C31] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-sm text-[#01312D]">
+                          We've sent your PDF quote to <strong>{email}</strong>. Please check your inbox (and spam folder if needed).
+                        </p>
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-[#01312D] mb-2">Your PDF includes:</h4>
+                      <ul className="text-xs text-slate-600 space-y-1">
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Complete configuration summary
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          All measurements and specifications
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Shade sail preview diagram
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Pricing and warranty details
+                        </li>
+                      </ul>
+                    </div>
+                  </>
+                ) : saveEmailSent ? (
                   <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
                     <div className="flex items-start gap-2">
                       <svg className="w-5 h-5 text-[#307C31] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -746,160 +719,6 @@ export function UnifiedSaveModal({
                     </div>
                   </div>
                 )}
-
-              </div>
-
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleClose}
-                className="w-full"
-              >
-                Done
-              </Button>
-            </>
-          )}
-
-          {modalStep === 'success' && selectedAction === 'email' && emailSent && (
-            <>
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-[#BFF102] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-[#01312D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                  PDF Quote Sent!
-                </h3>
-                <p className="text-sm text-slate-600">
-                  Your detailed PDF quote has been sent to your email.
-                </p>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <div className="bg-[#BFF102]/20 border-2 border-[#BFF102] rounded-lg p-4">
-                  <div className="text-xs font-medium text-[#307C31] mb-1">
-                    Shade Sail Name
-                  </div>
-                  <div className="text-lg font-bold text-[#01312D]">
-                    {savedQuote?.quoteName || quoteName.trim() || defaultQuoteName}
-                  </div>
-                  {(savedQuote?.customerReference || customerReference) && (
-                    <div className="mt-2 pt-2 border-t border-[#BFF102]/40">
-                      <div className="text-xs font-medium text-[#307C31]">
-                        Customer Reference
-                      </div>
-                      <div className="text-sm font-semibold text-[#01312D] mt-1">
-                        {savedQuote?.customerReference || customerReference}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {savedQuote && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                    <div className="text-xs font-medium text-slate-600 mb-1">
-                      System Reference
-                    </div>
-                    <div className="text-sm font-bold text-[#01312D] font-mono">
-                      {savedQuote.reference}
-                    </div>
-                  </div>
-                )}
-
-                {savedQuote && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                    <div className="text-xs font-medium text-slate-600 mb-1">
-                      Price Locked Until
-                    </div>
-                    <div className="text-sm font-semibold text-[#01312D]">
-                      {formatDate(savedQuote.pricingLockedUntil)}
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Your link never expires. After this date, live pricing applies.
-                    </p>
-                  </div>
-                )}
-
-                {savedQuote && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                    <div className="text-xs font-medium text-slate-600 mb-2">
-                      Shareable Link
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={savedQuote.url}
-                        readOnly
-                        className="flex-1 text-xs bg-white border border-slate-300 rounded px-3 py-2 font-mono text-slate-700"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCopyLink}
-                        className="flex-shrink-0"
-                      >
-                        {copied ? (
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Copied
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                            Copy
-                          </span>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="bg-[#BFF102]/10 border border-[#307C31]/30 rounded-lg p-4">
-                  <div className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-[#307C31] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-sm text-[#01312D]">
-                      We've sent your PDF quote to <strong>{email}</strong>. Please check your inbox (and spam folder if needed).
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-[#01312D] mb-2">Your PDF includes:</h4>
-                  <ul className="text-xs text-slate-600 space-y-1">
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Complete configuration summary
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      All measurements and specifications
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Shade sail preview diagram
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Pricing and warranty details
-                    </li>
-                  </ul>
-                </div>
-
               </div>
 
               <Button

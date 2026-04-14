@@ -25,6 +25,7 @@ interface PriceSummaryDisplayProps {
   handleAddToCart?: () => void;
   loading?: boolean;
   fabrics?: Fabric[];
+  isEmailMode?: boolean;
 }
 
 export function PriceSummaryDisplay({
@@ -37,6 +38,7 @@ export function PriceSummaryDisplay({
   handleAddToCart,
   loading = false,
   fabrics,
+  isEmailMode = false,
 }: PriceSummaryDisplayProps) {
   const FABRICS = fabrics && fabrics.length > 0 ? fabrics : FALLBACK_FABRICS;
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
@@ -176,17 +178,14 @@ export function PriceSummaryDisplay({
               <Tooltip
                 content={
                   <div className="text-slate-700">
-                    <p className="font-semibold mb-2">Two Ways to Save:</p>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <p className="font-medium">💾 Save Progress</p>
-                        <p className="text-slate-600">Return anytime within 30 days to continue your configuration</p>
-                      </div>
-                      <div>
-                        <p className="font-medium">📧 Email PDF Quote</p>
-                        <p className="text-slate-600">Receive a detailed quote with all specifications via email</p>
-                      </div>
-                    </div>
+                    <p className="font-semibold mb-1">
+                      {isEmailMode ? 'Save & Email PDF Quote' : 'Save Your Progress'}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {isEmailMode
+                        ? 'Save your configuration and receive a detailed PDF quote with pricing via email.'
+                        : 'Save your configuration and return anytime within 30 days to continue.'}
+                    </p>
                   </div>
                 }
                 fullWidth
@@ -197,14 +196,20 @@ export function PriceSummaryDisplay({
                   fullWidth
                   className="flex items-center justify-center gap-2 border-2 !bg-gradient-to-r !from-[#d4f763] !to-[#BFF102] hover:!from-[#BFF102] hover:!to-[#a8d902] !text-[#01312D] hover:!text-[#01312D] !border-[#BFF102] hover:!border-[#a8d902] transition-colors font-semibold"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                  </svg>
-                  <span>Save Configuration</span>
+                  {isEmailMode ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  )}
+                  <span>{isEmailMode ? 'Save & Email Quote' : 'Save Progress'}</span>
                 </Button>
               </Tooltip>
               <p className="text-xs text-center text-slate-500 mt-2">
-                Save progress or get a PDF quote via email
+                {isEmailMode ? 'Your price is locked for 30 days' : 'Return anytime to continue where you left off'}
               </p>
 
               {/* Add to Cart button - Show when all acknowledgments are checked */}

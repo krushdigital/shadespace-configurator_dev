@@ -2318,6 +2318,7 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
                 handleAddToCart={handleAddToCartFromConfigurator}
                 loading={loading}
                 fabrics={FABRICS}
+                isEmailMode={openStep === 6 && hasAllEdgeMeasurements}
               />
             </div>
           )}

@@ -6,11 +6,10 @@ interface TooltipProps {
   children: React.ReactNode;
   className?: string;
   onOpen?: () => void;
-  onAccordionOpen?: () => void;
   fullWidth?: boolean;
 }
 
-export function Tooltip({ content, children, className = '', onOpen, onAccordionOpen, fullWidth = false }: TooltipProps) {
+export function Tooltip({ content, children, className = '', onOpen, fullWidth = false }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isScrollable, setIsScrollable] = useState(false);
@@ -131,10 +130,6 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
         }
       }, 100);
     }
-
-    if (onAccordionOpen) {
-      onAccordionOpen();
-    }
   };
 
   const handleScroll = () => {
@@ -202,12 +197,6 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
     };
   }, [isVisible]);
 
-  const enhancedContent = React.isValidElement(content)
-    ? React.cloneElement(content as React.ReactElement<any>, {
-        onAccordionOpen: handleAccordionOpen
-      })
-    : content;
-
   const tooltipElement = isVisible ? createPortal(
     <div
       className={`fixed bg-white border border-slate-300 rounded-lg shadow-2xl ${className}`}
@@ -231,7 +220,7 @@ export function Tooltip({ content, children, className = '', onOpen, onAccordion
       <div className={`leading-relaxed p-3 sm:p-4 ${
         window.innerWidth < 768 ? 'text-xs' : 'text-sm'
       }`}>
-        {enhancedContent}
+        {content}
       </div>
       {(showScrollIndicator || accordionJustOpened) && (
         <div
