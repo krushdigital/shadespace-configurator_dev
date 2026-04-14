@@ -607,13 +607,20 @@ export function ShadeConfigurator() {
         firstName,
         lastName,
         quoteName,
-        customerReference
+        customerReference,
+        quoteReference: quoteReference || undefined,
       };
 
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const response = await fetch(
-        '/apps/shade_space/api/v1/public/email-summary-send',
+        `${supabaseUrl}/functions/v1/send-config-email`,
         {
           method: "POST",
+          headers: {
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json',
+          },
           body: JSON.stringify({ pdf: pdfBase64, ...orderData, email, firstName, lastName, quoteUrl }),
         }
       );
@@ -629,6 +636,17 @@ export function ShadeConfigurator() {
           includes_canvas: !!canvasImageUrl,
           total_price: calculations.totalPrice,
           currency: config.currency,
+          shopify_customer_created: data.shopifyCustomerCreated || false,
+          shopify_customer_id: data.shopifyCustomerId,
+        });
+
+        analytics.configEmailWithPdfSent({
+          email_domain: emailDomain,
+          includes_pdf: !!pdfBase64,
+          includes_canvas: !!canvasImageUrl,
+          total_price: calculations.totalPrice,
+          currency: config.currency,
+          quote_reference: quoteReference || '',
           shopify_customer_created: data.shopifyCustomerCreated || false,
           shopify_customer_id: data.shopifyCustomerId,
         });

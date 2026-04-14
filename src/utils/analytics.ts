@@ -107,6 +107,28 @@ export const analytics = {
     trackEvent('email_summary_sent_with_shopify', data);
   },
 
+  saveProgressEmailSent: (data: {
+    email_domain: string;
+    quote_reference: string;
+    total_price: number;
+    currency: string;
+  }) => {
+    trackEvent('save_progress_email_sent', data);
+  },
+
+  configEmailWithPdfSent: (data: {
+    email_domain: string;
+    includes_pdf: boolean;
+    includes_canvas: boolean;
+    total_price: number;
+    currency: string;
+    quote_reference: string;
+    shopify_customer_created: boolean;
+    shopify_customer_id?: string;
+  }) => {
+    trackEvent('config_email_with_pdf_sent', data);
+  },
+
   // SHOPIFY INTEGRATION
   shopifyCustomerCreated: (data: {
     customer_id: string;

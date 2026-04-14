@@ -170,10 +170,16 @@ export function UnifiedSaveModal({
 
       if (email) {
         try {
+          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
           const emailResponse = await fetch(
-            '/apps/shade_space/api/v1/public/quote-save-email',
+            `${supabaseUrl}/functions/v1/send-save-progress-email`,
             {
               method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+              },
               body: JSON.stringify({
                 email: email.trim(),
                 quoteReference: result.reference,
@@ -194,7 +200,14 @@ export function UnifiedSaveModal({
           } else {
             const emailData = await emailResponse.json();
             setSaveEmailSent(!!emailData.success);
-            if (!emailData.success) {
+            if (emailData.success) {
+              analytics.saveProgressEmailSent({
+                email_domain: email.split('@')[1] || 'unknown',
+                quote_reference: result.reference,
+                total_price: calculations.totalPrice,
+                currency: config.currency,
+              });
+            } else {
               console.warn('Save progress confirmation email failed:', emailData.error);
             }
           }
@@ -340,7 +353,7 @@ export function UnifiedSaveModal({
 
             setEmailSent(true);
             setModalStep('success');
-            showToast('PDF quote sent to your email!', 'success');
+            showToast('PDF sent to your email!', 'success');
 
             analytics.quoteSaveSuccess({
               quote_reference: savedRef,
@@ -443,11 +456,11 @@ export function UnifiedSaveModal({
           {modalStep === 'form' && (
             <>
               <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                {isEmailMode ? 'Save & Email PDF Quote' : 'Save Your Progress'}
+                {isEmailMode ? 'Save & Email PDF' : 'Save Your Progress'}
               </h3>
               <p className="text-sm text-slate-600 mb-6">
                 {isEmailMode
-                  ? 'Enter your details to save your configuration and receive a detailed PDF quote via email.'
+                  ? 'Enter your details to save your configuration and receive a detailed PDF via email.'
                   : 'Enter your details to save your configuration. You can return anytime to continue.'}
               </p>
 
@@ -457,7 +470,7 @@ export function UnifiedSaveModal({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   <p className="text-xs text-[#01312D]">
-                    A detailed PDF quote with your specifications, pricing, and a link to resume will be emailed to you.
+                    A detailed PDF with your specifications, pricing, and a link to resume will be emailed to you.
                   </p>
                 </div>
               )}
@@ -554,7 +567,7 @@ export function UnifiedSaveModal({
               >
                 {isSubmitting
                   ? (isEmailMode ? 'Saving & Sending...' : 'Saving...')
-                  : (isEmailMode ? 'Save & Email Quote' : 'Save Progress')}
+                  : (isEmailMode ? 'Save & Email' : 'Save Progress')}
               </Button>
             </>
           )}
@@ -568,11 +581,11 @@ export function UnifiedSaveModal({
                   </svg>
                 </div>
                 <h3 className="text-2xl font-bold text-[#01312D] mb-2">
-                  {emailSent ? 'Saved & PDF Quote Sent!' : 'Progress Saved!'}
+                  {emailSent ? 'Configuration Saved & PDF Sent!' : 'Progress Saved!'}
                 </h3>
                 <p className="text-sm text-slate-600">
                   {emailSent
-                    ? 'Your configuration has been saved and a detailed PDF quote has been sent to your email.'
+                    ? 'Your configuration has been saved and a detailed PDF has been sent to your email.'
                     : 'Your configuration has been saved successfully. You can return anytime to continue.'}
                 </p>
               </div>
@@ -662,7 +675,7 @@ export function UnifiedSaveModal({
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                         <p className="text-sm text-[#01312D]">
-                          We've sent your PDF quote to <strong>{email}</strong>. Please check your inbox (and spam folder if needed).
+                          We've sent your PDF to <strong>{email}</strong>. Please check your inbox (and spam folder if needed).
                         </p>
                       </div>
                     </div>
