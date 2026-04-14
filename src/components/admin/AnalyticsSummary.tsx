@@ -24,6 +24,7 @@ interface Analytics {
 export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange, excludeInternal }) => {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAnalytics();
@@ -32,10 +33,11 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange, e
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
+      setError(null);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
       if (!supabaseUrl) {
-        console.error('Supabase URL not found');
+        setError('Supabase URL not configured');
         return;
       }
 
@@ -53,12 +55,14 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange, e
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setAnalytics(data);
+      if (!response.ok) {
+        setError(`Failed to load analytics (${response.status})`);
+        return;
       }
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
+      const data = await response.json();
+      setAnalytics(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch analytics');
     } finally {
       setLoading(false);
     }
@@ -79,7 +83,7 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange, e
   if (!analytics) {
     return (
       <Card className="p-6">
-        <p className="text-gray-500 text-center py-8">Failed to load analytics data</p>
+        <p className="text-red-600 text-center py-8">{error || 'Failed to load analytics data'}</p>
       </Card>
     );
   }

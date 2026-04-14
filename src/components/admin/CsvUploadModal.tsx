@@ -24,6 +24,36 @@ export const CsvUploadModal: React.FC<CsvUploadModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const parseCsvLine = (line: string): string[] => {
+    const fields: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (inQuotes) {
+        if (ch === '"' && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else if (ch === '"') {
+          inQuotes = false;
+        } else {
+          current += ch;
+        }
+      } else {
+        if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          fields.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+    }
+    fields.push(current.trim());
+    return fields;
+  };
+
   const parseCsvPreview = (text: string) => {
     const lines = text.trim().split('\n');
     if (lines.length < 2) {
@@ -31,8 +61,8 @@ export const CsvUploadModal: React.FC<CsvUploadModalProps> = ({
       setPreviewRows([]);
       return;
     }
-    const headers = lines[0].split(',').map((h) => h.trim());
-    const rows = lines.slice(1, 11).map((line) => line.split(',').map((c) => c.trim()));
+    const headers = parseCsvLine(lines[0]);
+    const rows = lines.slice(1, 11).map((line) => parseCsvLine(line));
     setPreviewHeaders(headers);
     setPreviewRows(rows);
   };

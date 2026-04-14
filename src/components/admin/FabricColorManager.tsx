@@ -40,6 +40,12 @@ async function apiCall(path: string, method: string, body?: unknown) {
     headers: { ...headers, 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    let errorMsg = `Request failed (${res.status})`;
+    try { const parsed = JSON.parse(text); errorMsg = parsed.error || errorMsg; } catch { /* use default */ }
+    return { success: false, error: errorMsg };
+  }
   return res.json();
 }
 

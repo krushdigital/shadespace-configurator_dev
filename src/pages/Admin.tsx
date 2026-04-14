@@ -10,6 +10,9 @@ export const Admin: React.FC = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
+    }).catch(() => {
+      setIsAuthenticated(false);
+    }).finally(() => {
       setIsLoading(false);
     });
 
@@ -25,7 +28,11 @@ export const Admin: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Force logout on client even if server call fails
+    }
     setIsAuthenticated(false);
   };
 

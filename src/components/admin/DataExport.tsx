@@ -10,6 +10,7 @@ interface DataExportProps {
 
 export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeInternal }) => {
   const [exporting, setExporting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const downloadCSV = (filename: string, csv: string) => {
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -29,8 +30,9 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
   const exportQuotes = async () => {
     try {
       setExporting('quotes');
+      setError(null);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) return;
+      if (!supabaseUrl) { setError('Supabase URL not configured'); return; }
 
       const headers = await getAdminAuthHeaders();
       const exclusionFilter = excludeInternal ? '&is_excluded=eq.false' : '';
@@ -38,7 +40,7 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
         `${supabaseUrl}/rest/v1/saved_quotes?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=5000${exclusionFilter}`,
         { headers }
       );
-      if (!res.ok) return;
+      if (!res.ok) { setError(`Failed to export quotes (${res.status})`); return; }
       const quotes = await res.json();
 
       const csvHeaders = [
@@ -69,8 +71,8 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
         `shadespace-quotes-full-${dateRange.start}-to-${dateRange.end}.csv`,
         [csvHeaders.map(escapeCsv).join(','), ...rows].join('\n')
       );
-    } catch (error) {
-      console.error('Export failed:', error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExporting(null);
     }
@@ -79,8 +81,9 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
   const exportEvents = async () => {
     try {
       setExporting('events');
+      setError(null);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) return;
+      if (!supabaseUrl) { setError('Supabase URL not configured'); return; }
 
       const headers = await getAdminAuthHeaders();
       const exclusionFilter = excludeInternal ? '&is_excluded=eq.false' : '';
@@ -88,7 +91,7 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
         `${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=5000${exclusionFilter}`,
         { headers }
       );
-      if (!res.ok) return;
+      if (!res.ok) { setError(`Failed to export events (${res.status})`); return; }
       const events = await res.json();
 
       const csvHeaders = [
@@ -106,8 +109,8 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
         `shadespace-events-full-${dateRange.start}-to-${dateRange.end}.csv`,
         [csvHeaders.map(escapeCsv).join(','), ...rows].join('\n')
       );
-    } catch (error) {
-      console.error('Export failed:', error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExporting(null);
     }
@@ -116,8 +119,9 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
   const exportCustomerSummary = async () => {
     try {
       setExporting('customers');
+      setError(null);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) return;
+      if (!supabaseUrl) { setError('Supabase URL not configured'); return; }
 
       const headers = await getAdminAuthHeaders();
       const exclusionFilter = excludeInternal ? '&is_excluded=eq.false' : '';
@@ -186,8 +190,8 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
         `shadespace-customers-${dateRange.start}-to-${dateRange.end}.csv`,
         [csvHeaders.map(escapeCsv).join(','), ...rows].join('\n')
       );
-    } catch (error) {
-      console.error('Export failed:', error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Export failed');
     } finally {
       setExporting(null);
     }
@@ -205,6 +209,12 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
       {excludeInternal && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 text-sm text-amber-800">
           "Exclude Internal" is active -- exports will not include records flagged as internal traffic.
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="ml-2 font-bold text-red-500 hover:text-red-700">x</button>
         </div>
       )}
       <div className="space-y-4">

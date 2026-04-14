@@ -15,6 +15,7 @@ interface TimelineData {
 export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInternal }) => {
   const [timelineData, setTimelineData] = useState<Record<string, TimelineData[]>>({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedEventType, setSelectedEventType] = useState<string>('all');
 
   useEffect(() => {
@@ -24,41 +25,65 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInte
   const fetchTimelineData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
       if (!supabaseUrl) {
-        console.error('Supabase URL not found');
+        setError('Supabase URL not configured');
         return;
       }
 
       const eventTypes = ['pdf_download', 'email_summary', 'add_to_cart', 'quote_save'];
-      const data: Record<string, TimelineData[]> = {};
       const authHeaders = await getAdminAuthHeaders();
 
-      for (const eventType of eventTypes) {
-        const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_event_timeline`, {
+      const results = await Promise.all(
+        eventTypes.map(async (eventType) => {
+          const response = await fetch(`${supabaseUrl}/rest/v1/rpc/get_event_timeline`, {
+            method: 'POST',
+            headers: {
+              ...authHeaders,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              p_event_type: eventType,
+              p_start_date: new Date(dateRange.start).toISOString(),
+              p_end_date: new Date(dateRange.end + 'T23:59:59').toISOString(),
+              p_interval: 'day',
+              p_exclude_internal: excludeInternal || false,
+            }),
+          });
+          if (!response.ok) return { eventType, data: [] as TimelineData[] };
+          return { eventType, data: await response.json() as TimelineData[] };
+        })
+      );
+
+      const data: Record<string, TimelineData[]> = {};
+      let hasData = false;
+      for (const result of results) {
+        data[result.eventType] = result.data;
+        if (result.data.length > 0) hasData = true;
+      }
+
+      if (!hasData && results.every(r => r.data.length === 0)) {
+        const testResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/get_event_timeline`, {
           method: 'POST',
-          headers: {
-            ...authHeaders,
-            'Content-Type': 'application/json',
-          },
+          headers: { ...authHeaders, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            p_event_type: eventType,
+            p_event_type: 'pdf_download',
             p_start_date: new Date(dateRange.start).toISOString(),
             p_end_date: new Date(dateRange.end + 'T23:59:59').toISOString(),
             p_interval: 'day',
             p_exclude_internal: excludeInternal || false,
           }),
         });
-
-        if (response.ok) {
-          data[eventType] = await response.json();
+        if (!testResponse.ok) {
+          setError(`Failed to load timeline data (${testResponse.status})`);
         }
       }
 
       setTimelineData(data);
-    } catch (error) {
-      console.error('Failed to fetch timeline data:', error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch timeline data');
     } finally {
       setLoading(false);
     }
@@ -120,7 +145,11 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInte
         </div>
       </div>
 
-      {chartData.length === 0 ? (
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+      )}
+
+      {chartData.length === 0 && !error ? (
         <div className="text-center py-12 text-gray-500">
           No data available for selected period
         </div>
