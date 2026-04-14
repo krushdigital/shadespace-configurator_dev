@@ -180,7 +180,7 @@ function generateConfigEmailHTML(data: any): string {
     <!-- Green Banner -->
     <tr>
       <td style="background-color: #307C31; padding: 20px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">Your Custom Shade Sail Configuration</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">Your Quote Summary</h1>
       </td>
     </tr>
 
@@ -189,7 +189,7 @@ function generateConfigEmailHTML(data: any): string {
       <td style="padding: 30px 30px 15px 30px;">
         <p style="color: #01312D; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Hello, ${customerName}</p>
         <p style="color: #334155; margin: 0; font-size: 14px; line-height: 1.7;">
-          Thank you for configuring your custom shade sail with ShadeSpace. Your configuration has been saved and a detailed PDF is attached to this email for your records.
+          Thank you for configuring your custom shade sail with ShadeSpace. Here is your quote summary and a detailed PDF is attached to this email for your records. You can access your quote anytime using the link below.
         </p>
       </td>
     </tr>
@@ -198,13 +198,13 @@ function generateConfigEmailHTML(data: any): string {
     <tr>
       <td style="padding: 0 30px 20px 30px;">
         <div style="border: 2px solid #BFF102; border-radius: 10px; padding: 24px; text-align: center; background-color: #FAFFF0;">
-          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Configuration Name</div>
+          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Quote Name</div>
           <div style="color: #01312D; font-size: 18px; font-weight: bold; margin-bottom: 16px;">${quoteName || "Shade Sail Configuration"}</div>
-          <div style="color: #01312D; font-size: 14px; font-weight: bold; margin-bottom: 4px;">Reference</div>
+          <div style="color: #01312D; font-size: 14px; font-weight: bold; margin-bottom: 4px;">Quote Reference</div>
           <div style="color: #307C31; font-size: 22px; font-weight: bold; font-family: 'Courier New', monospace; margin-bottom: 16px;">${reference}</div>
           ${customerReference ? `<div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Customer Reference</div>
           <div style="color: #01312D; font-size: 16px; font-weight: bold; margin-bottom: 16px;">${customerReference}</div>` : ""}
-          ${lockedDate ? `<div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Price Locked Until</div>
+          ${lockedDate ? `<div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Valid Until</div>
           <div style="color: #01312D; font-size: 16px; font-weight: bold;">${lockedDate}</div>` : ""}
         </div>
       </td>
@@ -213,7 +213,7 @@ function generateConfigEmailHTML(data: any): string {
     <!-- CTA Button -->
     ${quoteUrl ? `<tr>
       <td style="padding: 0 30px 15px 30px; text-align: center;">
-        <a href="${quoteUrl}" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: bold;">Resume Your Configuration</a>
+        <a href="${quoteUrl}" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: bold;">Access Your Quote</a>
       </td>
     </tr>
     <tr>
@@ -321,10 +321,10 @@ function generateConfigEmailHTML(data: any): string {
         <div style="border-left: 4px solid #BFF102; background-color: #FAFFF0; border-radius: 0 8px 8px 0; padding: 16px 20px;">
           <h3 style="color: #01312D; margin: 0 0 10px 0; font-size: 16px; font-weight: bold;">Next Steps</h3>
           <ul style="color: #334155; margin: 0; padding: 0 0 0 18px; font-size: 13px; line-height: 2;">
-            <li>Your pricing is locked for 30 days</li>
-            <li>Use the link above to resume and add to cart</li>
-            <li>A detailed PDF is attached for your records</li>
+            <li>Your quote is valid for 30 days</li>
+            <li>Use the link above to access and modify your quote</li>
             <li>Contact us if you have any questions</li>
+            <li>Ready to proceed? Click the link to complete your purchase</li>
           </ul>
         </div>
       </td>
@@ -425,7 +425,7 @@ Deno.serve(async (req: Request) => {
       const emailPayload: any = {
         from: FROM_EMAIL,
         to: [email],
-        subject: `Your ShadeSpace Shade Sail Configuration - ${reference}`,
+        subject: `Your ShadeSpace Quote Summary - ${reference} (PDF Attached)`,
         html: emailHTML,
       };
 

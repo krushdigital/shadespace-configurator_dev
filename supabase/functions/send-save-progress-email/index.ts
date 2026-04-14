@@ -41,7 +41,7 @@ function generateSaveProgressHTML(data: {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your ShadeSpace Configuration</title>
+  <title>Your ShadeSpace Progress Has Been Saved</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Helvetica', Arial, sans-serif; background-color: #f8f9fa;">
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0;">
@@ -55,7 +55,7 @@ function generateSaveProgressHTML(data: {
     <!-- Green Banner -->
     <tr>
       <td style="background-color: #307C31; padding: 20px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">Your Configuration Has Been Saved!</h1>
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">Your Progress Has Been Saved!</h1>
       </td>
     </tr>
 
@@ -64,7 +64,7 @@ function generateSaveProgressHTML(data: {
       <td style="padding: 30px 30px 15px 30px;">
         <p style="color: #01312D; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Hello, ${customerName}</p>
         <p style="color: #334155; margin: 0; font-size: 14px; line-height: 1.7;">
-          Thank you for saving your custom shade sail configuration with ShadeSpace. Your progress has been saved and you can access it anytime using the link below.
+          Thank you for using ShadeSpace. Your progress has been saved and you can pick up right where you left off at any time using the link below.
         </p>
       </td>
     </tr>
@@ -73,11 +73,11 @@ function generateSaveProgressHTML(data: {
     <tr>
       <td style="padding: 0 30px 20px 30px;">
         <div style="border: 2px solid #BFF102; border-radius: 10px; padding: 24px; text-align: center; background-color: #FAFFF0;">
-          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Configuration Name</div>
+          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Quote Name</div>
           <div style="color: #01312D; font-size: 18px; font-weight: bold; margin-bottom: 16px;">${quoteName}</div>
-          <div style="color: #01312D; font-size: 14px; font-weight: bold; margin-bottom: 4px;">Reference</div>
+          <div style="color: #01312D; font-size: 14px; font-weight: bold; margin-bottom: 4px;">Quote Reference</div>
           <div style="color: #307C31; font-size: 22px; font-weight: bold; font-family: 'Courier New', monospace; margin-bottom: 16px;">${quoteReference}</div>
-          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Price Locked Until</div>
+          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Valid Until</div>
           <div style="color: #01312D; font-size: 16px; font-weight: bold;">${lockedDate}</div>
         </div>
       </td>
@@ -86,7 +86,7 @@ function generateSaveProgressHTML(data: {
     <!-- CTA Button -->
     <tr>
       <td style="padding: 0 30px 15px 30px; text-align: center;">
-        <a href="${quoteUrl}" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: bold;">Resume Your Configuration</a>
+        <a href="${quoteUrl}" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: bold;">Pick Up Where You Left Off</a>
       </td>
     </tr>
 
@@ -105,9 +105,9 @@ function generateSaveProgressHTML(data: {
           <h3 style="color: #01312D; margin: 0 0 10px 0; font-size: 16px; font-weight: bold;">Next Steps</h3>
           <ul style="color: #334155; margin: 0; padding: 0 0 0 18px; font-size: 13px; line-height: 2;">
             <li>Your pricing is locked for 30 days</li>
-            <li>Use the link above to resume your configuration</li>
+            <li>Click the button above to pick up where you left off</li>
+            <li>Your configuration is saved exactly as you left it</li>
             <li>Contact us if you have any questions</li>
-            <li>Ready to proceed? Click the link to complete your purchase</li>
           </ul>
         </div>
       </td>
@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: [email],
-          subject: `Your ShadeSpace Configuration - ${quoteReference || "Saved"}`,
+          subject: `Your ShadeSpace Progress Has Been Saved - ${quoteReference || "Saved"}`,
           html: emailHTML,
         }),
       });
