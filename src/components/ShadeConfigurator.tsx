@@ -611,14 +611,11 @@ export function ShadeConfigurator() {
         quoteReference: quoteReference || undefined,
       };
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/send-config-email`,
+        '/apps/shade_space/api/v1/public/email-summary-send',
         {
           method: "POST",
           headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ pdf: pdfBase64, ...orderData, email, firstName, lastName, quoteUrl }),

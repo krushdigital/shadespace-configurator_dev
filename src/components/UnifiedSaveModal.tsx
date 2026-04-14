@@ -170,14 +170,11 @@ export function UnifiedSaveModal({
 
       if (email) {
         try {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
           const emailResponse = await fetch(
-            `${supabaseUrl}/functions/v1/send-save-progress-email`,
+            '/apps/shade_space/api/v1/public/quote-save-email',
             {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${supabaseKey}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
