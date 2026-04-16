@@ -47,6 +47,7 @@ export const PricingManager: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showCsvUpload, setShowCsvUpload] = useState(false);
+  const [showFormulaInfo, setShowFormulaInfo] = useState(false);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -320,6 +321,39 @@ export const PricingManager: React.FC = () => {
                 );
               })}
             </div>
+          </div>
+
+          <div className="mb-4">
+            <button
+              onClick={() => setShowFormulaInfo(!showFormulaInfo)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {showFormulaInfo ? 'Hide formula explanation' : 'How is the Combined Factor calculated?'}
+            </button>
+
+            {showFormulaInfo && (
+              <div className="mt-2 bg-sky-50 border border-sky-200 rounded-lg p-4 text-sm text-slate-700 space-y-3">
+                <p>
+                  The <span className="font-semibold">Combined Factor</span> is a single multiplier that converts any base NZD price directly into the final customer price in that currency.
+                </p>
+                <div className="bg-white/70 border border-sky-100 rounded px-3 py-2 font-mono text-xs text-slate-800">
+                  Combined Factor = (Market Markup + Zonos/DHL Markup &minus; 1) &times; Exchange Rate
+                </div>
+                <ul className="space-y-1 text-xs text-slate-600 list-disc pl-4">
+                  <li><span className="font-medium text-slate-700">Market Markup</span> &mdash; your profit margin (e.g. 1.083 = 8.3% markup on the base NZD price)</li>
+                  <li><span className="font-medium text-slate-700">Zonos/DHL Markup</span> &mdash; shipping, duties &amp; fees surcharge. Only the extra portion above 1.0 is added (e.g. 1.200 = 20% added on top)</li>
+                  <li><span className="font-medium text-slate-700">Exchange Rate</span> &mdash; converts the result from NZD into the target currency</li>
+                </ul>
+                <div className="bg-white/70 border border-sky-100 rounded px-3 py-2 text-xs text-slate-600">
+                  <span className="font-medium text-slate-700">Example &mdash; USD:</span>{' '}
+                  (1.083 + 1.200 &minus; 1) &times; 0.58 = <span className="font-semibold text-slate-800">0.7443</span>,
+                  so a NZ$1,000 item becomes US$745
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="overflow-x-auto">
