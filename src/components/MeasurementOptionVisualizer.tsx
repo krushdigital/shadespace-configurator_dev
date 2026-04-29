@@ -187,7 +187,7 @@ export function MeasurementOptionVisualizer({
                         />
                       )}
                       <p className="text-sm text-slate-600 mb-3">
-                        Complete stainless steel hardware kit included with your sail.
+                        Complete stainless steel tensioning hardware kit included with your sail.
                       </p>
                       <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
                         <a
@@ -348,7 +348,7 @@ export function MeasurementOptionVisualizer({
                       <div>
                         <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
                         <p className="text-sm text-slate-600 mb-3">
-                          With this option, you'll receive the shade sail with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles, eyebolts/eye plates etc.) must be sourced separately.
+                          With this option, you'll receive the shade sail with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles etc.) must be sourced separately.
                         </p>
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                           <a
