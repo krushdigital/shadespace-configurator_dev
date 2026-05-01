@@ -21,7 +21,7 @@ import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, forma
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
-import { resolveUserCurrency } from '../utils/currencyDetection';
+import { getShopifyDisplayCurrency, reconcileShopifyMarket } from '../utils/currencyDetection';
 
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
@@ -54,7 +54,7 @@ const INITIAL_STATE: ConfiguratorState = {
   attachmentTypes: [],
   eyeOrientations: undefined,
   fixingPointsInstalled: undefined,
-  currency: 'NZD',
+  currency: 'USD',
   hasManuallyAdjustedShape: false
 };
 
@@ -271,29 +271,16 @@ export function ShadeConfigurator() {
 
 
   useEffect(() => {
-    let cancelled = false;
+    if (isLoadingQuote || quoteReference) return;
 
-    const resolveCurrency = async () => {
-      if (isLoadingQuote || quoteReference) return;
+    const shopifyCurrency = getShopifyDisplayCurrency();
+    setConfig(prev =>
+      prev.currency === shopifyCurrency ? prev : { ...prev, currency: shopifyCurrency }
+    );
 
-      try {
-        const resolved = await resolveUserCurrency();
-        if (cancelled) return;
-        if (resolved && EXCHANGE_RATES[resolved]) {
-          setConfig(prev =>
-            prev.currency === resolved ? prev : { ...prev, currency: resolved }
-          );
-        }
-      } catch (error) {
-        console.error('Currency resolution failed:', error);
-      }
-    };
-
-    resolveCurrency();
-
-    return () => {
-      cancelled = true;
-    };
+    reconcileShopifyMarket().catch(error => {
+      console.error('Shopify market reconciliation failed:', error);
+    });
   }, [isLoadingQuote, quoteReference]);
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
