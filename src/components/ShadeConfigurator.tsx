@@ -21,6 +21,7 @@ import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, forma
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
+import { resolveUserCurrency } from '../utils/currencyDetection';
 
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
@@ -270,13 +271,30 @@ export function ShadeConfigurator() {
 
 
   useEffect(() => {
-    const shopifyCurrency = window.Shopify?.currency?.active;
-    if (shopifyCurrency && EXCHANGE_RATES[shopifyCurrency]) {
-      setConfig(prev => ({ ...prev, currency: shopifyCurrency }));
-    } else if (shopifyCurrency) {
-      setConfig(prev => ({ ...prev, currency: 'USD' }));
-    }
-  }, []);
+    let cancelled = false;
+
+    const resolveCurrency = async () => {
+      if (isLoadingQuote || quoteReference) return;
+
+      try {
+        const resolved = await resolveUserCurrency();
+        if (cancelled) return;
+        if (resolved && EXCHANGE_RATES[resolved]) {
+          setConfig(prev =>
+            prev.currency === resolved ? prev : { ...prev, currency: resolved }
+          );
+        }
+      } catch (error) {
+        console.error('Currency resolution failed:', error);
+      }
+    };
+
+    resolveCurrency();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoadingQuote, quoteReference]);
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
     setConfig(prev => ({ ...prev, ...updates }));
