@@ -1,51 +1,33 @@
 import { EXCHANGE_RATES } from '../data/pricing';
 
-const SESSION_KEY = 'shadespace_detected_currency';
+const LOCALIZATION_ATTEMPTED_KEY = 'shadespace_localization_attempted_v2';
+const LEGACY_SESSION_KEY = 'shadespace_detected_currency';
 
-const COUNTRY_EXPECTED_CURRENCIES: { [country: string]: string[] } = {
-  NZ: ['NZD'],
-  AU: ['AUD'],
-  US: ['USD'],
-  GB: ['GBP'],
-  CA: ['CAD'],
-  AE: ['AED'],
-  AT: ['EUR'], BE: ['EUR'], CY: ['EUR'], DE: ['EUR'], EE: ['EUR'], ES: ['EUR'],
-  FI: ['EUR'], FR: ['EUR'], GR: ['EUR'], HR: ['EUR'], IE: ['EUR'], IT: ['EUR'],
-  LT: ['EUR'], LU: ['EUR'], LV: ['EUR'], MT: ['EUR'], NL: ['EUR'], PT: ['EUR'],
-  SI: ['EUR'], SK: ['EUR'],
-};
-
-function isSupported(code: string | null | undefined): boolean {
-  if (!code) return false;
-  return Object.prototype.hasOwnProperty.call(EXCHANGE_RATES, code.toUpperCase());
-}
-
-function readUrlOverride(): string | null {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const override = params.get('currency');
-    if (override && isSupported(override.toUpperCase())) {
-      return override.toUpperCase();
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-}
-
-function readShopifyCurrency(): string | null {
+export function readShopifyCurrency(): string | null {
   const raw = (window as any)?.Shopify?.currency?.active;
   if (typeof raw === 'string' && raw.length > 0) return raw.toUpperCase();
   return null;
+}
+
+export function readShopifyCountry(): string | null {
+  const raw = (window as any)?.Shopify?.country;
+  if (typeof raw === 'string' && raw.length > 0) return raw.toUpperCase();
+  return null;
+}
+
+export function getShopifyDisplayCurrency(): string {
+  const shopifyCurrency = readShopifyCurrency();
+  if (shopifyCurrency && EXCHANGE_RATES[shopifyCurrency]) {
+    return shopifyCurrency;
+  }
+  return 'USD';
 }
 
 async function fetchIpDetection(): Promise<{ currency: string | null; country: string | null }> {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !anonKey) {
-      return { currency: null, country: null };
-    }
+    if (!supabaseUrl || !anonKey) return { currency: null, country: null };
 
     const res = await fetch(`${supabaseUrl}/functions/v1/detect-currency`, {
       method: 'GET',
@@ -54,82 +36,150 @@ async function fetchIpDetection(): Promise<{ currency: string | null; country: s
         'Content-Type': 'application/json',
       },
     });
-
     if (!res.ok) return { currency: null, country: null };
     const data = await res.json();
-    const currency =
-      typeof data?.currency === 'string' ? data.currency.toUpperCase() : null;
-    const country =
-      typeof data?.country === 'string' ? data.country.toUpperCase() : null;
-    return { currency, country };
+    return {
+      currency: typeof data?.currency === 'string' ? data.currency.toUpperCase() : null,
+      country: typeof data?.country === 'string' ? data.country.toUpperCase() : null,
+    };
   } catch {
     return { currency: null, country: null };
   }
 }
 
-function reconcileShopifyAndIp(
-  shopifyCurrency: string | null,
-  ipCurrency: string | null,
-  ipCountry: string | null,
-): string | null {
-  if (!shopifyCurrency && !ipCurrency) return null;
-
-  if (!shopifyCurrency) {
-    return isSupported(ipCurrency) ? ipCurrency!.toUpperCase() : 'USD';
+async function fetchShopifyMarkets(): Promise<string[] | null> {
+  try {
+    const res = await fetch('/browsing_context_suggestions.json', {
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const countries: string[] = [];
+    const list = data?.detected_values?.country?.handle
+      ? [data.detected_values.country.handle]
+      : [];
+    for (const c of list) {
+      if (typeof c === 'string') countries.push(c.toUpperCase());
+    }
+    const suggestions = data?.suggestions?.countries;
+    if (Array.isArray(suggestions)) {
+      for (const entry of suggestions) {
+        const code = entry?.handle || entry?.iso_code;
+        if (typeof code === 'string') countries.push(code.toUpperCase());
+      }
+    }
+    return countries.length > 0 ? countries : null;
+  } catch {
+    return null;
   }
-
-  if (!ipCurrency || !ipCountry) {
-    return isSupported(shopifyCurrency) ? shopifyCurrency : 'USD';
-  }
-
-  const expected = COUNTRY_EXPECTED_CURRENCIES[ipCountry];
-
-  if (expected && expected.includes(shopifyCurrency)) {
-    return shopifyCurrency;
-  }
-
-  if (expected && !expected.includes(shopifyCurrency)) {
-    return isSupported(ipCurrency) ? ipCurrency : 'USD';
-  }
-
-  if (isSupported(shopifyCurrency)) return shopifyCurrency;
-  if (isSupported(ipCurrency)) return ipCurrency;
-
-  return 'USD';
 }
 
-export async function resolveUserCurrency(): Promise<string> {
-  const override = readUrlOverride();
-  if (override) {
-    try {
-      sessionStorage.setItem(SESSION_KEY, override);
-    } catch {
-      // ignore
-    }
-    return override;
+async function logMismatch(payload: {
+  detected_country: string;
+  detected_currency: string;
+  shopify_country: string;
+  shopify_currency: string;
+  action_taken: 'localization_switch' | 'no_matching_market' | 'no_change';
+}) {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return;
+
+    await fetch(`${supabaseUrl}/rest/v1/currency_mismatch_events`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // telemetry best-effort only
+  }
+}
+
+function submitLocalizationForm(countryCode: string) {
+  try {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/localization';
+    form.style.display = 'none';
+
+    const addField = (name: string, value: string) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+
+    addField('form_type', 'localization');
+    addField('utf8', '✓');
+    addField('country_code', countryCode);
+    addField('return_to', window.location.pathname + window.location.search);
+
+    document.body.appendChild(form);
+    form.submit();
+  } catch {
+    // swallow - we'll just leave the user on the current market
+  }
+}
+
+export async function reconcileShopifyMarket(): Promise<void> {
+  try {
+    sessionStorage.removeItem(LEGACY_SESSION_KEY);
+  } catch {
+    // ignore
   }
 
   try {
-    const cached = sessionStorage.getItem(SESSION_KEY);
-    if (cached && isSupported(cached)) return cached;
+    if (sessionStorage.getItem(LOCALIZATION_ATTEMPTED_KEY) === '1') return;
   } catch {
     // ignore
   }
 
   const shopifyCurrency = readShopifyCurrency();
-  const { currency: ipCurrency, country: ipCountry } = await fetchIpDetection();
+  const shopifyCountry = readShopifyCountry();
 
-  let resolved = reconcileShopifyAndIp(shopifyCurrency, ipCurrency, ipCountry);
+  if (!shopifyCurrency && !shopifyCountry) return;
 
-  if (!resolved || !isSupported(resolved)) {
-    resolved = 'USD';
+  const { currency: detectedCurrency, country: detectedCountry } = await fetchIpDetection();
+  if (!detectedCountry) return;
+
+  if (!shopifyCountry || detectedCountry === shopifyCountry) {
+    return;
   }
 
   try {
-    sessionStorage.setItem(SESSION_KEY, resolved);
+    sessionStorage.setItem(LOCALIZATION_ATTEMPTED_KEY, '1');
   } catch {
     // ignore
   }
 
-  return resolved;
+  const markets = await fetchShopifyMarkets();
+  const marketAvailable = markets ? markets.includes(detectedCountry) : true;
+
+  if (!marketAvailable) {
+    await logMismatch({
+      detected_country: detectedCountry,
+      detected_currency: detectedCurrency ?? '',
+      shopify_country: shopifyCountry ?? '',
+      shopify_currency: shopifyCurrency ?? '',
+      action_taken: 'no_matching_market',
+    });
+    return;
+  }
+
+  await logMismatch({
+    detected_country: detectedCountry,
+    detected_currency: detectedCurrency ?? '',
+    shopify_country: shopifyCountry ?? '',
+    shopify_currency: shopifyCurrency ?? '',
+    action_taken: 'localization_switch',
+  });
+
+  submitLocalizationForm(detectedCountry);
 }
