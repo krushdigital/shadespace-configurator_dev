@@ -10,22 +10,6 @@ interface ImperialValue {
   format: 'feet-inches' | 'inches-only';
 }
 
-const useIsSmallScreen = () => {
-  const [isSmall, setIsSmall] = useState(false);
-
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsSmall(window.innerWidth < 400);
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-
-  return isSmall;
-};
-
 interface DualImperialInputProps {
   value: number;
   onChange: (value: number) => void;
@@ -64,24 +48,13 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
   const [totalInchesInput, setTotalInchesInput] = useState('');
   const [inchesError, setInchesError] = useState('');
   const [isUserTyping, setIsUserTyping] = useState(false);
-  const isSmallScreen = useIsSmallScreen();
 
   useEffect(() => {
-    if (isSmallScreen && unit === 'imperial') {
-      setDisplayMode('inches-only');
-      if (value > 0) {
-        setTotalInchesInput(String(Math.round(value * 100) / 100));
-      }
-    }
-  }, [isSmallScreen, unit, value]);
-
-  useEffect(() => {
-    if (isSmallScreen) return;
     const savedPreference = localStorage.getItem('imperialInputFormat');
     if (savedPreference === 'inches-only' || savedPreference === 'feet-inches') {
       setDisplayMode(savedPreference);
     }
-  }, [isSmallScreen]);
+  }, []);
 
   // Initialize from prop value
   useEffect(() => {
@@ -235,6 +208,8 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
       <div className="relative">
         <Input
           type="text"
+          inputMode="decimal"
+          pattern="[0-9]*\.?[0-9]*"
           value={totalInchesInput}
           onChange={handleTotalInchesChange}
           onFocus={onFocus}
@@ -269,6 +244,8 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
               <div className="flex-1 relative">
                 <Input
                   type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
                   value={feetInput}
                   onChange={handleFeetChange}
                   onFocus={onFocus}
@@ -287,6 +264,8 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
               <div className="flex-1 relative">
                 <Input
                   type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
                   value={inchesInput}
                   onChange={handleInchesChange}
                   onFocus={onFocus}
@@ -302,11 +281,12 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
               </div>
             </div>
 
-            {allowFormatSwitch && !isSmallScreen && (
+            {allowFormatSwitch && (
               <button
                 type="button"
                 onClick={toggleDisplayMode}
-                className="mt-2 p-2 text-[#01312D]/60 hover:text-[#01312D] hover:bg-slate-100 rounded transition-colors"
+                aria-label="Switch to inches only"
+                className="mt-1 shrink-0 inline-flex items-center justify-center w-11 h-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
                 title="Switch to inches only"
               >
                 <ArrowRightLeft className="w-4 h-4" />
@@ -318,6 +298,8 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
             <div className="flex-1 relative">
               <Input
                 type="text"
+                inputMode="decimal"
+                pattern="[0-9]*\.?[0-9]*"
                 value={totalInchesInput}
                 onChange={handleTotalInchesChange}
                 onFocus={onFocus}
@@ -333,11 +315,12 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
               </span>
             </div>
 
-            {allowFormatSwitch && !isSmallScreen && (
+            {allowFormatSwitch && (
               <button
                 type="button"
                 onClick={toggleDisplayMode}
-                className="mt-2 p-2 text-[#01312D]/60 hover:text-[#01312D] hover:bg-slate-100 rounded transition-colors"
+                aria-label="Switch to feet and inches"
+                className="mt-1 shrink-0 inline-flex items-center justify-center w-11 h-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
                 title="Switch to feet and inches"
               >
                 <ArrowRightLeft className="w-4 h-4" />

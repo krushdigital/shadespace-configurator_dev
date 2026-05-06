@@ -43,7 +43,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, e
       <div className="relative">
         <input
           ref={ref}
-          className={`w-full px-2 py-1.5 sm:px-4 sm:py-3 border-2 rounded-lg focus:ring-2 transition-all duration-200 text-[#01312D] text-sm sm:text-base shadow-sm hover:shadow-md ${
+          className={`w-full px-2 py-1.5 sm:px-4 sm:py-3 border-2 rounded-lg focus:ring-2 transition-all duration-200 text-[#01312D] text-base shadow-sm hover:shadow-md ${
             props.type === 'number' ? 'no-spin-arrows ' : ''
           }${
             error ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' :
