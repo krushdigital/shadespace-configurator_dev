@@ -5,6 +5,7 @@ import { getAdminAuthHeaders } from '../../utils/adminAuth';
 interface EventsChartProps {
   dateRange: { start: string; end: string };
   excludeInternal?: boolean;
+  timezone?: string;
 }
 
 interface TimelineData {
@@ -12,7 +13,7 @@ interface TimelineData {
   event_count: number;
 }
 
-export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInternal }) => {
+export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [timelineData, setTimelineData] = useState<Record<string, TimelineData[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +21,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInte
 
   useEffect(() => {
     fetchTimelineData();
-  }, [dateRange, excludeInternal]);
+  }, [dateRange, excludeInternal, timezone]);
 
   const fetchTimelineData = async () => {
     try {
@@ -50,6 +51,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInte
               p_end_date: new Date(dateRange.end + 'T23:59:59').toISOString(),
               p_interval: 'day',
               p_exclude_internal: excludeInternal || false,
+              p_timezone: timezone,
             }),
           });
           if (!response.ok) return { eventType, data: [] as TimelineData[] };
@@ -74,6 +76,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInte
             p_end_date: new Date(dateRange.end + 'T23:59:59').toISOString(),
             p_interval: 'day',
             p_exclude_internal: excludeInternal || false,
+            p_timezone: timezone,
           }),
         });
         if (!testResponse.ok) {
@@ -111,7 +114,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInte
     const dateMap = new Map<string, number>();
     Object.values(timelineData).forEach((data) => {
       data.forEach((item) => {
-        const date = new Date(item.period).toISOString().split('T')[0];
+        const date = new Date(item.period).toLocaleDateString('en-CA', { timeZone: timezone });
         dateMap.set(date, (dateMap.get(date) || 0) + item.event_count);
       });
     });
@@ -160,6 +163,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({ dateRange, excludeInte
             const date = new Date(item.period).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
+              timeZone: timezone,
             });
 
             return (

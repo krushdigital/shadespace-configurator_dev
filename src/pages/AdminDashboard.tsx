@@ -19,12 +19,21 @@ interface AdminDashboardProps {
 
 type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions';
 
+const detectTimezone = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+};
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [excludeInternal, setExcludeInternal] = useState(() => {
     try { return localStorage.getItem('admin_exclude_internal') === 'true'; } catch { return false; }
   });
+  const timezone = detectTimezone();
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
@@ -143,13 +152,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <AnalyticsSummary dateRange={dateRange} excludeInternal={excludeInternal} />
-            <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} />
+            <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />
           </div>
         )}
 
-        {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} />}
+        {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
-        {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} />}
+        {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
         {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} excludeInternal={excludeInternal} />}
 
@@ -159,7 +168,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
         {activeTab === 'base-pricing' && <BasePricingManager />}
 
-        {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} />}
+        {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
         {activeTab === 'exclusions' && <ExclusionManager />}
       </div>

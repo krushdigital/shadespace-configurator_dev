@@ -31,7 +31,7 @@ interface Quote {
   config_data: ConfiguratorState;
 }
 
-export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean }> = ({ dateRange, excludeInternal }) => {
+export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean; timezone?: string }> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -92,6 +92,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: timezone,
     });
   };
 

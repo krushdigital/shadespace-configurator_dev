@@ -143,7 +143,8 @@ Deno.serve(async (req: Request) => {
       const isComplete = currentStep === 6 || currentStep === totalSteps - 1;
       const quoteStatus = isComplete ? 'quote_ready' : 'in_progress';
 
-      const customerIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+      const rawIpHeader = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+      const customerIp = rawIpHeader === 'unknown' ? 'unknown' : (rawIpHeader.split(',')[0].trim() || 'unknown');
       const geo = await lookupGeo(customerIp);
 
       const { data: quote, error: insertError } = await supabase
@@ -165,6 +166,7 @@ Deno.serve(async (req: Request) => {
           customer_first_name: firstName || null,
           customer_last_name: lastName || null,
           customer_ip: customerIp,
+          customer_ip_raw: rawIpHeader,
           customer_country: geo?.country || null,
           customer_country_code: geo?.countryCode || null,
         })
