@@ -18,17 +18,19 @@ interface InteractiveMeasurementCanvasProps {
   readonly?: boolean;
   forPdfCapture?: boolean;
   isMobile?: boolean;
+  plainBackground?: boolean;
 }
 
-export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCanvasRef, InteractiveMeasurementCanvasProps>(({ 
-  config, 
+export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCanvasRef, InteractiveMeasurementCanvasProps>(({
+  config,
   updateConfig,
   highlightedMeasurement,
   onMeasurementHover,
   compact = false,
   readonly = false,
   forPdfCapture = false,
-  isMobile = false
+  isMobile = false,
+  plainBackground = false
 }, ref) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [editingMeasurementKey, setEditingMeasurementKey] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
 
   return (
     <div className="w-full">
-      <div className="relative w-full pb-[100%] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+      <div className={`relative w-full pb-[100%] overflow-hidden ${plainBackground ? 'bg-white' : 'bg-gradient-to-br from-slate-50 to-slate-100'}`}>
         <ShadeSVGCore
           ref={svgRef}
           config={config}
@@ -151,6 +153,7 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
           onEditKeyDown={handleEditKeyDown}
           forPdfCapture={forPdfCapture}
           isMobile={isMobile}
+          plainBackground={plainBackground}
         >
           {/* Corner points - simplified for interactive canvas */}
           {cornerPoints.map(({ point, index, labelPosition, cornerColor, label }) => {

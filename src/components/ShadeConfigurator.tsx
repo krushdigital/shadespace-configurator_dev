@@ -34,6 +34,7 @@ import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
 import { eventTrackers } from '../utils/eventTracker';
 import { toast } from 'react-toastify';
+import { supabase } from '../lib/supabase';
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -70,12 +71,7 @@ export function ShadeConfigurator() {
   const [loading, setLoading] = useState(false)
   const { showToast } = useToast();
   const [showUnifiedSaveModal, setShowUnifiedSaveModal] = useState(false);
-  const [acknowledgments, setAcknowledgments] = useState({
-    customManufactured: false,
-    measurementsAccurate: false,
-    installationNotIncluded: false,
-    structuralResponsibility: false
-  });
+  const [agreedToAcknowledgments, setAgreedToAcknowledgments] = useState(false);
   const [capturedCustomerDetails, setCapturedCustomerDetails] = useState<{
     firstName: string; lastName: string; email: string; quoteReference?: string;
   } | null>(null);
@@ -738,11 +734,33 @@ export function ShadeConfigurator() {
     }
   };
 
-  const handleAcknowledgmentChange = (key: keyof typeof acknowledgments) => {
-    setAcknowledgments(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
+  const toggleAgreedToAcknowledgments = () => {
+    setAgreedToAcknowledgments(prev => {
+      const next = !prev;
+      if (next) {
+        void logAcknowledgmentConsent();
+      }
+      return next;
+    });
+  };
+
+  const logAcknowledgmentConsent = async () => {
+    try {
+      await supabase.from('acknowledgment_consents').insert({
+        quote_reference: quoteReference || '',
+        agreed_at: new Date().toISOString(),
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent || '' : '',
+        statements_version: 'v1-2026-05',
+        statements_snapshot: [
+          'I understand this shade sail is custom manufactured and cannot be returned or exchanged.',
+          'I confirm all measurements provided are accurate and verified on-site.',
+          'I acknowledge installation is not included and I am responsible for proper installation.',
+          'I understand structural adequacy of fixing points is my responsibility.',
+        ],
+      });
+    } catch {
+      // best-effort audit log
+    }
   };
 
   // Calculate derived state for order process
@@ -774,7 +792,7 @@ export function ShadeConfigurator() {
     return true;
   }, [config.diagonalsInitiallyProvided, config.corners, config.measurements]);
 
-  const allAcknowledgmentsChecked = Object.values(acknowledgments).every(checked => checked);
+  const allAcknowledgmentsChecked = agreedToAcknowledgments;
 
   // Check if heights are required and provided for 5+ corner sails
   const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
@@ -2189,8 +2207,8 @@ export function ShadeConfigurator() {
                     dismissTypoSuggestion={dismissTypoSuggestion}
                     mobileGuidance={mobileGuidance}
                     // Props for ReviewContent
-                    acknowledgments={acknowledgments}
-                    handleAcknowledgmentChange={handleAcknowledgmentChange}
+                    agreedToAcknowledgments={agreedToAcknowledgments}
+                    onToggleAgreement={toggleAgreedToAcknowledgments}
                     handleAddToCart={handleAddToCart}
                     allDiagonalsEntered={allDiagonalsEntered}
                     allAcknowledgmentsChecked={allAcknowledgmentsChecked}
