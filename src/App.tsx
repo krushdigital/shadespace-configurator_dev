@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ShadeConfigurator } from './components/ShadeConfigurator';
 import { Admin } from './pages/Admin';
+import { installLocalizationFormInterceptor } from './utils/currencyDetection';
 import './index.css';
 
 const App = () => {
@@ -14,6 +15,7 @@ const App = () => {
   console.log('🚀 yet another log for testing 13/01/2026 11:22');
 
   useEffect(() => {
+    installLocalizationFormInterceptor();
     // Check if current URL is the admin route
     const path = window.location.pathname;
     if (path.includes('/admin') || window.location.search.includes('admin=true')) {
