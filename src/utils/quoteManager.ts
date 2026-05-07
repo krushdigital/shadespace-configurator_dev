@@ -147,7 +147,6 @@ export async function updateQuoteStatus(
 
 /**
  * Generate a shareable quote URL with access token
- * Uses the current window origin - only use for in-app display (e.g. "copy link" buttons)
  */
 export function generateQuoteUrl(quoteId: string, accessToken: string): string {
   const baseUrl = window.location.origin;
@@ -155,86 +154,18 @@ export function generateQuoteUrl(quoteId: string, accessToken: string): string {
 }
 
 /**
- * Generate a canonical, domain-neutral quote URL that routes through a Supabase
- * Edge Function and then redirects to the canonical shadespace.com configurator URL.
- * Shopify's own market-based redirect then forwards the visitor to their regional
- * domain (.com.au, .co.uk, .ca, etc.) while preserving the quote/token params.
- *
- * Use this for every external artifact (emails, PDFs, admin share links) so the
- * link keeps working no matter which regional domain the customer lands on.
- */
-export function generateCanonicalQuoteUrl(
-  quoteId: string,
-  accessToken: string,
-  source: 'email' | 'pdf' | 'admin' | 'share' = 'share'
-): string {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const params = new URLSearchParams({
-    id: quoteId,
-    token: accessToken,
-    src: source,
-  });
-  if (!supabaseUrl) {
-    return generateQuoteUrl(quoteId, accessToken);
-  }
-  return `${supabaseUrl}/functions/v1/quote-redirect?${params.toString()}`;
-}
-
-const ACTIVE_QUOTE_STORAGE_KEY = 'shadespace_active_quote';
-
-function readQuoteFromStorage(): { id: string; token: string } | null {
-  try {
-    const raw = sessionStorage.getItem(ACTIVE_QUOTE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { id?: string; token?: string };
-    if (parsed && parsed.id && parsed.token) {
-      return { id: parsed.id, token: parsed.token };
-    }
-  } catch {
-    // ignore malformed storage
-  }
-  return null;
-}
-
-function writeQuoteToStorage(quote: { id: string; token: string }): void {
-  try {
-    sessionStorage.setItem(ACTIVE_QUOTE_STORAGE_KEY, JSON.stringify(quote));
-  } catch {
-    // ignore quota / access errors
-  }
-}
-
-export function clearActiveQuote(): void {
-  try {
-    sessionStorage.removeItem(ACTIVE_QUOTE_STORAGE_KEY);
-  } catch {
-    // ignore
-  }
-}
-
-export function hasActiveQuoteContext(): boolean {
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.get('quote') && urlParams.get('token')) return true;
-  return readQuoteFromStorage() !== null;
-}
-
-/**
- * Get quote ID and token from URL if present.
- * Falls back to sessionStorage if a Shopify regional redirect stripped the params
- * so the customer can still resume a saved quote after the domain switch.
+ * Get quote ID and token from URL if present
  */
 export function getQuoteFromUrl(): { id: string; token: string } | null {
   const urlParams = new URLSearchParams(window.location.search);
   const id = urlParams.get('quote');
   const token = urlParams.get('token');
 
-  if (id && token) {
-    const result = { id, token };
-    writeQuoteToStorage(result);
-    return result;
+  if (!id || !token) {
+    return null;
   }
 
-  return readQuoteFromStorage();
+  return { id, token };
 }
 
 export function formatExpirationDate(expiresAt: string): string {

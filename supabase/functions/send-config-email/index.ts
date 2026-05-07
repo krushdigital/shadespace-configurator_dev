@@ -363,20 +363,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const data = await req.json();
-    const { email, pdf, currency, totalPrice, firstName, lastName, quoteName, quoteId, accessToken } = data;
-    let { quoteUrl } = data;
-
-    const supabaseUrlEnv = Deno.env.get("SUPABASE_URL") || "";
-    // Ensure every outbound link routes through the canonical redirect so it
-    // works on every regional Shopify domain (.com, .com.au, .co.uk, .ca, ...)
-    if (!quoteUrl && quoteId && accessToken && supabaseUrlEnv) {
-      const params = new URLSearchParams({
-        id: quoteId,
-        token: accessToken,
-        src: "email",
-      });
-      quoteUrl = `${supabaseUrlEnv}/functions/v1/quote-redirect?${params.toString()}`;
-    }
+    const { email, pdf, currency, totalPrice, firstName, lastName, quoteName, quoteUrl } = data;
 
     if (!email) {
       return new Response(

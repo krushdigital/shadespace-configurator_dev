@@ -128,23 +128,7 @@ function submitLocalizationForm(countryCode: string) {
   }
 }
 
-function hasQuoteContext(): boolean {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('quote') && params.get('token')) return true;
-    if (sessionStorage.getItem('shadespace_active_quote')) return true;
-  } catch {
-    // ignore
-  }
-  return false;
-}
-
 export async function reconcileShopifyMarket(): Promise<void> {
-  // Never perform a market redirect when the user is restoring a saved quote —
-  // Shopify's localization form submission would reload the page and lose the
-  // configurator's in-memory state. The customer can still switch markets manually.
-  if (hasQuoteContext()) return;
-
   try {
     sessionStorage.removeItem(LEGACY_SESSION_KEY);
   } catch {
