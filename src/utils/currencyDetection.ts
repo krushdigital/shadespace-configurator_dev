@@ -1,7 +1,13 @@
 import { EXCHANGE_RATES } from '../data/pricing';
 
-const LOCALIZATION_ATTEMPTED_KEY = 'shadespace_localization_attempted_v2';
+const LOCALIZATION_ATTEMPTED_KEY = 'shadespace_localization_attempted_v3';
+const LOCALIZATION_ATTEMPTED_AT_KEY = 'shadespace_localization_attempted_at_v3';
+const USER_SELECTED_MARKET_KEY = 'shadespace_user_selected_market';
+const CLIENT_ID_KEY = 'shadespace_client_id';
 const LEGACY_SESSION_KEY = 'shadespace_detected_currency';
+const LEGACY_V2_KEY = 'shadespace_localization_attempted_v2';
+
+const RECONCILE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function readShopifyCurrency(): string | null {
   const raw = (window as any)?.Shopify?.currency?.active;
@@ -21,6 +27,114 @@ export function getShopifyDisplayCurrency(): string {
     return shopifyCurrency;
   }
   return 'USD';
+}
+
+function getOrCreateClientId(): string {
+  try {
+    let id = localStorage.getItem(CLIENT_ID_KEY);
+    if (!id) {
+      id = (crypto as any)?.randomUUID
+        ? (crypto as any).randomUUID()
+        : `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(CLIENT_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+function hasQuoteParam(): boolean {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    return !!(params.get('quote') || params.get('token'));
+  } catch {
+    return false;
+  }
+}
+
+function readLocalManualChoice(): { country: string; currency: string } | null {
+  try {
+    const raw = localStorage.getItem(USER_SELECTED_MARKET_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.country === 'string') {
+      return { country: parsed.country.toUpperCase(), currency: String(parsed.currency || '').toUpperCase() };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalManualChoice(country: string, currency: string) {
+  try {
+    localStorage.setItem(
+      USER_SELECTED_MARKET_KEY,
+      JSON.stringify({ country: country.toUpperCase(), currency: currency.toUpperCase(), at: Date.now() })
+    );
+  } catch {
+    // ignore
+  }
+}
+
+async function fetchSupabasePreference(clientId: string): Promise<{ country: string; currency: string } | null> {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return null;
+
+    const url = `${supabaseUrl}/rest/v1/user_currency_preferences?client_id=eq.${encodeURIComponent(clientId)}&select=country_code,currency_code,expires_at&limit=1`;
+    const res = await fetch(url, {
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const row = rows[0];
+    if (row?.expires_at && new Date(row.expires_at).getTime() < Date.now()) return null;
+    return {
+      country: String(row.country_code || '').toUpperCase(),
+      currency: String(row.currency_code || '').toUpperCase(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function upsertSupabasePreference(country: string, currency: string) {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !anonKey) return;
+
+    const clientId = getOrCreateClientId();
+    const payload = {
+      client_id: clientId,
+      country_code: country.toUpperCase(),
+      currency_code: currency.toUpperCase(),
+      user_agent: navigator.userAgent || '',
+      updated_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    await fetch(`${supabaseUrl}/rest/v1/user_currency_preferences?on_conflict=client_id`, {
+      method: 'POST',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${anonKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // best effort
+  }
 }
 
 async function fetchIpDetection(): Promise<{ currency: string | null; country: string | null }> {
@@ -79,7 +193,7 @@ async function logMismatch(payload: {
   detected_currency: string;
   shopify_country: string;
   shopify_currency: string;
-  action_taken: 'localization_switch' | 'no_matching_market' | 'no_change';
+  action_taken: 'localization_switch' | 'no_matching_market' | 'no_change' | 'skipped_user_preference' | 'skipped_quote_link' | 'skipped_cooldown';
 }) {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -124,25 +238,117 @@ function submitLocalizationForm(countryCode: string) {
     document.body.appendChild(form);
     form.submit();
   } catch {
-    // swallow - we'll just leave the user on the current market
+    // swallow
+  }
+}
+
+export function recordManualMarketChoice(country: string, currency: string) {
+  if (!country) return;
+  writeLocalManualChoice(country, currency);
+  try {
+    localStorage.setItem(LOCALIZATION_ATTEMPTED_KEY, '1');
+    localStorage.setItem(LOCALIZATION_ATTEMPTED_AT_KEY, String(Date.now()));
+  } catch {
+    // ignore
+  }
+  void upsertSupabasePreference(country, currency);
+}
+
+export function installLocalizationFormInterceptor() {
+  try {
+    if ((window as any).__shadespaceLocalizationInterceptorInstalled) return;
+    (window as any).__shadespaceLocalizationInterceptorInstalled = true;
+
+    document.addEventListener(
+      'submit',
+      (e) => {
+        const target = e.target as HTMLFormElement | null;
+        if (!target || target.tagName !== 'FORM') return;
+        const action = (target.getAttribute('action') || '').toLowerCase();
+        if (!action.includes('/localization')) return;
+
+        const typeField = target.querySelector('input[name="form_type"]') as HTMLInputElement | null;
+        if (typeField && typeField.value !== 'localization') return;
+
+        const countryField = target.querySelector('input[name="country_code"]') as HTMLInputElement | null;
+        const country = countryField?.value?.toUpperCase() || '';
+        if (country) {
+          const currency = readShopifyCurrency() || '';
+          recordManualMarketChoice(country, currency);
+        }
+      },
+      true
+    );
+  } catch {
+    // ignore
   }
 }
 
 export async function reconcileShopifyMarket(): Promise<void> {
   try {
     sessionStorage.removeItem(LEGACY_SESSION_KEY);
-  } catch {
-    // ignore
-  }
-
-  try {
-    if (sessionStorage.getItem(LOCALIZATION_ATTEMPTED_KEY) === '1') return;
+    sessionStorage.removeItem(LEGACY_V2_KEY);
   } catch {
     // ignore
   }
 
   const shopifyCurrency = readShopifyCurrency();
   const shopifyCountry = readShopifyCountry();
+
+  if (hasQuoteParam()) {
+    await logMismatch({
+      detected_country: '',
+      detected_currency: '',
+      shopify_country: shopifyCountry ?? '',
+      shopify_currency: shopifyCurrency ?? '',
+      action_taken: 'skipped_quote_link',
+    });
+    return;
+  }
+
+  const localChoice = readLocalManualChoice();
+  if (localChoice?.country) {
+    await logMismatch({
+      detected_country: '',
+      detected_currency: '',
+      shopify_country: shopifyCountry ?? '',
+      shopify_currency: shopifyCurrency ?? '',
+      action_taken: 'skipped_user_preference',
+    });
+    return;
+  }
+
+  try {
+    if (localStorage.getItem(LOCALIZATION_ATTEMPTED_KEY) === '1') {
+      const attemptedAt = Number(localStorage.getItem(LOCALIZATION_ATTEMPTED_AT_KEY) || '0');
+      if (attemptedAt && Date.now() - attemptedAt < RECONCILE_COOLDOWN_MS) {
+        await logMismatch({
+          detected_country: '',
+          detected_currency: '',
+          shopify_country: shopifyCountry ?? '',
+          shopify_currency: shopifyCurrency ?? '',
+          action_taken: 'skipped_cooldown',
+        });
+        return;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  const clientId = getOrCreateClientId();
+  const remotePref = await fetchSupabasePreference(clientId);
+  if (remotePref?.country) {
+    writeLocalManualChoice(remotePref.country, remotePref.currency);
+    await logMismatch({
+      detected_country: '',
+      detected_currency: '',
+      shopify_country: shopifyCountry ?? '',
+      shopify_currency: shopifyCurrency ?? '',
+      action_taken: 'skipped_user_preference',
+    });
+    return;
+  }
 
   if (!shopifyCurrency && !shopifyCountry) return;
 
@@ -154,7 +360,8 @@ export async function reconcileShopifyMarket(): Promise<void> {
   }
 
   try {
-    sessionStorage.setItem(LOCALIZATION_ATTEMPTED_KEY, '1');
+    localStorage.setItem(LOCALIZATION_ATTEMPTED_KEY, '1');
+    localStorage.setItem(LOCALIZATION_ATTEMPTED_AT_KEY, String(Date.now()));
   } catch {
     // ignore
   }
