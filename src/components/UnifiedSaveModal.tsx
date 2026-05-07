@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { saveQuote, generateQuoteUrl } from '../utils/quoteManager';
+import { saveQuote, generateCanonicalQuoteUrl } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { useToast } from './ui/ToastProvider';
 import { analytics } from '../utils/analytics';
@@ -144,7 +144,7 @@ export function UnifiedSaveModal({
 
       console.log('Save quote result:', result);
 
-      const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
+      const quoteUrl = generateCanonicalQuoteUrl(result.id, result.accessToken, 'email');
       const modalDuration = (Date.now() - modalOpenTime) / 1000;
       const emailDomain = email ? email.split('@')[1] : null;
 
@@ -183,6 +183,7 @@ export function UnifiedSaveModal({
                 quoteUrl,
                 quoteName: result.quoteName,
                 quoteId: result.id,
+                accessToken: result.accessToken,
                 expiresAt: result.pricingLockedUntil,
                 pricingLockedUntil: result.pricingLockedUntil,
                 firstName: firstName.trim(),
@@ -292,7 +293,7 @@ export function UnifiedSaveModal({
         lastName.trim()
       );
 
-      const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
+      const quoteUrl = generateCanonicalQuoteUrl(result.id, result.accessToken, 'email');
       const savedRef = result.reference;
 
       addQuoteToken(

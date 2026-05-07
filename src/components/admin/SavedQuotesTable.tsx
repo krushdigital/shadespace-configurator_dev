@@ -199,8 +199,13 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   };
 
   const getQuoteUrl = (quote: Quote) => {
-    const baseUrl = window.location.origin;
-    return `${baseUrl}/pages/shade-sail-configurator?quote=${quote.id}&token=${encodeURIComponent(quote.access_token)}`;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const params = new URLSearchParams({
+      id: quote.id,
+      token: quote.access_token,
+      src: 'admin',
+    });
+    return `${supabaseUrl}/functions/v1/quote-redirect?${params.toString()}`;
   };
 
   const copyQuoteUrl = (quote: Quote) => {

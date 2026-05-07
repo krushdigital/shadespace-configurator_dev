@@ -153,6 +153,8 @@ Deno.serve(async (req: Request) => {
       quoteReference,
       quoteName,
       quoteUrl,
+      quoteId,
+      accessToken,
       pricingLockedUntil,
       expiresAt,
     } = data;
@@ -167,6 +169,23 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const supabaseUrlEnv = Deno.env.get("SUPABASE_URL") || "";
+
+    // Canonical quote URL routes through the quote-redirect edge function so
+    // the link works on every regional Shopify domain (.com, .com.au, .co.uk, .ca, ...)
+    let canonicalQuoteUrl = quoteUrl || "";
+    if (!canonicalQuoteUrl && quoteId && accessToken && supabaseUrlEnv) {
+      const params = new URLSearchParams({
+        id: quoteId,
+        token: accessToken,
+        src: "email",
+      });
+      canonicalQuoteUrl = `${supabaseUrlEnv}/functions/v1/quote-redirect?${params.toString()}`;
+    }
+    if (!canonicalQuoteUrl) {
+      canonicalQuoteUrl = "https://shadespace.com/pages/shade-sail-configurator";
+    }
+
     const lockedUntil = pricingLockedUntil || expiresAt;
 
     const emailHTML = generateSaveProgressHTML({
@@ -175,7 +194,7 @@ Deno.serve(async (req: Request) => {
       email,
       quoteReference: quoteReference || "N/A",
       quoteName: quoteName || "Shade Sail Configuration",
-      quoteUrl: quoteUrl || "https://shadespace.com",
+      quoteUrl: canonicalQuoteUrl,
       pricingLockedUntil: lockedUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
 

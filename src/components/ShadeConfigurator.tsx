@@ -190,6 +190,33 @@ export function ShadeConfigurator() {
 
       setIsLoadingQuote(true);
 
+      const urlParams = new URLSearchParams(window.location.search);
+      const hadTokenInUrl = !!(urlParams.get('quote') && urlParams.get('token'));
+      const landedHost = window.location.host;
+      const linkSource = urlParams.get('src') || 'direct';
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      if (supabaseUrl && anonKey) {
+        fetch(`${supabaseUrl}/rest/v1/quote_link_events`, {
+          method: 'POST',
+          headers: {
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal',
+          },
+          body: JSON.stringify({
+            quote_id: quoteData.id,
+            source: linkSource,
+            landed_host: landedHost,
+            had_token: hadTokenInUrl,
+            user_agent: navigator.userAgent,
+          }),
+        }).catch(() => {
+          // telemetry best-effort only
+        });
+      }
+
       // Track load attempt
       analytics.quoteLoadAttempted({
         quote_id: quoteData.id,
