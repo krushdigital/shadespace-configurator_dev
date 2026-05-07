@@ -21,6 +21,7 @@ interface ShadeSVGCoreProps {
   forPdfCapture?: boolean;
   isMobile?: boolean;
   showAccuracyBadge?: boolean;
+  plainBackground?: boolean;
 }
 
 export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
@@ -40,7 +41,8 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   children,
   forPdfCapture = false,
   isMobile = false,
-  showAccuracyBadge = false
+  showAccuracyBadge = false,
+  plainBackground = false
 }, ref) => {
   const [fabricImageBase64, setFabricImageBase64] = useState<string | null>(null);
 
@@ -298,8 +300,8 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       className="absolute inset-0"
       style={{ userSelect: 'none' }}
     >
-      {/* White background for PDF capture */}
-      {forPdfCapture && (
+      {/* White background for PDF capture or plain background mode */}
+      {(forPdfCapture || plainBackground) && (
         <rect width="100%" height="100%" fill="white" />
       )}
       
@@ -344,7 +346,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
           </pattern>
         )}
       </defs>
-      {!forPdfCapture && (
+      {!forPdfCapture && !plainBackground && (
         <>
           <rect width="100%" height="100%" fill="url(#grid)" />
           <rect width="100%" height="100%" fill="url(#majorGrid)" />

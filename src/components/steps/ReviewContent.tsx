@@ -1054,6 +1054,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 compact={false}
                 readonly={false}
                 isMobile={isMobile}
+                plainBackground={true}
               />
               <div className="mt-2 text-xs text-slate-500">
                 Visual reference only<br />
