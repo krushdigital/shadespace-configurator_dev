@@ -21,7 +21,7 @@ import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, forma
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
-import { getShopifyDisplayCurrency, reconcileShopifyMarket } from '../utils/currencyDetection';
+import { getShopifyDisplayCurrency } from '../utils/currencyDetection';
 
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
@@ -262,10 +262,6 @@ export function ShadeConfigurator() {
     setConfig(prev =>
       prev.currency === shopifyCurrency ? prev : { ...prev, currency: shopifyCurrency }
     );
-
-    reconcileShopifyMarket().catch(error => {
-      console.error('Shopify market reconciliation failed:', error);
-    });
   }, [isLoadingQuote, quoteReference]);
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
