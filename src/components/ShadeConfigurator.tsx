@@ -89,7 +89,11 @@ export function ShadeConfigurator() {
 
   // Quote management state
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
-  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const [isLoadingQuote, setIsLoadingQuote] = useState(() => !!getQuoteFromUrl());
+  const [redirectingForCurrency, setRedirectingForCurrency] = useState<{
+    targetDomain?: string;
+    targetCountry?: string;
+  } | null>(null);
   const [loadedPricingSnapshot, setLoadedPricingSnapshot] = useState<Record<string, PricingSetting> | null>(null);
 
   // Highlighted measurement state for sticky diagram
@@ -228,21 +232,28 @@ export function ShadeConfigurator() {
         const createdAt = new Date(quote.created_at);
         const quoteAgeHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
 
-        setConfig(quote.config_data);
-        setQuoteReference(quote.quote_reference);
-
-        applyPricingSnapshot(quote);
-
+        // Align the Shopify storefront BEFORE we paint any prices so we never
+        // render the quote currency on a storefront that is still on a different one.
         const quoteCurrency = quote.config_data?.currency;
         if (quoteCurrency) {
           const alignment = await alignStorefrontToCurrency(quoteCurrency, {
             quoteId: quote.id,
             triggeredBy: 'quote_load',
           });
-          if (alignment.status === 'redirecting' || alignment.status === 'switching') {
+          if (alignment.status === 'redirecting') {
+            setRedirectingForCurrency({ targetDomain: alignment.targetDomain });
+            return;
+          }
+          if (alignment.status === 'switching') {
+            setRedirectingForCurrency({ targetCountry: alignment.targetCountry });
             return;
           }
         }
+
+        setConfig(quote.config_data);
+        setQuoteReference(quote.quote_reference);
+
+        applyPricingSnapshot(quote);
 
         const resumeStep = quote.current_step ?? 4;
         setOpenStep(resumeStep);
@@ -2082,6 +2093,20 @@ export function ShadeConfigurator() {
       });
     }
   };
+
+  if (redirectingForCurrency) {
+    const { targetDomain, targetCountry } = redirectingForCurrency;
+    const message = targetDomain
+      ? `Switching you to ${targetDomain} so your quote is shown in its original currency...`
+      : `Updating the store to ${targetCountry || 'your quote region'} so prices match your saved quote...`;
+    return (
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-16 text-center">
+        <div className="animate-spin w-12 h-12 border-4 border-[#BFF102] border-t-[#307C31] rounded-full mx-auto mb-4"></div>
+        <p className="text-lg text-slate-700 mb-2">{message}</p>
+        <p className="text-sm text-slate-500">If this page does not change within a few seconds, please refresh.</p>
+      </div>
+    );
+  }
 
   if (isLoadingQuote) {
     return (
