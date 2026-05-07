@@ -22,6 +22,7 @@ import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
 import { getShopifyDisplayCurrency } from '../utils/currencyDetection';
+import { alignStorefrontToCurrency, cartCurrencyMismatches, clearCart } from '../utils/currencySync';
 
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
@@ -216,6 +217,17 @@ export function ShadeConfigurator() {
         setQuoteReference(quote.quote_reference);
 
         applyPricingSnapshot(quote);
+
+        const quoteCurrency = quote.config_data?.currency;
+        if (quoteCurrency) {
+          const alignment = await alignStorefrontToCurrency(quoteCurrency, {
+            quoteId: quote.id,
+            triggeredBy: 'quote_load',
+          });
+          if (alignment.status === 'redirecting' || alignment.status === 'switching') {
+            return;
+          }
+        }
 
         const resumeStep = quote.current_step ?? 4;
         setOpenStep(resumeStep);
@@ -1281,6 +1293,32 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
 
           console.log('Add to cart in progress');
           console.log('Form data JSON:', JSON.stringify(formData, null, 2)); // Debug log
+
+          const cartState = await cartCurrencyMismatches(config.currency);
+          if (cartState.mismatch) {
+            console.warn(
+              `Cart currency ${cartState.cartCurrency} does not match quote currency ${config.currency}. Switching storefront.`
+            );
+            if (cartState.itemCount > 0) {
+              await clearCart();
+            }
+            const alignment = await alignStorefrontToCurrency(config.currency, {
+              quoteId: quoteParams?.id || null,
+              triggeredBy: 'cart_guard',
+            });
+            if (alignment.status === 'redirecting' || alignment.status === 'switching') {
+              return;
+            }
+            if (alignment.status === 'unsupported') {
+              showToast(
+                `Your cart is in ${cartState.cartCurrency} but this quote is in ${config.currency}. Please switch markets and try again.`,
+                'error'
+              );
+              setShowLoadingOverlay(false);
+              setLoading(false);
+              return;
+            }
+          }
 
           // ============ SOLUTION 3: ROBUST POLLING/RETRY LOGIC ============
           setLoadingStep({ text: 'Preparing your item for cart...', progress: 80 });
