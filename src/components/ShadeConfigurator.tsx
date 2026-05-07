@@ -21,7 +21,8 @@ import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, forma
 import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
-import { getShopifyDisplayCurrency, reconcileShopifyMarket } from '../utils/currencyDetection';
+import { getShopifyDisplayCurrency } from '../utils/currencyDetection';
+import { alignStorefrontToCurrency, cartCurrencyMismatches, clearCart } from '../utils/currencySync';
 
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
@@ -232,6 +233,17 @@ export function ShadeConfigurator() {
 
         applyPricingSnapshot(quote);
 
+        const quoteCurrency = quote.config_data?.currency;
+        if (quoteCurrency) {
+          const alignment = await alignStorefrontToCurrency(quoteCurrency, {
+            quoteId: quote.id,
+            triggeredBy: 'quote_load',
+          });
+          if (alignment.status === 'redirecting' || alignment.status === 'switching') {
+            return;
+          }
+        }
+
         const resumeStep = quote.current_step ?? 4;
         setOpenStep(resumeStep);
 
@@ -277,10 +289,6 @@ export function ShadeConfigurator() {
     setConfig(prev =>
       prev.currency === shopifyCurrency ? prev : { ...prev, currency: shopifyCurrency }
     );
-
-    reconcileShopifyMarket().catch(error => {
-      console.error('Shopify market reconciliation failed:', error);
-    });
   }, [isLoadingQuote, quoteReference]);
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
@@ -1265,6 +1273,32 @@ export function ShadeConfigurator() {
 
         console.log('Add to cart in progress');
         console.log('Form data JSON:', JSON.stringify(formData, null, 2));
+
+          const cartState = await cartCurrencyMismatches(config.currency);
+          if (cartState.mismatch) {
+            console.warn(
+              `Cart currency ${cartState.cartCurrency} does not match quote currency ${config.currency}. Switching storefront.`
+            );
+            if (cartState.itemCount > 0) {
+              await clearCart();
+            }
+            const alignment = await alignStorefrontToCurrency(config.currency, {
+              quoteId: quoteParams?.id || null,
+              triggeredBy: 'cart_guard',
+            });
+            if (alignment.status === 'redirecting' || alignment.status === 'switching') {
+              return;
+            }
+            if (alignment.status === 'unsupported') {
+              showToast(
+                `Your cart is in ${cartState.cartCurrency} but this quote is in ${config.currency}. Please switch markets and try again.`,
+                'error'
+              );
+              setShowLoadingOverlay(false);
+              setLoading(false);
+              return;
+            }
+          }
 
         setLoadingStep({ text: 'Preparing your item for cart...', progress: 80 });
 
