@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import App from "./App";
 import "./index.css";
+import { preloadCurrencyMap } from "./utils/currencySync";
+
+preloadCurrencyMap();
 
 const container = document.getElementById("SHADE_SPACE");
 

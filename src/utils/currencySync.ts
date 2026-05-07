@@ -7,24 +7,33 @@ type CurrencyMapping = {
 };
 
 let mappingCache: CurrencyMapping[] | null = null;
+let mappingPromise: Promise<CurrencyMapping[]> | null = null;
+
+function fetchCurrencyMap(): Promise<CurrencyMapping[]> {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !key) return Promise.resolve([]);
+  return fetch(
+    `${url}/rest/v1/currency_country_map?select=currency,preferred_country_code,preferred_domain`,
+    { headers: { apikey: key, Authorization: `Bearer ${key}` } }
+  )
+    .then((res) => (res.ok ? res.json() : []))
+    .then((rows: CurrencyMapping[]) => {
+      mappingCache = rows;
+      return rows;
+    })
+    .catch(() => [] as CurrencyMapping[]);
+}
+
+export function preloadCurrencyMap(): Promise<CurrencyMapping[]> {
+  if (mappingCache) return Promise.resolve(mappingCache);
+  if (!mappingPromise) mappingPromise = fetchCurrencyMap();
+  return mappingPromise;
+}
 
 async function loadCurrencyMap(): Promise<CurrencyMapping[]> {
   if (mappingCache) return mappingCache;
-  try {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    if (!url || !key) return [];
-    const res = await fetch(
-      `${url}/rest/v1/currency_country_map?select=currency,preferred_country_code,preferred_domain`,
-      { headers: { apikey: key, Authorization: `Bearer ${key}` } }
-    );
-    if (!res.ok) return [];
-    const rows = (await res.json()) as CurrencyMapping[];
-    mappingCache = rows;
-    return rows;
-  } catch {
-    return [];
-  }
+  return preloadCurrencyMap();
 }
 
 export async function lookupTargetForCurrency(currency: string): Promise<CurrencyMapping | null> {
@@ -55,6 +64,7 @@ async function logCurrencySwitch(payload: Record<string, unknown>) {
 }
 
 const SWITCH_ATTEMPT_KEY = 'shadespace_currency_switch_attempt';
+const REDIRECT_FAILED_KEY = 'shadespace_currency_redirect_failed';
 
 function getCurrentHost(): string {
   try {
@@ -82,6 +92,44 @@ function alreadyAttempted(signature: string): boolean {
     return sessionStorage.getItem(SWITCH_ATTEMPT_KEY) === signature;
   } catch {
     return false;
+  }
+}
+
+export function hasRedirectFailed(quoteId: string | null | undefined): boolean {
+  if (!quoteId) return false;
+  try {
+    return sessionStorage.getItem(REDIRECT_FAILED_KEY) === quoteId;
+  } catch {
+    return false;
+  }
+}
+
+function markRedirectFailed(quoteId: string | null | undefined) {
+  if (!quoteId) return;
+  try {
+    sessionStorage.setItem(REDIRECT_FAILED_KEY, quoteId);
+  } catch {
+    // ignore
+  }
+}
+
+async function logRedirectFailed(payload: Record<string, unknown>) {
+  try {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!url || !key) return;
+    await fetch(`${url}/rest/v1/currency_switch_redirect_failures`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    // best-effort telemetry
   }
 }
 
@@ -119,7 +167,10 @@ export async function alignStorefrontToCurrency(
 
   // Cross-domain redirect case
   if (targetHost && !domainsEqual(currentHost, targetHost)) {
-    const sig = `redirect:${targetHost}:${quoteCur}`;
+    if (hasRedirectFailed(opts.quoteId)) {
+      return { status: 'unsupported', quoteCurrency: quoteCur };
+    }
+    const sig = `redirect:${targetHost}:${quoteCur}:${opts.quoteId || ''}`;
     if (alreadyAttempted(sig)) {
       return { status: 'aligned', currency: shopifyCurrency };
     }
@@ -140,12 +191,34 @@ export async function alignStorefrontToCurrency(
     const targetUrl = new URL(`https://${targetHost}${url.pathname}${url.search}${url.hash}`);
     targetUrl.searchParams.set('_ab', '0');
     targetUrl.searchParams.set('_fd', '0');
+
+    const qid = opts.quoteId || null;
+    window.setTimeout(() => {
+      if (getCurrentHost() && !domainsEqual(getCurrentHost(), targetHost)) {
+        markRedirectFailed(qid);
+        void logRedirectFailed({
+          quote_id: qid,
+          quote_currency: quoteCur,
+          target_domain: targetHost,
+          origin_domain: currentHost,
+          user_agent: navigator.userAgent || '',
+        });
+        try {
+          window.dispatchEvent(new CustomEvent('shadespace:currency-redirect-failed', {
+            detail: { targetHost, quoteId: qid, quoteCurrency: quoteCur },
+          }));
+        } catch {
+          // ignore
+        }
+      }
+    }, 5000);
+
     window.location.replace(targetUrl.toString());
     return { status: 'redirecting', targetDomain: targetHost };
   }
 
   // Same-domain /localization switch
-  const sig = `localize:${target.preferred_country_code}:${quoteCur}`;
+  const sig = `localize:${target.preferred_country_code}:${quoteCur}:${opts.quoteId || ''}`;
   if (alreadyAttempted(sig)) {
     return { status: 'aligned', currency: shopifyCurrency };
   }
