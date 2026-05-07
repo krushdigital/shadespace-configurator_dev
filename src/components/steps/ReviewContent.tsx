@@ -21,13 +21,8 @@ interface ReviewContentProps {
   onPrev: (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
-  acknowledgments: {
-    customManufactured: boolean;
-    measurementsAccurate: boolean;
-    installationNotIncluded: boolean;
-    structuralResponsibility: boolean;
-  };
-  handleAcknowledgmentChange: (key: keyof ReviewContentProps['acknowledgments']) => void;
+  agreedToAcknowledgments: boolean;
+  onToggleAgreement: () => void;
   handleAddToCart: (orderData: any) => void;
   allDiagonalsEntered: boolean;
   allAcknowledgmentsChecked: boolean;
@@ -49,8 +44,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   nextStepTitle = '',
   showBackButton = false,
   onPrev,
-  acknowledgments,
-  handleAcknowledgmentChange,
+  agreedToAcknowledgments,
+  onToggleAgreement,
   handleAddToCart,
   allDiagonalsEntered,
   allAcknowledgmentsChecked,
@@ -81,8 +76,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     nextStepTitle,
     showBackButton,
     onPrev,
-    acknowledgments,
-    handleAcknowledgmentChange,
+    agreedToAcknowledgments,
+    onToggleAgreement,
     handleAddToCart,
     allDiagonalsEntered,
     allAcknowledgmentsChecked,
@@ -1127,78 +1122,39 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             )}
           </h4>
           <div className={`${isMobile ? 'space-y-2 text-xs' : 'space-y-4 text-sm'}`}>
-            <div className={`flex items-start gap-2 ${isMobile ? '' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
+            <ul className={`${isMobile ? 'space-y-1.5 pl-5' : 'space-y-2 pl-6'} list-disc text-slate-700 marker:text-slate-400`}>
+              <li>{isMobile ? 'Custom made - no returns/exchanges' : 'I understand this shade sail is custom manufactured and cannot be returned or exchanged.'}</li>
+              <li>{isMobile ? 'Measurements are accurate' : 'I confirm all measurements provided are accurate and verified on-site.'}</li>
+              <li>{isMobile ? 'Installation not included' : 'I acknowledge installation is not included and I am responsible for proper installation.'}</li>
+              <li>{isMobile ? 'Structural adequacy is my responsibility' : 'I understand structural adequacy of fixing points is my responsibility.'}</li>
+            </ul>
+
+            <label className={`flex items-start gap-3 cursor-pointer ${isMobile ? 'mt-3 p-2' : 'mt-4 p-3'} rounded-lg border-2 transition-colors ${
+              agreedToAcknowledgments
+                ? 'bg-emerald-50 border-emerald-300'
+                : showValidationFeedback && !agreedToAcknowledgments && allDiagonalsEntered
+                  ? 'bg-red-50 border-red-400'
+                  : 'bg-white border-slate-300 hover:border-slate-400'
+            }`}>
               <input
                 type="checkbox"
                 className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
-                checked={acknowledgments.customManufactured}
-                onChange={() => handleAcknowledgmentChange('customManufactured')}
+                checked={agreedToAcknowledgments}
+                onChange={onToggleAgreement}
                 required
               />
-              <span className={
-                showValidationFeedback && !acknowledgments.customManufactured && allDiagonalsEntered
-                  ? 'text-red-700'
-                  : allAcknowledgmentsChecked
-                    ? 'text-emerald-700'
-                    : 'text-slate-700'
-              }>
-                {isMobile ? 'Custom made - no returns/exchanges' : 'I understand this shade sail is custom manufactured and cannot be returned or exchanged.'}
+              <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold ${
+                agreedToAcknowledgments
+                  ? 'text-emerald-800'
+                  : showValidationFeedback && !agreedToAcknowledgments && allDiagonalsEntered
+                    ? 'text-red-700'
+                    : 'text-slate-800'
+              }`}>
+                {isMobile
+                  ? 'I agree to all acknowledgments above'
+                  : 'I have read and agree to all of the acknowledgments listed above.'}
               </span>
-            </div>
-            <div className={`flex items-start gap-2 ${isMobile ? '' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
-              <input
-                type="checkbox"
-                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
-                checked={acknowledgments.measurementsAccurate}
-                onChange={() => handleAcknowledgmentChange('measurementsAccurate')}
-                required
-              />
-              <span className={
-                showValidationFeedback && !acknowledgments.measurementsAccurate && allDiagonalsEntered
-                  ? 'text-red-700'
-                  : allAcknowledgmentsChecked
-                    ? 'text-emerald-700'
-                    : 'text-slate-700'
-              }>
-                {isMobile ? 'Measurements are accurate' : 'I confirm all measurements provided are accurate and verified on-site.'}
-              </span>
-            </div>
-            <div className={`flex items-start gap-2 ${isMobile ? '' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
-              <input
-                type="checkbox"
-                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
-                checked={acknowledgments.installationNotIncluded}
-                onChange={() => handleAcknowledgmentChange('installationNotIncluded')}
-                required
-              />
-              <span className={
-                showValidationFeedback && !acknowledgments.installationNotIncluded && allDiagonalsEntered
-                  ? 'text-red-700'
-                  : allAcknowledgmentsChecked
-                    ? 'text-emerald-700'
-                    : 'text-slate-700'
-              }>
-                {isMobile ? 'Installation not included' : 'I acknowledge installation is not included and I am responsible for proper installation.'}
-              </span>
-            </div>
-            <div className={`flex items-start gap-2 ${isMobile ? '' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
-              <input
-                type="checkbox"
-                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
-                checked={acknowledgments.structuralResponsibility}
-                onChange={() => handleAcknowledgmentChange('structuralResponsibility')}
-                required
-              />
-              <span className={
-                showValidationFeedback && !acknowledgments.structuralResponsibility && allDiagonalsEntered
-                  ? 'text-red-700'
-                  : allAcknowledgmentsChecked
-                    ? 'text-emerald-700'
-                    : 'text-slate-700'
-              }>
-                {isMobile ? 'Structural adequacy is my responsibility' : 'I understand structural adequacy of fixing points is my responsibility.'}
-              </span>
-            </div>
+            </label>
 
             {/* Conditional Height Disclaimer - Only show if heights not provided AND measurementOption is 'adjust' */}
             {config.corners !== 3 && config.measurementOption === 'adjust' && !config.heightsProvidedByUser && (
