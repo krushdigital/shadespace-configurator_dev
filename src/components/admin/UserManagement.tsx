@@ -1,0 +1,272 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
+import { supabase } from '../../lib/supabase';
+import { getAdminAuthHeaders } from '../../utils/adminAuth';
+import type { AdminProfile } from '../../hooks/useAdminProfile';
+
+interface AdminUserRow {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: 'admin' | 'super_admin';
+  status: 'pending' | 'active' | 'disabled';
+  auth_user_id: string | null;
+  invited_by: string | null;
+  invited_at: string | null;
+  activated_at: string | null;
+  last_login_at: string | null;
+  created_at: string;
+}
+
+interface Props {
+  currentProfile: AdminProfile;
+}
+
+export const UserManagement: React.FC<Props> = ({ currentProfile }) => {
+  const isSuper = currentProfile.role === 'super_admin';
+  const [rows, setRows] = useState<AdminUserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [inviting, setInviting] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'super_admin'>('admin');
+  const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from('admin_users').select('*').order('created_at', { ascending: false });
+    setRows((data as AdminUserRow[]) || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const showMsg = (type: 'success' | 'error', text: string) => {
+    setMsg({ type, text });
+    setTimeout(() => setMsg(null), 4000);
+  };
+
+  const invite = async () => {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-invite`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: inviteEmail.trim(), full_name: inviteName.trim(), role: inviteRole }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        showMsg('error', json.error || 'Invite failed');
+      } else {
+        showMsg('success', `Invite sent to ${inviteEmail}`);
+        setShowInvite(false);
+        setInviteEmail(''); setInviteName(''); setInviteRole('admin');
+        load();
+      }
+    } catch (e) {
+      showMsg('error', e instanceof Error ? e.message : 'Invite failed');
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const removeUser = async (row: AdminUserRow) => {
+    if (!confirm(`Permanently remove ${row.email}? This also deletes the Supabase Auth user so they can no longer sign in anywhere.`)) return;
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-delete`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminUserId: row.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) showMsg('error', json.error || 'Delete failed');
+      else {
+        showMsg('success', `${row.email} removed`);
+        load();
+      }
+    } catch (e) { showMsg('error', e instanceof Error ? e.message : 'Delete failed'); }
+  };
+
+  const updateRole = async (row: AdminUserRow, patch: { role?: 'admin' | 'super_admin'; status?: string }) => {
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-update-role`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminUserId: row.id, ...patch }),
+      });
+      const json = await res.json();
+      if (!res.ok) showMsg('error', json.error || 'Update failed');
+      else load();
+    } catch (e) { showMsg('error', e instanceof Error ? e.message : 'Update failed'); }
+  };
+
+  const resendInvite = async (row: AdminUserRow) => {
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-invite`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: row.email, full_name: row.full_name, role: row.role }),
+      });
+      const json = await res.json();
+      if (!res.ok) showMsg('error', json.error || 'Resend failed');
+      else showMsg('success', `Invite re-sent to ${row.email}`);
+    } catch (e) { showMsg('error', e instanceof Error ? e.message : 'Resend failed'); }
+  };
+
+  const fmt = (iso: string | null) => iso ? new Date(iso).toLocaleString() : '-';
+
+  const active = rows.filter(r => r.status === 'active');
+  const pending = rows.filter(r => r.status === 'pending');
+  const disabled = rows.filter(r => r.status === 'disabled');
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <p className="text-sm text-gray-500">Signed in as {currentProfile.email} ({currentProfile.role === 'super_admin' ? 'Super Admin' : 'Admin'})</p>
+        </div>
+        {isSuper && <Button onClick={() => setShowInvite(true)}>Invite admin</Button>}
+      </div>
+
+      {msg && (
+        <div className={`px-4 py-3 rounded text-sm ${msg.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
+          {msg.text}
+        </div>
+      )}
+
+      {loading ? (
+        <Card className="p-6 text-sm text-gray-500">Loading...</Card>
+      ) : (
+        <>
+          <Section title={`Active admins (${active.length})`}>
+            <UserTable rows={active} isSuper={isSuper} currentId={currentProfile.id} onRemove={removeUser} onUpdate={updateRole} fmt={fmt} />
+          </Section>
+          <Section title={`Pending invitations (${pending.length})`}>
+            <UserTable rows={pending} isSuper={isSuper} currentId={currentProfile.id} onRemove={removeUser} onResend={resendInvite} fmt={fmt} />
+          </Section>
+          {disabled.length > 0 && (
+            <Section title={`Disabled (${disabled.length})`}>
+              <UserTable rows={disabled} isSuper={isSuper} currentId={currentProfile.id} onRemove={removeUser} onUpdate={updateRole} fmt={fmt} />
+            </Section>
+          )}
+        </>
+      )}
+
+      {showInvite && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(false)}>
+          <Card className="max-w-md w-full p-5" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-3">Invite a new admin</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Email</label>
+                <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="name@company.com" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Full name</label>
+                <input value={inviteName} onChange={e => setInviteName(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="Jane Doe" />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block mb-1">Role</label>
+                <select value={inviteRole} onChange={e => setInviteRole(e.target.value as any)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm">
+                  <option value="admin">Admin (view analytics, manage content)</option>
+                  <option value="super_admin">Super Admin (can invite and remove admins)</option>
+                </select>
+              </div>
+              <p className="text-xs text-gray-500">They will receive an email invitation. They can sign in with Google once accepted.</p>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setShowInvite(false)}>Cancel</Button>
+                <Button onClick={invite} disabled={inviting || !inviteEmail}>{inviting ? 'Sending...' : 'Send invite'}</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <Card className="p-0 overflow-hidden">
+    <h2 className="font-semibold text-gray-900 p-4 border-b border-gray-200">{title}</h2>
+    {children}
+  </Card>
+);
+
+interface UserTableProps {
+  rows: AdminUserRow[];
+  isSuper: boolean;
+  currentId: string;
+  onRemove: (r: AdminUserRow) => void;
+  onUpdate?: (r: AdminUserRow, patch: any) => void;
+  onResend?: (r: AdminUserRow) => void;
+  fmt: (iso: string | null) => string;
+}
+
+const UserTable: React.FC<UserTableProps> = ({ rows, isSuper, currentId, onRemove, onUpdate, onResend, fmt }) => {
+  if (rows.length === 0) return <div className="p-6 text-center text-sm text-gray-500">No users here yet.</div>;
+  return (
+    <div className="overflow-auto">
+      <table className="min-w-full text-sm">
+        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+          <tr>
+            <th className="text-left px-4 py-2">Email</th>
+            <th className="text-left px-4 py-2">Name</th>
+            <th className="text-left px-4 py-2">Role</th>
+            <th className="text-left px-4 py-2">Last sign-in</th>
+            <th className="text-left px-4 py-2">Invited</th>
+            {isSuper && <th className="text-right px-4 py-2">Actions</th>}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map(r => (
+            <tr key={r.id} className="hover:bg-gray-50">
+              <td className="px-4 py-2 font-medium text-gray-900">{r.email}</td>
+              <td className="px-4 py-2 text-gray-700">{r.full_name || '-'}</td>
+              <td className="px-4 py-2">
+                <span className={`text-xs px-2 py-0.5 rounded ${r.role === 'super_admin' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                  {r.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                </span>
+              </td>
+              <td className="px-4 py-2 text-xs text-gray-600">{fmt(r.last_login_at)}</td>
+              <td className="px-4 py-2 text-xs text-gray-600">{fmt(r.invited_at)}</td>
+              {isSuper && (
+                <td className="px-4 py-2 text-right">
+                  <div className="flex justify-end gap-1 flex-wrap">
+                    {onUpdate && r.id !== currentId && r.status !== 'pending' && (
+                      <button
+                        onClick={() => onUpdate(r, { role: r.role === 'super_admin' ? 'admin' : 'super_admin' })}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        {r.role === 'super_admin' ? 'Demote' : 'Promote'}
+                      </button>
+                    )}
+                    {onUpdate && r.id !== currentId && r.status === 'active' && (
+                      <button onClick={() => onUpdate(r, { status: 'disabled' })} className="text-xs text-amber-600 hover:underline">Disable</button>
+                    )}
+                    {onUpdate && r.status === 'disabled' && (
+                      <button onClick={() => onUpdate(r, { status: 'active' })} className="text-xs text-green-600 hover:underline">Re-enable</button>
+                    )}
+                    {onResend && (
+                      <button onClick={() => onResend(r)} className="text-xs text-blue-600 hover:underline">Resend</button>
+                    )}
+                    {r.id !== currentId && (
+                      <button onClick={() => onRemove(r)} className="text-xs text-red-600 hover:underline">Remove</button>
+                    )}
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};

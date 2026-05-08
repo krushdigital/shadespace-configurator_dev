@@ -14,11 +14,15 @@ import { ExclusionManager } from '../components/admin/ExclusionManager';
 import { FabricColorManager } from '../components/admin/FabricColorManager';
 import { EmailStudio } from '../components/admin/EmailStudio';
 
+import type { AdminProfile } from '../hooks/useAdminProfile';
+import { UserManagement } from '../components/admin/UserManagement';
+
 interface AdminDashboardProps {
   onLogout: () => void;
+  profile: AdminProfile;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'team';
 
 const detectTimezone = (): string => {
   try {
@@ -28,7 +32,7 @@ const detectTimezone = (): string => {
   }
 };
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profile }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [excludeInternal, setExcludeInternal] = useState(() => {
@@ -56,6 +60,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
     { id: 'email', label: 'Email Studio' },
+    { id: 'team', label: 'User Management' },
     { id: 'exclusions', label: 'Exclusion Settings' },
   ];
 
@@ -69,6 +74,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <span className="text-sm text-gray-500">Analytics Dashboard</span>
             </div>
             <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-xs text-gray-600">
+                {profile.email}
+                <span className={`ml-2 px-2 py-0.5 rounded text-[10px] font-semibold ${profile.role === 'super_admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                  {profile.role === 'super_admin' ? 'SUPER ADMIN' : 'ADMIN'}
+                </span>
+              </span>
               <Button onClick={() => setShowChangePassword(true)} variant="outline" size="sm">
                 Change Password
               </Button>
@@ -173,6 +184,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
         {activeTab === 'email' && <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+
+        {activeTab === 'team' && <UserManagement currentProfile={profile} />}
 
         {activeTab === 'exclusions' && <ExclusionManager />}
       </div>
