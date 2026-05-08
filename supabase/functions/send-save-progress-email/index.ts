@@ -183,6 +183,9 @@ Deno.serve(async (req: Request) => {
     const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "ShadeSpace <sails@shadespace.com>";
 
     let emailSent = false;
+    let resendMessageId: string | null = null;
+    let resendError: string | null = null;
+    const subject = `Your ShadeSpace Progress Has Been Saved - ${quoteReference || "Saved"}`;
 
     if (RESEND_API_KEY) {
       const resendResponse = await fetch("https://api.resend.com/emails", {
@@ -194,17 +197,19 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: [email],
-          subject: `Your ShadeSpace Progress Has Been Saved - ${quoteReference || "Saved"}`,
+          subject,
           html: emailHTML,
         }),
       });
 
+      const resendJson = await resendResponse.json().catch(() => null);
       if (resendResponse.ok) {
         emailSent = true;
+        resendMessageId = resendJson?.id || null;
         console.log("Save progress email sent successfully to:", email);
       } else {
-        const errText = await resendResponse.text();
-        console.error("Resend API error:", resendResponse.status, errText);
+        resendError = JSON.stringify(resendJson) || `HTTP ${resendResponse.status}`;
+        console.error("Resend API error:", resendResponse.status, resendError);
       }
     } else {
       console.warn("RESEND_API_KEY not configured. Email not sent.");
@@ -216,7 +221,32 @@ Deno.serve(async (req: Request) => {
     if (supabaseUrl && supabaseKey) {
       try {
         const { createClient } = await import("npm:@supabase/supabase-js@2");
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || supabaseKey;
+        const supabase = createClient(supabaseUrl, serviceKey);
+
+        const { data: quoteRow } = await supabase
+          .from("saved_quotes")
+          .select("id")
+          .eq("quote_reference", quoteReference)
+          .maybeSingle();
+
+        const { data: queueRow } = await supabase.from("email_queue").insert({
+          template_id: null,
+          sender_id: null,
+          quote_id: quoteRow?.id || null,
+          recipient_email: email,
+          status: emailSent ? "sent" : "failed",
+          scheduled_at: new Date().toISOString(),
+          sent_at: emailSent ? new Date().toISOString() : null,
+          resend_message_id: resendMessageId,
+          subject_snapshot: subject,
+          html_snapshot: emailHTML,
+          error: resendError,
+        }).select().maybeSingle();
+
+        if (emailSent && queueRow?.id) {
+          await supabase.from("email_events").insert({ queue_id: queueRow.id, event_type: "sent" });
+        }
 
         await supabase.from("user_events").insert({
           event_type: "save_progress_email_sent",

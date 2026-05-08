@@ -8,9 +8,15 @@ const corsHeaders = {
 };
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
-const BASE_URL = Deno.env.get("EMAIL_APP_BASE_URL") || "https://configurator.shadespace.com";
+const BASE_URL = Deno.env.get("EMAIL_APP_BASE_URL") || "https://shadespace.com";
+const CONFIGURATOR_URL = Deno.env.get("CONFIGURATOR_URL") || `${BASE_URL}/pages/shade-sail-configurator`;
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+function buildResumeUrl(id?: string, token?: string): string {
+  if (!id || !token) return CONFIGURATOR_URL;
+  return `${CONFIGURATOR_URL}?quote=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`;
+}
 
 function escapeHtml(s: string) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -40,6 +46,8 @@ function buildContext(quote: any, sender: any, unsubUrl: string): Record<string,
   const cfg = quote?.config_data || {};
   const calc = quote?.calculations_data || {};
   const firstName = quote?.customer_first_name || (quote?.customer_email?.split("@")[0]) || "there";
+  const resumeUrl = buildResumeUrl(quote?.id, quote?.access_token);
+  const labels = ["Fabric & Colour", "Style", "Corners", "Measurement Options", "Dimensions", "Heights & Anchor Points", "Review"];
   return {
     first_name: firstName,
     last_name: quote?.customer_last_name || "",
@@ -48,18 +56,22 @@ function buildContext(quote: any, sender: any, unsubUrl: string): Record<string,
     quote_reference: quote?.quote_reference || "",
     quote_name: quote?.quote_name || "",
     current_step: quote?.current_step ?? "",
-    current_step_label: (() => {
-      const labels = ["Dimensions", "Corners", "Fixing Points", "Diagonals", "Fabric", "Colour", "Review"];
-      return labels[quote?.current_step] || "";
-    })(),
-    resume_url: quote?.access_token && quote?.id ? `${BASE_URL}/?id=${quote.id}&token=${quote.access_token}` : BASE_URL,
-    pdf_url: `${BASE_URL}/?id=${quote?.id || ""}&token=${quote?.access_token || ""}&download=pdf`,
+    current_step_label: labels[quote?.current_step] || "",
+    resume_url: resumeUrl,
+    quote_url: resumeUrl,
+    pdf_url: quote?.pdf_url || resumeUrl,
     price: calc?.totalPrice ? Math.round(calc.totalPrice).toLocaleString() : "",
     currency: cfg?.currency || "",
     country: quote?.customer_country || "",
     fabric_type: cfg?.fabricType || "",
     fabric_color: cfg?.fabricColor || "",
     corners: cfg?.corners || "",
+    style: cfg?.edgeType || cfg?.style || "",
+    width: cfg?.measurements?.width || "",
+    height: cfg?.measurements?.height || "",
+    pricing_locked_until: quote?.pricing_locked_until
+      ? new Date(quote.pricing_locked_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+      : "",
     days_since_saved: quote?.created_at ? Math.round((Date.now() - new Date(quote.created_at).getTime()) / 86400000) : "",
     sender_first_name: sender?.signature_name || "the Shade Systems team",
     support_phone: sender?.signature_phone || "",
