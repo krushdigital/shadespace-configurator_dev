@@ -27,6 +27,10 @@ function renderTemplate(str: string, ctx: Record<string, any>): string {
   let out = str.replace(/\{\{#if\s+([\w_]+)\s*\}\}([\s\S]*?)\{\{\/if\}\}/g, (_m, key, body) =>
     ctx[key] ? body : ""
   );
+  out = out.replace(/\{\{\{\s*([\w_]+)\s*\}\}\}/g, (_m, key) => {
+    const v = ctx[key];
+    return v === undefined || v === null ? "" : String(v);
+  });
   out = out.replace(/\{\{\s*([\w_]+)\s*\}\}/g, (_m, key) => {
     const v = ctx[key];
     return v === undefined || v === null || v === "" ? "" : String(v);
@@ -42,16 +46,61 @@ function rewriteLinksForTracking(html: string, queueId: string, unsubUrl: string
   });
 }
 
-function buildContext(quote: any, sender: any, unsubUrl: string): Record<string, any> {
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  NZD: "NZ$", USD: "US$", AUD: "AU$", GBP: "\u00A3", EUR: "\u20AC", CAD: "CA$",
+};
+
+function formatPriceDisplay(amount: number | undefined, currency: string): string {
+  if (!amount && amount !== 0) return "";
+  const symbol = CURRENCY_SYMBOLS[currency] || currency || "";
+  return `${symbol}${Number(amount).toFixed(2)}`;
+}
+
+function rowsHtml(title: string, source: Record<string, any> | undefined, labelFn: (k: string) => string): string {
+  if (!source || Object.keys(source).length === 0) return "";
+  let rows = "";
+  for (const [key, value] of Object.entries(source)) {
+    const display = typeof value === "string" ? value : (value as any)?.formatted ?? String(value);
+    rows += `<tr><td style="color:#307C31;padding:6px 0;font-weight:bold;font-size:14px;">${labelFn(key)}</td><td style="color:#01312D;font-weight:600;padding:6px 0;text-align:right;font-size:14px;">${display}</td></tr>`;
+  }
+  return `<div style="padding:0 30px 20px 30px;"><h3 style="color:#01312D;margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #BFF102;padding-bottom:6px;">${title}</h3><table width="100%" cellpadding="0" cellspacing="0">${rows}</table></div>`;
+}
+
+function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<string, any> = {}): Record<string, any> {
   const cfg = quote?.config_data || {};
   const calc = quote?.calculations_data || {};
   const firstName = quote?.customer_first_name || (quote?.customer_email?.split("@")[0]) || "there";
+  const lastName = quote?.customer_last_name || "";
+  const customerName = [quote?.customer_first_name, lastName].filter(Boolean).join(" ") || firstName;
   const resumeUrl = buildResumeUrl(quote?.id, quote?.access_token);
   const labels = ["Fabric & Colour", "Style", "Corners", "Measurement Options", "Dimensions", "Heights & Anchor Points", "Review"];
+
+  const currency = cfg?.currency || "";
+  const totalPrice = calc?.totalPrice;
+  const edgeType = cfg?.edgeType || cfg?.style || "";
+  const fabricType = cfg?.fabricType || "";
+  const fabricColor = cfg?.fabricColor || "";
+  const corners = cfg?.corners || "";
+  const wireThickness = cfg?.wireThickness || calc?.wireThickness || "";
+  const webbingWidth = cfg?.webbingWidth || calc?.webbingWidth || "";
+  const shadeFactor = calc?.shadeFactor || cfg?.shadeFactor || "";
+  const area = calc?.area || "";
+  const perimeter = calc?.perimeter || "";
+  const warrantyYears = cfg?.warrantyYears || calc?.warrantyYears || "15";
+  const productName = cfg?.productName || (fabricType && fabricColor && corners ? `Custom ${fabricType} Shade Sail - ${fabricColor} - ${corners} Corner` : "Custom Shade Sail");
+
+  const edgeMeasurements = calc?.edgeMeasurements || cfg?.edgeMeasurements;
+  const diagonalMeasurements = calc?.diagonalMeasurements || cfg?.diagonalMeasurements;
+  const anchorMeasurements = calc?.anchorPointMeasurements || cfg?.anchorPointMeasurements;
+
+  const wireOrWebbing = wireThickness || webbingWidth || "";
+  const wireOrWebbingLabel = wireThickness ? "Wire Thickness" : webbingWidth ? "Webbing Width" : "";
+
   return {
     first_name: firstName,
-    last_name: quote?.customer_last_name || "",
-    applicant_name: [quote?.customer_first_name, quote?.customer_last_name].filter(Boolean).join(" ") || firstName,
+    last_name: lastName,
+    customer_name: customerName,
+    applicant_name: customerName,
     email: quote?.customer_email || "",
     quote_reference: quote?.quote_reference || "",
     quote_name: quote?.quote_name || "",
@@ -60,22 +109,39 @@ function buildContext(quote: any, sender: any, unsubUrl: string): Record<string,
     resume_url: resumeUrl,
     quote_url: resumeUrl,
     pdf_url: quote?.pdf_url || resumeUrl,
-    price: calc?.totalPrice ? Math.round(calc.totalPrice).toLocaleString() : "",
-    currency: cfg?.currency || "",
+    price: totalPrice ? Math.round(totalPrice).toLocaleString() : "",
+    price_formatted: formatPriceDisplay(totalPrice, currency),
+    currency,
     country: quote?.customer_country || "",
-    fabric_type: cfg?.fabricType || "",
-    fabric_color: cfg?.fabricColor || "",
-    corners: cfg?.corners || "",
-    style: cfg?.edgeType || cfg?.style || "",
+    fabric_type: fabricType,
+    fabric_color: fabricColor,
+    corners,
+    style: edgeType,
+    edge_type: edgeType,
+    wire_thickness: wireThickness,
+    webbing_width: webbingWidth,
+    wire_or_webbing: wireOrWebbing,
+    wire_or_webbing_label: wireOrWebbingLabel,
+    product_name: productName,
+    shade_factor: shadeFactor ? `${shadeFactor}%` : "",
+    area: typeof area === "number" ? `${area.toFixed(2)} m\u00B2` : (area || ""),
+    perimeter: typeof perimeter === "number" ? `${perimeter}mm` : (perimeter || ""),
+    warranty_years: warrantyYears,
+    canvas_image: extra.canvas_image || quote?.diagram_url || "",
+    edge_measurements_html: rowsHtml("Precise Measurements", edgeMeasurements, (k) => `${k.charAt(0)} \u2192 ${k.charAt(1)}`),
+    diagonal_measurements_html: rowsHtml("Diagonal Measurements", diagonalMeasurements, (k) => `Diagonal ${k.charAt(0)} \u2192 ${k.charAt(1)}`),
+    anchor_measurements_html: rowsHtml("Anchor Point Heights", anchorMeasurements, (k) => `Corner ${k}`),
     width: cfg?.measurements?.width || "",
     height: cfg?.measurements?.height || "",
     pricing_locked_until: quote?.pricing_locked_until
       ? new Date(quote.pricing_locked_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
       : "",
+    no_price_yet: !totalPrice,
     days_since_saved: quote?.created_at ? Math.round((Date.now() - new Date(quote.created_at).getTime()) / 86400000) : "",
-    sender_first_name: sender?.signature_name || "the Shade Systems team",
+    sender_first_name: sender?.signature_name || "the ShadeSpace team",
     support_phone: sender?.signature_phone || "",
     unsubscribe_url: unsubUrl,
+    ...extra,
   };
 }
 
@@ -85,24 +151,29 @@ Deno.serve(async (req: Request) => {
   try {
     const supabase = createClient(SB_URL, SB_SERVICE);
     const body = await req.json();
-    const { templateId, senderId, toEmail, quoteId, testMode, overrideSubject } = body;
+    const { templateId, templateKey, senderId, toEmail, quoteId, testMode, overrideSubject, attachments, contextExtras } = body;
 
-    if (!templateId || !toEmail) {
-      return new Response(JSON.stringify({ error: "templateId and toEmail required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if ((!templateId && !templateKey) || !toEmail) {
+      return new Response(JSON.stringify({ error: "templateId or templateKey, and toEmail required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     if (!RESEND_API_KEY) {
       return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: unsub } = await supabase.from("email_unsubscribes").select("email").eq("email", toEmail.toLowerCase()).maybeSingle();
-    if (unsub && !testMode) {
-      return new Response(JSON.stringify({ skipped: true, reason: "unsubscribed" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    const { data: template } = await supabase.from("email_templates").select("*").eq("id", templateId).maybeSingle();
+    const templateQuery = supabase.from("email_templates").select("*");
+    const { data: template } = templateId
+      ? await templateQuery.eq("id", templateId).maybeSingle()
+      : await templateQuery.eq("template_key", templateKey).maybeSingle();
     if (!template) {
       return new Response(JSON.stringify({ error: "template not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    if (!template.transactional) {
+      const { data: unsub } = await supabase.from("email_unsubscribes").select("email").eq("email", toEmail.toLowerCase()).maybeSingle();
+      if (unsub && !testMode) {
+        return new Response(JSON.stringify({ skipped: true, reason: "unsubscribed" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     const senderRowId = senderId || template.default_sender_id;
@@ -148,11 +219,51 @@ Deno.serve(async (req: Request) => {
     if (qErr) throw qErr;
 
     const unsubUrl = `${BASE_URL}/email/unsubscribe?email=${encodeURIComponent(toEmail)}`;
-    const ctx = buildContext(quote, sender, unsubUrl);
-    const subject = renderTemplate(overrideSubject || template.subject, ctx);
+    const ctx = buildContext(quote, sender, unsubUrl, contextExtras || {});
+    const effectiveSubject = template.subject_locked ? template.subject : (overrideSubject || template.subject);
+    const subject = renderTemplate(effectiveSubject, ctx);
     let html = renderTemplate(template.html_body, ctx);
     html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
     const text = renderTemplate(template.text_body, ctx);
+
+    const resolvedAttachments: Array<{ filename: string; content: string; type?: string }> = [];
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      for (const att of attachments) {
+        if (att?.content) {
+          const raw = String(att.content);
+          resolvedAttachments.push({
+            filename: att.filename || "attachment",
+            content: raw.startsWith("data:") ? raw.split(",")[1] : raw,
+            type: att.type || "application/octet-stream",
+          });
+        } else if (att?.storage_path) {
+          const { data: file } = await supabase.storage.from("quote-assets").download(att.storage_path);
+          if (file) {
+            const buf = new Uint8Array(await file.arrayBuffer());
+            let binary = "";
+            for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+            resolvedAttachments.push({
+              filename: att.filename || att.storage_path.split("/").pop() || "attachment.pdf",
+              content: btoa(binary),
+              type: att.type || "application/pdf",
+            });
+          }
+        }
+      }
+    }
+
+    const resendPayload: Record<string, any> = {
+      from: `${sender.from_name} <${sender.from_email}>`,
+      to: [toEmail],
+      reply_to: sender.reply_to || sender.from_email,
+      subject,
+      html,
+      text,
+      headers: { "List-Unsubscribe": `<${unsubUrl}>` },
+    };
+    if (resolvedAttachments.length > 0) {
+      resendPayload.attachments = resolvedAttachments.map(({ filename, content }) => ({ filename, content }));
+    }
 
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -160,15 +271,7 @@ Deno.serve(async (req: Request) => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: `${sender.from_name} <${sender.from_email}>`,
-        to: [toEmail],
-        reply_to: sender.reply_to || sender.from_email,
-        subject,
-        html,
-        text,
-        headers: { "List-Unsubscribe": `<${unsubUrl}>` },
-      }),
+      body: JSON.stringify(resendPayload),
     });
 
     const resendJson = await resendRes.json();
@@ -184,6 +287,7 @@ Deno.serve(async (req: Request) => {
       resend_message_id: resendJson.id,
       subject_snapshot: subject,
       html_snapshot: html,
+      attachments: resolvedAttachments.map(({ filename, type }) => ({ filename, type })),
     }).eq("id", queueRow.id);
 
     await supabase.from("email_events").insert({ queue_id: queueRow.id, event_type: "sent" });

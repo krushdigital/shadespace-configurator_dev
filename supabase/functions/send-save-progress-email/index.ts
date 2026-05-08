@@ -1,133 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
-
-function generateSaveProgressHTML(data: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  quoteReference: string;
-  quoteName: string;
-  quoteUrl: string;
-  pricingLockedUntil: string;
-}): string {
-  const {
-    firstName,
-    lastName,
-    quoteReference,
-    quoteName,
-    quoteUrl,
-    pricingLockedUntil,
-  } = data;
-
-  const customerName =
-    firstName && lastName
-      ? `${firstName} ${lastName}`
-      : firstName || "there";
-
-  const lockedDate = new Date(pricingLockedUntil).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your ShadeSpace Progress Has Been Saved</title>
-</head>
-<body style="margin: 0; padding: 0; font-family: 'Helvetica', Arial, sans-serif; background-color: #f8f9fa;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0;">
-    <!-- Logo Header -->
-    <tr>
-      <td style="background-color: #01312D; padding: 24px 20px; text-align: center;">
-        <img src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Logo-horizontal-white_3x_db41a610-bfc6-4f61-bb82-b95e27cd58d8.png?v=1728339549" alt="ShadeSpace" style="height: 40px; width: auto;" />
-      </td>
-    </tr>
-
-    <!-- Green Banner -->
-    <tr>
-      <td style="background-color: #307C31; padding: 20px; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: bold;">Your Progress Has Been Saved!</h1>
-      </td>
-    </tr>
-
-    <!-- Greeting -->
-    <tr>
-      <td style="padding: 30px 30px 15px 30px;">
-        <p style="color: #01312D; margin: 0 0 15px 0; font-size: 16px; font-weight: 600;">Hello, ${customerName}</p>
-        <p style="color: #334155; margin: 0; font-size: 14px; line-height: 1.7;">
-          Thank you for using ShadeSpace. Your progress has been saved and you can pick up right where you left off at any time using the link below.
-        </p>
-      </td>
-    </tr>
-
-    <!-- Reference Card -->
-    <tr>
-      <td style="padding: 0 30px 20px 30px;">
-        <div style="border: 2px solid #BFF102; border-radius: 10px; padding: 24px; text-align: center; background-color: #FAFFF0;">
-          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Quote Name</div>
-          <div style="color: #01312D; font-size: 18px; font-weight: bold; margin-bottom: 16px;">${quoteName}</div>
-          <div style="color: #01312D; font-size: 14px; font-weight: bold; margin-bottom: 4px;">Quote Reference</div>
-          <div style="color: #307C31; font-size: 22px; font-weight: bold; font-family: 'Courier New', monospace; margin-bottom: 16px;">${quoteReference}</div>
-          <div style="color: #64748B; font-size: 12px; margin-bottom: 4px;">Valid Until</div>
-          <div style="color: #01312D; font-size: 16px; font-weight: bold;">${lockedDate}</div>
-        </div>
-      </td>
-    </tr>
-
-    <!-- CTA Button -->
-    <tr>
-      <td style="padding: 0 30px 15px 30px; text-align: center;">
-        <a href="${quoteUrl}" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 16px 48px; border-radius: 8px; font-size: 16px; font-weight: bold;">Pick Up Where You Left Off</a>
-      </td>
-    </tr>
-
-    <!-- Fallback Link -->
-    <tr>
-      <td style="padding: 0 30px 25px 30px; text-align: center;">
-        <p style="color: #64748B; font-size: 12px; margin: 0 0 4px 0;">Or copy this link:</p>
-        <p style="color: #307C31; font-size: 11px; margin: 0; word-break: break-all; font-family: 'Courier New', monospace;">${quoteUrl}</p>
-      </td>
-    </tr>
-
-    <!-- Next Steps -->
-    <tr>
-      <td style="padding: 0 30px 25px 30px;">
-        <div style="border-left: 4px solid #BFF102; background-color: #FAFFF0; border-radius: 0 8px 8px 0; padding: 16px 20px;">
-          <h3 style="color: #01312D; margin: 0 0 10px 0; font-size: 16px; font-weight: bold;">Next Steps</h3>
-          <ul style="color: #334155; margin: 0; padding: 0 0 0 18px; font-size: 13px; line-height: 2;">
-            <li>Your pricing is locked for 30 days</li>
-            <li>Click the button above to pick up where you left off</li>
-            <li>Your configuration is saved exactly as you left it</li>
-            <li>Contact us if you have any questions</li>
-          </ul>
-        </div>
-      </td>
-    </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td style="background-color: #f8fafc; padding: 20px 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-        <p style="color: #334155; font-size: 13px; margin: 0 0 6px 0;">
-          Thank you for choosing <strong>ShadeSpace</strong> for your custom shade solution.
-        </p>
-        <p style="color: #64748B; font-size: 12px; margin: 0;">
-          Need help? Contact us at <a href="mailto:sails@shadespace.com" style="color: #307C31; text-decoration: underline;">sails@shadespace.com</a>
-        </p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -138,10 +16,7 @@ Deno.serve(async (req: Request) => {
     if (req.method !== "POST") {
       return new Response(
         JSON.stringify({ success: false, error: "Method not allowed" }),
-        {
-          status: 405,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -155,146 +30,109 @@ Deno.serve(async (req: Request) => {
       quoteUrl,
       pricingLockedUntil,
       expiresAt,
+      quoteId,
     } = data;
 
     if (!email) {
       return new Response(
         JSON.stringify({ success: false, error: "Email address is required" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const lockedUntil = pricingLockedUntil || expiresAt;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceKey);
 
-    const emailHTML = generateSaveProgressHTML({
-      firstName: firstName || "",
-      lastName: lastName || "",
-      email,
-      quoteReference: quoteReference || "N/A",
-      quoteName: quoteName || "Shade Sail Configuration",
-      quoteUrl: quoteUrl || "https://shadespace.com",
-      pricingLockedUntil: lockedUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    });
+    // Check feature flag
+    const { data: cfgRow } = await supabase
+      .from("email_pipeline_config")
+      .select("use_studio_transactional")
+      .eq("id", 1)
+      .maybeSingle();
+    const useStudio = cfgRow?.use_studio_transactional !== false;
 
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "ShadeSpace <sails@shadespace.com>";
-
-    let emailSent = false;
-    let resendMessageId: string | null = null;
-    let resendError: string | null = null;
-    const subject = `Your ShadeSpace Progress Has Been Saved - ${quoteReference || "Saved"}`;
-
-    if (RESEND_API_KEY) {
-      const resendResponse = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: FROM_EMAIL,
-          to: [email],
-          subject,
-          html: emailHTML,
-        }),
-      });
-
-      const resendJson = await resendResponse.json().catch(() => null);
-      if (resendResponse.ok) {
-        emailSent = true;
-        resendMessageId = resendJson?.id || null;
-        console.log("Save progress email sent successfully to:", email);
-      } else {
-        resendError = JSON.stringify(resendJson) || `HTTP ${resendResponse.status}`;
-        console.error("Resend API error:", resendResponse.status, resendError);
-      }
-    } else {
-      console.warn("RESEND_API_KEY not configured. Email not sent.");
+    let resolvedQuoteId = quoteId || null;
+    if (!resolvedQuoteId && quoteReference) {
+      const { data: qr } = await supabase
+        .from("saved_quotes")
+        .select("id")
+        .eq("quote_reference", quoteReference)
+        .maybeSingle();
+      resolvedQuoteId = qr?.id || null;
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY");
+    if (useStudio) {
+      const { data: template } = await supabase
+        .from("email_templates")
+        .select("id")
+        .eq("template_key", "configuration_saved")
+        .maybeSingle();
 
-    if (supabaseUrl && supabaseKey) {
-      try {
-        const { createClient } = await import("npm:@supabase/supabase-js@2");
-        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || supabaseKey;
-        const supabase = createClient(supabaseUrl, serviceKey);
+      if (template?.id) {
+        const sendRes = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            templateId: template.id,
+            toEmail: email,
+            quoteId: resolvedQuoteId,
+            contextExtras: {
+              first_name: firstName || "",
+              last_name: lastName || "",
+              customer_name: [firstName, lastName].filter(Boolean).join(" ") || firstName || "there",
+              quote_reference: quoteReference || "",
+              quote_name: quoteName || "Shade Sail Configuration",
+              resume_url: quoteUrl || "https://shadespace.com",
+              pricing_locked_until: pricingLockedUntil || expiresAt
+                ? new Date(pricingLockedUntil || expiresAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+                : "",
+            },
+          }),
+        });
 
-        const { data: quoteRow } = await supabase
-          .from("saved_quotes")
-          .select("id")
-          .eq("quote_reference", quoteReference)
-          .maybeSingle();
-
-        const { data: queueRow } = await supabase.from("email_queue").insert({
-          template_id: null,
-          sender_id: null,
-          quote_id: quoteRow?.id || null,
-          recipient_email: email,
-          status: emailSent ? "sent" : "failed",
-          scheduled_at: new Date().toISOString(),
-          sent_at: emailSent ? new Date().toISOString() : null,
-          resend_message_id: resendMessageId,
-          subject_snapshot: subject,
-          html_snapshot: emailHTML,
-          error: resendError,
-        }).select().maybeSingle();
-
-        if (emailSent && queueRow?.id) {
-          await supabase.from("email_events").insert({ queue_id: queueRow.id, event_type: "sent" });
-        }
+        const sendJson = await sendRes.json().catch(() => null);
+        const emailSent = sendRes.ok && !!sendJson?.ok;
 
         await supabase.from("user_events").insert({
           event_type: "save_progress_email_sent",
-          event_data: {
-            quoteReference,
-            quoteName,
-            emailSent,
-            sent_by: "edge_function",
-          },
+          event_data: { quoteReference, quoteName, emailSent, sent_by: "email_studio" },
           customer_email: email,
           device_type: "server",
-          customer_ip:
-            req.headers.get("x-forwarded-for") ||
-            req.headers.get("x-real-ip") ||
-            null,
+          customer_ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || null,
           user_agent: req.headers.get("user-agent") || null,
           success: emailSent,
         });
-      } catch (trackError) {
-        console.error("Failed to track save progress email event:", trackError);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            emailSent,
+            message: emailSent
+              ? `Configuration saved email sent to ${email}`
+              : sendJson?.error || "Email Studio did not send",
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
     }
 
+    // Fallback: legacy direct Resend path (kept for safety if template missing or flag off)
     return new Response(
-      JSON.stringify({
-        success: true,
-        emailSent,
-        message: emailSent
-          ? `Configuration saved email sent to ${email}`
-          : "Email service not configured, but event tracked",
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ success: false, emailSent: false, error: "Transactional template not configured" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error in send-save-progress-email:", error);
     return new Response(
       JSON.stringify({
         success: false,
         error: "Failed to process request",
         details: error instanceof Error ? error.message : "Unknown error",
       }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
