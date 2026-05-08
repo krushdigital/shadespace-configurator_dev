@@ -12,12 +12,13 @@ import { FunnelAnalysis } from '../components/admin/FunnelAnalysis';
 import { DataExport } from '../components/admin/DataExport';
 import { ExclusionManager } from '../components/admin/ExclusionManager';
 import { FabricColorManager } from '../components/admin/FabricColorManager';
+import { EmailStudio } from '../components/admin/EmailStudio';
 
 interface AdminDashboardProps {
   onLogout: () => void;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email';
 
 const detectTimezone = (): string => {
   try {
@@ -54,6 +55,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     { id: 'pricing', label: 'Currency Pricing' },
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
+    { id: 'email', label: 'Email Studio' },
     { id: 'exclusions', label: 'Exclusion Settings' },
   ];
 
@@ -169,6 +171,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {activeTab === 'base-pricing' && <BasePricingManager />}
 
         {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+
+        {activeTab === 'email' && <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
         {activeTab === 'exclusions' && <ExclusionManager />}
       </div>
