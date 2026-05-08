@@ -66,6 +66,16 @@ function rowsHtml(title: string, source: Record<string, any> | undefined, labelF
   return `<div style="padding:0 30px 20px 30px;"><h3 style="color:#01312D;margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #BFF102;padding-bottom:6px;">${title}</h3><table width="100%" cellpadding="0" cellspacing="0">${rows}</table></div>`;
 }
 
+function measurementRowsOnly(source: Record<string, any> | undefined, labelFn: (k: string) => string): string {
+  if (!source || Object.keys(source).length === 0) return "";
+  let rows = "";
+  for (const [key, value] of Object.entries(source)) {
+    const display = typeof value === "string" ? value : (value as any)?.formatted ?? String(value);
+    rows += `<tr><td style="color:#0f172a;padding:10px 0;font-size:14px;font-weight:700;width:45%;border-bottom:1px solid #f1f5f9;">${labelFn(key)}</td><td style="color:#0f172a;padding:10px 0;font-size:14px;border-bottom:1px solid #f1f5f9;">${display}</td></tr>`;
+  }
+  return `<table width="100%" cellpadding="0" cellspacing="0">${rows}</table>`;
+}
+
 function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<string, any> = {}): Record<string, any> {
   const cfg = quote?.config_data || {};
   const calc = quote?.calculations_data || {};
@@ -131,6 +141,9 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
     edge_measurements_html: rowsHtml("Precise Measurements", edgeMeasurements, (k) => `${k.charAt(0)} \u2192 ${k.charAt(1)}`),
     diagonal_measurements_html: rowsHtml("Diagonal Measurements", diagonalMeasurements, (k) => `Diagonal ${k.charAt(0)} \u2192 ${k.charAt(1)}`),
     anchor_measurements_html: rowsHtml("Anchor Point Heights", anchorMeasurements, (k) => `Corner ${k}`),
+    edge_measurements_rows: measurementRowsOnly(edgeMeasurements, (k) => `${k.charAt(0)} \u2192 ${k.charAt(1)}`),
+    diagonal_measurements_rows: measurementRowsOnly(diagonalMeasurements, (k) => `Diagonal ${k.charAt(0)} \u2192 ${k.charAt(1)}`),
+    anchor_measurements_rows: measurementRowsOnly(anchorMeasurements, (k) => `Corner ${k}`),
     width: cfg?.measurements?.width || "",
     height: cfg?.measurements?.height || "",
     pricing_locked_until: quote?.pricing_locked_until
@@ -151,13 +164,13 @@ Deno.serve(async (req: Request) => {
   try {
     const supabase = createClient(SB_URL, SB_SERVICE);
     const body = await req.json();
-    const { templateId, templateKey, senderId, toEmail, quoteId, testMode, overrideSubject, attachments, contextExtras } = body;
+    const { templateId, templateKey, senderId, toEmail, quoteId, testMode, overrideSubject, attachments, contextExtras, previewOnly } = body;
 
-    if ((!templateId && !templateKey) || !toEmail) {
+    if ((!templateId && !templateKey) || (!toEmail && !previewOnly)) {
       return new Response(JSON.stringify({ error: "templateId or templateKey, and toEmail required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    if (!RESEND_API_KEY) {
+    if (!RESEND_API_KEY && !previewOnly) {
       return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -190,7 +203,7 @@ Deno.serve(async (req: Request) => {
         return new Response(JSON.stringify({ skipped: true, reason: "excluded" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
-    if (!quote && testMode) {
+    if (!quote && (testMode || previewOnly)) {
       quote = {
         id: "00000000-0000-0000-0000-000000000000",
         access_token: "demo",
@@ -205,6 +218,17 @@ Deno.serve(async (req: Request) => {
         calculations_data: { totalPrice: 1299 },
         created_at: new Date().toISOString(),
       };
+    }
+
+    // Preview-only mode: render HTML with real context and return without sending
+    if (previewOnly) {
+      const unsubPreview = `${BASE_URL}/email/unsubscribe?email=${encodeURIComponent(toEmail || "preview@example.com")}`;
+      const previewCtx = buildContext(quote, sender, unsubPreview, contextExtras || {});
+      const previewSubject = renderTemplate(template.subject_locked ? template.subject : (overrideSubject || template.subject), previewCtx);
+      const previewHtml = renderTemplate(template.html_body, previewCtx);
+      return new Response(JSON.stringify({ ok: true, preview: true, subject: previewSubject, html: previewHtml }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Insert queue row first so queueId is available for tracking links

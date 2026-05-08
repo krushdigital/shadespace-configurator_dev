@@ -7,8 +7,9 @@ import { TemplateEditor } from './email/TemplateEditor';
 import { AutomationEditor } from './email/AutomationEditor';
 import { EmailAnalytics } from './email/EmailAnalytics';
 import { SendersManager } from './email/SendersManager';
+import { TransactionalTemplates } from './email/TransactionalTemplates';
 
-type SubTab = 'templates' | 'automations' | 'senders' | 'analytics';
+type SubTab = 'transactional' | 'templates' | 'automations' | 'senders' | 'analytics';
 
 interface EmailStudioProps {
   dateRange: { start: string; end: string };
@@ -57,7 +58,7 @@ export interface EmailAutomation {
 }
 
 export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInternal, timezone }) => {
-  const [sub, setSub] = useState<SubTab>('templates');
+  const [sub, setSub] = useState<SubTab>('transactional');
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [senders, setSenders] = useState<EmailSender[]>([]);
   const [automations, setAutomations] = useState<EmailAutomation[]>([]);
@@ -158,7 +159,7 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
       )}
 
       <div className="flex gap-1 border-b border-gray-200">
-        {(['templates', 'automations', 'senders', 'analytics'] as SubTab[]).map(s => (
+        {(['transactional', 'templates', 'automations', 'senders', 'analytics'] as SubTab[]).map(s => (
           <button
             key={s}
             onClick={() => setSub(s)}
@@ -172,6 +173,8 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
       </div>
 
       {loading && <div className="p-6 text-sm text-gray-500">Loading...</div>}
+
+      {!loading && sub === 'transactional' && <TransactionalTemplates />}
 
       {!loading && sub === 'templates' && (
         <TemplatesList
