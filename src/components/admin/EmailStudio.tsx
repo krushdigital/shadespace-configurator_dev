@@ -80,6 +80,25 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  const [health, setHealth] = useState<{ lastRun: string | null; pending: number; failed: number; keyConfigured: boolean } | null>(null);
+
+  const loadHealth = useCallback(async () => {
+    const [{ data: cron }, { count: pending }, { count: failed }, { data: cfg }] = await Promise.all([
+      supabase.from('cron_run_log').select('ran_at, status').order('ran_at', { ascending: false }).limit(1),
+      supabase.from('email_queue').select('id', { count: 'exact', head: true }).in('status', ['pending', 'sending']),
+      supabase.from('email_queue').select('id', { count: 'exact', head: true }).eq('status', 'failed'),
+      supabase.from('email_pipeline_config').select('service_role_key').maybeSingle(),
+    ]);
+    setHealth({
+      lastRun: cron?.[0]?.ran_at || null,
+      pending: pending || 0,
+      failed: failed || 0,
+      keyConfigured: !!cfg?.service_role_key,
+    });
+  }, []);
+
+  useEffect(() => { loadHealth(); const i = setInterval(loadHealth, 30000); return () => clearInterval(i); }, [loadHealth]);
+
   const pauseAll = async () => {
     if (!confirm('Pause every automation? No emails will be sent until you re-enable them.')) return;
     await supabase.from('email_automations').update({ is_active: false }).neq('id', '00000000-0000-0000-0000-000000000000');
@@ -118,11 +137,25 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Email Studio</h1>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={runEvaluatorNow}>Run evaluator</Button>
-          <Button size="sm" variant="outline" onClick={processQueueNow}>Process queue</Button>
+          <Button size="sm" variant="outline" onClick={() => { runEvaluatorNow(); loadHealth(); }}>Run evaluator</Button>
+          <Button size="sm" variant="outline" onClick={() => { processQueueNow(); loadHealth(); }}>Process queue</Button>
           <Button size="sm" variant="outline" onClick={pauseAll} className="text-red-600 border-red-300">Pause all</Button>
         </div>
       </div>
+
+      {health && (
+        <Card className="p-3">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <Dot ok={health.keyConfigured} label={health.keyConfigured ? 'Scheduler key set' : 'Scheduler key missing'} />
+            <Dot
+              ok={!!health.lastRun && Date.now() - new Date(health.lastRun).getTime() < 15 * 60_000}
+              label={health.lastRun ? `Last cron ${new Date(health.lastRun).toLocaleString()}` : 'Cron has not run yet'}
+            />
+            <span className="text-gray-600">Pending queue: <strong className="text-gray-900">{health.pending}</strong></span>
+            <span className={health.failed > 0 ? 'text-red-600' : 'text-gray-600'}>Failed: <strong>{health.failed}</strong></span>
+          </div>
+        </Card>
+      )}
 
       <div className="flex gap-1 border-b border-gray-200">
         {(['templates', 'automations', 'senders', 'analytics'] as SubTab[]).map(s => (
@@ -185,6 +218,13 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
   );
 };
 
+const Dot: React.FC<{ ok: boolean; label: string }> = ({ ok, label }) => (
+  <span className="inline-flex items-center gap-1.5">
+    <span className={`inline-block w-2 h-2 rounded-full ${ok ? 'bg-green-500' : 'bg-red-500'}`} />
+    <span className={ok ? 'text-gray-700' : 'text-red-700'}>{label}</span>
+  </span>
+);
+
 const TemplatesList: React.FC<{ templates: EmailTemplate[]; onEdit: (t: EmailTemplate) => void; onCreate: () => void; onRefresh: () => void }> = ({ templates, onEdit, onCreate, onRefresh }) => (
   <Card className="p-0 overflow-hidden">
     <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -219,8 +259,9 @@ const AutomationsList: React.FC<{ automations: EmailAutomation[]; templates: Ema
     const tpl = templates.find(t => t.id === a.template_id)?.name || '(no template)';
     const snd = senders.find(s => s.id === a.sender_id)?.from_name || '(default sender)';
     const cfg = a.trigger_config || {};
+    const stepLabels = ['Fabric & Colour', 'Style', 'Corners', 'Measurement options', 'Dimensions', 'Heights & Anchor Points', 'Review'];
     const trig = a.trigger_type === 'quote_reached_step'
-      ? `when a quote is at step ${cfg.step + 1}${cfg.status ? ` with status ${cfg.status}` : ''}`
+      ? `when a quote reaches step ${cfg.step + 1} (${stepLabels[cfg.step] || '?'})${cfg.status ? ` with status ${cfg.status}` : ''}`
       : a.trigger_type === 'pdf_downloaded'
       ? `${cfg.hours_since || 48}h after a PDF download`
       : a.trigger_type;
