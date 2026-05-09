@@ -46,6 +46,7 @@ interface UnifiedSaveModalProps {
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
   onCustomerDetailsCaptured?: (details: { firstName: string; lastName: string; email: string; quoteReference?: string }) => void;
+  getCanvasImageUrl?: () => Promise<string | null>;
 }
 
 export function UnifiedSaveModal({
@@ -61,6 +62,7 @@ export function UnifiedSaveModal({
   onEmailPDFQuote,
   onSaveComplete,
   onCustomerDetailsCaptured,
+  getCanvasImageUrl,
 }: UnifiedSaveModalProps) {
   const isEmailMode = shouldShowEmailOption;
   const [modalStep, setModalStep] = useState<ModalStep>('form');
@@ -129,6 +131,15 @@ export function UnifiedSaveModal({
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : undefined;
       const sanitizedReference = customerReference.trim() ? sanitizeCustomerReference(customerReference) : undefined;
 
+      let capturedCanvasUrl: string | null = null;
+      if (getCanvasImageUrl) {
+        try {
+          capturedCanvasUrl = await getCanvasImageUrl();
+        } catch (err) {
+          console.warn('Canvas capture failed, continuing without diagram:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -139,7 +150,8 @@ export function UnifiedSaveModal({
         totalSteps,
         pricingSnapshot,
         firstName.trim(),
-        lastName.trim()
+        lastName.trim(),
+        capturedCanvasUrl
       );
 
       console.log('Save quote result:', result);
@@ -265,6 +277,15 @@ export function UnifiedSaveModal({
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : defaultQuoteName;
       const sanitizedReference = customerReference.trim() ? sanitizeCustomerReference(customerReference) : null;
 
+      let capturedCanvasUrl: string | null = null;
+      if (getCanvasImageUrl) {
+        try {
+          capturedCanvasUrl = await getCanvasImageUrl();
+        } catch (err) {
+          console.warn('Canvas capture failed, continuing without diagram:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -275,7 +296,8 @@ export function UnifiedSaveModal({
         totalSteps,
         pricingSnapshot,
         firstName.trim(),
-        lastName.trim()
+        lastName.trim(),
+        capturedCanvasUrl
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);

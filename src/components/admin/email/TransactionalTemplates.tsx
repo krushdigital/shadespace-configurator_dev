@@ -13,6 +13,8 @@ interface QuoteOption {
   customer_first_name: string | null;
   customer_last_name: string | null;
   created_at: string;
+  diagram_public_url: string | null;
+  diagram_image_path: string | null;
 }
 
 interface RecentSend {
@@ -65,7 +67,7 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
   useEffect(() => {
     supabase
       .from('saved_quotes')
-      .select('id, quote_reference, quote_name, customer_email, customer_first_name, customer_last_name, created_at')
+      .select('id, quote_reference, quote_name, customer_email, customer_first_name, customer_last_name, created_at, diagram_public_url, diagram_image_path')
       .order('created_at', { ascending: false })
       .limit(25)
       .then(({ data }) => setQuotes(data || []));
@@ -266,6 +268,18 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
                   <option value="">Sample data (Alex Sample)</option>
                   {quotes.map(q => <option key={q.id} value={q.id}>{quoteLabel(q)}</option>)}
                 </select>
+                {(() => {
+                  if (!previewQuoteId) return null;
+                  const q = quotes.find(x => x.id === previewQuoteId);
+                  if (!q) return null;
+                  const hasDiagram = !!(q.diagram_public_url || q.diagram_image_path);
+                  if (hasDiagram) return null;
+                  return (
+                    <p className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                      This quote does not have a stored design diagram. Emails will render without the diagram image. New saves and PDF sends store diagrams automatically.
+                    </p>
+                  );
+                })()}
               </div>
             </Card>
 

@@ -2429,6 +2429,19 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
         onCustomerDetailsCaptured={setCapturedCustomerDetails}
         onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
         onEmailPDFQuote={handleEmailPDFQuote}
+        getCanvasImageUrl={async () => {
+          const svgElement = canvasRef.current?.getSVGElement?.();
+          if (!svgElement) return null;
+          try {
+            const blob = await convertSvgToPng(svgElement, 600, 500);
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+            return await uploadImageToShopify(blob, filename);
+          } catch (err) {
+            console.warn('Failed to capture diagram for saved quote:', err);
+            return null;
+          }
+        }}
       />
     </>
   );

@@ -25,6 +25,7 @@ interface SaveQuoteModalProps {
   calculations: ShadeCalculations;
   currentStep?: number;
   totalSteps?: number;
+  getCanvasImageUrl?: () => Promise<string | null>;
 }
 
 
@@ -35,6 +36,7 @@ export function SaveQuoteModal({
   calculations,
   currentStep,
   totalSteps = 7,
+  getCanvasImageUrl,
 }: SaveQuoteModalProps) {
   const [email, setEmail] = useState('');
   const [quoteName, setQuoteName] = useState('');
@@ -89,6 +91,15 @@ export function SaveQuoteModal({
       const sanitizedQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : undefined;
       const sanitizedReference = customerReference.trim() ? sanitizeCustomerReference(customerReference) : undefined;
 
+      let capturedCanvasUrl: string | null = null;
+      if (getCanvasImageUrl) {
+        try {
+          capturedCanvasUrl = await getCanvasImageUrl();
+        } catch (err) {
+          console.warn('Canvas capture failed, continuing without diagram:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -96,7 +107,11 @@ export function SaveQuoteModal({
         sanitizedQuoteName,
         sanitizedReference,
         currentStep,
-        totalSteps
+        totalSteps,
+        undefined,
+        undefined,
+        undefined,
+        capturedCanvasUrl
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
