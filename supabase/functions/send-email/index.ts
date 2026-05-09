@@ -202,9 +202,13 @@ Deno.serve(async (req: Request) => {
       if (quote?.is_excluded && !testMode) {
         return new Response(JSON.stringify({ skipped: true, reason: "excluded" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      if (quote?.diagram_image_path && !quote.resolved_diagram_url) {
-        const { data: pub } = supabase.storage.from("quote-assets").getPublicUrl(quote.diagram_image_path);
-        if (pub?.publicUrl) quote.resolved_diagram_url = pub.publicUrl;
+      if (!quote?.resolved_diagram_url) {
+        if (quote?.diagram_public_url) {
+          quote.resolved_diagram_url = quote.diagram_public_url;
+        } else if (quote?.diagram_image_path) {
+          const { data: pub } = supabase.storage.from("quote-assets").getPublicUrl(quote.diagram_image_path);
+          if (pub?.publicUrl) quote.resolved_diagram_url = pub.publicUrl;
+        }
       }
       if (quote?.marketing_opt_in === false && !template?.transactional && !testMode) {
         return new Response(JSON.stringify({ skipped: true, reason: "marketing_opt_in_false" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

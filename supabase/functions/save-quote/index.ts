@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
 
     if (req.method === 'POST') {
       // Save a new quote
-      const { config, calculations, email, quoteName, customerReference, currentStep, totalSteps, pricingSnapshot, firstName, lastName } = await req.json();
+      const { config, calculations, email, quoteName, customerReference, currentStep, totalSteps, pricingSnapshot, firstName, lastName, canvasImageUrl } = await req.json();
 
       if (!config || !calculations) {
         return new Response(
@@ -169,6 +169,7 @@ Deno.serve(async (req: Request) => {
           customer_ip_raw: rawIpHeader,
           customer_country: geo?.country || null,
           customer_country_code: geo?.countryCode || null,
+          diagram_public_url: typeof canvasImageUrl === "string" && canvasImageUrl.startsWith("http") ? canvasImageUrl : null,
         })
         .select()
         .single();

@@ -134,11 +134,19 @@ Deno.serve(async (req: Request) => {
       }
     }
     if (!resolvedCanvasUrl && resolvedQuoteId) {
-      const { data: qRow } = await supabase.from("saved_quotes").select("diagram_image_path").eq("id", resolvedQuoteId).maybeSingle();
-      if (qRow?.diagram_image_path) {
+      const { data: qRow } = await supabase.from("saved_quotes").select("diagram_image_path, diagram_public_url").eq("id", resolvedQuoteId).maybeSingle();
+      if (qRow?.diagram_public_url) {
+        resolvedCanvasUrl = qRow.diagram_public_url;
+      } else if (qRow?.diagram_image_path) {
         const { data: pub } = supabase.storage.from("quote-assets").getPublicUrl(qRow.diagram_image_path);
         resolvedCanvasUrl = pub?.publicUrl || "";
       }
+    }
+
+    if (resolvedCanvasUrl && resolvedQuoteId) {
+      await supabase.from("saved_quotes")
+        .update({ diagram_public_url: resolvedCanvasUrl })
+        .eq("id", resolvedQuoteId);
     }
 
     const { data: cfgRow } = await supabase
