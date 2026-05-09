@@ -3,7 +3,7 @@ import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { supabase } from '../../../lib/supabase';
 import { getAdminAuthHeaders } from '../../../utils/adminAuth';
-import type { EmailTemplate } from '../EmailStudio';
+import type { EmailTemplate, EmailSender } from '../EmailStudio';
 
 interface QuoteOption {
   id: string;
@@ -27,7 +27,7 @@ interface RecentSend {
   error: string | null;
 }
 
-export const TransactionalTemplates: React.FC = () => {
+export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ senders }) => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selected, setSelected] = useState<EmailTemplate | null>(null);
   const [draft, setDraft] = useState<EmailTemplate | null>(null);
@@ -127,6 +127,7 @@ export const TransactionalTemplates: React.FC = () => {
     const { error } = await supabase.from('email_templates').update({
       html_body: draft.html_body,
       text_body: draft.text_body,
+      default_sender_id: draft.default_sender_id,
     }).eq('id', draft.id);
     setSaving(false);
     if (error) { alert(`Save failed: ${error.message}`); return; }
@@ -236,6 +237,23 @@ export const TransactionalTemplates: React.FC = () => {
                   className="w-full border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-700"
                   title="Subject is locked for transactional templates to protect customer expectations"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">From sender</label>
+                <select
+                  value={draft.default_sender_id || ''}
+                  onChange={e => setDraft({ ...draft, default_sender_id: e.target.value || null })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  <option value="">-- choose sender --</option>
+                  {senders.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.from_name} &lt;{s.from_email}&gt;{s.is_default ? ' (default)' : ''}{s.is_verified ? '' : ' (unverified)'}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-gray-500 mt-1">Customer-facing "From" line for this email. Click Save to apply.</p>
               </div>
 
               <div>

@@ -174,7 +174,7 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
 
       {loading && <div className="p-6 text-sm text-gray-500">Loading...</div>}
 
-      {!loading && sub === 'transactional' && <TransactionalTemplates />}
+      {!loading && sub === 'transactional' && <TransactionalTemplates senders={senders} />}
 
       {!loading && sub === 'templates' && (
         <TemplatesList

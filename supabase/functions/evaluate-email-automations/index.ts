@@ -41,6 +41,9 @@ Deno.serve(async (req: Request) => {
     let enqueued = 0;
     const report: any[] = [];
 
+    const { data: unsubRows } = await supabase.from("email_unsubscribes").select("email");
+    const unsubSet = new Set((unsubRows || []).map((r: any) => String(r.email).toLowerCase()));
+
     for (const a of automations) {
       const { data: conds } = await supabase.from("email_automation_conditions").select("*").eq("automation_id", a.id);
 
@@ -76,6 +79,8 @@ Deno.serve(async (req: Request) => {
       for (const row of candidates) {
         if ((conds || []).some((c: any) => !conditionPasses(row, c))) continue;
         if (!row.customer_email) continue;
+        if (unsubSet.has(String(row.customer_email).toLowerCase())) continue;
+        if (row.marketing_opt_in === false) continue;
 
         const { count } = await supabase.from("email_queue")
           .select("id", { count: "exact", head: true })

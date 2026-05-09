@@ -137,7 +137,7 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
     area: typeof area === "number" ? `${area.toFixed(2)} m\u00B2` : (area || ""),
     perimeter: typeof perimeter === "number" ? `${perimeter}mm` : (perimeter || ""),
     warranty_years: warrantyYears,
-    canvas_image: extra.canvas_image || quote?.diagram_url || "",
+    canvas_image: extra.canvas_image || quote?.diagram_url || quote?.resolved_diagram_url || "",
     edge_measurements_html: rowsHtml("Precise Measurements", edgeMeasurements, (k) => `${k.charAt(0)} \u2192 ${k.charAt(1)}`),
     diagonal_measurements_html: rowsHtml("Diagonal Measurements", diagonalMeasurements, (k) => `Diagonal ${k.charAt(0)} \u2192 ${k.charAt(1)}`),
     anchor_measurements_html: rowsHtml("Anchor Point Heights", anchorMeasurements, (k) => `Corner ${k}`),
@@ -201,6 +201,13 @@ Deno.serve(async (req: Request) => {
       quote = data;
       if (quote?.is_excluded && !testMode) {
         return new Response(JSON.stringify({ skipped: true, reason: "excluded" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (quote?.diagram_image_path && !quote.resolved_diagram_url) {
+        const { data: pub } = supabase.storage.from("quote-assets").getPublicUrl(quote.diagram_image_path);
+        if (pub?.publicUrl) quote.resolved_diagram_url = pub.publicUrl;
+      }
+      if (quote?.marketing_opt_in === false && !template?.transactional && !testMode) {
+        return new Response(JSON.stringify({ skipped: true, reason: "marketing_opt_in_false" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
     if (!quote && (testMode || previewOnly)) {

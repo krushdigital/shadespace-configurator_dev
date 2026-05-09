@@ -448,7 +448,7 @@ if (saveMethod === 'email' && email) {
                         className="w-full"
                       />
                       <p className="text-xs text-slate-500 mt-2">
-                        We'll send you a link to continue your configuration later
+                        We'll send you a link to continue your configuration later, plus occasional helpful updates. Unsubscribe any time from the link in the email.
                       </p>
                     </div>
                   )}

@@ -235,20 +235,6 @@ export function UnifiedSaveModal({
       });
 
 
-      // customer subscription
-
-        const subscription_response = await fetch('/apps/shade_space/api/v1/customers/subscribe', { method: "POST", body: JSON.stringify({ email, firstName, lastName }) })
-
-        const subscription_data = await subscription_response.json()
-
-        const { success, message, error } = subscription_data
-
-        if (success && message && !error) {
-          showToast(message, 'success')
-        } else if (!success && !message && error) {
-          showToast(error, 'error')
-        }
-
       onCustomerDetailsCaptured?.({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -511,6 +497,7 @@ export function UnifiedSaveModal({
                     placeholder="your@email.com"
                     className="w-full"
                   />
+                  <p className="text-[11px] text-slate-500 mt-1.5">By saving, you'll receive helpful updates about your shade sail configuration. Unsubscribe any time from the link in the email.</p>
                 </div>
 
                 <div>

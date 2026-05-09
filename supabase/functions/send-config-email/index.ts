@@ -107,6 +107,40 @@ Deno.serve(async (req: Request) => {
       resolvedQuoteId = qr?.id || null;
     }
 
+    // If canvasImage is a data URL (which email clients commonly strip or bloat),
+    // upload it to Supabase Storage and use the public URL instead.
+    let resolvedCanvasUrl: string = "";
+    if (typeof canvasImage === "string" && canvasImage.length > 0) {
+      if (canvasImage.startsWith("data:image")) {
+        try {
+          const match = canvasImage.match(/^data:(image\/[a-zA-Z+.-]+);base64,(.+)$/);
+          if (match) {
+            const mime = match[1];
+            const ext = mime.split("/")[1]?.replace("+xml", "") || "png";
+            const bytes = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+            const path = `email-diagrams/${resolvedQuoteId || "anon"}-${Date.now()}.${ext}`;
+            const { error: upErr } = await supabase.storage.from("quote-assets")
+              .upload(path, bytes, { contentType: mime, upsert: true });
+            if (!upErr) {
+              const { data: pub } = supabase.storage.from("quote-assets").getPublicUrl(path);
+              resolvedCanvasUrl = pub?.publicUrl || "";
+            }
+          }
+        } catch (e) {
+          console.error("canvas upload failed", e);
+        }
+      } else {
+        resolvedCanvasUrl = canvasImage;
+      }
+    }
+    if (!resolvedCanvasUrl && resolvedQuoteId) {
+      const { data: qRow } = await supabase.from("saved_quotes").select("diagram_image_path").eq("id", resolvedQuoteId).maybeSingle();
+      if (qRow?.diagram_image_path) {
+        const { data: pub } = supabase.storage.from("quote-assets").getPublicUrl(qRow.diagram_image_path);
+        resolvedCanvasUrl = pub?.publicUrl || "";
+      }
+    }
+
     const { data: cfgRow } = await supabase
       .from("email_pipeline_config")
       .select("use_studio_transactional")
@@ -156,7 +190,7 @@ Deno.serve(async (req: Request) => {
               pricing_locked_until: pricingLockedUntil
                 ? new Date(pricingLockedUntil).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
                 : "",
-              canvas_image: canvasImage || "",
+              canvas_image: resolvedCanvasUrl || "",
               fabric_type: Fabric_Type || "",
               fabric_color: fabricColor || "",
               shade_factor: Shade_Factor ? `${Shade_Factor}%` : "",
