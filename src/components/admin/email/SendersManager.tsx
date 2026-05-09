@@ -16,6 +16,7 @@ export const SendersManager: React.FC<{ senders: EmailSender[]; onRefresh: () =>
       reply_to: editing.reply_to || null,
       signature_name: editing.signature_name || null,
       signature_phone: editing.signature_phone || null,
+      signature_html: editing.signature_html || null,
       is_default: editing.is_default || false,
       is_verified: editing.is_verified || false,
     };
@@ -80,6 +81,23 @@ export const SendersManager: React.FC<{ senders: EmailSender[]; onRefresh: () =>
                 />
               </div>
             ))}
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Signature HTML (paste from Codetwo or compose)</label>
+              <textarea
+                value={editing.signature_html || ''}
+                onChange={e => setEditing({ ...editing, signature_html: e.target.value })}
+                className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono h-32"
+                placeholder='<div>Nick Example<br><a href="mailto:nick@shadespace.com">nick@shadespace.com</a></div>'
+                spellCheck={false}
+              />
+              {editing.signature_html && (
+                <div className="mt-2 border border-gray-200 rounded bg-white p-2">
+                  <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Preview</div>
+                  <div dangerouslySetInnerHTML={{ __html: editing.signature_html }} />
+                </div>
+              )}
+            </div>
+
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={editing.is_default || false} onChange={e => setEditing({ ...editing, is_default: e.target.checked })} />
               Default sender

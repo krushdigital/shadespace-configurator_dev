@@ -52,7 +52,35 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const previewHtml = useMemo(() => renderPreview(draft.html_body), [draft.html_body]);
+  const activeSender = useMemo(
+    () => senders.find(s => s.id === draft.default_sender_id) || senders.find(s => s.is_default) || senders[0],
+    [senders, draft.default_sender_id],
+  );
+
+  const transformForPreview = (html: string): string => {
+    let out = html;
+    if (draft.include_header === false) {
+      out = out.replace(/<!--\s*HEADER_BANNER_START\s*-->[\s\S]*?<!--\s*HEADER_BANNER_END\s*-->/g, '');
+    }
+    if (draft.include_signature) {
+      const sigHtml = (activeSender?.signature_html && activeSender.signature_html.trim())
+        || (activeSender?.signature_name || activeSender?.signature_phone
+          ? `<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:14px;line-height:1.5;color:#374151;">${[activeSender?.signature_name ? `<strong>${activeSender.signature_name}</strong>` : '', activeSender?.signature_phone || ''].filter(Boolean).join('<br>')}</div>`
+          : '');
+      if (sigHtml) {
+        const anchor = /(<p[^>]*>\s*-\s*(?:\{\{\s*sender_first_name\s*\}\}|[A-Za-z][A-Za-z .'-]{0,40})\s*<\/p>)/i;
+        if (anchor.test(out)) out = out.replace(anchor, `$1${sigHtml}`);
+        else if (out.includes('</body>')) out = out.replace('</body>', `${sigHtml}</body>`);
+        else out = out + sigHtml;
+      }
+    }
+    return out;
+  };
+
+  const previewHtml = useMemo(
+    () => renderPreview(transformForPreview(draft.html_body)),
+    [draft.html_body, draft.include_header, draft.include_signature, activeSender?.signature_html, activeSender?.signature_name, activeSender?.signature_phone],
+  );
 
   const save = async () => {
     setSaving(true);
@@ -66,6 +94,8 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
       default_sender_id: draft.default_sender_id,
       is_active: draft.is_active,
       description: draft.description,
+      include_header: draft.include_header ?? true,
+      include_signature: draft.include_signature ?? false,
     }).eq('id', draft.id);
     setSaving(false);
     if (error) alert(`Save failed: ${error.message}`); else alert('Saved');
@@ -149,6 +179,58 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
               <option value="">-- none --</option>
               {senders.map(s => <option key={s.id} value={s.id}>{s.from_name} &lt;{s.from_email}&gt;</option>)}
             </select>
+          </div>
+
+          <div className="mb-4 p-3 border border-gray-200 rounded-md bg-gray-50">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Styling</div>
+              <button
+                type="button"
+                onClick={() => setDraft({ ...draft, include_header: false, include_signature: true })}
+                className="text-xs px-2.5 py-1 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+                title="Strip the branded banner and append the sender signature"
+              >
+                Make it feel personal
+              </button>
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-start gap-2 text-sm text-gray-800">
+                <input
+                  type="checkbox"
+                  checked={draft.include_header !== false}
+                  onChange={e => setDraft({ ...draft, include_header: e.target.checked })}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">Include branded header banner</span>
+                  <span className="block text-xs text-gray-500">Uncheck to strip the dark banner and logo so the email reads like a personal message.</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-2 text-sm text-gray-800">
+                <input
+                  type="checkbox"
+                  checked={!!draft.include_signature}
+                  onChange={e => setDraft({ ...draft, include_signature: e.target.checked })}
+                  className="mt-0.5"
+                />
+                <span>
+                  <span className="font-medium">Append sender signature</span>
+                  <span className="block text-xs text-gray-500">
+                    Uses the signature HTML from the selected sender. {activeSender?.signature_html ? 'Signature is set.' : 'No signature HTML configured on this sender yet.'}
+                  </span>
+                </span>
+              </label>
+              {draft.include_signature && !activeSender?.signature_html && (
+                <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                  Add "Signature HTML" on this sender in the Senders tab, or the signature will fall back to the plain name/phone fields.
+                </p>
+              )}
+              {draft.include_signature && (
+                <p className="text-[11px] text-gray-500">
+                  Heads up: if Codetwo also appends a signature for this sender, turn this off to avoid duplicates.
+                </p>
+              )}
+            </div>
           </div>
 
           {mode === 'visual' && (

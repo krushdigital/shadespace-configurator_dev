@@ -29,6 +29,9 @@ export interface EmailTemplate {
   default_sender_id: string | null;
   is_active: boolean;
   updated_at: string;
+  transactional?: boolean;
+  include_header?: boolean;
+  include_signature?: boolean;
 }
 
 export interface EmailSender {
@@ -39,6 +42,7 @@ export interface EmailSender {
   reply_to: string | null;
   signature_name: string | null;
   signature_phone: string | null;
+  signature_html: string | null;
   is_default: boolean;
   is_verified: boolean;
 }

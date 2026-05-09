@@ -38,6 +38,54 @@ function renderTemplate(str: string, ctx: Record<string, any>): string {
   return out;
 }
 
+function stripHeaderBanner(html: string): string {
+  return html.replace(/<!--\s*HEADER_BANNER_START\s*-->[\s\S]*?<!--\s*HEADER_BANNER_END\s*-->/g, "");
+}
+
+function buildDefaultSignatureHtml(sender: any): string {
+  const name = sender?.signature_name;
+  const phone = sender?.signature_phone;
+  if (!name && !phone) return "";
+  const lines: string[] = [];
+  if (name) lines.push(`<strong>${escapeHtml(name)}</strong>`);
+  if (phone) lines.push(escapeHtml(phone));
+  return `<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:14px;line-height:1.5;color:#374151;">${lines.join("<br>")}</div>`;
+}
+
+function appendSignature(html: string, signatureHtml: string): string {
+  if (!signatureHtml) return html;
+  const wrapped = `<!-- SIGNATURE_BLOCK -->${signatureHtml}<!-- /SIGNATURE_BLOCK -->`;
+  if (html.includes("<!-- SIGNATURE_SLOT -->")) {
+    return html.replace("<!-- SIGNATURE_SLOT -->", wrapped);
+  }
+  const anchors = [
+    /(<p[^>]*>\s*-\s*\{\{\s*sender_first_name\s*\}\}\s*<\/p>)/i,
+    /(<p[^>]*>\s*-\s*[A-Za-z][A-Za-z .'-]{0,40}\s*<\/p>)/i,
+  ];
+  for (const re of anchors) {
+    if (re.test(html)) return html.replace(re, `$1${wrapped}`);
+  }
+  if (html.includes("</body>")) return html.replace("</body>", `${wrapped}</body>`);
+  return html + wrapped;
+}
+
+function applyTemplateTransforms(
+  html: string,
+  template: any,
+  sender: any,
+): string {
+  let out = html;
+  if (template?.include_header === false) {
+    out = stripHeaderBanner(out);
+  }
+  if (template?.include_signature) {
+    const sigHtml = (sender?.signature_html && String(sender.signature_html).trim())
+      || buildDefaultSignatureHtml(sender);
+    if (sigHtml) out = appendSignature(out, sigHtml);
+  }
+  return out;
+}
+
 function rewriteLinksForTracking(html: string, queueId: string, unsubUrl: string): string {
   return html.replace(/href="([^"]+)"/g, (_m, url) => {
     if (url.startsWith("mailto:") || url.includes("{{unsubscribe_url}}") || url === unsubUrl) return `href="${url}"`;
@@ -236,7 +284,8 @@ Deno.serve(async (req: Request) => {
       const unsubPreview = `${BASE_URL}/email/unsubscribe?email=${encodeURIComponent(toEmail || "preview@example.com")}`;
       const previewCtx = buildContext(quote, sender, unsubPreview, contextExtras || {});
       const previewSubject = renderTemplate(template.subject_locked ? template.subject : (overrideSubject || template.subject), previewCtx);
-      const previewHtml = renderTemplate(template.html_body, previewCtx);
+      const transformedBody = applyTemplateTransforms(template.html_body, template, sender);
+      const previewHtml = renderTemplate(transformedBody, previewCtx);
       return new Response(JSON.stringify({ ok: true, preview: true, subject: previewSubject, html: previewHtml }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -257,7 +306,8 @@ Deno.serve(async (req: Request) => {
     const ctx = buildContext(quote, sender, unsubUrl, contextExtras || {});
     const effectiveSubject = template.subject_locked ? template.subject : (overrideSubject || template.subject);
     const subject = renderTemplate(effectiveSubject, ctx);
-    let html = renderTemplate(template.html_body, ctx);
+    const transformedBodyForSend = applyTemplateTransforms(template.html_body, template, sender);
+    let html = renderTemplate(transformedBodyForSend, ctx);
     html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
     const text = renderTemplate(template.text_body, ctx);
 
