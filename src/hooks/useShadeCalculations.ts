@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { ConfiguratorState, ShadeCalculations } from '../types';
+import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../types';
+import type { HardwarePack } from './useHardwareCatalog';
 import {
   CORNER_COSTS,
   CABLED_CORNER_COSTS,
@@ -23,7 +24,8 @@ import {
 export function useShadeCalculations(
   config: ConfiguratorState,
   pricingSettingsMap?: Record<string, PricingSetting>,
-  basePricingData?: BasePricingData | null
+  basePricingData?: BasePricingData | null,
+  hardwarePacks?: HardwarePack[] | null
 ): ShadeCalculations {
   return useMemo(() => {
     let perimeterMM = 0;
@@ -102,6 +104,40 @@ export function useShadeCalculations(
       }
     }
 
+    const perCornerNzd: number[] = new Array(config.corners).fill(0);
+    let breakdownMode: 'standard' | 'manual' = 'standard';
+    let breakdownSubtotalNzd = hardwareCostNZD;
+
+    if (config.measurementOption === 'adjust') {
+      if (config.hardwareSelectionMode === 'manual' && config.cornerHardware) {
+        let manualSubtotal = 0;
+        for (let i = 0; i < config.corners; i++) {
+          const lines = config.cornerHardware[i] || [];
+          const cornerTotal = lines.reduce((sum: number, line: CornerHardwareLine) => sum + (line.priceNzd * line.qty), 0);
+          perCornerNzd[i] = cornerTotal;
+          manualSubtotal += cornerTotal;
+        }
+        hardwareCostNZD = manualSubtotal;
+        breakdownMode = 'manual';
+        breakdownSubtotalNzd = manualSubtotal;
+      } else if (hardwarePacks && hardwarePacks.length > 0) {
+        const pack = hardwarePacks.find(p => p.edge_type === edgeType && p.corners === config.corners);
+        if (pack) {
+          const packTotal = pack.price_nzd_override != null ? Number(pack.price_nzd_override) : hardwareCostNZD;
+          hardwareCostNZD = packTotal;
+          const per = config.corners > 0 ? packTotal / config.corners : 0;
+          for (let i = 0; i < config.corners; i++) perCornerNzd[i] = per;
+          breakdownSubtotalNzd = packTotal;
+        } else {
+          const per = config.corners > 0 ? hardwareCostNZD / config.corners : 0;
+          for (let i = 0; i < config.corners; i++) perCornerNzd[i] = per;
+        }
+      } else {
+        const per = config.corners > 0 ? hardwareCostNZD / config.corners : 0;
+        for (let i = 0; i < config.corners; i++) perCornerNzd[i] = per;
+      }
+    }
+
     const baseNZD = fabricCostNZD + edgeCostNZD + cornerCostNZD + hardwareCostNZD;
 
     const pricing = pricingSettingsMap
@@ -145,6 +181,11 @@ export function useShadeCalculations(
       fabricCost,
       edgeCost,
       hardwareCost,
+      hardwareBreakdown: {
+        mode: breakdownMode,
+        subtotalNzd: breakdownSubtotalNzd,
+        perCornerNzd,
+      },
       totalPrice,
       webbingWidth,
       wireThickness,
@@ -158,7 +199,10 @@ export function useShadeCalculations(
     config.measurementOption,
     config.currency,
     config.unit,
+    config.hardwareSelectionMode,
+    config.cornerHardware,
     pricingSettingsMap,
-    basePricingData
+    basePricingData,
+    hardwarePacks
   ]);
 }

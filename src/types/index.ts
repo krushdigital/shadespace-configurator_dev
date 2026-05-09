@@ -24,6 +24,16 @@ export interface ConfiguratorState {
   diagonalsInitiallyProvided?: boolean;
   heightsProvidedByUser?: boolean;
   hasManuallyAdjustedShape?: boolean;
+  hardwareSelectionMode?: 'standard' | 'manual';
+  cornerHardware?: { [cornerIndex: number]: CornerHardwareLine[] };
+}
+
+export interface CornerHardwareLine {
+  catalogId: string;
+  qty: number;
+  name: string;
+  sku: string | null;
+  priceNzd: number;
 }
 
 export interface ShadeCalculations {
@@ -32,6 +42,11 @@ export interface ShadeCalculations {
   fabricCost: number;
   edgeCost: number;
   hardwareCost: number;
+  hardwareBreakdown?: {
+    mode: 'standard' | 'manual';
+    subtotalNzd: number;
+    perCornerNzd: number[];
+  };
   totalPrice: number;
   webbingWidth: number;
   wireThickness?: number;

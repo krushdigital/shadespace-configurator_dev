@@ -438,7 +438,44 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     });
     
     yPos += 20; // Reduced spacing after configuration summary
-    
+
+    // Hardware breakdown (manual mode)
+    if (
+      config.measurementOption === 'adjust' &&
+      config.hardwareSelectionMode === 'manual' &&
+      config.cornerHardware
+    ) {
+      pdf.setTextColor(...primaryDark);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Corner Hardware', 15, yPos);
+      yPos += 8;
+
+      pdf.setFontSize(10);
+      for (let i = 0; i < config.corners; i++) {
+        const letter = String.fromCharCode(65 + i);
+        const lines = config.cornerHardware[i] || [];
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...textDark);
+        pdf.text(`Corner ${letter}`, 20, yPos);
+        yPos += 6;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...textMedium);
+        if (lines.length === 0) {
+          pdf.text('No hardware selected', 25, yPos);
+          yPos += 6;
+        } else {
+          for (const line of lines) {
+            const skuPart = line.sku ? ` (${line.sku})` : '';
+            pdf.text(`${line.qty}x ${line.name}${skuPart}`, 25, yPos);
+            yPos += 5;
+          }
+        }
+        yPos += 2;
+      }
+      yPos += 6;
+    }
+
     // Measurements section
     pdf.setTextColor(...primaryDark);
     pdf.setFontSize(12);

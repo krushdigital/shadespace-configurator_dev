@@ -8,9 +8,10 @@ import { EdgeTypeContent } from './steps/EdgeTypeContent';
 import { CornersContent } from './steps/CornersContent';
 import { CombinedMeasurementContent } from './steps/CombinedMeasurementContent';
 import { DimensionsContent } from './steps/DimensionsContent';
-import { FixingPointsContent } from './steps/FixingPointsContent';
+import { HardwareContent } from './steps/HardwareContent';
 import { ReviewContent } from './steps/ReviewContent';
 import { useShadeCalculations } from '../hooks/useShadeCalculations';
+import { useHardwareCatalog } from '../hooks/useHardwareCatalog';
 import { usePricingSettings } from '../hooks/usePricingSettings';
 import { useBasePricing } from '../hooks/useBasePricing';
 import { useMobileGuidance } from '../hooks/useMobileGuidance';
@@ -110,8 +111,9 @@ export function ShadeConfigurator() {
 
   const { settingsMap: pricingSettingsMap } = usePricingSettings();
   const { data: basePricingData } = useBasePricing();
+  const { packs: hardwarePacks } = useHardwareCatalog();
   const activePricingMap = loadedPricingSnapshot || pricingSettingsMap;
-  const calculations = useShadeCalculations(config, activePricingMap, basePricingData);
+  const calculations = useShadeCalculations(config, activePricingMap, basePricingData, hardwarePacks);
 
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({
@@ -1257,6 +1259,22 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
           console.log('❌ No PDF URL available to add to line item');
         }
 
+        // Corner hardware line items (Manual mode: per corner; Standard: single pack label)
+        if (config.measurementOption === 'adjust') {
+          const mode = config.hardwareSelectionMode || 'standard';
+          metafieldProperties['Hardware Selection'] = mode === 'manual' ? 'Manual per corner' : 'Standard pack';
+          if (mode === 'manual' && config.cornerHardware) {
+            for (let i = 0; i < config.corners; i++) {
+              const lines = config.cornerHardware[i] || [];
+              const letter = String.fromCharCode(65 + i);
+              lines.forEach((line, lineIdx) => {
+                const skuPart = line.sku ? ` (${line.sku})` : '';
+                metafieldProperties[`Corner ${letter} Hardware ${lineIdx + 1}`] = `${line.qty}x ${line.name}${skuPart}`;
+              });
+            }
+          }
+        }
+
         // Add fabrication type (visible to fulfillment team in admin)
         const fabricationType = config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit';
         metafieldProperties['_fabrication_type'] = fabricationType;
@@ -1604,9 +1622,9 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
 
   // Helper function to check if a step should be skipped
   const shouldSkipStep = (step: number): boolean => {
-    // Always skip Step 5 (Heights & Anchor Points) - now integrated into Step 4 as optional
+    // Step 5 (Hardware Selection) - only shown when user provides precise measurements
     if (step === 5) {
-      return true;
+      return config.measurementOption !== 'adjust';
     }
     return false;
   };
@@ -1669,8 +1687,15 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
 
         // Heights are never required to complete this step - they can be added during review
         return allEdgesProvided;
-      case 5: // Heights & Anchor Points
-        // Step 5 is now always skipped (integrated into Step 4 as optional)
+      case 5: // Hardware Selection
+        if (config.measurementOption !== 'adjust') return true;
+        if (config.hardwareSelectionMode === 'manual') {
+          const ch = config.cornerHardware || {};
+          for (let i = 0; i < config.corners; i++) {
+            if (!ch[i] || ch[i].length === 0) return false;
+          }
+          return true;
+        }
         return true;
       case 6: // Review
         return true;
@@ -1812,8 +1837,16 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
           }
         }
         break;
-      case 5: // Heights & Anchor Points
-        // Step 5 is now skipped - heights are optional in Step 4
+      case 5: // Hardware Selection
+        if (config.measurementOption === 'adjust' && config.hardwareSelectionMode === 'manual') {
+          const ch = config.cornerHardware || {};
+          for (let i = 0; i < config.corners; i++) {
+            if (!ch[i] || ch[i].length === 0) {
+              errors.cornerHardware = `Please select hardware for all ${config.corners} corners before continuing.`;
+              break;
+            }
+          }
+        }
         break;
     }
 
@@ -1843,7 +1876,7 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
     // If no validation errors, proceed to next step
     const nextStepIndex = getActualNextStep(openStep);
 
-    const stepNames = ['Fabric & Color', 'Style', 'Fixing Points', 'Measurement Options', 'Dimensions', 'Heights & Anchor Points', 'Review & Purchase'];
+    const stepNames = ['Fabric & Color', 'Style', 'Fixing Points', 'Measurement Options', 'Dimensions', 'Hardware Selection', 'Review & Purchase'];
     eventTrackers.stepChange(nextStepIndex, stepNames[nextStepIndex] || `Step ${nextStepIndex}`, 'forward', {
       fabricType: config.fabricType,
       fabricColor: config.fabricColor,
@@ -1938,9 +1971,14 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
           }
         }
         return edgeCount === config.corners ? `${edgeCount} edge measurements entered` : `${edgeCount}/${config.corners} edges measured`;
-      case 5: // Heights & Anchor Points
-        // Step 5 is now integrated into Step 4 as optional
-        return 'Integrated into Dimensions step';
+      case 5: // Hardware Selection
+        if (config.measurementOption !== 'adjust') return 'Not required';
+        if (config.hardwareSelectionMode === 'manual') {
+          const ch = config.cornerHardware || {};
+          const configured = Array.from({ length: config.corners }, (_, i) => (ch[i]?.length || 0) > 0).filter(Boolean).length;
+          return `Manual (${configured}/${config.corners} corners)`;
+        }
+        return 'Standard hardware pack';
       case 6: // Review
         return 'Ready for purchase';
       default:
@@ -1956,14 +1994,13 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
       'Fixing Points',
       'Measurement Options',
       'Dimensions',
-      'Heights & Anchor Points',
+      'Hardware Selection',
       'Review & Purchase'
     ];
 
     const actualNextStep = getActualNextStep(currentStep);
 
-    // Special case: If we're on step 4 (Dimensions) and step 5 will be skipped,
-    // the next step title should be "Review & Purchase"
+    // If we're on Dimensions and Hardware step is skipped, jump to Review
     if (currentStep === 4 && shouldSkipStep(5)) {
       return 'Review & Purchase';
     }
@@ -1999,9 +2036,9 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
       component: DimensionsContent
     },
     {
-      title: 'Heights & Anchor Points',
-      subtitle: 'Configure attachment points',
-      component: FixingPointsContent
+      title: 'Hardware Selection',
+      subtitle: 'Choose corner hardware',
+      component: HardwareContent
     },
     {
       title: 'Review & Purchase',
@@ -2340,6 +2377,7 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
                     setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
                     navigateToDiagonals={index === 4 ? navigateToDiagonals : undefined}
                     setNavigateToDiagonals={index === 4 ? setNavigateToDiagonals : undefined}
+                    pricingSettingsMap={activePricingMap}
                   />
                 </AccordionStep>
               );
