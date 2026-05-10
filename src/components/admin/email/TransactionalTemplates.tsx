@@ -297,12 +297,12 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
               </div>
               <div className="p-4">
                 {mode === 'preview' && (
-                  <div className="bg-gray-100 p-4 rounded">
-                    <div className="text-xs text-gray-600 mb-2">
+                  <div className="bg-[#f3f4f6] p-6 rounded">
+                    <div className="text-xs text-gray-600 mb-3">
                       Subject: <strong>{previewSubject || draft.subject}</strong>
                       {previewLoading && <span className="ml-2 text-gray-400">(loading...)</span>}
                     </div>
-                    <div className="bg-white rounded shadow-sm max-h-[800px] overflow-auto" dangerouslySetInnerHTML={{ __html: previewHtml || '<div style="padding:20px;color:#6b7280;">Loading preview...</div>' }} />
+                    <div className="mx-auto bg-white border border-gray-200 rounded overflow-hidden max-h-[800px] overflow-y-auto" style={{ maxWidth: 640 }} dangerouslySetInnerHTML={{ __html: previewHtml || '<div style="padding:20px;color:#6b7280;">Loading preview...</div>' }} />
                   </div>
                 )}
                 {mode === 'code' && (

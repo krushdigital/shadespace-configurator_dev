@@ -36,22 +36,24 @@ export function AccordionItem({ trigger, children, defaultOpen = false, onOpenCh
       </button>
 
       <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden ${
-          isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+        className={`transition-[grid-template-rows,opacity] duration-300 ease-in-out grid ${
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         }`}
       >
-        <div className="px-2 pb-3 pt-1" ref={contentRef}>
-          {children}
-        </div>
-        {isMobile && isOpen && (
-          <div className="flex justify-center pb-2">
-            <div className="animate-bounce text-slate-400">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+        <div className="overflow-hidden min-h-0">
+          <div className="px-2 pb-3 pt-1" ref={contentRef}>
+            {children}
           </div>
-        )}
+          {isMobile && isOpen && (
+            <div className="flex justify-center pb-2">
+              <div className="animate-bounce text-slate-400">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

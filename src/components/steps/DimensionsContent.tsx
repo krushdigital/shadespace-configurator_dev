@@ -302,8 +302,9 @@ export function DimensionsContent({
 
   // Auto-reconstruct polygon from measurements with debouncing
   useEffect(() => {
-    // Only auto-reconstruct if shape hasn't been manually adjusted
-    if (config.hasManuallyAdjustedShape) {
+    // Triangles are always in Auto mode. For other corner counts, skip reconstruction
+    // when the user has manually adjusted the shape.
+    if (config.corners !== 3 && config.hasManuallyAdjustedShape) {
       return;
     }
 
@@ -351,7 +352,11 @@ export function DimensionsContent({
             pointsCount: reconstructedPoints.length
           });
           lastValidPointsRef.current = reconstructedPoints;
-          updateConfig({ points: reconstructedPoints });
+          if (config.corners === 3 && config.hasManuallyAdjustedShape) {
+            updateConfig({ points: reconstructedPoints, hasManuallyAdjustedShape: false });
+          } else {
+            updateConfig({ points: reconstructedPoints });
+          }
         } else {
           console.log('Reconstruction failed or returned null - preserving last valid shape:', {
             corners: config.corners,

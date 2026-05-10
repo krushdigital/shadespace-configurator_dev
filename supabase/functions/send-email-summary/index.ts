@@ -340,7 +340,7 @@ function generateEmailHTML(data: any): string {
           <p style="color: #ffffff; margin: 0 0 18px 0; font-size: 13px; opacity: 0.9;">
             Click below to return to your saved configuration, review your details, and add to cart when you are ready.
           </p>
-          <a href="${quoteUrl}" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">Resume & Add to Cart</a>
+          <a href="${quoteUrl}" style="display: inline-block; background-color: #307C31; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">Resume & Add to Cart</a>
           <p style="color: #ffffff; margin: 12px 0 0 0; font-size: 11px; opacity: 0.7;">
             Your price is locked for 30 days from the quote date.
           </p>
@@ -351,7 +351,7 @@ function generateEmailHTML(data: any): string {
     <!-- CTA Button -->
     <tr>
       <td style="padding: 0 20px 30px 20px; text-align: center;">
-        <a href="https://shadespace.com" style="display: inline-block; background-color: #BFF102; color: #01312D; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">Complete Your Order</a>
+        <a href="https://shadespace.com" style="display: inline-block; background-color: #307C31; color: #ffffff; text-decoration: none; padding: 15px 40px; border-radius: 8px; font-size: 16px; font-weight: bold;">Complete Your Order</a>
       </td>
     </tr>
     `}

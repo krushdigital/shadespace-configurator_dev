@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Fabric, FabricColor } from '../types';
+import { Fabric, FabricColor, FabricSpec } from '../types';
 import { FABRICS } from '../data/fabrics';
 
 interface DbFabric {
@@ -17,6 +17,15 @@ interface DbFabric {
   is_fire_retardant: boolean;
   display_order: number;
   is_active: boolean;
+  short_name?: string;
+  tag?: string;
+  chip_color?: string;
+  tagline?: string;
+  image_lifestyle_url?: string;
+  image_swatch_url?: string;
+  image_macro_url?: string;
+  highlights?: string[] | unknown;
+  spec_extras?: FabricSpec[] | unknown;
 }
 
 interface DbColor {
@@ -59,6 +68,15 @@ function mapDbToFabric(dbFabrics: DbFabric[], dbColors: DbColor[]): Fabric[] {
       weightPerSqm: f.weight_per_sqm,
       badgeText: f.badge_text,
       isFireRetardant: f.is_fire_retardant,
+      shortName: f.short_name || undefined,
+      tag: f.tag || undefined,
+      chipColor: f.chip_color || undefined,
+      tagline: f.tagline || undefined,
+      imageLifestyleUrl: f.image_lifestyle_url || undefined,
+      imageSwatchUrl: f.image_swatch_url || undefined,
+      imageMacroUrl: f.image_macro_url || undefined,
+      highlights: Array.isArray(f.highlights) ? (f.highlights as string[]) : [],
+      specExtras: Array.isArray(f.spec_extras) ? (f.spec_extras as FabricSpec[]) : [],
     };
   });
 }

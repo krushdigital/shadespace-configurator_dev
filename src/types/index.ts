@@ -79,6 +79,23 @@ export interface Fabric {
   weightPerSqm: number;
   badgeText?: string;
   isFireRetardant?: boolean;
+  shortName?: string;
+  tag?: string;
+  chipColor?: string;
+  tagline?: string;
+  imageLifestyleUrl?: string;
+  imageSwatchUrl?: string;
+  imageMacroUrl?: string;
+  highlights?: string[];
+  specExtras?: FabricSpec[];
+}
+
+export interface FabricSpec {
+  label: string;
+  value: string;
+  numeric?: number;
+  higherBetter?: boolean;
+  featured?: boolean;
 }
 
 export interface FabricColor {

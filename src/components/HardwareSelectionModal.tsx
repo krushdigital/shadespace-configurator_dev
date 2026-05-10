@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { X, Search, Minus, Plus, Wrench } from 'lucide-react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Search, Minus, Plus, Wrench, Info } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../utils/currencyFormatter';
 import type { CornerHardwareLine } from '../types';
@@ -41,6 +42,10 @@ export function HardwareSelectionModal({
   const [draft, setDraft] = useState<Map<string, DraftLine>>(new Map());
   const [applyToAll, setApplyToAll] = useState(false);
   const [hoverItem, setHoverItem] = useState<HardwareItem | null>(null);
+  const [hoverAnchor, setHoverAnchor] = useState<DOMRect | null>(null);
+  const [detailItem, setDetailItem] = useState<HardwareItem | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -53,7 +58,37 @@ export function HardwareSelectionModal({
     setQuery('');
     setApplyToAll(false);
     setHoverItem(null);
+    setHoverAnchor(null);
+    setDetailItem(null);
+    setTooltipPos(null);
   }, [open, initialSelection, items]);
+
+  useLayoutEffect(() => {
+    if (!hoverItem || !hoverAnchor) {
+      setTooltipPos(null);
+      return;
+    }
+    const tooltipEl = tooltipRef.current;
+    const tooltipWidth = tooltipEl?.offsetWidth ?? 288;
+    const tooltipHeight = tooltipEl?.offsetHeight ?? 260;
+    const margin = 12;
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+
+    let left = hoverAnchor.right + margin;
+    if (left + tooltipWidth > viewportW - margin) {
+      left = hoverAnchor.left - tooltipWidth - margin;
+    }
+    left = Math.max(margin, Math.min(left, viewportW - tooltipWidth - margin));
+
+    let top = hoverAnchor.top;
+    if (top + tooltipHeight > viewportH - margin) {
+      top = viewportH - tooltipHeight - margin;
+    }
+    top = Math.max(margin, top);
+
+    setTooltipPos({ top, left });
+  }, [hoverItem, hoverAnchor]);
 
   const pricing = pricingSettingsMap
     ? getPricingForCurrency(pricingSettingsMap, currency)
@@ -165,10 +200,13 @@ export function HardwareSelectionModal({
                   return (
                     <div
                       key={item.id}
-                      className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
+                      className={`flex items-center gap-2 sm:gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
                         selected ? 'border-[#307C31]/60 bg-[#307C31]/5' : 'border-slate-100 hover:bg-slate-50'
                       }`}
-                      onMouseEnter={() => setHoverItem(item)}
+                      onMouseEnter={e => {
+                        setHoverItem(item);
+                        setHoverAnchor((e.currentTarget as HTMLDivElement).getBoundingClientRect());
+                      }}
                       onMouseLeave={() => setHoverItem(prev => (prev?.id === item.id ? null : prev))}
                     >
                       <input
@@ -216,6 +254,17 @@ export function HardwareSelectionModal({
                       <div className="flex-shrink-0 text-right text-sm font-bold text-[#D97706]">
                         {formatCurrency(displayPrice, currency)}
                       </div>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          setDetailItem(item);
+                        }}
+                        aria-label={`More info about ${item.name}`}
+                        className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#01312D] lg:hidden"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
                     </div>
                   );
                 })}
@@ -224,8 +273,13 @@ export function HardwareSelectionModal({
           ))}
         </div>
 
-        {hoverItem && (
-          <div className="pointer-events-none absolute right-4 top-20 z-20 hidden w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl lg:block">
+        {hoverItem && tooltipPos && typeof document !== 'undefined' && createPortal(
+          <div
+            ref={tooltipRef}
+            role="tooltip"
+            className="pointer-events-none fixed z-[90] hidden w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl lg:block"
+            style={{ top: tooltipPos.top, left: tooltipPos.left }}
+          >
             <div className="mb-3 flex h-40 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
               {hoverItem.image_url ? (
                 <img src={hoverItem.image_url} alt={hoverItem.name} className="h-full w-full object-contain" />
@@ -245,7 +299,78 @@ export function HardwareSelectionModal({
               )}
             </div>
             <div className="mt-3 text-lg font-bold text-[#D97706]">{formatCurrency(toDisplayPrice(hoverItem), currency)}</div>
-          </div>
+          </div>,
+          document.body
+        )}
+
+        {detailItem && typeof document !== 'undefined' && createPortal(
+          <div
+            className="fixed inset-0 z-[85] flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4"
+            onClick={() => setDetailItem(null)}
+          >
+            <div
+              className="relative flex w-full sm:max-w-md flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl max-h-[85vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-slate-900 leading-tight">{detailItem.name}</h3>
+                  {detailItem.sku && (
+                    <p className="text-xs text-slate-500 mt-0.5">SKU: {detailItem.sku}</p>
+                  )}
+                </div>
+                <button
+                  onClick={() => setDetailItem(null)}
+                  aria-label="Close"
+                  className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-5 py-4">
+                <div className="mb-3 flex h-48 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
+                  {detailItem.image_url ? (
+                    <img src={detailItem.image_url} alt={detailItem.name} className="h-full w-full object-contain" />
+                  ) : (
+                    <Wrench className="h-16 w-16 text-slate-300" />
+                  )}
+                </div>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  {detailItem.long_description || detailItem.short_description}
+                </p>
+                <dl className="mt-4 space-y-1.5 text-sm">
+                  {detailItem.material && (
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-slate-500">Material</dt>
+                      <dd className="font-medium text-slate-800 text-right">{detailItem.material}</dd>
+                    </div>
+                  )}
+                  {detailItem.deduction_mm > 0 && (
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-slate-500">Deduction</dt>
+                      <dd className="font-medium text-slate-800 text-right">{detailItem.deduction_mm} mm</dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between gap-3 pt-2 border-t border-slate-100">
+                    <dt className="text-slate-500 font-semibold">Price</dt>
+                    <dd className="font-bold text-[#D97706] text-right text-base">{formatCurrency(toDisplayPrice(detailItem), currency)}</dd>
+                  </div>
+                </dl>
+              </div>
+              <div className="border-t border-slate-100 bg-slate-50 px-5 py-3 grid grid-cols-2 gap-2">
+                <Button variant="secondary" onClick={() => setDetailItem(null)}>Close</Button>
+                <Button
+                  onClick={() => {
+                    toggle(detailItem);
+                    setDetailItem(null);
+                  }}
+                >
+                  {draft.has(detailItem.id) ? 'Remove' : 'Add'}
+                </Button>
+              </div>
+            </div>
+          </div>,
+          document.body
         )}
 
         <div className="border-t border-slate-100 bg-slate-50 px-5 py-3">

@@ -90,6 +90,21 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const hardwareOnlyDisplay = calculations.hardwareBreakdown?.hardwareOnlyLivePrice
     ?? ((calculations.hardwareBreakdown?.hardwareOnlyPriceNzd || 0) * hardwarePricing.exchangeRate);
   const perCornerLiveDisplay = calculations.hardwareBreakdown?.perCornerLivePrice ?? [];
+  const totalHardwareItems = useMemo(() => {
+    if (hardwareMode === 'standard' && hardwarePack) {
+      return hardwarePack.items.reduce((sum, p) => sum + (p.qty || 0), 0);
+    }
+    if (hardwareMode === 'manual') {
+      const map = config.cornerHardware || {};
+      let total = 0;
+      for (let i = 0; i < config.corners; i++) {
+        const lines = map[i] || [];
+        for (const l of lines) total += l.qty || 0;
+      }
+      return total;
+    }
+    return 0;
+  }, [hardwareMode, hardwarePack, config.cornerHardware, config.corners]);
   const livePriceForLine = (line: { catalogId: string; priceNzd: number; qty: number; livePrice?: number; livePriceCurrency?: string }) => {
     const catalogItem = hardwareItemsById.get(line.catalogId);
     if (catalogItem) {
@@ -782,126 +797,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </Card>
             )}
 
-            {/* Hardware & Price Breakdown - Collapsible */}
-            <AccordionItem
-              trigger={
-                <span className="flex items-center justify-between gap-2 w-full pr-2">
-                  <span className="text-sm font-semibold">Hardware & Price Breakdown</span>
-                  <span className="text-sm font-bold text-[#01312D]">
-                    {formatCurrency(calculations.totalPrice, config.currency)}
-                  </span>
-                </span>
-              }
-              defaultOpen={false}
-            >
-            <Card className="p-4 mb-4 mt-2">
-              <h3 className="text-base font-bold text-slate-900 mb-3">Hardware Breakdown</h3>
-              {hardwareMode === 'standard' && hardwarePack && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-semibold text-slate-900">Hardware Tensioning Kit</div>
-                    <span className="text-xs font-semibold text-[#307C31] bg-[#307C31]/10 px-2 py-0.5 rounded-full">Included in sail price</span>
-                  </div>
-                  <div className="space-y-2 mt-2">
-                    {hardwarePack.items.map((p, idx) => {
-                      const it = hardwareItemsById.get(p.catalog_id);
-                      if (!it) return null;
-                      return (
-                        <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
-                          {it.image_url && (
-                            <img src={it.image_url} alt={it.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-slate-900 truncate">{it.name}</div>
-                            {it.short_description && (
-                              <div className="text-xs text-slate-500 truncate">{it.short_description}</div>
-                            )}
-                          </div>
-                          <div className="text-xs font-semibold text-slate-700 flex-shrink-0">× {p.qty}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {hardwareMode === 'manual' && (
-                <div className="space-y-3">
-                  {Array.from({ length: config.corners }, (_, i) => {
-                    const letter = String.fromCharCode(65 + i);
-                    const lines = (config.cornerHardware || {})[i] || [];
-                    const cornerLive = perCornerLiveDisplay[i] ?? 0;
-                    return (
-                      <div key={i} className="rounded-lg border border-slate-200 p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">{letter}</div>
-                            <div className="text-sm font-semibold text-slate-900">Corner {letter}</div>
-                          </div>
-                          <div className="text-sm font-bold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
-                        </div>
-                        {lines.length === 0 ? (
-                          <div className="text-xs text-slate-500 ml-9">No hardware selected</div>
-                        ) : (
-                          <ul className="text-xs text-slate-700 ml-9 space-y-0.5">
-                            {lines.map((l, li) => (
-                              <li key={li} className="flex justify-between gap-2">
-                                <span>{l.qty}× {l.name}{l.sku ? ` (${l.sku})` : ''}</span>
-                                <span className="text-slate-500">{formatCurrency(livePriceForLine(l), config.currency)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <div className="flex justify-between items-center rounded-lg bg-slate-100 px-3 py-2">
-                    <span className="text-sm font-semibold text-slate-700">Hardware subtotal</span>
-                    <span className="text-base font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
-                  </div>
-                </div>
-              )}
-              {hardwareMode === 'none' && (
-                <div className="text-sm text-slate-700">No hardware — the sail ships with corner D-rings sewn in only.</div>
-              )}
-            </Card>
-
-            {/* Price Breakdown */}
-            <Card className="p-4 mb-4">
-              <h3 className="text-base font-bold text-slate-900 mb-3">Price Breakdown</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Shade sail:</span>
-                  <span className="font-semibold text-slate-900">
-                    {formatCurrency(
-                      hardwareMode === 'manual'
-                        ? calculations.totalPrice - Math.round(hardwareOnlyDisplay)
-                        : calculations.totalPrice,
-                      config.currency,
-                    )}
-                  </span>
-                </div>
-                {hardwareMode === 'manual' && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Hardware:</span>
-                    <span className="font-semibold text-slate-900">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
-                  </div>
-                )}
-                {hardwareMode === 'standard' && (
-                  <div className="flex justify-between text-xs">
-                    <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
-                      <span className="text-slate-500">Hardware Tensioning Kit included</span>
-                    </StandardPackPreview>
-                    <span className="text-slate-500">Included</span>
-                  </div>
-                )}
-                <div className="flex justify-between pt-2 border-t border-slate-200">
-                  <span className="text-slate-900 font-semibold">Total:</span>
-                  <span className="font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
-                </div>
-              </div>
-            </Card>
-            </AccordionItem>
-
             {/* Invalid Measurement Warning - Show prominently when area is 0 with all measurements AND diagonals are entered (or not required) */}
             {calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered) && (
               <Card className="p-4 mb-4 border-2 border-red-500 bg-red-50">
@@ -994,6 +889,159 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             )}
 
 
+          </div>
+
+          {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
+          <div className="lg:col-span-2 lg:sticky lg:top-8 lg:self-start space-y-6">
+            {/* Shade Sail Preview */}
+            <div ref={ref} className="shade-canvas-container">
+              <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                Shade Sail Preview
+              </h4>
+              <InteractiveMeasurementCanvas
+                ref={canvasRef}
+                config={config}
+                updateConfig={updateConfig}
+                highlightedMeasurement={highlightedMeasurement}
+                onMeasurementHover={setHighlightedMeasurement}
+                compact={false}
+                readonly={false}
+                isMobile={isMobile}
+                plainBackground={true}
+              />
+              <div className="mt-2 text-xs text-slate-500">
+                Visual reference only<br />
+                Corner labels show edge positions
+              </div>
+            </div>
+
+          </div>
+
+          {/* Full-width sections below the two-column grid row */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Hardware & Price Breakdown - Collapsible */}
+            <AccordionItem
+              trigger={
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  <span>Hardware & Price Breakdown</span>
+                  {totalHardwareItems > 0 && (
+                    <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
+                      {totalHardwareItems}
+                    </span>
+                  )}
+                </span>
+              }
+              defaultOpen={false}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+                <Card className="p-4 md:p-5">
+                  <h3 className="text-base font-bold text-slate-900 mb-3">Hardware Breakdown</h3>
+                  {hardwareMode === 'standard' && hardwarePack && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <div className="text-sm font-semibold text-slate-900">Hardware Tensioning Kit</div>
+                        <span className="text-xs font-semibold text-[#307C31] bg-[#307C31]/10 px-2 py-0.5 rounded-full">Included in sail price</span>
+                      </div>
+                      <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                        {hardwarePack.items.map((p, idx) => {
+                          const it = hardwareItemsById.get(p.catalog_id);
+                          if (!it) return null;
+                          return (
+                            <div key={idx} className="flex items-center gap-3 px-3 py-2">
+                              {it.image_url && (
+                                <img src={it.image_url} alt={it.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-slate-900 truncate">{it.name}</div>
+                              </div>
+                              <div className="text-xs font-semibold text-slate-600 flex-shrink-0">× {p.qty}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {hardwareMode === 'manual' && (
+                    <div className="space-y-3">
+                      <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                        {Array.from({ length: config.corners }, (_, i) => {
+                          const letter = String.fromCharCode(65 + i);
+                          const lines = (config.cornerHardware || {})[i] || [];
+                          const cornerLive = perCornerLiveDisplay[i] ?? 0;
+                          return (
+                            <div key={i} className="px-3 py-2.5">
+                              <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{letter}</div>
+                                  <div className="text-sm font-semibold text-slate-900">Corner {letter}</div>
+                                </div>
+                                <div className="text-sm font-semibold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
+                              </div>
+                              {lines.length === 0 ? (
+                                <div className="text-xs text-slate-500 ml-8">No hardware selected</div>
+                              ) : (
+                                <div className="ml-8 grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 text-xs text-slate-700">
+                                  {lines.map((l, li) => (
+                                    <React.Fragment key={li}>
+                                      <span className="truncate">{l.qty}× {l.name}{l.sku ? ` (${l.sku})` : ''}</span>
+                                      <span className="text-slate-500 text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
+                                    </React.Fragment>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div className="flex justify-between items-center rounded-lg bg-slate-100 px-3 py-1.5">
+                        <span className="text-sm font-semibold text-slate-700">Hardware subtotal</span>
+                        <span className="text-sm font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
+                      </div>
+                    </div>
+                  )}
+                  {hardwareMode === 'none' && (
+                    <div className="text-sm text-slate-700">No hardware — the sail ships with corner D-rings sewn in only.</div>
+                  )}
+                </Card>
+
+                {/* Price Breakdown */}
+                <Card className="p-4 md:p-5">
+                  <h3 className="text-base font-bold text-slate-900 mb-3">Price Breakdown</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Shade sail:</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatCurrency(
+                          hardwareMode === 'manual'
+                            ? calculations.totalPrice - Math.round(hardwareOnlyDisplay)
+                            : calculations.totalPrice,
+                          config.currency,
+                        )}
+                      </span>
+                    </div>
+                    {hardwareMode === 'manual' && (
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Hardware:</span>
+                        <span className="font-semibold text-slate-900">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
+                      </div>
+                    )}
+                    {hardwareMode === 'standard' && (
+                      <div className="flex justify-between text-xs">
+                        <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
+                          <span className="text-slate-500">Hardware Tensioning Kit included</span>
+                        </StandardPackPreview>
+                        <span className="text-slate-500">Included</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between pt-2 border-t border-slate-200">
+                      <span className="text-slate-900 font-semibold">Total:</span>
+                      <span className="font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </AccordionItem>
+
             {/* Precise Measurements Summary */}
             <div>
               {isMobile ? (
@@ -1068,11 +1116,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   }
                   defaultOpen={false}
                 >
-                  <Card className="p-4 mb-4 mt-2">
-                    <div className="space-y-3">
+                  <Card className="p-4 mt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                       <div>
-                        <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths:</h6>
-                        <div className="space-y-1 text-sm">
+                        <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths</h6>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
                           {Array.from({ length: config.corners }, (_, index) => {
                             const nextIndex = (index + 1) % config.corners;
                             const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
@@ -1094,8 +1142,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
                       {config.corners >= 4 && diagonalMeasurements.length > 0 && (
                         <div>
-                          <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths:</h6>
-                          <div className="space-y-1 text-sm">
+                          <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths</h6>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
                             {diagonalMeasurements.map((diagonal) => {
                               const measurement = config.measurements[diagonal.key];
 
@@ -1138,7 +1186,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                         {config.fixingHeights.map((height, index) => {
                           const corner = String.fromCharCode(65 + index);
-                          const type = config.fixingTypes?.[index] || 'post';
 
                           return (
                             <div key={index} className="flex justify-between">
@@ -1155,12 +1202,19 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     </Card>
                   </AccordionItem>
                 ) : (
-                  <>
-                    <h4 className="text-lg font-semibold text-slate-900 mb-3">
-                      Anchor Point Heights
-                    </h4>
-                    <Card className="p-4 mb-4">
-                      <div className="space-y-2 text-sm">
+                  <AccordionItem
+                    trigger={
+                      <span className="flex items-center gap-2 text-sm font-semibold">
+                        <span>Anchor Point Heights</span>
+                        <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
+                          {config.corners}
+                        </span>
+                      </span>
+                    }
+                    defaultOpen={false}
+                  >
+                    <Card className="p-4 mt-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-sm">
                         {config.fixingHeights.map((height, index) => {
                           const corner = String.fromCharCode(65 + index);
                           const type = config.fixingTypes?.[index] || 'post';
@@ -1168,47 +1222,18 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           return (
                             <div key={index} className="flex justify-between">
                               <span className="text-slate-600">Anchor Point {corner}:</span>
-                              <div className="text-right">
-                                <div className="font-medium text-slate-900">
-                                  {formatMeasurement(height, config.unit)} ({type})
-                                </div>
-                              </div>
+                              <span className="font-medium text-slate-900">
+                                {formatMeasurement(height, config.unit)} ({type})
+                              </span>
                             </div>
                           );
                         })}
                       </div>
                     </Card>
-                  </>
+                  </AccordionItem>
                 )}
               </div>
             )}
-
-          </div>
-
-          {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
-          <div className="lg:col-span-2 lg:sticky lg:top-8 lg:self-start space-y-6">
-            {/* Shade Sail Preview */}
-            <div ref={ref} className="shade-canvas-container">
-              <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                Shade Sail Preview
-              </h4>
-              <InteractiveMeasurementCanvas
-                ref={canvasRef}
-                config={config}
-                updateConfig={updateConfig}
-                highlightedMeasurement={highlightedMeasurement}
-                onMeasurementHover={setHighlightedMeasurement}
-                compact={false}
-                readonly={false}
-                isMobile={isMobile}
-                plainBackground={true}
-              />
-              <div className="mt-2 text-xs text-slate-500">
-                Visual reference only<br />
-                Corner labels show edge positions
-              </div>
-            </div>
-
           </div>
         </div>
 

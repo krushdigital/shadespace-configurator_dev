@@ -17,6 +17,10 @@ interface ShapeCanvasProps {
   isMobile?: boolean;
   measurementOption?: 'adjust' | 'exact';
   unit?: 'metric' | 'imperial';
+  plainBackground?: boolean;
+  onCornerTap?: (index: number) => void;
+  onCornerHover?: (index: number | null) => void;
+  hideHelp?: boolean;
 }
 
 export function ShapeCanvas({
@@ -28,7 +32,11 @@ export function ShapeCanvas({
   highlightedCorner = null,
   isMobile = false,
   measurementOption = 'adjust',
-  unit = 'metric'
+  unit = 'metric',
+  plainBackground = false,
+  onCornerTap,
+  onCornerHover,
+  hideHelp = false,
 }: ShapeCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -82,12 +90,13 @@ export function ShapeCanvas({
 
   const handleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
     if (readonly) return;
-    
+    if (config.corners === 3) return;
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     setDragIndex(index);
-  }, [readonly]);
+  }, [readonly, config.corners]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (dragIndex === null || readonly) return;
@@ -139,12 +148,13 @@ export function ShapeCanvas({
   // Touch event handlers for mobile devices
   const handleTouchStart = useCallback((e: React.TouchEvent, index: number) => {
     if (readonly) return;
-    
+    if (config.corners === 3) return;
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     setDragIndex(index);
-  }, [readonly]);
+  }, [readonly, config.corners]);
 
   const handleTouchMove = useCallback((e: TouchEvent) => {
     if (dragIndex === null || readonly) return;
@@ -288,7 +298,7 @@ export function ShapeCanvas({
     return config.points.map((point, index) => {
       const labelPosition = getOutwardPosition(point, centroid, isMobile ? 40 : 25);
       const fabricColor = getSelectedColor(config.fabricType, config.fabricColor);
-      const cornerColor = config.hasManuallyAdjustedShape ? '#3B82F6' : fabricColor;
+      const cornerColor = (config.corners !== 3 && config.hasManuallyAdjustedShape) ? '#3B82F6' : fabricColor;
 
       return {
         point,
@@ -337,18 +347,20 @@ export function ShapeCanvas({
         </div>
       )}
 
-      <div className="relative w-full pb-[100%] bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+      <div className={`relative w-full pb-[100%] overflow-hidden ${plainBackground ? 'bg-white' : 'bg-gradient-to-br from-slate-50 to-slate-100'}`}>
         {/* Help Icon Tooltip in Top-Left Corner */}
-        <div className="absolute top-3 left-3 z-20">
-          <Tooltip content={tooltipContent}>
-            <button
-              className="w-7 h-7 flex items-center justify-center bg-[#01312D] text-white rounded-full shadow-lg hover:bg-[#307C31] transition-colors duration-200 cursor-help"
-              aria-label="Canvas help and instructions"
-            >
-              <HelpCircle className="w-4 h-4" />
-            </button>
-          </Tooltip>
-        </div>
+        {!hideHelp && (
+          <div className="absolute top-3 left-3 z-20">
+            <Tooltip content={tooltipContent}>
+              <button
+                className="w-7 h-7 flex items-center justify-center bg-[#01312D] text-white rounded-full shadow-lg hover:bg-[#307C31] transition-colors duration-200 cursor-help"
+                aria-label="Canvas help and instructions"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          </div>
+        )}
 
         <svg
           ref={svgRef}
@@ -367,6 +379,7 @@ export function ShapeCanvas({
             onMeasurementClick={handleMeasurementClick}
             readonly={readonly}
             compact={false}
+            plainBackground={plainBackground}
             editingMeasurementKey={editingMeasurementKey}
             editingValue={editingValue}
             editingPosition={editingPosition}
@@ -406,11 +419,14 @@ export function ShapeCanvas({
                     fill={displayColor}
                     stroke="white"
                     strokeWidth="3"
-                    className={readonly ? '' : 'cursor-grab'}
-                    onMouseDown={(e) => handleMouseDown(e, index)}
-                    onTouchStart={(e) => handleTouchStart(e, index)}
+                    className={(readonly && onCornerTap) ? 'cursor-pointer' : (readonly || config.corners === 3) ? '' : 'cursor-grab'}
+                    onMouseDown={config.corners === 3 || readonly ? undefined : (e) => handleMouseDown(e, index)}
+                    onTouchStart={config.corners === 3 || readonly ? undefined : (e) => handleTouchStart(e, index)}
+                    onClick={readonly && onCornerTap ? () => onCornerTap(index) : undefined}
+                    onMouseEnter={readonly && onCornerHover ? () => onCornerHover(index) : undefined}
+                    onMouseLeave={readonly && onCornerHover ? () => onCornerHover(null) : undefined}
                     style={{
-                      cursor: readonly ? 'default' : dragIndex === index ? 'grabbing' : 'grab'
+                      cursor: (readonly && onCornerTap) ? 'pointer' : (readonly || config.corners === 3) ? 'default' : dragIndex === index ? 'grabbing' : 'grab'
                     }}
                   />
                   <text

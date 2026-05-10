@@ -6,8 +6,9 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { AccordionItem } from '../ui/AccordionItem';
-import { Info, AlertCircle } from 'lucide-react';
+import { Info, AlertCircle, GitCompare } from 'lucide-react';
 import { analytics } from '../../utils/analytics';
+import { FabricComparison } from '../FabricComparison';
 
 interface FabricSelectionContentProps {
   config: ConfiguratorState;
@@ -32,6 +33,13 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
   const FABRICS = fabrics && fabrics.length > 0 ? fabrics : FALLBACK_FABRICS;
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [comparisonInitialId, setComparisonInitialId] = useState<string | undefined>(undefined);
+
+  const openComparison = (fabricId?: string) => {
+    setComparisonInitialId(fabricId || config.fabricType || FABRICS[0]?.id);
+    setComparisonOpen(true);
+  };
 
   useEffect(() => {
     analytics.stepViewed(1, 'fabric_and_color');
@@ -69,16 +77,26 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
     <div className="p-6">
       {/* Fabric Type Selection */}
       <div className="mb-8">
-        <h4 className="text-lg font-semibold text-[#01312D] mb-4">
-          <a 
-            href="https://shadespace.com/pages/our-fabrics" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-[#01312D] hover:text-[#307C31] transition-colors"
+        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <h4 className="text-lg font-semibold text-[#01312D]">
+            <a
+              href="https://shadespace.com/pages/our-fabrics"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#01312D] hover:text-[#307C31] transition-colors"
+            >
+              Fabric Material
+            </a>
+          </h4>
+          <button
+            type="button"
+            onClick={() => openComparison()}
+            className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-[#01312D] border border-[#01312D] hover:bg-[#01312D] hover:text-white px-3 py-1.5 rounded-full transition-colors"
           >
-            Fabric Material
-          </a>
-        </h4>
+            <GitCompare className="w-3.5 h-3.5" />
+            Compare Fabrics
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {FABRICS.map((fabric) => {
             const isSelected = config.fabricType === fabric.id;
@@ -198,6 +216,18 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                 </div>
                               </div>
                             </AccordionItem>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openComparison(fabric.id);
+                              }}
+                              className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-[#01312D] hover:bg-[#307C31] px-3 py-2 rounded-full transition-colors"
+                            >
+                              <GitCompare className="w-3.5 h-3.5" />
+                              Compare all fabrics
+                            </button>
                           </div>
 
                         </div>
@@ -432,6 +462,17 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
           </div>
         </div>
       </div>
+
+      <FabricComparison
+        fabrics={FABRICS}
+        open={comparisonOpen}
+        onClose={() => setComparisonOpen(false)}
+        initialFabricId={comparisonInitialId}
+        onSelectFabric={(id) => {
+          analytics.fabricTypeSelected(id, FABRICS.find(f => f.id === id)?.label || id);
+          updateConfig({ fabricType: id, fabricColor: '' });
+        }}
+      />
     </div>
   );
 }

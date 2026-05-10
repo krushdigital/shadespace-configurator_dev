@@ -1897,7 +1897,8 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
   };
 
   const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
-    const prevStepIndex = getActualPrevStep(openStep);
+    const wantsDimensions = options?.navigateToHeights || options?.navigateToDiagonals;
+    const prevStepIndex = wantsDimensions ? 4 : getActualPrevStep(openStep);
 
     // Auto-center shape when moving to previous step
     const centeredPoints = centerShape(config.points);
@@ -1912,7 +1913,7 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
       setNavigateToDiagonals(true);
     }
 
-    setConfig(prev => ({ ...prev, step: prevStepIndex }));
+    setConfig(prev => ({ ...prev, step: Math.max(prev.step, prevStepIndex) }));
     updateConfig({ points: centeredPoints });
     setOpenStep(prevStepIndex);
 

@@ -29,14 +29,16 @@ const SHORTCODES: { code: string; desc: string }[] = [
   { code: 'unsubscribe_url', desc: 'Unsubscribe link (injected automatically)' },
 ];
 
-function renderPreview(html: string): string {
+function renderPreview(html: string, sender?: EmailSender): string {
   const sample: Record<string, string> = {
     first_name: 'Alex', applicant_name: 'Alex Sample', email: 'alex@example.com',
     quote_reference: 'QT-2026-0042', quote_name: 'Backyard sail',
     current_step_label: 'Review', resume_url: '#', pdf_url: '#',
     price: '1,299', currency: 'NZD', country: 'NZ',
     fabric_type: 'Shadetex 320', fabric_color: 'Charcoal', corners: '4',
-    days_since_saved: '2', sender_first_name: 'Nick', support_phone: '+64 21 000 000',
+    days_since_saved: '2',
+    sender_first_name: sender?.signature_name || 'Team',
+    support_phone: sender?.signature_phone || '',
     unsubscribe_url: '#',
   };
   let out = html.replace(/\{\{#if\s+([\w_]+)\s*\}\}([\s\S]*?)\{\{\/if\}\}/g, (_m, k, body) => sample[k] ? body : '');
@@ -78,8 +80,8 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
   };
 
   const previewHtml = useMemo(
-    () => renderPreview(transformForPreview(draft.html_body)),
-    [draft.html_body, draft.include_header, draft.include_signature, activeSender?.signature_html, activeSender?.signature_name, activeSender?.signature_phone],
+    () => renderPreview(transformForPreview(draft.html_body), activeSender),
+    [draft.html_body, draft.include_header, draft.include_signature, activeSender?.id, activeSender?.signature_html, activeSender?.signature_name, activeSender?.signature_phone],
   );
 
   const save = async () => {
@@ -282,9 +284,9 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
           )}
 
           {mode === 'preview' && (
-            <div className="bg-gray-100 p-6 rounded">
-              <div className="text-xs text-gray-500 mb-2">Subject: <strong>{renderPreview(draft.subject)}</strong></div>
-              <div className="bg-white rounded shadow-sm" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            <div className="bg-[#f3f4f6] p-6 rounded">
+              <div className="text-xs text-gray-500 mb-3">Subject: <strong>{renderPreview(draft.subject, activeSender)}</strong></div>
+              <div className="mx-auto bg-white border border-gray-200 rounded overflow-hidden" style={{ maxWidth: 640 }} dangerouslySetInnerHTML={{ __html: previewHtml }} />
             </div>
           )}
         </div>

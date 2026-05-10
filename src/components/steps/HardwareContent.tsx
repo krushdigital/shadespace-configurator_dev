@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { SlidersHorizontal, Package, CheckCircle2, Ban, Info } from 'lucide-react';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
+import { ShapeCanvas } from '../ShapeCanvas';
 import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
 import { useHardwareCatalog, getDefaultPack, HardwareItem } from '../../hooks/useHardwareCatalog';
 import { formatCurrency } from '../../utils/currencyFormatter';
@@ -19,6 +20,7 @@ interface HardwareContentProps {
   showBackButton?: boolean;
   pricingSettingsMap?: Record<string, PricingSetting>;
   setHighlightedCorner?: (corner: number | null) => void;
+  highlightedCorner?: number | null;
 }
 
 export function HardwareContent({
@@ -31,9 +33,11 @@ export function HardwareContent({
   showBackButton,
   pricingSettingsMap,
   setHighlightedCorner,
+  highlightedCorner = null,
 }: HardwareContentProps) {
   const { items, categories, packs, loading } = useHardwareCatalog();
   const [modalCorner, setModalCorner] = useState<number | null>(null);
+  const manualPanelRef = useRef<HTMLDivElement>(null);
   const isExact = config.measurementOption === 'exact';
   const allowNone = isExact;
   const allowStandard = !isExact;
@@ -58,11 +62,19 @@ export function HardwareContent({
 
   const setMode = (next: 'standard' | 'manual' | 'none') => {
     if (next === 'none' && !allowNone) return;
+    const wasManual = mode === 'manual';
     const updates: Partial<ConfiguratorState> = { hardwareSelectionMode: next };
     if (next !== 'manual') {
       updates.cornerHardware = {};
     }
     updateConfig(updates);
+    if (next === 'manual' && !wasManual && typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          manualPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 60);
+      });
+    }
   };
 
   const openCornerModal = (cornerIndex: number) => setModalCorner(cornerIndex);
@@ -115,7 +127,7 @@ export function HardwareContent({
 
   return (
     <div className="p-4 sm:p-6 space-y-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Corner Hardware Selection</h2>
           <p className="mt-1 text-sm text-slate-600">
@@ -206,8 +218,28 @@ export function HardwareContent({
       )}
 
       {mode === 'manual' && (
+        <div ref={manualPanelRef} className="scroll-mt-4">
         <Card className="p-4">
-          <p className="mb-3 text-sm text-slate-600">Hover over a corner row to highlight it on the diagram. Click to select hardware.</p>
+          <div className="lg:hidden mb-4">
+            <p className="mb-2 text-xs text-slate-600">Tap a corner on the diagram or the list below to configure.</p>
+            <div className="mx-auto max-w-[280px]">
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={true}
+                snapToGrid={false}
+                highlightedCorner={highlightedCorner}
+                isMobile={true}
+                measurementOption={config.measurementOption}
+                unit={config.unit}
+                plainBackground={true}
+                hideHelp={true}
+                onCornerTap={openCornerModal}
+                onCornerHover={setHighlightedCorner}
+              />
+            </div>
+          </div>
+          <p className="mb-3 text-sm text-slate-600 hidden lg:block">Hover over a corner row to highlight it on the diagram. Click to select hardware.</p>
           <div className="space-y-2">
             {Array.from({ length: config.corners }, (_, idx) => {
               const letter = String.fromCharCode(65 + idx);
@@ -222,6 +254,7 @@ export function HardwareContent({
                   onMouseLeave={() => handleHoverCorner(null)}
                   onFocus={() => handleHoverCorner(idx)}
                   onBlur={() => handleHoverCorner(null)}
+                  onTouchStart={() => handleHoverCorner(idx)}
                   className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition ${
                     isConfigured ? 'border-emerald-200 bg-emerald-50/40' : 'border-amber-200 bg-amber-50/60'
                   }`}
@@ -266,6 +299,7 @@ export function HardwareContent({
             </div>
           )}
         </Card>
+        </div>
       )}
 
       <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 pt-2">
