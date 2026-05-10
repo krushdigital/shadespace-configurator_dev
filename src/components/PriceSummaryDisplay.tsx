@@ -189,10 +189,8 @@ export function PriceSummaryDisplay({
                     <ul className="space-y-1.5">
                       {packLines.map(({ item, qty }) => (
                         <li key={item.id} className="flex items-center gap-2 text-xs">
-                          {item.image_url ? (
+                          {item.image_url && (
                             <img src={item.image_url} alt="" className="h-7 w-7 rounded object-cover flex-shrink-0 bg-white border border-slate-200" />
-                          ) : (
-                            <div className="h-7 w-7 rounded bg-white border border-slate-200 flex-shrink-0" />
                           )}
                           <span className="flex-1 min-w-0 truncate text-slate-800">{item.name}</span>
                           <span className="flex-shrink-0 font-semibold text-slate-600">x {qty}</span>

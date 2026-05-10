@@ -68,8 +68,33 @@ function generateEmailHTML(data: any): string {
     customerReference,
     firstName,
     lastName,
-    quoteUrl
+    quoteUrl,
+    measurementOption,
+    hardwareSelectionMode,
+    cornerHardware,
+    hardwareBreakdown,
+    backendEdgeMeasurements,
+    backendDiagonalMeasurements,
   } = data;
+
+  const resolvedHardwareMode: 'standard' | 'manual' | 'none' =
+    hardwareSelectionMode || (measurementOption === 'adjust' ? 'standard' : 'none');
+  const sailNzd = hardwareBreakdown?.sailOnlyPriceNzd || 0;
+  const hwNzd = hardwareBreakdown?.hardwareOnlyPriceNzd || 0;
+  const baseTotalNzd = sailNzd + hwNzd;
+  const combinedFactor = baseTotalNzd > 0 ? totalPrice / baseTotalNzd : 1;
+  const toDisplay = (nzd: number) => nzd * combinedFactor;
+
+  const edgesRows: Array<{ label: string; value: string }> = Array.isArray(backendEdgeMeasurements)
+    ? backendEdgeMeasurements.map((m: any) => ({ label: m.label || m.key || '', value: m.value || '' }))
+    : (edgeMeasurements && typeof edgeMeasurements === 'object'
+        ? Object.entries(edgeMeasurements).map(([k, v]) => ({ label: `Edge ${k}`, value: String(v) }))
+        : []);
+  const diagonalsRows: Array<{ label: string; value: string }> = Array.isArray(backendDiagonalMeasurements)
+    ? backendDiagonalMeasurements.map((m: any) => ({ label: m.label || m.key || '', value: m.value || '' }))
+    : (diagonalMeasurementsObj && typeof diagonalMeasurementsObj === 'object'
+        ? Object.entries(diagonalMeasurementsObj).map(([k, v]) => ({ label: `Diagonal ${k}`, value: String(v) }))
+        : []);
 
   const formattedPrice = formatCurrency(totalPrice, currency);
   const currencySymbol = CURRENCY_SYMBOLS[currency] || currency;
@@ -202,6 +227,94 @@ function generateEmailHTML(data: any): string {
       </td>
     </tr>
     
+    ${(edgesRows.length > 0 || diagonalsRows.length > 0) ? `
+    <!-- Precise Measurements -->
+    <tr>
+      <td style="padding: 0 20px 20px 20px;">
+        <h3 style="color: #01312D; margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #BFF102; padding-bottom: 8px;">Precise Measurements</h3>
+        <table width="100%" cellpadding="5" cellspacing="0" style="font-size: 14px;">
+          ${edgesRows.map(m => `
+          <tr>
+            <td style="color: #64748B; padding: 6px 0; border-bottom: 1px solid #E2E8F0;">${m.label}:</td>
+            <td style="color: #01312D; font-weight: 600; padding: 6px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${m.value}</td>
+          </tr>
+          `).join('')}
+          ${diagonalsRows.map(m => `
+          <tr>
+            <td style="color: #64748B; padding: 6px 0; border-bottom: 1px solid #E2E8F0;">${m.label}:</td>
+            <td style="color: #01312D; font-weight: 600; padding: 6px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${m.value}</td>
+          </tr>
+          `).join('')}
+        </table>
+      </td>
+    </tr>
+    ` : ''}
+
+    ${resolvedHardwareMode === 'manual' && cornerHardware ? `
+    <!-- Corner Hardware Breakdown -->
+    <tr>
+      <td style="padding: 0 20px 20px 20px;">
+        <h3 style="color: #01312D; margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #BFF102; padding-bottom: 8px;">Corner Hardware Breakdown</h3>
+        ${Array.from({ length: corners }, (_, i) => {
+          const letter = String.fromCharCode(65 + i);
+          const lines = cornerHardware[i] || cornerHardware[String(i)] || [];
+          const cornerSubtotalNzd = hardwareBreakdown?.perCornerNzd?.[i] || 0;
+          return `
+          <div style="padding: 10px 0; border-bottom: 1px solid #E2E8F0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="color: #01312D; font-weight: bold; font-size: 14px;">Corner ${letter}</td>
+                <td style="color: #01312D; font-weight: bold; font-size: 14px; text-align: right;">${formatCurrency(toDisplay(cornerSubtotalNzd), currency)}</td>
+              </tr>
+            </table>
+            ${lines.length === 0 ? '<div style="padding-left: 12px; font-size: 12px; color: #64748B;">No hardware selected</div>' : (lines as any[]).map(line => {
+              const skuPart = line.sku ? ` (${line.sku})` : '';
+              const lineNzd = (line.priceNzd || 0) * line.qty;
+              return `
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 4px;">
+                <tr>
+                  <td style="padding-left: 12px; font-size: 12px; color: #64748B;">${line.qty}x ${line.name}${skuPart}</td>
+                  <td style="font-size: 12px; color: #64748B; text-align: right;">${formatCurrency(toDisplay(lineNzd), currency)}</td>
+                </tr>
+              </table>`;
+            }).join('')}
+          </div>`;
+        }).join('')}
+      </td>
+    </tr>
+    ` : ''}
+
+    ${hardwareBreakdown ? `
+    <!-- Price Breakdown -->
+    <tr>
+      <td style="padding: 0 20px 20px 20px;">
+        <h3 style="color: #01312D; margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #BFF102; padding-bottom: 8px;">Price Breakdown</h3>
+        <table width="100%" cellpadding="5" cellspacing="0" style="font-size: 14px;">
+          <tr>
+            <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Shade sail:</td>
+            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${formatCurrency(toDisplay(sailNzd), currency)}</td>
+          </tr>
+          ${resolvedHardwareMode === 'standard' ? `
+          <tr>
+            <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Hardware Tensioning Kit:</td>
+            <td style="color: #307C31; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">Included</td>
+          </tr>
+          ` : ''}
+          ${resolvedHardwareMode === 'manual' && hwNzd > 0 ? `
+          <tr>
+            <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Corner hardware:</td>
+            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${formatCurrency(toDisplay(hwNzd), currency)}</td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td style="color: #01312D; font-weight: bold; padding: 10px 0; border-top: 2px solid #01312D;">Total:</td>
+            <td style="color: #01312D; font-weight: bold; padding: 10px 0; text-align: right; border-top: 2px solid #01312D;">${formatCurrency(totalPrice, currency)}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    ` : ''}
+
     <!-- Warranty -->
     <tr>
       <td style="padding: 0 20px 30px 20px;">

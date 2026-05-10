@@ -4,6 +4,14 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // Import Puppeteer for headless browser PDF generation
 import puppeteer from "npm:puppeteer@21.5.0"
 
+interface CornerHardwareLine {
+  catalog_id?: string;
+  name: string;
+  sku?: string;
+  qty: number;
+  priceNzd: number;
+}
+
 interface ConfiguratorState {
   fabricType: string;
   fabricColor: string;
@@ -19,6 +27,8 @@ interface ConfiguratorState {
   currency: string;
   quoteName?: string;
   customerReference?: string;
+  hardwareSelectionMode?: 'standard' | 'manual' | 'none';
+  cornerHardware?: { [cornerIndex: number]: CornerHardwareLine[] };
 }
 
 interface ShadeCalculations {
@@ -27,9 +37,17 @@ interface ShadeCalculations {
   fabricCost: number;
   edgeCost: number;
   hardwareCost: number;
+  hardwareBreakdown?: {
+    mode: 'standard' | 'manual' | 'none';
+    subtotalNzd: number;
+    perCornerNzd: number[];
+    sailOnlyPriceNzd: number;
+    hardwareOnlyPriceNzd: number;
+  };
   totalPrice: number;
   webbingWidth: number;
   wireThickness?: number;
+  totalWeightGrams?: number;
 }
 
 interface PDFRequest {
@@ -178,7 +196,7 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
     const height = config.fixingHeights[i];
     const type = config.fixingTypes?.[i] || 'post';
     const orientation = config.eyeOrientations?.[i] || 'horizontal';
-    
+
     anchorPoints.push({
       corner,
       height: height && height > 0 ? formatMeasurement(height, config.unit) : 'Not set',
@@ -186,6 +204,16 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
       orientation
     });
   }
+
+  // Hardware + price breakdown calculations
+  const resolvedHardwareMode: 'standard' | 'manual' | 'none' =
+    config.hardwareSelectionMode || (config.measurementOption === 'adjust' ? 'standard' : 'none');
+  const hwBreakdown = calculations.hardwareBreakdown;
+  const sailNzd = hwBreakdown?.sailOnlyPriceNzd || 0;
+  const hwNzd = hwBreakdown?.hardwareOnlyPriceNzd || 0;
+  const baseTotalNzd = sailNzd + hwNzd;
+  const combinedFactor = baseTotalNzd > 0 ? calculations.totalPrice / baseTotalNzd : 1;
+  const toDisplay = (nzd: number) => nzd * combinedFactor;
 
   return `
 <!DOCTYPE html>
@@ -557,21 +585,33 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                 </div>
                 <div class="config-item">
                     <span class="config-label">Manufacturing Option:</span>
-                    <span class="config-value">${config.measurementOption === 'adjust' ? 'Adjust to fit space (hardware included)' : 'Exact dimensions (hardware not included)'}</span>
+                    <span class="config-value">${config.measurementOption === 'adjust' ? 'Adjust to fit space' : 'Exact dimensions'}</span>
                 </div>
-                ${config.measurementOption === 'adjust' ? `
+                ${(() => {
+                  const mode = config.hardwareSelectionMode || (config.measurementOption === 'adjust' ? 'standard' : 'none');
+                  if (mode === 'standard') {
+                    return `
                 <div class="config-item">
                     <span class="config-label">Tensioning Hardware Included:</span>
                     <span class="config-value">
-                        Yes - Turnbuckles & Shackles
+                        Yes - Hardware Tensioning Kit
                         ${HARDWARE_PACK_IMAGES[config.corners] ? `
                         <img src="${HARDWARE_PACK_IMAGES[config.corners]}"
                              alt="${config.corners} Corner Hardware Pack"
                              style="width: 20px; height: 20px; margin-left: 8px; border-radius: 3px; border: 1px solid #E2E8F0; vertical-align: middle; object-fit: cover;" />
                         ` : ''}
                     </span>
-                </div>
-                ` : ''}
+                </div>`;
+                  }
+                  if (mode === 'manual') {
+                    return `
+                <div class="config-item">
+                    <span class="config-label">Tensioning Hardware:</span>
+                    <span class="config-value">Manual per corner (see breakdown below)</span>
+                </div>`;
+                  }
+                  return '';
+                })()}
                 <div class="config-item">
                     <span class="config-label">Fixing Points Installed:</span>
                     <span class="config-value">${config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'}</span>
@@ -618,7 +658,65 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                 `).join('')}
             </div>
         </div>
-        
+
+        ${resolvedHardwareMode === 'manual' && config.cornerHardware ? `
+        <!-- Corner Hardware Breakdown -->
+        <div class="section">
+            <h2 class="section-title">Corner Hardware Breakdown</h2>
+            <div class="anchor-points">
+                ${Array.from({ length: config.corners }, (_, i) => {
+                  const letter = String.fromCharCode(65 + i);
+                  const lines = (config.cornerHardware && config.cornerHardware[i]) || [];
+                  const cornerSubtotalNzd = hwBreakdown?.perCornerNzd?.[i] || 0;
+                  return `
+                  <div style="padding: 10px 0; border-bottom: 1px solid #E2E8F0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <span class="anchor-corner">Corner ${letter}</span>
+                      <span class="anchor-corner">${formatCurrency(toDisplay(cornerSubtotalNzd), config.currency)}</span>
+                    </div>
+                    ${lines.length === 0 ? '<div class="anchor-details" style="padding-left: 12px;">No hardware selected</div>' : lines.map(line => {
+                      const skuPart = line.sku ? ` (${line.sku})` : '';
+                      const lineNzd = (line.priceNzd || 0) * line.qty;
+                      return `<div style="display: flex; justify-content: space-between; padding-left: 12px; font-size: 11px; color: #64748B;">
+                        <span>${line.qty}x ${line.name}${skuPart}</span>
+                        <span>${formatCurrency(toDisplay(lineNzd), config.currency)}</span>
+                      </div>`;
+                    }).join('')}
+                  </div>`;
+                }).join('')}
+            </div>
+        </div>
+        ` : ''}
+
+        ${hwBreakdown ? `
+        <!-- Price Breakdown -->
+        <div class="section">
+            <h2 class="section-title">Price Breakdown</h2>
+            <div class="anchor-points">
+                <div class="anchor-item">
+                    <span class="anchor-details">Shade sail:</span>
+                    <span class="anchor-corner">${formatCurrency(toDisplay(sailNzd), config.currency)}</span>
+                </div>
+                ${resolvedHardwareMode === 'standard' ? `
+                <div class="anchor-item">
+                    <span class="anchor-details">Hardware Tensioning Kit:</span>
+                    <span class="anchor-corner" style="color: #307C31;">Included</span>
+                </div>
+                ` : ''}
+                ${resolvedHardwareMode === 'manual' && hwNzd > 0 ? `
+                <div class="anchor-item">
+                    <span class="anchor-details">Corner hardware:</span>
+                    <span class="anchor-corner">${formatCurrency(toDisplay(hwNzd), config.currency)}</span>
+                </div>
+                ` : ''}
+                <div class="anchor-item" style="border-top: 2px solid #01312D; border-bottom: none; margin-top: 4px; padding-top: 10px;">
+                    <span class="anchor-corner" style="font-size: 14px;">Total:</span>
+                    <span class="anchor-corner" style="font-size: 14px; color: #01312D;">${formatCurrency(calculations.totalPrice, config.currency)}</span>
+                </div>
+            </div>
+        </div>
+        ` : ''}
+
         <!-- Premium Quality Guarantee -->
         <div class="guarantee-section">
             <div class="guarantee-title">Premium Quality Guarantee</div>

@@ -799,10 +799,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       if (!it) return null;
                       return (
                         <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
-                          {it.image_url ? (
+                          {it.image_url && (
                             <img src={it.image_url} alt={it.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
-                          ) : (
-                            <div className="w-10 h-10 rounded bg-slate-200 flex-shrink-0" />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-semibold text-slate-900 truncate">{it.name}</div>
