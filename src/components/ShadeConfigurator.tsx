@@ -1259,10 +1259,11 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
           console.log('❌ No PDF URL available to add to line item');
         }
 
-        // Corner hardware line items (Manual mode: per corner; Standard: single pack label)
-        if (config.measurementOption === 'adjust') {
-          const mode = config.hardwareSelectionMode || 'standard';
-          metafieldProperties['Hardware Selection'] = mode === 'manual' ? 'Manual per corner' : 'Standard pack';
+        // Corner hardware line items
+        {
+          const mode = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+          const label = mode === 'manual' ? 'Manual per corner' : mode === 'standard' ? 'Standard pack' : 'No hardware';
+          metafieldProperties['Hardware Selection'] = label;
           if (mode === 'manual' && config.cornerHardware) {
             for (let i = 0; i < config.corners; i++) {
               const lines = config.cornerHardware[i] || [];
@@ -1621,11 +1622,7 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
   };
 
   // Helper function to check if a step should be skipped
-  const shouldSkipStep = (step: number): boolean => {
-    // Step 5 (Hardware Selection) - only shown when user provides precise measurements
-    if (step === 5) {
-      return config.measurementOption !== 'adjust';
-    }
+  const shouldSkipStep = (_step: number): boolean => {
     return false;
   };
 
@@ -1688,7 +1685,6 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
         // Heights are never required to complete this step - they can be added during review
         return allEdgesProvided;
       case 5: // Hardware Selection
-        if (config.measurementOption !== 'adjust') return true;
         if (config.hardwareSelectionMode === 'manual') {
           const ch = config.cornerHardware || {};
           for (let i = 0; i < config.corners; i++) {
@@ -1838,7 +1834,7 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
         }
         break;
       case 5: // Hardware Selection
-        if (config.measurementOption === 'adjust' && config.hardwareSelectionMode === 'manual') {
+        if (config.hardwareSelectionMode === 'manual') {
           const ch = config.cornerHardware || {};
           for (let i = 0; i < config.corners; i++) {
             if (!ch[i] || ch[i].length === 0) {
@@ -1972,13 +1968,16 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
         }
         return edgeCount === config.corners ? `${edgeCount} edge measurements entered` : `${edgeCount}/${config.corners} edges measured`;
       case 5: // Hardware Selection
-        if (config.measurementOption !== 'adjust') return 'Not required';
-        if (config.hardwareSelectionMode === 'manual') {
-          const ch = config.cornerHardware || {};
-          const configured = Array.from({ length: config.corners }, (_, i) => (ch[i]?.length || 0) > 0).filter(Boolean).length;
-          return `Manual (${configured}/${config.corners} corners)`;
+        {
+          const m = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+          if (m === 'manual') {
+            const ch = config.cornerHardware || {};
+            const configured = Array.from({ length: config.corners }, (_, i) => (ch[i]?.length || 0) > 0).filter(Boolean).length;
+            return `Manual (${configured}/${config.corners} corners)`;
+          }
+          if (m === 'none') return 'No hardware';
+          return 'Standard hardware pack';
         }
-        return 'Standard hardware pack';
       case 6: // Review
         return 'Ready for purchase';
       default:
@@ -2297,9 +2296,9 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
           )}
         </div>
 
-        <div className={`grid grid-cols-1 gap-8 ${openStep === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-8 ${(openStep === 4 || openStep === 5) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step (50% of 4 cols)
+          <div className={`space-y-2 min-h-0 ${(openStep === 4 || openStep === 5) // Dimensions or Hardware step (50% of 4 cols)
             ? 'lg:col-span-2'
             : (openStep >= 5 && !shouldSkipStep(5)) // Review step (66.7% of 3 cols when step 5 is not skipped)
               ? 'lg:col-span-2'
@@ -2427,8 +2426,31 @@ console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
             );
           })()}
 
-          {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
-          {(openStep >= 5 && (!shouldSkipStep(5) || openStep === 6)) && (
+          {/* Sticky Diagram for Hardware Step - Desktop Only */}
+          {openStep === 5 && !isMobile && (
+            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
+              <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                Sail Diagram
+              </h4>
+              <p className="text-sm text-slate-600 mb-3">
+                Hover over a corner below to preview which corner on the sail you are configuring.
+              </p>
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={true}
+                snapToGrid={true}
+                highlightedMeasurement={highlightedMeasurement}
+                highlightedCorner={highlightedCorner}
+                isMobile={isMobile}
+                measurementOption={config.measurementOption}
+                unit={config.unit}
+              />
+            </div>
+          )}
+
+          {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
+          {(openStep === 6) && (
             <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <PriceSummaryDisplay
                 config={config}

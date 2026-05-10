@@ -11,6 +11,8 @@ import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
+import { useHardwareCatalog, getDefaultPack } from '../../hooks/useHardwareCatalog';
+import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
 
 interface ReviewContentProps {
   config: ConfiguratorState;
@@ -35,6 +37,7 @@ interface ReviewContentProps {
   setShowLoadingOverlay: (loading: boolean) => void;
   quoteReference?: string | null;
   onSaveQuote?: () => void;
+  pricingSettingsMap?: Record<string, PricingSetting>;
 }
 
 export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
@@ -56,7 +59,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   loading,
   setLoading,
   setShowLoadingOverlay,
-  onSaveQuote
+  onSaveQuote,
+  pricingSettingsMap,
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
@@ -68,6 +72,24 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
+
+  const { items: hardwareItems, packs: hardwarePacks } = useHardwareCatalog();
+  const hardwareItemsById = useMemo(() => {
+    const m = new Map<string, typeof hardwareItems[number]>();
+    for (const it of hardwareItems) m.set(it.id, it);
+    return m;
+  }, [hardwareItems]);
+  const hardwareMode: 'standard' | 'manual' | 'none' =
+    config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+  const hardwareEdgeType = (config.edgeType as 'webbing' | 'cabled') || 'webbing';
+  const hardwarePack = getDefaultPack(hardwarePacks, hardwareEdgeType, config.corners);
+  const hardwarePricing = pricingSettingsMap
+    ? getPricingForCurrency(pricingSettingsMap, config.currency)
+    : { marketMarkup: 1, zonosDhlMarkup: 1, exchangeRate: 1, symbol: 'NZ$' };
+  const hardwareFactor = hardwarePricing.marketMarkup * hardwarePricing.exchangeRate
+    + (hardwarePricing.zonosDhlMarkup - 1) * hardwarePricing.exchangeRate;
+  const toHardwareDisplay = (nzd: number) => (Number(nzd) || 0) * hardwareFactor;
+  const hardwareOnlyDisplay = toHardwareDisplay(calculations.hardwareBreakdown?.hardwareOnlyPriceNzd || 0);
 
   console.log({
     config,
@@ -635,12 +657,12 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                         }
                       </span>
                     </div>
-                    {config.measurementOption === 'adjust' && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Hardware:</span>
-                        <span className="font-medium text-slate-900">Included</span>
-                      </div>
-                    )}
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Hardware:</span>
+                      <span className="font-medium text-slate-900">
+                        {hardwareMode === 'standard' ? 'Standard pack (included)' : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
+                      </span>
+                    </div>
                   </div>
                 </Card>
               </AccordionItem>
@@ -732,35 +754,123 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     }
                   </span>
                 </div>
-                {config.measurementOption === 'adjust' && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Tensioning Hardware Included:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900">Yes</span>
-                      {(() => {
-                        const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
-                          3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
-                          4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
-                          5: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/5_Corner_Sails.jpg?v=1724717405',
-                          6: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-                          7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-                          8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-                        };
-                        const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
-                        return hardwarePackImageUrl ? (
-                          <img
-                            src={hardwarePackImageUrl}
-                            alt={`${config.corners} Corner Hardware Pack`}
-                            className="w-8 h-8 rounded border border-slate-300 shadow-sm object-cover"
-                          />
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Hardware:</span>
+                  <span className="font-medium text-slate-900">
+                    {hardwareMode === 'standard' ? 'Standard pack (included)' : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
+                  </span>
+                </div>
               </div>
             </Card>
             )}
+
+            {/* Hardware Breakdown */}
+            <Card className="p-4 mb-4">
+              <h3 className="text-base font-bold text-slate-900 mb-3">Hardware Breakdown</h3>
+              {hardwareMode === 'standard' && hardwarePack && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-semibold text-slate-900">{hardwarePack.name}</div>
+                    <span className="text-xs font-semibold text-[#307C31] bg-[#307C31]/10 px-2 py-0.5 rounded-full">Included in sail price</span>
+                  </div>
+                  <div className="space-y-2 mt-2">
+                    {hardwarePack.items.map((p, idx) => {
+                      const it = hardwareItemsById.get(p.catalog_id);
+                      if (!it) return null;
+                      return (
+                        <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
+                          {it.image_url ? (
+                            <img src={it.image_url} alt={it.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-slate-200 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-slate-900 truncate">{it.name}</div>
+                            {it.short_description && (
+                              <div className="text-xs text-slate-500 truncate">{it.short_description}</div>
+                            )}
+                          </div>
+                          <div className="text-xs font-semibold text-slate-700 flex-shrink-0">× {p.qty}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {hardwareMode === 'manual' && (
+                <div className="space-y-3">
+                  {Array.from({ length: config.corners }, (_, i) => {
+                    const letter = String.fromCharCode(65 + i);
+                    const lines = (config.cornerHardware || {})[i] || [];
+                    const nzd = lines.reduce((s, l) => s + l.priceNzd * l.qty, 0);
+                    return (
+                      <div key={i} className="rounded-lg border border-slate-200 p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">{letter}</div>
+                            <div className="text-sm font-semibold text-slate-900">Corner {letter}</div>
+                          </div>
+                          <div className="text-sm font-bold text-[#D97706]">{formatCurrency(toHardwareDisplay(nzd), config.currency)}</div>
+                        </div>
+                        {lines.length === 0 ? (
+                          <div className="text-xs text-slate-500 ml-9">No hardware selected</div>
+                        ) : (
+                          <ul className="text-xs text-slate-700 ml-9 space-y-0.5">
+                            {lines.map((l, li) => (
+                              <li key={li} className="flex justify-between gap-2">
+                                <span>{l.qty}× {l.name}{l.sku ? ` (${l.sku})` : ''}</span>
+                                <span className="text-slate-500">{formatCurrency(toHardwareDisplay(l.priceNzd * l.qty), config.currency)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between items-center rounded-lg bg-slate-100 px-3 py-2">
+                    <span className="text-sm font-semibold text-slate-700">Hardware subtotal</span>
+                    <span className="text-base font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
+                  </div>
+                </div>
+              )}
+              {hardwareMode === 'none' && (
+                <div className="text-sm text-slate-700">No hardware — the sail ships with corner D-rings sewn in only.</div>
+              )}
+            </Card>
+
+            {/* Price Breakdown */}
+            <Card className="p-4 mb-4">
+              <h3 className="text-base font-bold text-slate-900 mb-3">Price Breakdown</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Shade sail:</span>
+                  <span className="font-semibold text-slate-900">
+                    {formatCurrency(
+                      hardwareMode === 'manual'
+                        ? calculations.totalPrice - Math.round(hardwareOnlyDisplay)
+                        : calculations.totalPrice,
+                      config.currency,
+                    )}
+                  </span>
+                </div>
+                {hardwareMode === 'manual' && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Hardware:</span>
+                    <span className="font-semibold text-slate-900">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
+                  </div>
+                )}
+                {hardwareMode === 'standard' && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-500">Hardware pack included</span>
+                    <span className="text-slate-500">Included</span>
+                  </div>
+                )}
+                <div className="flex justify-between pt-2 border-t border-slate-200">
+                  <span className="text-slate-900 font-semibold">Total:</span>
+                  <span className="font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
+                </div>
+              </div>
+            </Card>
 
             {/* Invalid Measurement Warning - Show prominently when area is 0 with all measurements AND diagonals are entered (or not required) */}
             {calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered) && (

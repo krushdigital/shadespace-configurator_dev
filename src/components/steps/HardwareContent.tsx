@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { SlidersHorizontal, Package, CheckCircle2, Wrench } from 'lucide-react';
+import { SlidersHorizontal, Package, CheckCircle2, Ban } from 'lucide-react';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
-import { useHardwareCatalog, getDefaultPack } from '../../hooks/useHardwareCatalog';
+import { useHardwareCatalog, getDefaultPack, HardwareItem } from '../../hooks/useHardwareCatalog';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
 
@@ -17,6 +17,7 @@ interface HardwareContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   pricingSettingsMap?: Record<string, PricingSetting>;
+  setHighlightedCorner?: (corner: number | null) => void;
 }
 
 export function HardwareContent({
@@ -28,10 +29,13 @@ export function HardwareContent({
   nextStepTitle,
   showBackButton,
   pricingSettingsMap,
+  setHighlightedCorner,
 }: HardwareContentProps) {
   const { items, categories, packs, loading } = useHardwareCatalog();
   const [modalCorner, setModalCorner] = useState<number | null>(null);
-  const mode = config.hardwareSelectionMode || 'standard';
+  const mode: 'standard' | 'manual' | 'none' =
+    config.hardwareSelectionMode
+    ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
   const edgeType = (config.edgeType as 'webbing' | 'cabled') || 'webbing';
   const pack = getDefaultPack(packs, edgeType, config.corners);
 
@@ -46,10 +50,14 @@ export function HardwareContent({
 
   const cornerHardware = config.cornerHardware || {};
   const configuredCount = Array.from({ length: config.corners }, (_, i) => cornerHardware[i]?.length || 0).filter(n => n > 0).length;
-  const allConfigured = mode === 'standard' || configuredCount === config.corners;
+  const allManualConfigured = mode === 'manual' ? configuredCount === config.corners : true;
 
-  const setMode = (next: 'standard' | 'manual') => {
-    updateConfig({ hardwareSelectionMode: next });
+  const setMode = (next: 'standard' | 'manual' | 'none') => {
+    const updates: Partial<ConfiguratorState> = { hardwareSelectionMode: next };
+    if (next !== 'manual') {
+      updates.cornerHardware = {};
+    }
+    updateConfig(updates);
   };
 
   const openCornerModal = (cornerIndex: number) => setModalCorner(cornerIndex);
@@ -84,25 +92,42 @@ export function HardwareContent({
     return formatCurrency(toDisplayPrice(nzd), config.currency);
   };
 
+  const itemsById = React.useMemo(() => {
+    const m = new Map<string, HardwareItem>();
+    for (const it of items) m.set(it.id, it);
+    return m;
+  }, [items]);
+
+  const packLines = React.useMemo(() => {
+    if (!pack) return [];
+    return pack.items
+      .map(p => ({ item: itemsById.get(p.catalog_id), qty: p.qty }))
+      .filter((row): row is { item: HardwareItem; qty: number } => !!row.item);
+  }, [pack, itemsById]);
+
+  const handleHoverCorner = (i: number | null) => {
+    if (setHighlightedCorner) setHighlightedCorner(i);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Corner Hardware Selection</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Choose the standard pack or manually pick hardware for each corner.
+            Choose a standard pack, manually pick per corner, or continue without hardware.
           </p>
         </div>
         {mode === 'manual' && (
           <span className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-            allConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+            allManualConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
           }`}>
             {configuredCount}/{config.corners} configured
           </span>
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <button
           type="button"
           onClick={() => setMode('standard')}
@@ -115,12 +140,8 @@ export function HardwareContent({
             {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
           </div>
           <div className="mt-2 text-sm font-bold text-slate-900">Standard Hardware Pack</div>
-          <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail — same pack every corner.</div>
-          {pack?.price_nzd_override != null && (
-            <div className="mt-2 text-sm font-bold text-[#D97706]">
-              {formatCurrency(toDisplayPrice(Number(pack.price_nzd_override)), config.currency)}
-            </div>
-          )}
+          <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail, included in sail price.</div>
+          <div className="mt-2 text-xs font-semibold text-[#307C31]">Included</div>
         </button>
 
         <button
@@ -135,13 +156,70 @@ export function HardwareContent({
             {mode === 'manual' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
           </div>
           <div className="mt-2 text-sm font-bold text-slate-900">Manual per corner</div>
-          <div className="mt-0.5 text-xs text-slate-600">Pick specific hardware for each corner of your sail.</div>
+          <div className="mt-0.5 text-xs text-slate-600">Pick specific hardware — priced separately.</div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode('none')}
+          className={`rounded-xl border-2 p-4 text-left transition ${
+            mode === 'none' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <Ban className="h-6 w-6 text-[#307C31]" />
+            {mode === 'none' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
+          </div>
+          <div className="mt-2 text-sm font-bold text-slate-900">No Hardware</div>
+          <div className="mt-0.5 text-xs text-slate-600">Sail only — corner D-rings only, source hardware separately.</div>
         </button>
       </div>
 
+      {mode === 'standard' && pack && (
+        <Card className="p-4">
+          <div className="flex items-start gap-3 mb-3">
+            <Package className="h-5 w-5 text-[#307C31] flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="text-sm font-bold text-slate-900">{pack.name}</div>
+              <div className="text-xs text-slate-600">Applied evenly across all {config.corners} corners.</div>
+            </div>
+            <div className="text-xs font-semibold text-[#307C31] flex-shrink-0 bg-[#307C31]/10 px-2 py-0.5 rounded-full">
+              Included in sail price
+            </div>
+          </div>
+          {packLines.length > 0 && (
+            <div className="space-y-2 mt-3 border-t border-slate-200 pt-3">
+              <div className="text-xs font-semibold text-slate-700 mb-1">What's included:</div>
+              {packLines.map(({ item, qty }) => (
+                <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded bg-slate-200 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-slate-900 truncate">{item.name}</div>
+                    {item.short_description && (
+                      <div className="text-xs text-slate-500 truncate">{item.short_description}</div>
+                    )}
+                  </div>
+                  <div className="text-xs font-semibold text-slate-700 flex-shrink-0">× {qty}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {mode === 'standard' && !pack && (
+        <Card className="p-4">
+          <div className="text-sm text-slate-600">Standard pack details are unavailable — please contact support.</div>
+        </Card>
+      )}
+
       {mode === 'manual' && (
         <Card className="p-4">
-          <p className="mb-3 text-sm text-slate-600">Click on a corner below or on the diagram to select hardware.</p>
+          <p className="mb-3 text-sm text-slate-600">Hover over a corner row to highlight it on the diagram. Click to select hardware.</p>
           <div className="space-y-2">
             {Array.from({ length: config.corners }, (_, idx) => {
               const letter = String.fromCharCode(65 + idx);
@@ -152,6 +230,10 @@ export function HardwareContent({
                   key={idx}
                   type="button"
                   onClick={() => openCornerModal(idx)}
+                  onMouseEnter={() => handleHoverCorner(idx)}
+                  onMouseLeave={() => handleHoverCorner(null)}
+                  onFocus={() => handleHoverCorner(idx)}
+                  onBlur={() => handleHoverCorner(null)}
                   className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition ${
                     isConfigured ? 'border-emerald-200 bg-emerald-50/40' : 'border-amber-200 bg-amber-50/60'
                   }`}
@@ -191,26 +273,23 @@ export function HardwareContent({
 
           {config.corners > 0 && (
             <div className="mt-4 rounded-xl bg-slate-100 p-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-700">Total Hardware Cost (all corners):</span>
+              <span className="text-sm font-semibold text-slate-700">Hardware Cost (added to total):</span>
               <span className="text-lg font-bold text-[#D97706]">{formatCurrency(toDisplayPrice(calculations.hardwareBreakdown?.subtotalNzd || 0), config.currency)}</span>
             </div>
           )}
         </Card>
       )}
 
-      {mode === 'standard' && pack && (
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <Wrench className="h-5 w-5 text-[#307C31] flex-shrink-0" />
-            <div className="flex-1">
-              <div className="text-sm font-bold text-slate-900">{pack.name}</div>
-              <div className="text-xs text-slate-600">Applied evenly across all {config.corners} corners.</div>
-            </div>
-            {pack.price_nzd_override != null && (
-              <div className="text-lg font-bold text-[#D97706] flex-shrink-0">
-                {formatCurrency(toDisplayPrice(Number(pack.price_nzd_override)), config.currency)}
+      {mode === 'none' && (
+        <Card className="p-4 border-amber-200 bg-amber-50/60">
+          <div className="flex items-start gap-3">
+            <Ban className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="text-sm font-bold text-slate-900">No hardware selected</div>
+              <div className="text-xs text-slate-700 mt-1">
+                Your sail will ship with corner D-rings sewn in. You will need to source tensioning hardware separately.
               </div>
-            )}
+            </div>
           </div>
         </Card>
       )}
@@ -219,7 +298,7 @@ export function HardwareContent({
         {showBackButton ? <Button variant="secondary" onClick={onPrev}>Back</Button> : <span />}
         <Button
           onClick={onNext}
-          disabled={mode === 'manual' && !allConfigured}
+          disabled={mode === 'manual' && !allManualConfigured}
           className="min-w-[180px]"
         >
           {nextStepTitle ? `Next: ${nextStepTitle}` : 'Next'}
