@@ -14,6 +14,7 @@ import { ExclusionManager } from '../components/admin/ExclusionManager';
 import { FabricColorManager } from '../components/admin/FabricColorManager';
 import { EmailStudio } from '../components/admin/EmailStudio';
 import { HardwareSyncCard } from '../components/admin/HardwareSyncCard';
+import { HardwareCatalogManager } from '../components/admin/HardwareCatalogManager';
 
 import type { AdminProfile } from '../hooks/useAdminProfile';
 import { UserManagement } from '../components/admin/UserManagement';
@@ -23,7 +24,7 @@ interface AdminDashboardProps {
   profile: AdminProfile;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'team';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'hardware' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'team';
 
 const detectTimezone = (): string => {
   try {
@@ -57,6 +58,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
     { id: 'events', label: 'User Events' },
     { id: 'funnel', label: 'Funnel & Insights' },
     { id: 'fabrics', label: 'Fabrics & Colors' },
+    { id: 'hardware', label: 'Hardware Catalog' },
     { id: 'pricing', label: 'Currency Pricing' },
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
@@ -178,6 +180,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
         {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} excludeInternal={excludeInternal} />}
 
         {activeTab === 'fabrics' && <FabricColorManager />}
+
+        {activeTab === 'hardware' && (
+          <div className="space-y-6">
+            <HardwareSyncCard />
+            <HardwareCatalogManager />
+          </div>
+        )}
 
         {activeTab === 'pricing' && <PricingManager />}
 

@@ -23,6 +23,12 @@ export interface HardwareItem {
   deduction_mm: number;
   edge_types: string[];
   display_order: number;
+  admin_hidden?: boolean;
+  is_featured?: boolean;
+  admin_category_override?: string | null;
+  merged_into_id?: string | null;
+  is_active?: boolean;
+  last_synced_at?: string | null;
 }
 
 export interface HardwarePack {
@@ -52,7 +58,13 @@ export function useHardwareCatalog(): HardwareCatalogData {
     (async () => {
       const [cats, items, packs] = await Promise.all([
         supabase.from('hardware_categories').select('id,label,display_order').eq('is_active', true).order('display_order'),
-        supabase.from('hardware_catalog').select('*').eq('is_active', true).order('display_order'),
+        supabase
+          .from('hardware_catalog')
+          .select('*')
+          .eq('is_active', true)
+          .eq('admin_hidden', false)
+          .is('merged_into_id', null)
+          .order('display_order'),
         supabase.from('hardware_packs').select('*').eq('is_active', true),
       ]);
       if (cancelled) return;
@@ -80,13 +92,25 @@ export function getDefaultPack(
   return packs.find(p => p.edge_type === edgeType && p.corners === corners) || null;
 }
 
+function resolvedCategoryId(it: HardwareItem): string {
+  return it.admin_category_override || it.category_id || '_uncategorised';
+}
+
 export function groupItemsByCategory(items: HardwareItem[], categories: HardwareCategory[]): Array<{ category: HardwareCategory; items: HardwareItem[] }> {
   const map = new Map<string, HardwareItem[]>();
   for (const it of items) {
-    const key = it.category_id || '_uncategorised';
+    const key = resolvedCategoryId(it);
     const arr = map.get(key) || [];
     arr.push(it);
     map.set(key, arr);
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => {
+      const fa = a.is_featured ? 0 : 1;
+      const fb = b.is_featured ? 0 : 1;
+      if (fa !== fb) return fa - fb;
+      return (a.display_order || 0) - (b.display_order || 0);
+    });
   }
   const out: Array<{ category: HardwareCategory; items: HardwareItem[] }> = [];
   for (const cat of categories) {
