@@ -6,10 +6,13 @@ import puppeteer from "npm:puppeteer@21.5.0"
 
 interface CornerHardwareLine {
   catalog_id?: string;
+  catalogId?: string;
   name: string;
   sku?: string;
   qty: number;
   priceNzd: number;
+  livePrice?: number;
+  livePriceCurrency?: string;
 }
 
 interface ConfiguratorState {
@@ -43,6 +46,10 @@ interface ShadeCalculations {
     perCornerNzd: number[];
     sailOnlyPriceNzd: number;
     hardwareOnlyPriceNzd: number;
+    liveCurrency?: string;
+    hardwareOnlyLivePrice?: number;
+    perCornerLivePrice?: number[];
+    standardPackLivePrice?: number | null;
   };
   totalPrice: number;
   webbingWidth: number;
@@ -209,11 +216,9 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
   const resolvedHardwareMode: 'standard' | 'manual' | 'none' =
     config.hardwareSelectionMode || (config.measurementOption === 'adjust' ? 'standard' : 'none');
   const hwBreakdown = calculations.hardwareBreakdown;
-  const sailNzd = hwBreakdown?.sailOnlyPriceNzd || 0;
-  const hwNzd = hwBreakdown?.hardwareOnlyPriceNzd || 0;
-  const baseTotalNzd = sailNzd + hwNzd;
-  const combinedFactor = baseTotalNzd > 0 ? calculations.totalPrice / baseTotalNzd : 1;
-  const toDisplay = (nzd: number) => nzd * combinedFactor;
+  const hwLiveTotal = hwBreakdown?.hardwareOnlyLivePrice ?? 0;
+  const perCornerLive = hwBreakdown?.perCornerLivePrice ?? [];
+  const sailDisplay = Math.max(0, calculations.totalPrice - Math.round(hwLiveTotal));
 
   return `
 <!DOCTYPE html>
@@ -667,19 +672,21 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                 ${Array.from({ length: config.corners }, (_, i) => {
                   const letter = String.fromCharCode(65 + i);
                   const lines = (config.cornerHardware && config.cornerHardware[i]) || [];
-                  const cornerSubtotalNzd = hwBreakdown?.perCornerNzd?.[i] || 0;
+                  const cornerLive = perCornerLive[i] ?? 0;
                   return `
                   <div style="padding: 10px 0; border-bottom: 1px solid #E2E8F0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                       <span class="anchor-corner">Corner ${letter}</span>
-                      <span class="anchor-corner">${formatCurrency(toDisplay(cornerSubtotalNzd), config.currency)}</span>
+                      <span class="anchor-corner">${formatCurrency(cornerLive, config.currency)}</span>
                     </div>
                     ${lines.length === 0 ? '<div class="anchor-details" style="padding-left: 12px;">No hardware selected</div>' : lines.map(line => {
                       const skuPart = line.sku ? ` (${line.sku})` : '';
-                      const lineNzd = (line.priceNzd || 0) * line.qty;
+                      const lineLive = line.livePriceCurrency === config.currency && line.livePrice != null
+                        ? line.livePrice * line.qty
+                        : 0;
                       return `<div style="display: flex; justify-content: space-between; padding-left: 12px; font-size: 11px; color: #64748B;">
                         <span>${line.qty}x ${line.name}${skuPart}</span>
-                        <span>${formatCurrency(toDisplay(lineNzd), config.currency)}</span>
+                        <span>${formatCurrency(lineLive, config.currency)}</span>
                       </div>`;
                     }).join('')}
                   </div>`;
@@ -695,7 +702,7 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
             <div class="anchor-points">
                 <div class="anchor-item">
                     <span class="anchor-details">Shade sail:</span>
-                    <span class="anchor-corner">${formatCurrency(toDisplay(sailNzd), config.currency)}</span>
+                    <span class="anchor-corner">${formatCurrency(sailDisplay, config.currency)}</span>
                 </div>
                 ${resolvedHardwareMode === 'standard' ? `
                 <div class="anchor-item">
@@ -703,10 +710,10 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                     <span class="anchor-corner" style="color: #307C31;">Included</span>
                 </div>
                 ` : ''}
-                ${resolvedHardwareMode === 'manual' && hwNzd > 0 ? `
+                ${resolvedHardwareMode === 'manual' && hwLiveTotal > 0 ? `
                 <div class="anchor-item">
                     <span class="anchor-details">Corner hardware:</span>
-                    <span class="anchor-corner">${formatCurrency(toDisplay(hwNzd), config.currency)}</span>
+                    <span class="anchor-corner">${formatCurrency(hwLiveTotal, config.currency)}</span>
                 </div>
                 ` : ''}
                 <div class="anchor-item" style="border-top: 2px solid #01312D; border-bottom: none; margin-top: 4px; padding-top: 10px;">

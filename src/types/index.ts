@@ -34,6 +34,8 @@ export interface CornerHardwareLine {
   name: string;
   sku: string | null;
   priceNzd: number;
+  livePrice?: number;
+  livePriceCurrency?: string;
 }
 
 export interface ShadeCalculations {
@@ -48,6 +50,10 @@ export interface ShadeCalculations {
     perCornerNzd: number[];
     sailOnlyPriceNzd: number;
     hardwareOnlyPriceNzd: number;
+    liveCurrency?: string;
+    hardwareOnlyLivePrice?: number;
+    perCornerLivePrice?: number[];
+    standardPackLivePrice?: number | null;
   };
   totalPrice: number;
   webbingWidth: number;

@@ -11,7 +11,7 @@ import { FABRICS } from '../../data/fabrics';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
-import { useHardwareCatalog, getDefaultPack } from '../../hooks/useHardwareCatalog';
+import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
 import { StandardPackPreview } from '../StandardPackPreview';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
 
@@ -87,10 +87,19 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const hardwarePricing = pricingSettingsMap
     ? getPricingForCurrency(pricingSettingsMap, config.currency)
     : { marketMarkup: 1, zonosDhlMarkup: 1, exchangeRate: 1, symbol: 'NZ$' };
-  const hardwareFactor = hardwarePricing.marketMarkup * hardwarePricing.exchangeRate
-    + (hardwarePricing.zonosDhlMarkup - 1) * hardwarePricing.exchangeRate;
-  const toHardwareDisplay = (nzd: number) => (Number(nzd) || 0) * hardwareFactor;
-  const hardwareOnlyDisplay = toHardwareDisplay(calculations.hardwareBreakdown?.hardwareOnlyPriceNzd || 0);
+  const hardwareOnlyDisplay = calculations.hardwareBreakdown?.hardwareOnlyLivePrice
+    ?? ((calculations.hardwareBreakdown?.hardwareOnlyPriceNzd || 0) * hardwarePricing.exchangeRate);
+  const perCornerLiveDisplay = calculations.hardwareBreakdown?.perCornerLivePrice ?? [];
+  const livePriceForLine = (line: { catalogId: string; priceNzd: number; qty: number; livePrice?: number; livePriceCurrency?: string }) => {
+    const catalogItem = hardwareItemsById.get(line.catalogId);
+    if (catalogItem) {
+      return getLiveHardwarePrice(catalogItem, config.currency, hardwarePricing.exchangeRate) * line.qty;
+    }
+    if (line.livePriceCurrency === config.currency && line.livePrice != null) {
+      return line.livePrice * line.qty;
+    }
+    return line.priceNzd * line.qty * hardwarePricing.exchangeRate;
+  };
 
   console.log({
     config,
@@ -820,7 +829,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   {Array.from({ length: config.corners }, (_, i) => {
                     const letter = String.fromCharCode(65 + i);
                     const lines = (config.cornerHardware || {})[i] || [];
-                    const nzd = lines.reduce((s, l) => s + l.priceNzd * l.qty, 0);
+                    const cornerLive = perCornerLiveDisplay[i] ?? 0;
                     return (
                       <div key={i} className="rounded-lg border border-slate-200 p-3">
                         <div className="flex items-center justify-between mb-1">
@@ -828,7 +837,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-xs font-bold text-white">{letter}</div>
                             <div className="text-sm font-semibold text-slate-900">Corner {letter}</div>
                           </div>
-                          <div className="text-sm font-bold text-[#D97706]">{formatCurrency(toHardwareDisplay(nzd), config.currency)}</div>
+                          <div className="text-sm font-bold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
                         </div>
                         {lines.length === 0 ? (
                           <div className="text-xs text-slate-500 ml-9">No hardware selected</div>
@@ -837,7 +846,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                             {lines.map((l, li) => (
                               <li key={li} className="flex justify-between gap-2">
                                 <span>{l.qty}× {l.name}{l.sku ? ` (${l.sku})` : ''}</span>
-                                <span className="text-slate-500">{formatCurrency(toHardwareDisplay(l.priceNzd * l.qty), config.currency)}</span>
+                                <span className="text-slate-500">{formatCurrency(livePriceForLine(l), config.currency)}</span>
                               </li>
                             ))}
                           </ul>

@@ -20,6 +20,8 @@ export interface HardwareItem {
   category_id: string | null;
   price_nzd: number;
   compare_at_nzd: number | null;
+  prices?: Record<string, number> | null;
+  presentment_synced_at?: string | null;
   deduction_mm: number;
   edge_types: string[];
   display_order: number;
@@ -38,6 +40,40 @@ export interface HardwarePack {
   corners: number;
   items: Array<{ catalog_id: string; qty: number }>;
   price_nzd_override: number | null;
+  prices?: Record<string, number> | null;
+}
+
+/**
+ * Live hardware price in the buyer's currency.
+ * Returns the Shopify presentment price captured by the sync function.
+ * Falls back to NZD * exchangeRate when Shopify has not yet provided a
+ * per-currency price (legacy rows without shopify_variant_id).
+ */
+export function getLiveHardwarePrice(
+  item: Pick<HardwareItem, 'prices' | 'price_nzd'>,
+  currency: string,
+  exchangeRateFromNzd: number = 1,
+): number {
+  const map = item.prices || {};
+  const direct = map[currency];
+  if (typeof direct === 'number' && direct > 0) return direct;
+  const nzd = Number(item.price_nzd) || 0;
+  if (currency === 'NZD') return nzd;
+  return nzd * exchangeRateFromNzd;
+}
+
+export function getLivePackPrice(
+  pack: Pick<HardwarePack, 'prices' | 'price_nzd_override'>,
+  currency: string,
+  exchangeRateFromNzd: number = 1,
+): number | null {
+  const map = pack.prices || {};
+  const direct = map[currency];
+  if (typeof direct === 'number' && direct > 0) return direct;
+  if (pack.price_nzd_override == null) return null;
+  const nzd = Number(pack.price_nzd_override) || 0;
+  if (currency === 'NZD') return nzd;
+  return nzd * exchangeRateFromNzd;
 }
 
 export interface HardwareCatalogData {

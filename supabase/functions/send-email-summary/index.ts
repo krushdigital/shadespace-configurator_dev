@@ -79,11 +79,9 @@ function generateEmailHTML(data: any): string {
 
   const resolvedHardwareMode: 'standard' | 'manual' | 'none' =
     hardwareSelectionMode || (measurementOption === 'adjust' ? 'standard' : 'none');
-  const sailNzd = hardwareBreakdown?.sailOnlyPriceNzd || 0;
-  const hwNzd = hardwareBreakdown?.hardwareOnlyPriceNzd || 0;
-  const baseTotalNzd = sailNzd + hwNzd;
-  const combinedFactor = baseTotalNzd > 0 ? totalPrice / baseTotalNzd : 1;
-  const toDisplay = (nzd: number) => nzd * combinedFactor;
+  const hwLiveTotal = hardwareBreakdown?.hardwareOnlyLivePrice ?? 0;
+  const perCornerLive: number[] = hardwareBreakdown?.perCornerLivePrice ?? [];
+  const sailDisplay = Math.max(0, totalPrice - Math.round(hwLiveTotal));
 
   const edgesRows: Array<{ label: string; value: string }> = Array.isArray(backendEdgeMeasurements)
     ? backendEdgeMeasurements.map((m: any) => ({ label: m.label || m.key || '', value: m.value || '' }))
@@ -258,23 +256,25 @@ function generateEmailHTML(data: any): string {
         ${Array.from({ length: corners }, (_, i) => {
           const letter = String.fromCharCode(65 + i);
           const lines = cornerHardware[i] || cornerHardware[String(i)] || [];
-          const cornerSubtotalNzd = hardwareBreakdown?.perCornerNzd?.[i] || 0;
+          const cornerLive = perCornerLive[i] ?? 0;
           return `
           <div style="padding: 10px 0; border-bottom: 1px solid #E2E8F0;">
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="color: #01312D; font-weight: bold; font-size: 14px;">Corner ${letter}</td>
-                <td style="color: #01312D; font-weight: bold; font-size: 14px; text-align: right;">${formatCurrency(toDisplay(cornerSubtotalNzd), currency)}</td>
+                <td style="color: #01312D; font-weight: bold; font-size: 14px; text-align: right;">${formatCurrency(cornerLive, currency)}</td>
               </tr>
             </table>
             ${lines.length === 0 ? '<div style="padding-left: 12px; font-size: 12px; color: #64748B;">No hardware selected</div>' : (lines as any[]).map(line => {
               const skuPart = line.sku ? ` (${line.sku})` : '';
-              const lineNzd = (line.priceNzd || 0) * line.qty;
+              const lineLive = line.livePriceCurrency === currency && line.livePrice != null
+                ? line.livePrice * line.qty
+                : 0;
               return `
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 4px;">
                 <tr>
                   <td style="padding-left: 12px; font-size: 12px; color: #64748B;">${line.qty}x ${line.name}${skuPart}</td>
-                  <td style="font-size: 12px; color: #64748B; text-align: right;">${formatCurrency(toDisplay(lineNzd), currency)}</td>
+                  <td style="font-size: 12px; color: #64748B; text-align: right;">${formatCurrency(lineLive, currency)}</td>
                 </tr>
               </table>`;
             }).join('')}
@@ -292,7 +292,7 @@ function generateEmailHTML(data: any): string {
         <table width="100%" cellpadding="5" cellspacing="0" style="font-size: 14px;">
           <tr>
             <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Shade sail:</td>
-            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${formatCurrency(toDisplay(sailNzd), currency)}</td>
+            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${formatCurrency(sailDisplay, currency)}</td>
           </tr>
           ${resolvedHardwareMode === 'standard' ? `
           <tr>
@@ -300,10 +300,10 @@ function generateEmailHTML(data: any): string {
             <td style="color: #307C31; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">Included</td>
           </tr>
           ` : ''}
-          ${resolvedHardwareMode === 'manual' && hwNzd > 0 ? `
+          ${resolvedHardwareMode === 'manual' && hwLiveTotal > 0 ? `
           <tr>
             <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Corner hardware:</td>
-            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${formatCurrency(toDisplay(hwNzd), currency)}</td>
+            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${formatCurrency(hwLiveTotal, currency)}</td>
           </tr>
           ` : ''}
           <tr>

@@ -4,7 +4,7 @@ import { Button } from './ui/Button';
 import { formatCurrency } from '../utils/currencyFormatter';
 import type { CornerHardwareLine } from '../types';
 import type { HardwareItem, HardwareCategory, HardwarePack } from '../hooks/useHardwareCatalog';
-import { groupItemsByCategory, useHardwareSearch } from '../hooks/useHardwareCatalog';
+import { groupItemsByCategory, useHardwareSearch, getLiveHardwarePrice } from '../hooks/useHardwareCatalog';
 import { getPricingForCurrency, PricingSetting } from '../hooks/usePricingSettings';
 
 interface HardwareSelectionModalProps {
@@ -59,12 +59,8 @@ export function HardwareSelectionModal({
     ? getPricingForCurrency(pricingSettingsMap, currency)
     : { marketMarkup: 1, zonosDhlMarkup: 1, exchangeRate: 1, symbol: 'NZ$' };
 
-  const toDisplayPrice = (priceNzd: number) => {
-    const base = Number(priceNzd) || 0;
-    const marketFactor = pricing.marketMarkup * pricing.exchangeRate;
-    const zonosFactor = (pricing.zonosDhlMarkup - 1) * pricing.exchangeRate;
-    return base * (marketFactor + zonosFactor);
-  };
+  const toDisplayPrice = (item: HardwareItem) =>
+    getLiveHardwarePrice(item, currency, pricing.exchangeRate);
 
   const filtered = useHardwareSearch(items, query);
   const grouped = useMemo(() => groupItemsByCategory(filtered, categories), [filtered, categories]);
@@ -91,13 +87,12 @@ export function HardwareSelectionModal({
     });
   };
 
-  const cornerTotalNzd = useMemo(() => {
+  const cornerTotalDisplay = useMemo(() => {
     let sum = 0;
-    for (const line of draft.values()) sum += line.item.price_nzd * line.qty;
+    for (const line of draft.values()) sum += toDisplayPrice(line.item) * line.qty;
     return sum;
-  }, [draft]);
-
-  const cornerTotalDisplay = toDisplayPrice(cornerTotalNzd);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, currency, pricingSettingsMap]);
   const canAdd = draft.size > 0;
 
   const handleConfirm = () => {
@@ -107,6 +102,8 @@ export function HardwareSelectionModal({
       name: d.item.name,
       sku: d.item.sku,
       priceNzd: Number(d.item.price_nzd),
+      livePrice: toDisplayPrice(d.item),
+      livePriceCurrency: currency,
     }));
     onConfirm(lines, applyToAll);
   };
@@ -164,7 +161,7 @@ export function HardwareSelectionModal({
                 {group.items.map(item => {
                   const selected = draft.has(item.id);
                   const draftLine = draft.get(item.id);
-                  const displayPrice = toDisplayPrice(Number(item.price_nzd));
+                  const displayPrice = toDisplayPrice(item);
                   return (
                     <div
                       key={item.id}
@@ -247,7 +244,7 @@ export function HardwareSelectionModal({
                 <div><span className="font-semibold text-slate-600">SKU:</span> {hoverItem.sku}</div>
               )}
             </div>
-            <div className="mt-3 text-lg font-bold text-[#D97706]">{formatCurrency(toDisplayPrice(Number(hoverItem.price_nzd)), currency)}</div>
+            <div className="mt-3 text-lg font-bold text-[#D97706]">{formatCurrency(toDisplayPrice(hoverItem), currency)}</div>
           </div>
         )}
 

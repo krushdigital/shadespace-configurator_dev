@@ -7,7 +7,7 @@ import { HardwareSelectionModal } from '../HardwareSelectionModal';
 import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
 import { useHardwareCatalog, getDefaultPack, HardwareItem } from '../../hooks/useHardwareCatalog';
 import { formatCurrency } from '../../utils/currencyFormatter';
-import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
+import { PricingSetting } from '../../hooks/usePricingSettings';
 
 interface HardwareContentProps {
   config: ConfiguratorState;
@@ -52,15 +52,6 @@ export function HardwareContent({
     }
   }, [allowNone, allowStandard, config.hardwareSelectionMode, updateConfig]);
 
-  const pricing = pricingSettingsMap
-    ? getPricingForCurrency(pricingSettingsMap, config.currency)
-    : { marketMarkup: 1, zonosDhlMarkup: 1, exchangeRate: 1, symbol: 'NZ$' };
-  const toDisplayPrice = (priceNzd: number) => {
-    const base = Number(priceNzd) || 0;
-    const factor = pricing.marketMarkup * pricing.exchangeRate + (pricing.zonosDhlMarkup - 1) * pricing.exchangeRate;
-    return base * factor;
-  };
-
   const cornerHardware = config.cornerHardware || {};
   const configuredCount = Array.from({ length: config.corners }, (_, i) => cornerHardware[i]?.length || 0).filter(n => n > 0).length;
   const allManualConfigured = mode === 'manual' ? configuredCount === config.corners : true;
@@ -101,9 +92,8 @@ export function HardwareContent({
   };
 
   const cornerSubtotalDisplay = (cornerIndex: number) => {
-    const lines = cornerHardware[cornerIndex] || [];
-    const nzd = lines.reduce((s, l) => s + l.priceNzd * l.qty, 0);
-    return formatCurrency(toDisplayPrice(nzd), config.currency);
+    const live = calculations.hardwareBreakdown?.perCornerLivePrice?.[cornerIndex] ?? 0;
+    return formatCurrency(live, config.currency);
   };
 
   const itemsById = React.useMemo(() => {
@@ -272,7 +262,7 @@ export function HardwareContent({
           {config.corners > 0 && (
             <div className="mt-4 rounded-xl bg-slate-100 p-3 flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-700">Hardware Cost (added to total):</span>
-              <span className="text-lg font-bold text-[#D97706]">{formatCurrency(toDisplayPrice(calculations.hardwareBreakdown?.subtotalNzd || 0), config.currency)}</span>
+              <span className="text-lg font-bold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0, config.currency)}</span>
             </div>
           )}
         </Card>

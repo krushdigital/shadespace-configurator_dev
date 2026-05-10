@@ -111,9 +111,9 @@ export function ShadeConfigurator() {
 
   const { settingsMap: pricingSettingsMap } = usePricingSettings();
   const { data: basePricingData } = useBasePricing();
-  const { packs: hardwarePacks } = useHardwareCatalog();
+  const { packs: hardwarePacks, items: hardwareItems } = useHardwareCatalog();
   const activePricingMap = loadedPricingSnapshot || pricingSettingsMap;
-  const calculations = useShadeCalculations(config, activePricingMap, basePricingData, hardwarePacks);
+  const calculations = useShadeCalculations(config, activePricingMap, basePricingData, hardwarePacks, hardwareItems);
 
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({
