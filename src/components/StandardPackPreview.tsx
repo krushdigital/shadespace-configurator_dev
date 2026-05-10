@@ -17,9 +17,11 @@ interface StandardPackPreviewProps {
   itemsById: Map<string, HardwareItem>;
   corners: number;
   children: React.ReactNode;
+  triggerClassName?: string;
+  onTriggerClick?: () => void;
 }
 
-export function StandardPackPreview({ pack, itemsById, corners, children }: StandardPackPreviewProps) {
+export function StandardPackPreview({ pack, itemsById, corners, children, triggerClassName, onTriggerClick }: StandardPackPreviewProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [coords, setCoords] = useState({ x: 0, y: 0, placement: 'right' as 'right' | 'left' | 'bottom' });
@@ -109,12 +111,15 @@ export function StandardPackPreview({ pack, itemsById, corners, children }: Stan
       <button
         ref={triggerRef}
         type="button"
-        onClick={isMobile ? (open ? handleClose : handleOpen) : undefined}
+        onClick={() => {
+          if (onTriggerClick) onTriggerClick();
+          if (isMobile) { if (open) handleClose(); else handleOpen(); }
+        }}
         onMouseEnter={!isMobile ? handleOpen : undefined}
         onMouseLeave={!isMobile ? handleClose : undefined}
         onFocus={!isMobile ? handleOpen : undefined}
         onBlur={!isMobile ? handleClose : undefined}
-        className="inline-flex items-center gap-1 rounded border-b border-dotted border-slate-400 text-left hover:text-[#01312D] focus:outline-none focus:ring-2 focus:ring-[#307C31] focus:ring-offset-1"
+        className={triggerClassName ?? "inline-flex items-center gap-1 rounded border-b border-dotted border-slate-400 text-left hover:text-[#01312D] focus:outline-none focus:ring-2 focus:ring-[#307C31] focus:ring-offset-1"}
         aria-expanded={open}
       >
         {children}
