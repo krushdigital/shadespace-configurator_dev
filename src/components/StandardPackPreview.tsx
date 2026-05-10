@@ -86,22 +86,26 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
         </div>
       )}
       <div className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">What's included</div>
-      {packLines.length === 0 ? (
-        <div className="text-xs text-slate-500">Contents tailored to your sail on order.</div>
-      ) : (
-        <ul className="space-y-1.5 max-h-52 overflow-y-auto">
-          {packLines.map(({ item, qty }) => (
-            <li key={item.id} className="flex items-center gap-2 text-xs">
-              {item.image_url ? (
-                <img src={item.image_url} alt="" className="h-6 w-6 rounded object-cover flex-shrink-0" />
-              ) : (
-                <div className="h-6 w-6 rounded bg-slate-100 flex-shrink-0" />
-              )}
-              <span className="flex-1 min-w-0 truncate text-slate-800">{item.name}</span>
-              <span className="flex-shrink-0 font-semibold text-slate-600">x {qty}</span>
-            </li>
-          ))}
+      {corners > 0 ? (
+        <ul className="space-y-1.5">
+          <li className="flex items-center gap-2 text-xs">
+            <div className="h-6 w-6 rounded bg-slate-100 flex-shrink-0" />
+            <span className="flex-1 min-w-0 truncate text-slate-800">Turnbuckle</span>
+            <span className="flex-shrink-0 font-semibold text-slate-600">x {corners}</span>
+          </li>
+          <li className="flex items-center gap-2 text-xs">
+            <div className="h-6 w-6 rounded bg-slate-100 flex-shrink-0" />
+            <span className="flex-1 min-w-0 truncate text-slate-800">D-Shackle</span>
+            <span className="flex-shrink-0 font-semibold text-slate-600">x {corners}</span>
+          </li>
+          <li className="flex items-center gap-2 text-xs">
+            <div className="h-6 w-6 rounded bg-slate-100 flex-shrink-0" />
+            <span className="flex-1 min-w-0 truncate text-slate-800">Tub of grease</span>
+            <span className="flex-shrink-0 font-semibold text-slate-600">x 1</span>
+          </li>
         </ul>
+      ) : (
+        <div className="text-xs text-slate-500">Contents tailored to your sail on order.</div>
       )}
     </div>
   ) : null;
