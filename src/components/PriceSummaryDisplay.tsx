@@ -120,7 +120,7 @@ export function PriceSummaryDisplay({
           </div>
 
           <div className="space-y-4 border-t border-slate-200 pt-4">
-            {config.measurementOption === 'adjust' ? (
+            {(config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none')) === 'standard' ? (
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                 <div className="flex items-start gap-3 mb-3">
                   {packImage ? (
