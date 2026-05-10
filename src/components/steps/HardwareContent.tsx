@@ -33,7 +33,9 @@ export function HardwareContent({
 }: HardwareContentProps) {
   const { items, categories, packs, loading } = useHardwareCatalog();
   const [modalCorner, setModalCorner] = useState<number | null>(null);
-  const allowNone = config.measurementOption === 'exact';
+  const isExact = config.measurementOption === 'exact';
+  const allowNone = isExact;
+  const allowStandard = !isExact;
   const mode: 'standard' | 'manual' | 'none' =
     config.hardwareSelectionMode
     ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
@@ -44,7 +46,10 @@ export function HardwareContent({
     if (!allowNone && config.hardwareSelectionMode === 'none') {
       updateConfig({ hardwareSelectionMode: 'standard', cornerHardware: {} });
     }
-  }, [allowNone, config.hardwareSelectionMode, updateConfig]);
+    if (!allowStandard && config.hardwareSelectionMode === 'standard') {
+      updateConfig({ hardwareSelectionMode: 'none', cornerHardware: {} });
+    }
+  }, [allowNone, allowStandard, config.hardwareSelectionMode, updateConfig]);
 
   const pricing = pricingSettingsMap
     ? getPricingForCurrency(pricingSettingsMap, config.currency)
@@ -123,8 +128,8 @@ export function HardwareContent({
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Corner Hardware Selection</h2>
           <p className="mt-1 text-sm text-slate-600">
-            {allowNone
-              ? 'Choose a hardware tensioning kit, manually pick per corner, or continue without hardware.'
+            {isExact
+              ? 'Manually pick per corner, or continue without hardware.'
               : 'Choose a hardware tensioning kit or manually pick per corner.'}
           </p>
         </div>
@@ -137,22 +142,24 @@ export function HardwareContent({
         )}
       </div>
 
-      <div className={`grid grid-cols-1 gap-3 ${allowNone ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-        <button
-          type="button"
-          onClick={() => setMode('standard')}
-          className={`rounded-xl border-2 p-4 text-left transition ${
-            mode === 'standard' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <Package className="h-6 w-6 text-[#307C31]" />
-            {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
-          </div>
-          <div className="mt-2 text-sm font-bold text-slate-900">Hardware Tensioning Kit</div>
-          <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail, included in sail price.</div>
-          <div className="mt-2 text-xs font-semibold text-[#307C31]">Included</div>
-        </button>
+      <div className={`grid grid-cols-1 gap-3 ${allowStandard && allowNone ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        {allowStandard && (
+          <button
+            type="button"
+            onClick={() => setMode('standard')}
+            className={`rounded-xl border-2 p-4 text-left transition ${
+              mode === 'standard' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <Package className="h-6 w-6 text-[#307C31]" />
+              {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
+            </div>
+            <div className="mt-2 text-sm font-bold text-slate-900">Hardware Tensioning Kit</div>
+            <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail, included in sail price.</div>
+            <div className="mt-2 text-xs font-semibold text-[#307C31]">Included</div>
+          </button>
+        )}
 
         <button
           type="button"
