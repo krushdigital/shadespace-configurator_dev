@@ -10,12 +10,12 @@ const corsHeaders = {
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const SHOPIFY_STORE = Deno.env.get("SHOPIFY_STORE_DOMAIN") || "";
-const SHOPIFY_ADMIN_TOKEN = Deno.env.get("SHOPIFY_ADMIN_TOKEN") || "";
-const HARDWARE_COLLECTION_HANDLE = Deno.env.get("SHOPIFY_HARDWARE_COLLECTION_HANDLE") || "hardware";
+const SHOPIFY_STOREFRONT_TOKEN = Deno.env.get("SHOPIFY_STOREFRONT_TOKEN") || "";
+const HARDWARE_COLLECTION_HANDLE = Deno.env.get("SHOPIFY_HARDWARE_COLLECTION_HANDLE") || "shade-sail-hardware";
 
 const QUERY = `
-  query HardwareProducts($cursor: String) {
-    collectionByHandle(handle: "${HARDWARE_COLLECTION_HANDLE}") {
+  query HardwareProducts($handle: String!, $cursor: String) {
+    collection(handle: $handle) {
       products(first: 50, after: $cursor) {
         pageInfo { hasNextPage endCursor }
         edges {
@@ -57,15 +57,15 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 200, headers: corsHeaders });
 
   try {
-    if (!SHOPIFY_STORE || !SHOPIFY_ADMIN_TOKEN) {
+    if (!SHOPIFY_STORE || !SHOPIFY_STOREFRONT_TOKEN) {
       return new Response(JSON.stringify({
         error: "Shopify credentials missing",
-        missing: [!SHOPIFY_STORE && "SHOPIFY_STORE_DOMAIN", !SHOPIFY_ADMIN_TOKEN && "SHOPIFY_ADMIN_TOKEN"].filter(Boolean),
+        missing: [!SHOPIFY_STORE && "SHOPIFY_STORE_DOMAIN", !SHOPIFY_STOREFRONT_TOKEN && "SHOPIFY_STOREFRONT_TOKEN"].filter(Boolean),
       }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const supabase = createClient(SB_URL, SB_SERVICE);
-    const endpoint = `https://${SHOPIFY_STORE}/admin/api/2024-10/graphql.json`;
+    const endpoint = `https://${SHOPIFY_STORE}/api/2024-10/graphql.json`;
 
     const collected: any[] = [];
     let cursor: string | null = null;
@@ -76,9 +76,12 @@ Deno.serve(async (req: Request) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Shopify-Access-Token": SHOPIFY_ADMIN_TOKEN,
+          "X-Shopify-Storefront-Access-Token": SHOPIFY_STOREFRONT_TOKEN,
         },
-        body: JSON.stringify({ query: QUERY, variables: { cursor } }),
+        body: JSON.stringify({
+          query: QUERY,
+          variables: { handle: HARDWARE_COLLECTION_HANDLE, cursor },
+        }),
       });
       const json = await res.json();
       if (!res.ok || json?.errors) {
@@ -87,9 +90,9 @@ Deno.serve(async (req: Request) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const coll = json?.data?.collectionByHandle;
+      const coll = json?.data?.collection;
       if (!coll) {
-        return new Response(JSON.stringify({ error: `Collection "${HARDWARE_COLLECTION_HANDLE}" not found on Shopify` }), {
+        return new Response(JSON.stringify({ error: `Collection "${HARDWARE_COLLECTION_HANDLE}" not found on Shopify Storefront API` }), {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -102,6 +105,7 @@ Deno.serve(async (req: Request) => {
 
     const now = new Date().toISOString();
     let upserts = 0;
+    const upsertErrors: string[] = [];
     const seenVariantIds = new Set<string>();
 
     for (const product of collected) {
@@ -134,7 +138,11 @@ Deno.serve(async (req: Request) => {
         updated_at: now,
       }, { onConflict: "shopify_variant_id" });
 
-      if (!error) upserts += 1;
+      if (!error) {
+        upserts += 1;
+      } else if (upsertErrors.length < 3) {
+        upsertErrors.push(`${variantId}: ${error.message}`);
+      }
     }
 
     let deactivated = 0;
@@ -156,7 +164,7 @@ Deno.serve(async (req: Request) => {
     }
 
     return new Response(
-      JSON.stringify({ ok: true, fetched: collected.length, upserts, deactivated }),
+      JSON.stringify({ ok: true, fetched: collected.length, upserts, deactivated, upsertErrors }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
