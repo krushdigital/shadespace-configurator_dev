@@ -12,6 +12,7 @@ import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
 import { useHardwareCatalog, getDefaultPack } from '../../hooks/useHardwareCatalog';
+import { StandardPackPreview } from '../StandardPackPreview';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
 
 interface ReviewContentProps {
@@ -660,7 +661,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     <div className="flex justify-between">
                       <span className="text-slate-600">Hardware:</span>
                       <span className="font-medium text-slate-900">
-                        {hardwareMode === 'standard' ? 'Standard pack (included)' : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
+                        {hardwareMode === 'standard' ? (
+                          <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
+                            <span className="font-medium text-slate-900">Hardware Tensioning Kit (included)</span>
+                          </StandardPackPreview>
+                        ) : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
                       </span>
                     </div>
                   </div>
@@ -770,7 +775,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               {hardwareMode === 'standard' && hardwarePack && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-sm font-semibold text-slate-900">{hardwarePack.name}</div>
+                    <div className="text-sm font-semibold text-slate-900">Hardware Tensioning Kit</div>
                     <span className="text-xs font-semibold text-[#307C31] bg-[#307C31]/10 px-2 py-0.5 rounded-full">Included in sail price</span>
                   </div>
                   <div className="space-y-2 mt-2">
@@ -861,7 +866,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 )}
                 {hardwareMode === 'standard' && (
                   <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Hardware pack included</span>
+                    <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
+                      <span className="text-slate-500">Hardware Tensioning Kit included</span>
+                    </StandardPackPreview>
                     <span className="text-slate-500">Included</span>
                   </div>
                 )}

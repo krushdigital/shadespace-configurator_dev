@@ -33,11 +33,18 @@ export function HardwareContent({
 }: HardwareContentProps) {
   const { items, categories, packs, loading } = useHardwareCatalog();
   const [modalCorner, setModalCorner] = useState<number | null>(null);
+  const allowNone = config.measurementOption === 'exact';
   const mode: 'standard' | 'manual' | 'none' =
     config.hardwareSelectionMode
     ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
   const edgeType = (config.edgeType as 'webbing' | 'cabled') || 'webbing';
   const pack = getDefaultPack(packs, edgeType, config.corners);
+
+  React.useEffect(() => {
+    if (!allowNone && config.hardwareSelectionMode === 'none') {
+      updateConfig({ hardwareSelectionMode: 'standard', cornerHardware: {} });
+    }
+  }, [allowNone, config.hardwareSelectionMode, updateConfig]);
 
   const pricing = pricingSettingsMap
     ? getPricingForCurrency(pricingSettingsMap, config.currency)
@@ -53,6 +60,7 @@ export function HardwareContent({
   const allManualConfigured = mode === 'manual' ? configuredCount === config.corners : true;
 
   const setMode = (next: 'standard' | 'manual' | 'none') => {
+    if (next === 'none' && !allowNone) return;
     const updates: Partial<ConfiguratorState> = { hardwareSelectionMode: next };
     if (next !== 'manual') {
       updates.cornerHardware = {};
@@ -115,7 +123,9 @@ export function HardwareContent({
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Corner Hardware Selection</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Choose a standard pack, manually pick per corner, or continue without hardware.
+            {allowNone
+              ? 'Choose a hardware tensioning kit, manually pick per corner, or continue without hardware.'
+              : 'Choose a hardware tensioning kit or manually pick per corner.'}
           </p>
         </div>
         {mode === 'manual' && (
@@ -127,7 +137,7 @@ export function HardwareContent({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className={`grid grid-cols-1 gap-3 ${allowNone ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <button
           type="button"
           onClick={() => setMode('standard')}
@@ -139,7 +149,7 @@ export function HardwareContent({
             <Package className="h-6 w-6 text-[#307C31]" />
             {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
           </div>
-          <div className="mt-2 text-sm font-bold text-slate-900">Standard Hardware Pack</div>
+          <div className="mt-2 text-sm font-bold text-slate-900">Hardware Tensioning Kit</div>
           <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail, included in sail price.</div>
           <div className="mt-2 text-xs font-semibold text-[#307C31]">Included</div>
         </button>
@@ -159,7 +169,7 @@ export function HardwareContent({
           <div className="mt-0.5 text-xs text-slate-600">Pick specific hardware — priced separately.</div>
         </button>
 
-        <button
+        {allowNone && <button
           type="button"
           onClick={() => setMode('none')}
           className={`rounded-xl border-2 p-4 text-left transition ${
@@ -172,7 +182,7 @@ export function HardwareContent({
           </div>
           <div className="mt-2 text-sm font-bold text-slate-900">No Hardware</div>
           <div className="mt-0.5 text-xs text-slate-600">Sail only — corner D-rings only, source hardware separately.</div>
-        </button>
+        </button>}
       </div>
 
       {mode === 'standard' && pack && (
@@ -180,7 +190,7 @@ export function HardwareContent({
           <div className="flex items-start gap-3 mb-3">
             <Package className="h-5 w-5 text-[#307C31] flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <div className="text-sm font-bold text-slate-900">{pack.name}</div>
+              <div className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</div>
               <div className="text-xs text-slate-600">Applied evenly across all {config.corners} corners.</div>
             </div>
             <div className="text-xs font-semibold text-[#307C31] flex-shrink-0 bg-[#307C31]/10 px-2 py-0.5 rounded-full">

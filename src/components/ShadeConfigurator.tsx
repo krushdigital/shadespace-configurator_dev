@@ -1262,7 +1262,7 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
         // Corner hardware line items
         {
           const mode = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
-          const label = mode === 'manual' ? 'Manual per corner' : mode === 'standard' ? 'Standard pack' : 'No hardware';
+          const label = mode === 'manual' ? 'Manual per corner' : mode === 'standard' ? 'Hardware Tensioning Kit' : 'No hardware';
           metafieldProperties['Hardware Selection'] = label;
           if (mode === 'manual' && config.cornerHardware) {
             for (let i = 0; i < config.corners; i++) {
