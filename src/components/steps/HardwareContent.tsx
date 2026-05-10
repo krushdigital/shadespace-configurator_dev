@@ -178,21 +178,6 @@ export function HardwareContent({
           </StandardPackPreview>
         )}
 
-        <button
-          type="button"
-          onClick={() => setMode('manual')}
-          className={`rounded-xl border-2 p-4 text-left transition ${
-            mode === 'manual' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <SlidersHorizontal className="h-6 w-6 text-[#307C31]" />
-            {mode === 'manual' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
-          </div>
-          <div className="mt-2 text-sm font-bold text-slate-900">Manual per corner</div>
-          <div className="mt-0.5 text-xs text-slate-600">Pick specific hardware per corner.</div>
-        </button>
-
         {allowNone && <button
           type="button"
           onClick={() => setMode('none')}
@@ -207,6 +192,21 @@ export function HardwareContent({
           <div className="mt-2 text-sm font-bold text-slate-900">No Hardware</div>
           <div className="mt-0.5 text-xs text-slate-600">Sail only — corner D-rings only, source hardware separately.</div>
         </button>}
+
+        <button
+          type="button"
+          onClick={() => setMode('manual')}
+          className={`rounded-xl border-2 p-4 text-left transition ${
+            mode === 'manual' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <SlidersHorizontal className="h-6 w-6 text-[#307C31]" />
+            {mode === 'manual' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
+          </div>
+          <div className="mt-2 text-sm font-bold text-slate-900">Manual per corner</div>
+          <div className="mt-0.5 text-xs text-slate-600">Pick specific hardware per corner.</div>
+        </button>
       </div>
 
       {mode === 'standard' && !pack && (
@@ -275,20 +275,6 @@ export function HardwareContent({
               <span className="text-lg font-bold text-[#D97706]">{formatCurrency(toDisplayPrice(calculations.hardwareBreakdown?.subtotalNzd || 0), config.currency)}</span>
             </div>
           )}
-        </Card>
-      )}
-
-      {mode === 'none' && (
-        <Card className="p-4 border-amber-200 bg-amber-50/60">
-          <div className="flex items-start gap-3">
-            <Ban className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <div className="text-sm font-bold text-slate-900">No hardware selected</div>
-              <div className="text-xs text-slate-700 mt-1">
-                Your sail will ship with corner D-rings sewn in. You will need to source tensioning hardware separately.
-              </div>
-            </div>
-          </div>
         </Card>
       )}
 
