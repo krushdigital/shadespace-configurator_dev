@@ -116,7 +116,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Card className="mb-6 border border-gray-200 shadow-sm">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
             <label className="text-sm font-semibold text-gray-700">Date Range:</label>
             <input
               type="date"
@@ -167,7 +167,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
 
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            <HardwareSyncCard />
             <AnalyticsSummary dateRange={dateRange} excludeInternal={excludeInternal} />
             <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />
           </div>

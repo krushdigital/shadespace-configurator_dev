@@ -55,7 +55,7 @@ export const HardwareSyncCard: React.FC = () => {
   };
 
   return (
-    <Card className="border border-gray-200 shadow-sm">
+    <Card className="border border-gray-200 shadow-sm p-4 sm:p-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-semibold text-forest-900">Hardware Catalog Sync</h3>
