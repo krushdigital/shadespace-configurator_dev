@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { SlidersHorizontal, Package, CheckCircle2, Ban } from 'lucide-react';
+import { SlidersHorizontal, Package, CheckCircle2, Ban, Info } from 'lucide-react';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
+import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
 import { useHardwareCatalog, getDefaultPack, HardwareItem } from '../../hooks/useHardwareCatalog';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
@@ -123,7 +124,7 @@ export function HardwareContent({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 sm:p-6 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Corner Hardware Selection</h2>
@@ -144,21 +145,42 @@ export function HardwareContent({
 
       <div className={`grid grid-cols-1 gap-3 ${allowStandard && allowNone ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         {allowStandard && (
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => setMode('standard')}
-            className={`rounded-xl border-2 p-4 text-left transition ${
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setMode('standard'); } }}
+            className={`relative rounded-xl border-2 p-4 text-left transition cursor-pointer ${
               mode === 'standard' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <Package className="h-6 w-6 text-[#307C31]" />
-              {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
+            <div className="flex items-start gap-3">
+              {HARDWARE_PACK_IMAGES[config.corners] ? (
+                <img
+                  src={HARDWARE_PACK_IMAGES[config.corners]}
+                  alt={`${config.corners} corner hardware kit`}
+                  className="h-14 w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white object-contain"
+                />
+              ) : (
+                <div className="h-14 w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white flex items-center justify-center">
+                  <Package className="h-6 w-6 text-[#307C31]" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</span>
+                  <span onClick={(e) => e.stopPropagation()} className="inline-flex">
+                    <StandardPackPreview pack={pack} itemsById={itemsById} corners={config.corners}>
+                      <Info className="h-4 w-4 text-slate-400 hover:text-[#307C31]" />
+                    </StandardPackPreview>
+                  </span>
+                </div>
+                <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail, included in sail price.</div>
+                <div className="mt-1 text-xs font-semibold text-[#307C31]">Included</div>
+              </div>
+              {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31] flex-shrink-0" />}
             </div>
-            <div className="mt-2 text-sm font-bold text-slate-900">Hardware Tensioning Kit</div>
-            <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail, included in sail price.</div>
-            <div className="mt-2 text-xs font-semibold text-[#307C31]">Included</div>
-          </button>
+          </div>
         )}
 
         <button
@@ -195,9 +217,22 @@ export function HardwareContent({
       {mode === 'standard' && pack && (
         <Card className="p-4">
           <div className="flex items-start gap-3 mb-3">
-            <Package className="h-5 w-5 text-[#307C31] flex-shrink-0 mt-0.5" />
+            {HARDWARE_PACK_IMAGES[config.corners] ? (
+              <img
+                src={HARDWARE_PACK_IMAGES[config.corners]}
+                alt={`${config.corners} corner hardware kit`}
+                className="h-12 w-12 flex-shrink-0 rounded-lg border border-slate-200 bg-white object-contain"
+              />
+            ) : (
+              <Package className="h-5 w-5 text-[#307C31] flex-shrink-0 mt-0.5" />
+            )}
             <div className="flex-1">
-              <div className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</span>
+                <StandardPackPreview pack={pack} itemsById={itemsById} corners={config.corners}>
+                  <Info className="h-4 w-4 text-slate-400 hover:text-[#307C31]" />
+                </StandardPackPreview>
+              </div>
               <div className="text-xs text-slate-600">Applied evenly across all {config.corners} corners.</div>
             </div>
             <div className="text-xs font-semibold text-[#307C31] flex-shrink-0 bg-[#307C31]/10 px-2 py-0.5 rounded-full">

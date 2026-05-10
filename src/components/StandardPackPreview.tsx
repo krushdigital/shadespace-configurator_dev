@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Package, X } from 'lucide-react';
 import type { HardwareItem, HardwarePack } from '../hooks/useHardwareCatalog';
 
-const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
+export const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
   3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
   4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
   5: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/5_Corner_Sails.jpg?v=1724717405',
