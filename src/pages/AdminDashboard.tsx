@@ -13,6 +13,7 @@ import { DataExport } from '../components/admin/DataExport';
 import { ExclusionManager } from '../components/admin/ExclusionManager';
 import { FabricColorManager } from '../components/admin/FabricColorManager';
 import { EmailStudio } from '../components/admin/EmailStudio';
+import { HardwareSyncCard } from '../components/admin/HardwareSyncCard';
 
 import type { AdminProfile } from '../hooks/useAdminProfile';
 import { UserManagement } from '../components/admin/UserManagement';
@@ -164,6 +165,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
 
         {activeTab === 'overview' && (
           <div className="space-y-6">
+            <HardwareSyncCard />
             <AnalyticsSummary dateRange={dateRange} excludeInternal={excludeInternal} />
             <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />
           </div>
