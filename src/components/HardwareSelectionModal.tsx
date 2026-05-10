@@ -157,7 +157,7 @@ export function HardwareSelectionModal({
           )}
           {grouped.map(group => (
             <div key={group.category.id} className="mb-4">
-              <div className="sticky top-0 z-[1] -mx-5 bg-white/95 px-5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 backdrop-blur">
+              <div className="sticky top-0 z-[1] -mx-5 border-b border-slate-100 bg-white px-5 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 shadow-sm">
                 {group.category.label}
               </div>
               <div className="space-y-1.5">
@@ -228,7 +228,7 @@ export function HardwareSelectionModal({
         </div>
 
         {hoverItem && (
-          <div className="pointer-events-none absolute right-4 top-20 hidden w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl lg:block">
+          <div className="pointer-events-none absolute right-4 top-20 z-20 hidden w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl lg:block">
             <div className="mb-3 flex h-40 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
               {hoverItem.image_url ? (
                 <img src={hoverItem.image_url} alt={hoverItem.name} className="h-full w-full object-contain" />
