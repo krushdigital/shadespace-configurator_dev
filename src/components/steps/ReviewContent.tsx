@@ -773,8 +773,19 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </Card>
             )}
 
-            {/* Hardware Breakdown */}
-            <Card className="p-4 mb-4">
+            {/* Hardware & Price Breakdown - Collapsible */}
+            <AccordionItem
+              trigger={
+                <span className="flex items-center justify-between gap-2 w-full pr-2">
+                  <span className="text-sm font-semibold">Hardware & Price Breakdown</span>
+                  <span className="text-sm font-bold text-[#01312D]">
+                    {formatCurrency(calculations.totalPrice, config.currency)}
+                  </span>
+                </span>
+              }
+              defaultOpen={false}
+            >
+            <Card className="p-4 mb-4 mt-2">
               <h3 className="text-base font-bold text-slate-900 mb-3">Hardware Breakdown</h3>
               {hardwareMode === 'standard' && hardwarePack && (
                 <div>
@@ -882,6 +893,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 </div>
               </div>
             </Card>
+            </AccordionItem>
 
             {/* Invalid Measurement Warning - Show prominently when area is 0 with all measurements AND diagonals are entered (or not required) */}
             {calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered) && (
@@ -1038,11 +1050,18 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </Card>
                 </AccordionItem>
               ) : (
-                <>
-                  <h4 className="text-lg font-semibold text-slate-900 mb-3">
-                    Precise Measurements
-                  </h4>
-                  <Card className="p-4 mb-4">
+                <AccordionItem
+                  trigger={
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <span>Precise Measurements</span>
+                      <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
+                        {config.corners + (config.corners >= 4 ? diagonalMeasurements.length : 0)}
+                      </span>
+                    </span>
+                  }
+                  defaultOpen={false}
+                >
+                  <Card className="p-4 mb-4 mt-2">
                     <div className="space-y-3">
                       <div>
                         <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths:</h6>
@@ -1089,7 +1108,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       )}
                     </div>
                   </Card>
-                </>
+                </AccordionItem>
               )}
             </div>
 

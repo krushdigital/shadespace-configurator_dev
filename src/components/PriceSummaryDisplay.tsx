@@ -202,7 +202,7 @@ export function PriceSummaryDisplay({
                   </div>
                 )}
               </div>
-            ) : (
+            ) : (config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none')) === 'manual' ? null : (
               <div className="flex justify-between text-sm">
                 <span className="text-[#01312D]/60">Tensioning hardware & fittings:</span>
                 <span className="text-[#01312D] font-semibold">
