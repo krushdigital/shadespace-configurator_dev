@@ -762,7 +762,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 <div className="flex justify-between">
                   <span className="text-slate-600">Hardware:</span>
                   <span className="font-medium text-slate-900">
-                    {hardwareMode === 'standard' ? 'Standard pack (included)' : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
+                    {hardwareMode === 'standard' ? (
+                      <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
+                        <span className="font-medium text-slate-900">Hardware Tensioning Kit (included)</span>
+                      </StandardPackPreview>
+                    ) : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
                   </span>
                 </div>
               </div>
