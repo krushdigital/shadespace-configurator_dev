@@ -77,6 +77,27 @@ interface FabricColorRecord {
   shadeFactor: number | null;
 }
 
+type PdfBlockType =
+  | 'summary'
+  | 'measurements'
+  | 'anchorPoints'
+  | 'hardwareBreakdown'
+  | 'priceBreakdown'
+  | 'guarantee'
+  | 'pricingCallout'
+  | 'customText'
+  | 'customImage'
+  | 'customHtml'
+  | 'divider'
+  | 'spacer';
+
+interface PdfBlock {
+  id: string;
+  type: PdfBlockType;
+  visible: boolean;
+  props: Record<string, unknown>;
+}
+
 interface PdfTemplate {
   brand: {
     primaryColor: string;
@@ -100,7 +121,39 @@ interface PdfTemplate {
     showPricingCallout: boolean;
   };
   paper: 'A4' | 'Letter';
+  blocks: PdfBlock[];
 }
+
+function sanitizeCustomHtml(html: string): string {
+  if (!html) return '';
+  let out = html;
+  out = out.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '');
+  out = out.replace(/<\s*iframe[^>]*>[\s\S]*?<\s*\/\s*iframe\s*>/gi, '');
+  out = out.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, '');
+  out = out.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  out = out.replace(/javascript:/gi, '');
+  return out;
+}
+
+function escapeHtmlText(s: unknown): string {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[c] as string));
+}
+
+const DEFAULT_BLOCKS_ORDER: PdfBlock[] = [
+  { id: 'b-summary', type: 'summary', visible: true, props: { title: 'Shade Sail Summary' } },
+  { id: 'b-measurements', type: 'measurements', visible: true, props: { title: 'Precise Measurements' } },
+  { id: 'b-anchor', type: 'anchorPoints', visible: true, props: { title: 'Anchor Point Configuration' } },
+  { id: 'b-hardware', type: 'hardwareBreakdown', visible: true, props: { title: 'Corner Hardware Breakdown' } },
+  { id: 'b-price', type: 'priceBreakdown', visible: true, props: { title: 'Price Breakdown' } },
+  { id: 'b-guarantee', type: 'guarantee', visible: true, props: { title: 'Premium Quality Guarantee' } },
+  { id: 'b-callout', type: 'pricingCallout', visible: true, props: { title: 'All-Inclusive Price to Your Door' } },
+];
 
 const DEFAULT_PDF_TEMPLATE: PdfTemplate = {
   brand: {
@@ -128,7 +181,23 @@ const DEFAULT_PDF_TEMPLATE: PdfTemplate = {
     showPricingCallout: true,
   },
   paper: 'A4',
+  blocks: DEFAULT_BLOCKS_ORDER,
 };
+
+function normalizeBlocks(input: unknown): PdfBlock[] {
+  if (!Array.isArray(input) || input.length === 0) return DEFAULT_BLOCKS_ORDER;
+  return input
+    .filter((b) => b && typeof b === 'object')
+    .map((raw) => {
+      const b = raw as Partial<PdfBlock>;
+      return {
+        id: typeof b.id === 'string' && b.id ? b.id : Math.random().toString(36).slice(2, 10),
+        type: (b.type as PdfBlockType) || 'customText',
+        visible: b.visible !== false,
+        props: (b.props && typeof b.props === 'object' ? b.props : {}) as Record<string, unknown>,
+      };
+    });
+}
 
 async function fetchActiveTemplate(): Promise<PdfTemplate> {
   try {
@@ -138,17 +207,18 @@ async function fetchActiveTemplate(): Promise<PdfTemplate> {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
     const { data } = await supabase
       .from('pdf_templates')
-      .select('config')
+      .select('config, blocks')
       .eq('is_active', true)
       .maybeSingle();
-    if (!data?.config) return DEFAULT_PDF_TEMPLATE;
-    const cfg = data.config as Partial<PdfTemplate>;
+    if (!data) return DEFAULT_PDF_TEMPLATE;
+    const cfg = (data.config || {}) as Partial<PdfTemplate>;
     return {
       brand: { ...DEFAULT_PDF_TEMPLATE.brand, ...(cfg.brand || {}) },
       header: { ...DEFAULT_PDF_TEMPLATE.header, ...(cfg.header || {}) },
       footer: { ...DEFAULT_PDF_TEMPLATE.footer, ...(cfg.footer || {}) },
       sections: { ...DEFAULT_PDF_TEMPLATE.sections, ...(cfg.sections || {}) },
       paper: (cfg.paper as 'A4' | 'Letter') || DEFAULT_PDF_TEMPLATE.paper,
+      blocks: normalizeBlocks(data.blocks),
     };
   } catch (err) {
     console.warn('[generate-pdf] Failed to fetch active template, using defaults:', err);
@@ -344,6 +414,323 @@ async function generateHTMLContent(config: ConfiguratorState, calculations: Shad
   const hwLiveTotal = hwBreakdown?.hardwareOnlyLivePrice ?? 0;
   const perCornerLive = hwBreakdown?.perCornerLivePrice ?? [];
   const sailDisplay = Math.max(0, calculations.totalPrice - Math.round(hwLiveTotal));
+
+  const titleOf = (block: PdfBlock, fallback: string) =>
+    typeof block.props?.title === 'string' && block.props.title ? String(block.props.title) : fallback;
+
+  const renderSummary = (block: PdfBlock) => `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Shade Sail Summary'))}</h2>
+            <div class="config-grid">
+                <div class="config-item">
+                    <span class="config-label">Fabric Material:</span>
+                    <span class="config-value">${selectedFabric?.label || 'Not selected'}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Fabric Color:</span>
+                    <span class="config-value">
+                        ${config.fabricColor || 'Not selected'}
+                        ${isNonFRColor ? '<span style="color: #DC2626; font-size: 10px; background: #FEE2E2; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">(Not FR Certified)</span>' : ''}
+                    </span>
+                </div>
+                ${selectedColor?.shadeFactor != null ? `
+                <div class="config-item">
+                    <span class="config-label">Shade Factor:</span>
+                    <span class="config-value">${selectedColor.shadeFactor}%</span>
+                </div>
+                ` : ''}
+                <div class="config-item">
+                    <span class="config-label">Fabric Made In:</span>
+                    <span class="config-value">${selectedFabric?.madeIn || 'Not specified'}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Warranty:</span>
+                    <span class="config-value">${selectedFabric ? `${selectedFabric.warrantyYears} Years` : 'Not specified'}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Fire Retardant:</span>
+                    <span class="config-value">${isFireRetardant ? 'Yes' : isNonFRColor ? 'No (Selected color is not FR certified)' : 'No'}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Edge Reinforcement:</span>
+                    <span class="config-value">${config.edgeType === 'webbing' ? 'Webbing Reinforced' : config.edgeType === 'cabled' ? 'Cabled Edge' : 'Not selected'}</span>
+                </div>
+                ${config.edgeType === 'webbing' ? `
+                <div class="config-item">
+                    <span class="config-label">Webbing Width:</span>
+                    <span class="config-value">
+                        ${config.unit === 'imperial'
+                          ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}"`
+                          : `${calculations.webbingWidth}mm`
+                        }
+                    </span>
+                </div>
+                ` : ''}
+                ${config.edgeType === 'cabled' && calculations.wireThickness ? `
+                <div class="config-item">
+                    <span class="config-label">Wire Thickness:</span>
+                    <span class="config-value">
+                        ${config.unit === 'imperial'
+                          ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"`
+                          : `${calculations.wireThickness}mm`
+                        }
+                    </span>
+                </div>
+                ` : ''}
+                <div class="config-item">
+                    <span class="config-label">Number of Corners:</span>
+                    <span class="config-value">${config.corners}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Total Area:</span>
+                    <span class="config-value">${formatArea(calculations.area * 1000000, config.unit)}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Total Perimeter:</span>
+                    <span class="config-value">${formatMeasurement(calculations.perimeter * 1000, config.unit)}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Total Weight:</span>
+                    <span class="config-value">${formatWeight(calculations.totalWeightGrams ?? 0, config.unit)}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Measurement Units:</span>
+                    <span class="config-value">${config.unit === 'metric' ? 'Metric (mm/m)' : 'Imperial (in/ft)'}</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Manufacturing Option:</span>
+                    <span class="config-value">${config.measurementOption === 'adjust' ? 'Adjust to fit space' : 'Exact dimensions'}</span>
+                </div>
+                ${(() => {
+                  const mode = config.hardwareSelectionMode || (config.measurementOption === 'adjust' ? 'standard' : 'none');
+                  if (mode === 'standard') {
+                    return `
+                <div class="config-item">
+                    <span class="config-label">Tensioning Hardware Included:</span>
+                    <span class="config-value">
+                        Yes - Hardware Tensioning Kit
+                        ${HARDWARE_PACK_IMAGES[config.corners] ? `
+                        <img src="${HARDWARE_PACK_IMAGES[config.corners]}"
+                             alt="${config.corners} Corner Hardware Pack"
+                             style="width: 20px; height: 20px; margin-left: 8px; border-radius: 3px; border: 1px solid #E2E8F0; vertical-align: middle; object-fit: cover;" />
+                        ` : ''}
+                    </span>
+                </div>`;
+                  }
+                  if (mode === 'manual') {
+                    return `
+                <div class="config-item">
+                    <span class="config-label">Tensioning Hardware:</span>
+                    <span class="config-value">Manual per corner (see breakdown below)</span>
+                </div>`;
+                  }
+                  return '';
+                })()}
+                <div class="config-item">
+                    <span class="config-label">Fixing Points Installed:</span>
+                    <span class="config-value">${config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'}</span>
+                </div>
+            </div>
+        </div>`;
+
+  const renderMeasurements = (block: PdfBlock) => `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Precise Measurements'))}</h2>
+            <div class="measurements-grid">
+                <div class="measurement-card">
+                    <h3>Edge Lengths</h3>
+                    ${edgeMeasurements.map(m => `
+                        <div class="measurement-item">
+                            <span class="measurement-label">${m.label}:</span>
+                            <span class="measurement-value">${m.value}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ${diagonalMeasurements.length > 0 ? `
+                <div class="measurement-card">
+                    <h3>Diagonal Lengths</h3>
+                    ${diagonalMeasurements.map(m => `
+                        <div class="measurement-item">
+                            <span class="measurement-label">${m.label}:</span>
+                            <span class="measurement-value">${m.value}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ` : ''}
+            </div>
+        </div>`;
+
+  const renderAnchor = (block: PdfBlock) => `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Anchor Point Configuration'))}</h2>
+            <div class="anchor-points">
+                ${anchorPoints.map(point => `
+                    <div class="anchor-item">
+                        <span class="anchor-corner">Corner ${point.corner}:</span>
+                        <span class="anchor-details">${point.height} (${point.type}, ${point.orientation} eye)</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>`;
+
+  const renderHardwareBreakdown = (block: PdfBlock) => {
+    if (resolvedHardwareMode !== 'manual' || !config.cornerHardware) return '';
+    return `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Corner Hardware Breakdown'))}</h2>
+            <div class="anchor-points">
+                ${Array.from({ length: config.corners }, (_, i) => {
+                  const letter = String.fromCharCode(65 + i);
+                  const lines = (config.cornerHardware && config.cornerHardware[i]) || [];
+                  const cornerLive = perCornerLive[i] ?? 0;
+                  return `
+                  <div style="padding: 10px 0; border-bottom: 1px solid #E2E8F0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                      <span class="anchor-corner">Corner ${letter}</span>
+                      <span class="anchor-corner">${formatCurrency(cornerLive, config.currency)}</span>
+                    </div>
+                    ${lines.length === 0 ? '<div class="anchor-details" style="padding-left: 12px;">No hardware selected</div>' : lines.map(line => {
+                      const skuPart = line.sku ? ` (${line.sku})` : '';
+                      const lineLive = line.livePriceCurrency === config.currency && line.livePrice != null
+                        ? line.livePrice * line.qty
+                        : 0;
+                      return `<div style="display: flex; justify-content: space-between; padding-left: 12px; font-size: 11px; color: #64748B;">
+                        <span>${line.qty}x ${line.name}${skuPart}</span>
+                        <span>${formatCurrency(lineLive, config.currency)}</span>
+                      </div>`;
+                    }).join('')}
+                  </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+  };
+
+  const renderPriceBreakdown = (block: PdfBlock) => {
+    if (!hwBreakdown) return '';
+    return `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Price Breakdown'))}</h2>
+            <div class="anchor-points">
+                <div class="anchor-item">
+                    <span class="anchor-details">Shade sail:</span>
+                    <span class="anchor-corner">${formatCurrency(sailDisplay, config.currency)}</span>
+                </div>
+                ${resolvedHardwareMode === 'standard' ? `
+                <div class="anchor-item">
+                    <span class="anchor-details">Hardware Tensioning Kit:</span>
+                    <span class="anchor-corner" style="color: #307C31;">Included</span>
+                </div>
+                ` : ''}
+                ${resolvedHardwareMode === 'manual' && hwLiveTotal > 0 ? `
+                <div class="anchor-item">
+                    <span class="anchor-details">Corner hardware:</span>
+                    <span class="anchor-corner">${formatCurrency(hwLiveTotal, config.currency)}</span>
+                </div>
+                ` : ''}
+                <div class="anchor-item" style="border-top: 2px solid ${brand.primaryColor}; border-bottom: none; margin-top: 4px; padding-top: 10px;">
+                    <span class="anchor-corner" style="font-size: 14px;">Total:</span>
+                    <span class="anchor-corner" style="font-size: 14px; color: ${brand.primaryColor};">${formatCurrency(calculations.totalPrice, config.currency)}</span>
+                </div>
+            </div>
+        </div>`;
+  };
+
+  const renderGuarantee = (block: PdfBlock) => `
+        <div class="guarantee-section">
+            <div class="guarantee-title">${escapeHtmlText(titleOf(block, 'Premium Quality Guarantee'))}</div>
+            <ul class="guarantee-list">
+                <li>${selectedFabric?.warrantyYears || 10}-year Fabric & Workmanship Warranty</li>
+                <li>Weather-resistant materials and UV protection</li>
+                <li>Professional installation guide included</li>
+                <li>Free worldwide shipping with no hidden costs</li>
+            </ul>
+        </div>`;
+
+  const renderPricingCallout = (block: PdfBlock) => `
+        <div class="price-section">
+            <div class="price-title">${escapeHtmlText(titleOf(block, 'All-Inclusive Price to Your Door'))}</div>
+            <div class="price-amount">${formatCurrency(calculations.totalPrice, config.currency)}</div>
+            <ul class="price-features">
+                <li>Express freight to your door included</li>
+                <li>All taxes & duties included</li>
+                <li>No hidden costs or tariffs</li>
+            </ul>
+        </div>`;
+
+  const renderCustomText = (block: PdfBlock) => {
+    const heading = escapeHtmlText(block.props?.heading ?? '');
+    const body = escapeHtmlText(block.props?.body ?? '').replace(/\n/g, '<br/>');
+    const align = String(block.props?.align ?? 'left');
+    return `
+        <div class="section" style="text-align: ${align};">
+            ${heading ? `<h2 class="section-title">${heading}</h2>` : ''}
+            <div style="color: ${brand.textColor}; font-size: 13px; line-height: 1.6;">${body}</div>
+        </div>`;
+  };
+
+  const renderCustomImage = (block: PdfBlock) => {
+    const url = typeof block.props?.url === 'string' ? block.props.url : '';
+    if (!url || !/^https?:\/\//i.test(url)) return '';
+    const alt = escapeHtmlText(block.props?.alt ?? '');
+    const width = Number(block.props?.width) || 400;
+    return `
+        <div class="section" style="text-align: center;">
+            <img src="${escapeHtmlText(url)}" alt="${alt}" style="max-width: ${width}px; width: 100%; height: auto; border-radius: 8px;" />
+        </div>`;
+  };
+
+  const renderCustomHtml = (block: PdfBlock) => {
+    const html = sanitizeCustomHtml(String(block.props?.html ?? ''));
+    return `<div class="section">${html}</div>`;
+  };
+
+  const renderDivider = (block: PdfBlock) => {
+    const thickness = Number(block.props?.thickness) || 1;
+    return `<hr style="border: none; border-top: ${thickness}px solid #E2E8F0; margin: 20px 0;" />`;
+  };
+
+  const renderSpacer = (block: PdfBlock) => {
+    const height = Number(block.props?.height) || 16;
+    return `<div style="height: ${height}px;"></div>`;
+  };
+
+  const renderBlock = (block: PdfBlock): string => {
+    if (!block.visible) return '';
+    switch (block.type) {
+      case 'summary': return renderSummary(block);
+      case 'measurements': return renderMeasurements(block);
+      case 'anchorPoints': return renderAnchor(block);
+      case 'hardwareBreakdown': return renderHardwareBreakdown(block);
+      case 'priceBreakdown': return renderPriceBreakdown(block);
+      case 'guarantee': return renderGuarantee(block);
+      case 'pricingCallout': return renderPricingCallout(block);
+      case 'customText': return renderCustomText(block);
+      case 'customImage': return renderCustomImage(block);
+      case 'customHtml': return renderCustomHtml(block);
+      case 'divider': return renderDivider(block);
+      case 'spacer': return renderSpacer(block);
+      default: return '';
+    }
+  };
+
+  // Legacy section toggles filter: if template was saved before blocks existed, they still gate dynamic blocks.
+  const sectionGate = (type: PdfBlockType): boolean => {
+    switch (type) {
+      case 'summary': return sections.showSummary !== false;
+      case 'measurements': return sections.showMeasurements !== false;
+      case 'anchorPoints': return sections.showAnchorPoints !== false;
+      case 'hardwareBreakdown': return sections.showHardwareBreakdown !== false;
+      case 'priceBreakdown': return sections.showPriceBreakdown !== false;
+      case 'guarantee': return sections.showGuarantee !== false;
+      case 'pricingCallout': return sections.showPricingCallout !== false;
+      default: return true;
+    }
+  };
+
+  const blocksHtml = template.blocks
+    .filter((b) => b.visible && sectionGate(b.type))
+    .map((b) => renderBlock(b))
+    .join('\n');
 
   return `
 <!DOCTYPE html>
@@ -647,252 +1034,7 @@ async function generateHTMLContent(config: ConfiguratorState, calculations: Shad
         </div>
         ` : ''}
 
-        ${sections.showSummary ? `
-        <!-- Configuration Summary -->
-        <div class="section">
-            <h2 class="section-title">Shade Sail Summary</h2>
-            <div class="config-grid">
-                <div class="config-item">
-                    <span class="config-label">Fabric Material:</span>
-                    <span class="config-value">${selectedFabric?.label || 'Not selected'}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Fabric Color:</span>
-                    <span class="config-value">
-                        ${config.fabricColor || 'Not selected'}
-                        ${isNonFRColor ? '<span style="color: #DC2626; font-size: 10px; background: #FEE2E2; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">(Not FR Certified)</span>' : ''}
-                    </span>
-                </div>
-                ${selectedColor?.shadeFactor != null ? `
-                <div class="config-item">
-                    <span class="config-label">Shade Factor:</span>
-                    <span class="config-value">${selectedColor.shadeFactor}%</span>
-                </div>
-                ` : ''}
-                <div class="config-item">
-                    <span class="config-label">Fabric Made In:</span>
-                    <span class="config-value">${selectedFabric?.madeIn || 'Not specified'}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Warranty:</span>
-                    <span class="config-value">${selectedFabric ? `${selectedFabric.warrantyYears} Years` : 'Not specified'}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Fire Retardant:</span>
-                    <span class="config-value">${isFireRetardant ? 'Yes' : isNonFRColor ? 'No (Selected color is not FR certified)' : 'No'}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Edge Reinforcement:</span>
-                    <span class="config-value">${config.edgeType === 'webbing' ? 'Webbing Reinforced' : config.edgeType === 'cabled' ? 'Cabled Edge' : 'Not selected'}</span>
-                </div>
-                ${config.edgeType === 'webbing' ? `
-                <div class="config-item">
-                    <span class="config-label">Webbing Width:</span>
-                    <span class="config-value">
-                        ${config.unit === 'imperial' 
-                          ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}"`
-                          : `${calculations.webbingWidth}mm`
-                        }
-                    </span>
-                </div>
-                ` : ''}
-                ${config.edgeType === 'cabled' && calculations.wireThickness ? `
-                <div class="config-item">
-                    <span class="config-label">Wire Thickness:</span>
-                    <span class="config-value">
-                        ${config.unit === 'imperial' 
-                          ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"`
-                          : `${calculations.wireThickness}mm`
-                        }
-                    </span>
-                </div>
-                ` : ''}
-                <div class="config-item">
-                    <span class="config-label">Number of Corners:</span>
-                    <span class="config-value">${config.corners}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Total Area:</span>
-                    <span class="config-value">${formatArea(calculations.area * 1000000, config.unit)}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Total Perimeter:</span>
-                    <span class="config-value">${formatMeasurement(calculations.perimeter * 1000, config.unit)}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Total Weight:</span>
-                    <span class="config-value">${formatWeight(calculations.totalWeightGrams, config.unit)}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Measurement Units:</span>
-                    <span class="config-value">${config.unit === 'metric' ? 'Metric (mm/m)' : 'Imperial (in/ft)'}</span>
-                </div>
-                <div class="config-item">
-                    <span class="config-label">Manufacturing Option:</span>
-                    <span class="config-value">${config.measurementOption === 'adjust' ? 'Adjust to fit space' : 'Exact dimensions'}</span>
-                </div>
-                ${(() => {
-                  const mode = config.hardwareSelectionMode || (config.measurementOption === 'adjust' ? 'standard' : 'none');
-                  if (mode === 'standard') {
-                    return `
-                <div class="config-item">
-                    <span class="config-label">Tensioning Hardware Included:</span>
-                    <span class="config-value">
-                        Yes - Hardware Tensioning Kit
-                        ${HARDWARE_PACK_IMAGES[config.corners] ? `
-                        <img src="${HARDWARE_PACK_IMAGES[config.corners]}"
-                             alt="${config.corners} Corner Hardware Pack"
-                             style="width: 20px; height: 20px; margin-left: 8px; border-radius: 3px; border: 1px solid #E2E8F0; vertical-align: middle; object-fit: cover;" />
-                        ` : ''}
-                    </span>
-                </div>`;
-                  }
-                  if (mode === 'manual') {
-                    return `
-                <div class="config-item">
-                    <span class="config-label">Tensioning Hardware:</span>
-                    <span class="config-value">Manual per corner (see breakdown below)</span>
-                </div>`;
-                  }
-                  return '';
-                })()}
-                <div class="config-item">
-                    <span class="config-label">Fixing Points Installed:</span>
-                    <span class="config-value">${config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'}</span>
-                </div>
-            </div>
-        </div>
-        ` : ''}
-
-        ${sections.showMeasurements ? `
-        <!-- Measurements -->
-        <div class="section">
-            <h2 class="section-title">Precise Measurements</h2>
-            <div class="measurements-grid">
-                <div class="measurement-card">
-                    <h3>Edge Lengths</h3>
-                    ${edgeMeasurements.map(m => `
-                        <div class="measurement-item">
-                            <span class="measurement-label">${m.label}:</span>
-                            <span class="measurement-value">${m.value}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                ${diagonalMeasurements.length > 0 ? `
-                <div class="measurement-card">
-                    <h3>Diagonal Lengths</h3>
-                    ${diagonalMeasurements.map(m => `
-                        <div class="measurement-item">
-                            <span class="measurement-label">${m.label}:</span>
-                            <span class="measurement-value">${m.value}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                ` : ''}
-            </div>
-        </div>
-        ` : ''}
-
-        ${sections.showAnchorPoints ? `
-        <!-- Anchor Points -->
-        <div class="section">
-            <h2 class="section-title">Anchor Point Configuration</h2>
-            <div class="anchor-points">
-                ${anchorPoints.map(point => `
-                    <div class="anchor-item">
-                        <span class="anchor-corner">Corner ${point.corner}:</span>
-                        <span class="anchor-details">${point.height} (${point.type}, ${point.orientation} eye)</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-        ` : ''}
-
-        ${sections.showHardwareBreakdown && resolvedHardwareMode === 'manual' && config.cornerHardware ? `
-        <!-- Corner Hardware Breakdown -->
-        <div class="section">
-            <h2 class="section-title">Corner Hardware Breakdown</h2>
-            <div class="anchor-points">
-                ${Array.from({ length: config.corners }, (_, i) => {
-                  const letter = String.fromCharCode(65 + i);
-                  const lines = (config.cornerHardware && config.cornerHardware[i]) || [];
-                  const cornerLive = perCornerLive[i] ?? 0;
-                  return `
-                  <div style="padding: 10px 0; border-bottom: 1px solid #E2E8F0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                      <span class="anchor-corner">Corner ${letter}</span>
-                      <span class="anchor-corner">${formatCurrency(cornerLive, config.currency)}</span>
-                    </div>
-                    ${lines.length === 0 ? '<div class="anchor-details" style="padding-left: 12px;">No hardware selected</div>' : lines.map(line => {
-                      const skuPart = line.sku ? ` (${line.sku})` : '';
-                      const lineLive = line.livePriceCurrency === config.currency && line.livePrice != null
-                        ? line.livePrice * line.qty
-                        : 0;
-                      return `<div style="display: flex; justify-content: space-between; padding-left: 12px; font-size: 11px; color: #64748B;">
-                        <span>${line.qty}x ${line.name}${skuPart}</span>
-                        <span>${formatCurrency(lineLive, config.currency)}</span>
-                      </div>`;
-                    }).join('')}
-                  </div>`;
-                }).join('')}
-            </div>
-        </div>
-        ` : ''}
-
-        ${sections.showPriceBreakdown && hwBreakdown ? `
-        <!-- Price Breakdown -->
-        <div class="section">
-            <h2 class="section-title">Price Breakdown</h2>
-            <div class="anchor-points">
-                <div class="anchor-item">
-                    <span class="anchor-details">Shade sail:</span>
-                    <span class="anchor-corner">${formatCurrency(sailDisplay, config.currency)}</span>
-                </div>
-                ${resolvedHardwareMode === 'standard' ? `
-                <div class="anchor-item">
-                    <span class="anchor-details">Hardware Tensioning Kit:</span>
-                    <span class="anchor-corner" style="color: #307C31;">Included</span>
-                </div>
-                ` : ''}
-                ${resolvedHardwareMode === 'manual' && hwLiveTotal > 0 ? `
-                <div class="anchor-item">
-                    <span class="anchor-details">Corner hardware:</span>
-                    <span class="anchor-corner">${formatCurrency(hwLiveTotal, config.currency)}</span>
-                </div>
-                ` : ''}
-                <div class="anchor-item" style="border-top: 2px solid ${brand.primaryColor}; border-bottom: none; margin-top: 4px; padding-top: 10px;">
-                    <span class="anchor-corner" style="font-size: 14px;">Total:</span>
-                    <span class="anchor-corner" style="font-size: 14px; color: ${brand.primaryColor};">${formatCurrency(calculations.totalPrice, config.currency)}</span>
-                </div>
-            </div>
-        </div>
-        ` : ''}
-
-        ${sections.showGuarantee ? `
-        <!-- Premium Quality Guarantee -->
-        <div class="guarantee-section">
-            <div class="guarantee-title">Premium Quality Guarantee</div>
-            <ul class="guarantee-list">
-                <li>${selectedFabric?.warrantyYears || 10}-year Fabric & Workmanship Warranty</li>
-                <li>Weather-resistant materials and UV protection</li>
-                <li>Professional installation guide included</li>
-                <li>Free worldwide shipping with no hidden costs</li>
-            </ul>
-        </div>
-        ` : ''}
-
-        ${sections.showPricingCallout ? `
-        <!-- Pricing -->
-        <div class="price-section">
-            <div class="price-title">All-Inclusive Price to Your Door</div>
-            <div class="price-amount">${formatCurrency(calculations.totalPrice, config.currency)}</div>
-            <ul class="price-features">
-                <li>Express freight to your door included</li>
-                <li>All taxes & duties included</li>
-                <li>No hidden costs or tariffs</li>
-            </ul>
-        </div>
-        ` : ''}
+        ${blocksHtml}
 
         <!-- Footer -->
         <div class="footer">

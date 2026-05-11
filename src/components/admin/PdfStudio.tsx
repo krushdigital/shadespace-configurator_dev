@@ -2,6 +2,17 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
+import {
+  BLOCK_LABELS,
+  BlockType,
+  DEFAULT_BLOCKS,
+  DYNAMIC_TYPES,
+  PdfBlock,
+  escapeHtml,
+  makeDefaultProps,
+  newBlockId,
+  sanitizeCustomHtml,
+} from '../../utils/pdfBlocks';
 
 export interface PdfTemplateConfig {
   brand: {
@@ -14,14 +25,8 @@ export interface PdfTemplateConfig {
     logoUrl: string;
     fontFamily: string;
   };
-  header: {
-    title: string;
-    tagline: string;
-  };
-  footer: {
-    line1: string;
-    line2: string;
-  };
+  header: { title: string; tagline: string };
+  footer: { line1: string; line2: string };
   sections: {
     showSummary: boolean;
     showMeasurements: boolean;
@@ -39,6 +44,7 @@ interface PdfTemplateRow {
   name: string;
   is_active: boolean;
   config: PdfTemplateConfig;
+  blocks: PdfBlock[];
   updated_at: string;
 }
 
@@ -80,14 +86,32 @@ function mergeConfig(input: Partial<PdfTemplateConfig> | null | undefined): PdfT
   };
 }
 
+function normalizeBlocks(input: unknown): PdfBlock[] {
+  if (!Array.isArray(input) || input.length === 0) return DEFAULT_BLOCKS.map((b) => ({ ...b, id: newBlockId() }));
+  return input
+    .filter((b) => b && typeof b === 'object')
+    .map((raw) => {
+      const b = raw as Partial<PdfBlock>;
+      return {
+        id: typeof b.id === 'string' && b.id ? b.id : newBlockId(),
+        type: (b.type as BlockType) || 'customText',
+        visible: b.visible !== false,
+        props: (b.props && typeof b.props === 'object' ? b.props : {}) as Record<string, unknown>,
+      };
+    });
+}
+
 export const PdfStudio: React.FC = () => {
   const [templates, setTemplates] = useState<PdfTemplateRow[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [config, setConfig] = useState<PdfTemplateConfig>(DEFAULT_CONFIG);
+  const [blocks, setBlocks] = useState<PdfBlock[]>(DEFAULT_BLOCKS);
   const [name, setName] = useState<string>('');
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+  const [pane, setPane] = useState<'layout' | 'branding'>('layout');
 
   const loadTemplates = async () => {
     setLoading(true);
@@ -100,13 +124,18 @@ export const PdfStudio: React.FC = () => {
       setLoading(false);
       return;
     }
-    const rows = (data || []) as PdfTemplateRow[];
+    const rows = ((data || []) as unknown as PdfTemplateRow[]).map((r) => ({
+      ...r,
+      blocks: normalizeBlocks((r as unknown as { blocks: unknown }).blocks),
+    }));
     setTemplates(rows);
     const active = rows.find((r) => r.is_active) || rows[0];
     if (active) {
       setActiveId(active.id);
       setName(active.name);
       setConfig(mergeConfig(active.config));
+      setBlocks(active.blocks);
+      setSelectedBlockId(active.blocks[0]?.id ?? null);
     }
     setLoading(false);
   };
@@ -121,6 +150,8 @@ export const PdfStudio: React.FC = () => {
     setActiveId(id);
     setName(row.name);
     setConfig(mergeConfig(row.config));
+    setBlocks(row.blocks);
+    setSelectedBlockId(row.blocks[0]?.id ?? null);
     setMessage(null);
   };
 
@@ -130,7 +161,7 @@ export const PdfStudio: React.FC = () => {
     setMessage(null);
     const { error } = await supabase
       .from('pdf_templates')
-      .update({ name, config, updated_at: new Date().toISOString() })
+      .update({ name, config, blocks, updated_at: new Date().toISOString() })
       .eq('id', activeId);
     setSaving(false);
     if (error) {
@@ -163,7 +194,7 @@ export const PdfStudio: React.FC = () => {
     setSaving(true);
     const { data, error } = await supabase
       .from('pdf_templates')
-      .insert({ name: newName, is_active: false, config })
+      .insert({ name: newName, is_active: false, config, blocks })
       .select()
       .single();
     setSaving(false);
@@ -176,11 +207,48 @@ export const PdfStudio: React.FC = () => {
     if (data) setActiveId((data as PdfTemplateRow).id);
   };
 
-  const handleReset = () => {
+  const handleResetBranding = () => {
     setConfig(DEFAULT_CONFIG);
   };
 
-  const previewHtml = useMemo(() => buildPreview(config), [config]);
+  const addBlock = (type: BlockType) => {
+    const block: PdfBlock = { id: newBlockId(), type, visible: true, props: makeDefaultProps(type) };
+    const idx = blocks.findIndex((b) => b.id === selectedBlockId);
+    const next = [...blocks];
+    next.splice(idx >= 0 ? idx + 1 : next.length, 0, block);
+    setBlocks(next);
+    setSelectedBlockId(block.id);
+  };
+
+  const removeBlock = (id: string) => {
+    const next = blocks.filter((b) => b.id !== id);
+    setBlocks(next);
+    if (selectedBlockId === id) setSelectedBlockId(next[0]?.id ?? null);
+  };
+
+  const move = (id: string, dir: -1 | 1) => {
+    const idx = blocks.findIndex((b) => b.id === id);
+    if (idx < 0) return;
+    const target = idx + dir;
+    if (target < 0 || target >= blocks.length) return;
+    const next = [...blocks];
+    const [b] = next.splice(idx, 1);
+    next.splice(target, 0, b);
+    setBlocks(next);
+  };
+
+  const updateBlock = (id: string, patch: Partial<PdfBlock>) => {
+    setBlocks(blocks.map((b) => (b.id === id ? { ...b, ...patch } : b)));
+  };
+
+  const updateBlockProp = (id: string, key: string, value: unknown) => {
+    setBlocks(
+      blocks.map((b) => (b.id === id ? { ...b, props: { ...b.props, [key]: value } } : b))
+    );
+  };
+
+  const selected = useMemo(() => blocks.find((b) => b.id === selectedBlockId) || null, [blocks, selectedBlockId]);
+  const previewHtml = useMemo(() => buildPreview(config, blocks), [config, blocks]);
 
   if (loading) {
     return <Card className="p-6">Loading templates...</Card>;
@@ -217,7 +285,6 @@ export const PdfStudio: React.FC = () => {
             <Button onClick={handleSave} disabled={saving}>Save</Button>
             <Button onClick={handleSetActive} disabled={saving} variant="outline">Set Active</Button>
             <Button onClick={handleDuplicate} disabled={saving} variant="outline">Duplicate</Button>
-            <Button onClick={handleReset} disabled={saving} variant="outline">Reset to defaults</Button>
           </div>
         </div>
         {message && (
@@ -231,119 +298,143 @@ export const PdfStudio: React.FC = () => {
             {message.text}
           </div>
         )}
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setPane('layout')}
+            className={`px-3 py-1.5 text-sm rounded-lg border ${pane === 'layout' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600'}`}
+          >
+            Layout & Blocks
+          </button>
+          <button
+            type="button"
+            onClick={() => setPane('branding')}
+            className={`px-3 py-1.5 text-sm rounded-lg border ${pane === 'branding' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600'}`}
+          >
+            Branding & Text
+          </button>
+        </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-4 sm:p-6 border border-gray-200 space-y-6">
-          <Section title="Branding">
-            <ColorRow
-              label="Primary"
-              value={config.brand.primaryColor}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, primaryColor: v } })}
-            />
-            <ColorRow
-              label="Accent"
-              value={config.brand.accentColor}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, accentColor: v } })}
-            />
-            <ColorRow
-              label="Accent Dark"
-              value={config.brand.accentDark}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, accentDark: v } })}
-            />
-            <ColorRow
-              label="Text"
-              value={config.brand.textColor}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, textColor: v } })}
-            />
-            <ColorRow
-              label="Muted"
-              value={config.brand.mutedColor}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, mutedColor: v } })}
-            />
-            <ColorRow
-              label="Background"
-              value={config.brand.backgroundColor}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, backgroundColor: v } })}
-            />
-            <TextRow
-              label="Logo URL"
-              value={config.brand.logoUrl}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, logoUrl: v } })}
-              placeholder="https://..."
-            />
-            <TextRow
-              label="Font family"
-              value={config.brand.fontFamily}
-              onChange={(v) => setConfig({ ...config, brand: { ...config.brand, fontFamily: v } })}
-              placeholder="Helvetica, Arial, sans-serif"
-            />
-          </Section>
-
-          <Section title="Header">
-            <TextRow
-              label="Title"
-              value={config.header.title}
-              onChange={(v) => setConfig({ ...config, header: { ...config.header, title: v } })}
-            />
-            <TextRow
-              label="Tagline"
-              value={config.header.tagline}
-              onChange={(v) => setConfig({ ...config, header: { ...config.header, tagline: v } })}
-            />
-          </Section>
-
-          <Section title="Footer">
-            <TextRow
-              label="Line 1"
-              value={config.footer.line1}
-              onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line1: v } })}
-            />
-            <TextRow
-              label="Line 2"
-              value={config.footer.line2}
-              onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line2: v } })}
-            />
-          </Section>
-
-          <Section title="Sections">
-            {(Object.keys(config.sections) as Array<keyof typeof config.sections>).map((key) => (
-              <label key={key} className="flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={config.sections[key]}
-                  onChange={(e) =>
-                    setConfig({
-                      ...config,
-                      sections: { ...config.sections, [key]: e.target.checked },
-                    })
-                  }
-                  className="rounded border-gray-300 text-lime-600 focus:ring-lime-500"
-                />
-                {prettyKey(key)}
-              </label>
-            ))}
-          </Section>
-
-          <Section title="Paper">
-            <div className="flex gap-2">
-              {(['A4', 'Letter'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setConfig({ ...config, paper: p })}
-                  className={`px-3 py-1.5 rounded-lg border text-sm ${
-                    config.paper === p
-                      ? 'border-lime-500 bg-lime-50 text-lime-800'
-                      : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+      <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr_320px] gap-6">
+        {pane === 'layout' ? (
+          <Card className="p-3 border border-gray-200">
+            <div className="text-xs font-semibold text-gray-700 mb-2">Blocks (drag order with arrows)</div>
+            <div className="space-y-1">
+              {blocks.map((b) => (
+                <div
+                  key={b.id}
+                  className={`flex items-center gap-1 rounded border px-2 py-1.5 text-sm cursor-pointer ${
+                    selectedBlockId === b.id ? 'border-lime-500 bg-lime-50' : 'border-gray-200 hover:bg-gray-50'
                   }`}
+                  onClick={() => setSelectedBlockId(b.id)}
                 >
-                  {p}
-                </button>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      move(b.id, -1);
+                    }}
+                    aria-label="Move up"
+                  >
+                    {'\u25B2'}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      move(b.id, 1);
+                    }}
+                    aria-label="Move down"
+                  >
+                    {'\u25BC'}
+                  </button>
+                  <span className={`flex-1 truncate ${b.visible ? '' : 'line-through text-gray-400'}`}>
+                    {BLOCK_LABELS[b.type]}
+                  </span>
+                  <button
+                    type="button"
+                    className="text-gray-400 hover:text-gray-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateBlock(b.id, { visible: !b.visible });
+                    }}
+                    aria-label="Toggle visibility"
+                    title={b.visible ? 'Hide' : 'Show'}
+                  >
+                    {b.visible ? 'o' : '-'}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-red-400 hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeBlock(b.id);
+                    }}
+                    aria-label="Delete"
+                  >
+                    x
+                  </button>
+                </div>
               ))}
             </div>
-          </Section>
-        </Card>
+            <div className="mt-4 border-t border-gray-200 pt-3">
+              <div className="text-xs font-semibold text-gray-700 mb-2">Add block</div>
+              <div className="grid grid-cols-2 gap-1">
+                {(Object.keys(BLOCK_LABELS) as BlockType[]).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => addBlock(t)}
+                    className="px-2 py-1.5 text-xs border border-gray-300 rounded hover:bg-gray-50 text-left"
+                  >
+                    + {BLOCK_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Card>
+        ) : (
+          <Card className="p-4 border border-gray-200 space-y-6">
+            <Section title="Branding">
+              <ColorRow label="Primary" value={config.brand.primaryColor} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, primaryColor: v } })} />
+              <ColorRow label="Accent" value={config.brand.accentColor} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, accentColor: v } })} />
+              <ColorRow label="Accent Dark" value={config.brand.accentDark} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, accentDark: v } })} />
+              <ColorRow label="Text" value={config.brand.textColor} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, textColor: v } })} />
+              <ColorRow label="Muted" value={config.brand.mutedColor} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, mutedColor: v } })} />
+              <ColorRow label="Background" value={config.brand.backgroundColor} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, backgroundColor: v } })} />
+              <TextRow label="Logo URL" value={config.brand.logoUrl} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, logoUrl: v } })} placeholder="https://..." />
+              <TextRow label="Font family" value={config.brand.fontFamily} onChange={(v) => setConfig({ ...config, brand: { ...config.brand, fontFamily: v } })} />
+            </Section>
+            <Section title="Header">
+              <TextRow label="Title" value={config.header.title} onChange={(v) => setConfig({ ...config, header: { ...config.header, title: v } })} />
+              <TextRow label="Tagline" value={config.header.tagline} onChange={(v) => setConfig({ ...config, header: { ...config.header, tagline: v } })} />
+            </Section>
+            <Section title="Footer">
+              <TextRow label="Line 1" value={config.footer.line1} onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line1: v } })} />
+              <TextRow label="Line 2" value={config.footer.line2} onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line2: v } })} />
+            </Section>
+            <Section title="Paper">
+              <div className="flex gap-2">
+                {(['A4', 'Letter'] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setConfig({ ...config, paper: p })}
+                    className={`px-3 py-1.5 rounded-lg border text-sm ${
+                      config.paper === p ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </Section>
+            <Button onClick={handleResetBranding} variant="outline">Reset branding to defaults</Button>
+          </Card>
+        )}
 
         <Card className="p-0 border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 text-sm font-semibold text-gray-700">
@@ -353,10 +444,134 @@ export const PdfStudio: React.FC = () => {
             title="pdf-preview"
             srcDoc={previewHtml}
             className="w-full bg-white"
-            style={{ height: '720px', border: 'none' }}
+            style={{ height: '820px', border: 'none' }}
           />
         </Card>
+
+        {pane === 'layout' && (
+          <Card className="p-4 border border-gray-200">
+            <div className="text-xs font-semibold text-gray-700 mb-2">Block properties</div>
+            {!selected ? (
+              <div className="text-sm text-gray-500">Select a block to edit its properties.</div>
+            ) : (
+              <BlockPropsEditor
+                block={selected}
+                onProp={(k, v) => updateBlockProp(selected.id, k, v)}
+                onToggle={(v) => updateBlock(selected.id, { visible: v })}
+              />
+            )}
+          </Card>
+        )}
       </div>
+    </div>
+  );
+};
+
+const BlockPropsEditor: React.FC<{
+  block: PdfBlock;
+  onProp: (k: string, v: unknown) => void;
+  onToggle: (v: boolean) => void;
+}> = ({ block, onProp, onToggle }) => {
+  const props = block.props || {};
+  return (
+    <div className="space-y-3">
+      <div className="text-sm font-semibold text-gray-800">{BLOCK_LABELS[block.type]}</div>
+      <label className="flex items-center gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={block.visible}
+          onChange={(e) => onToggle(e.target.checked)}
+          className="rounded border-gray-300 text-lime-600 focus:ring-lime-500"
+        />
+        Visible
+      </label>
+
+      {DYNAMIC_TYPES.includes(block.type) && (
+        <TextRow
+          label="Title"
+          value={String(props.title ?? '')}
+          onChange={(v) => onProp('title', v)}
+        />
+      )}
+
+      {block.type === 'customText' && (
+        <>
+          <TextRow label="Heading" value={String(props.heading ?? '')} onChange={(v) => onProp('heading', v)} />
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Body</label>
+            <textarea
+              value={String(props.body ?? '')}
+              onChange={(e) => onProp('body', e.target.value)}
+              rows={5}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm font-mono"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Align</label>
+            <select
+              value={String(props.align ?? 'left')}
+              onChange={(e) => onProp('align', e.target.value)}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+            >
+              <option value="left">Left</option>
+              <option value="center">Center</option>
+              <option value="right">Right</option>
+            </select>
+          </div>
+        </>
+      )}
+
+      {block.type === 'customImage' && (
+        <>
+          <TextRow label="Image URL" value={String(props.url ?? '')} onChange={(v) => onProp('url', v)} placeholder="https://..." />
+          <TextRow label="Alt" value={String(props.alt ?? '')} onChange={(v) => onProp('alt', v)} />
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Width (px)</label>
+            <input
+              type="number"
+              value={Number(props.width ?? 400)}
+              onChange={(e) => onProp('width', Number(e.target.value) || 0)}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+            />
+          </div>
+        </>
+      )}
+
+      {block.type === 'customHtml' && (
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">HTML (scripts and event handlers stripped)</label>
+          <textarea
+            value={String(props.html ?? '')}
+            onChange={(e) => onProp('html', e.target.value)}
+            rows={8}
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-xs font-mono"
+          />
+        </div>
+      )}
+
+      {block.type === 'spacer' && (
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Height (px)</label>
+          <input
+            type="number"
+            value={Number(props.height ?? 16)}
+            onChange={(e) => onProp('height', Number(e.target.value) || 0)}
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+          />
+        </div>
+      )}
+
+      {block.type === 'divider' && (
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Thickness (px)</label>
+          <input
+            type="number"
+            value={Number(props.thickness ?? 1)}
+            onChange={(e) => onProp('thickness', Number(e.target.value) || 1)}
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+          />
+        </div>
+      )}
     </div>
   );
 };
@@ -368,60 +583,27 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
   </div>
 );
 
-const ColorRow: React.FC<{ label: string; value: string; onChange: (v: string) => void }> = ({
-  label,
-  value,
-  onChange,
-}) => (
+const ColorRow: React.FC<{ label: string; value: string; onChange: (v: string) => void }> = ({ label, value, onChange }) => (
   <div className="flex items-center gap-3">
     <label className="w-28 text-xs text-gray-600">{label}</label>
-    <input
-      type="color"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-8 w-10 border border-gray-300 rounded"
-    />
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm font-mono"
-    />
+    <input type="color" value={value} onChange={(e) => onChange(e.target.value)} className="h-8 w-10 border border-gray-300 rounded" />
+    <input type="text" value={value} onChange={(e) => onChange(e.target.value)} className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm font-mono" />
   </div>
 );
 
-const TextRow: React.FC<{
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-}> = ({ label, value, onChange, placeholder }) => (
+const TextRow: React.FC<{ label: string; value: string; onChange: (v: string) => void; placeholder?: string }> = ({ label, value, onChange, placeholder }) => (
   <div className="flex items-center gap-3">
     <label className="w-28 text-xs text-gray-600">{label}</label>
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm"
-    />
+    <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" />
   </div>
 );
 
-function prettyKey(key: string): string {
-  return key
-    .replace(/^show/, '')
-    .replace(/([A-Z])/g, ' $1')
-    .trim();
-}
-
-function buildPreview(cfg: PdfTemplateConfig): string {
+function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[]): string {
   const b = cfg.brand;
-  const s = cfg.sections;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body { margin:0; padding:24px; background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; }
     .header { display:flex; align-items:center; gap:12px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 100%); border:2px solid ${b.accentDark}; margin-bottom:16px; }
-    .logo { width:48px; height:48px; object-fit:contain; background:#fff; border-radius:8px; padding:4px; }
+    .logo-img { max-height:40px; max-width:180px; object-fit:contain; }
     .title { font-size:22px; font-weight:700; color:${b.primaryColor}; margin:0; }
     .tagline { font-size:12px; color:${b.accentDark}; margin:4px 0 0 0; }
     h2 { font-size:16px; color:${b.primaryColor}; border-bottom:2px solid ${b.accentColor}; padding-bottom:6px; margin:20px 0 10px; }
@@ -430,37 +612,18 @@ function buildPreview(cfg: PdfTemplateConfig): string {
     .val { color:${b.textColor}; font-weight:600; }
     .callout { margin-top:16px; padding:16px; border-radius:12px; background:${b.primaryColor}; color:#fff; text-align:center; }
     .callout .price { font-size:22px; font-weight:700; color:${b.accentColor}; }
+    .guarantee { margin-top:16px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; }
     .footer { margin-top:24px; text-align:center; font-size:11px; color:${b.mutedColor}; }
+    hr { border:none; border-top:1px solid ${b.mutedColor}; margin:8px 0; opacity:0.4; }
   </style></head><body>
     <div class="header">
-      ${b.logoUrl ? `<img class="logo" src="${escapeHtml(b.logoUrl)}" alt="logo" />` : ''}
+      ${b.logoUrl ? `<img class="logo-img" src="${escapeHtml(b.logoUrl)}" alt="logo" />` : ''}
       <div>
         <h1 class="title">${escapeHtml(cfg.header.title)}</h1>
         <p class="tagline">${escapeHtml(cfg.header.tagline)}</p>
       </div>
     </div>
-    ${s.showSummary ? `<h2>Shade Sail Summary</h2>
-      <div class="row"><span class="muted">Fabric Material</span><span class="val">Monotec 370</span></div>
-      <div class="row"><span class="muted">Fabric Color</span><span class="val">Domino Black</span></div>
-      <div class="row"><span class="muted">Shade Factor</span><span class="val">88.4%</span></div>
-      <div class="row"><span class="muted">Warranty</span><span class="val">15 Years</span></div>
-      <div class="row"><span class="muted">Corners</span><span class="val">4</span></div>` : ''}
-    ${s.showMeasurements ? `<h2>Precise Measurements</h2>
-      <div class="row"><span class="muted">Edge A to B</span><span class="val">4000mm</span></div>
-      <div class="row"><span class="muted">Edge B to C</span><span class="val">3500mm</span></div>` : ''}
-    ${s.showAnchorPoints ? `<h2>Anchor Point Configuration</h2>
-      <div class="row"><span class="muted">Corner A</span><span class="val">2400mm, post</span></div>` : ''}
-    ${s.showHardwareBreakdown ? `<h2>Corner Hardware Breakdown</h2>
-      <div class="row"><span class="muted">1x Turnbuckle</span><span class="val">NZ$25.00</span></div>` : ''}
-    ${s.showPriceBreakdown ? `<h2>Price Breakdown</h2>
-      <div class="row"><span class="muted">Shade sail</span><span class="val">NZ$580.00</span></div>
-      <div class="row"><span class="val">Total</span><span class="val">NZ$650.00</span></div>` : ''}
-    ${s.showGuarantee ? `<h2>Premium Quality Guarantee</h2>
-      <div class="muted" style="font-size:12px;">15-year Fabric &amp; Workmanship Warranty · Weather-resistant materials · Free worldwide shipping</div>` : ''}
-    ${s.showPricingCallout ? `<div class="callout">
-      <div class="muted" style="color:#fff; font-size:12px;">All-Inclusive Price to Your Door</div>
-      <div class="price">NZ$650.00</div>
-    </div>` : ''}
+    ${blocks.filter((x) => x.visible).map((x) => renderSampleBlock(x, cfg)).join('')}
     <div class="footer">
       <div>${escapeHtml(cfg.footer.line1)}</div>
       <div>${escapeHtml(cfg.footer.line2)}</div>
@@ -468,12 +631,50 @@ function buildPreview(cfg: PdfTemplateConfig): string {
   </body></html>`;
 }
 
-function escapeHtml(s: string): string {
-  return String(s || '').replace(/[&<>"']/g, (c) => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-  }[c] as string));
+function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig): string {
+  const p = block.props || {};
+  const title = (p.title as string) || BLOCK_LABELS[block.type];
+  switch (block.type) {
+    case 'summary':
+      return `<h2>${escapeHtml(title)}</h2>
+        <div class="row"><span class="muted">Fabric Material</span><span class="val">Monotec 370</span></div>
+        <div class="row"><span class="muted">Fabric Color</span><span class="val">Domino Black</span></div>
+        <div class="row"><span class="muted">Shade Factor</span><span class="val">88.4%</span></div>
+        <div class="row"><span class="muted">Warranty</span><span class="val">15 Years</span></div>
+        <div class="row"><span class="muted">Corners</span><span class="val">4</span></div>`;
+    case 'measurements':
+      return `<h2>${escapeHtml(title)}</h2>
+        <div class="row"><span class="muted">Edge A to B</span><span class="val">4000mm</span></div>
+        <div class="row"><span class="muted">Edge B to C</span><span class="val">3500mm</span></div>`;
+    case 'anchorPoints':
+      return `<h2>${escapeHtml(title)}</h2>
+        <div class="row"><span class="muted">Corner A</span><span class="val">2400mm, post</span></div>`;
+    case 'hardwareBreakdown':
+      return `<h2>${escapeHtml(title)}</h2>
+        <div class="row"><span class="muted">1x Turnbuckle</span><span class="val">NZ$25.00</span></div>`;
+    case 'priceBreakdown':
+      return `<h2>${escapeHtml(title)}</h2>
+        <div class="row"><span class="muted">Shade sail</span><span class="val">NZ$580.00</span></div>
+        <div class="row"><span class="val">Total</span><span class="val">NZ$650.00</span></div>`;
+    case 'guarantee':
+      return `<div class="guarantee"><div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
+        <div style="font-size:12px;">15-year Fabric &amp; Workmanship Warranty &middot; Weather-resistant materials &middot; Free worldwide shipping</div></div>`;
+    case 'pricingCallout':
+      return `<div class="callout"><div style="font-size:12px;opacity:.85;">${escapeHtml(title)}</div><div class="price">NZ$650.00</div></div>`;
+    case 'customText': {
+      const align = (p.align as string) || 'left';
+      const heading = p.heading ? `<div style="font-weight:700;margin-bottom:6px;color:${cfg.brand.primaryColor};">${escapeHtml(p.heading)}</div>` : '';
+      return `<div style="margin:12px 0;text-align:${align};font-size:13px;">${heading}<div>${escapeHtml(p.body || '')}</div></div>`;
+    }
+    case 'customImage':
+      return p.url ? `<div style="margin:12px 0;text-align:center;"><img src="${escapeHtml(p.url)}" alt="${escapeHtml(p.alt || '')}" style="max-width:${Number(p.width) || 400}px;width:100%;" /></div>` : '';
+    case 'customHtml':
+      return `<div style="margin:12px 0;font-size:13px;">${sanitizeCustomHtml(String(p.html || ''))}</div>`;
+    case 'divider':
+      return `<hr style="border-top:${Number(p.thickness) || 1}px solid ${cfg.brand.mutedColor};opacity:0.4;" />`;
+    case 'spacer':
+      return `<div style="height:${Number(p.height) || 16}px;"></div>`;
+    default:
+      return '';
+  }
 }

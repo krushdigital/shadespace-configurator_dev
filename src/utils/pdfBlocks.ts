@@ -1,0 +1,101 @@
+export type BlockType =
+  | 'summary'
+  | 'measurements'
+  | 'anchorPoints'
+  | 'hardwareBreakdown'
+  | 'priceBreakdown'
+  | 'guarantee'
+  | 'pricingCallout'
+  | 'customText'
+  | 'customImage'
+  | 'customHtml'
+  | 'divider'
+  | 'spacer';
+
+export interface PdfBlock {
+  id: string;
+  type: BlockType;
+  visible: boolean;
+  props: Record<string, unknown>;
+}
+
+export const BLOCK_LABELS: Record<BlockType, string> = {
+  summary: 'Shade Sail Summary',
+  measurements: 'Precise Measurements',
+  anchorPoints: 'Anchor Point Configuration',
+  hardwareBreakdown: 'Corner Hardware Breakdown',
+  priceBreakdown: 'Price Breakdown',
+  guarantee: 'Premium Quality Guarantee',
+  pricingCallout: 'Pricing Callout',
+  customText: 'Custom Text',
+  customImage: 'Custom Image',
+  customHtml: 'Custom HTML',
+  divider: 'Divider',
+  spacer: 'Spacer',
+};
+
+export const DYNAMIC_TYPES: BlockType[] = [
+  'summary',
+  'measurements',
+  'anchorPoints',
+  'hardwareBreakdown',
+  'priceBreakdown',
+  'guarantee',
+  'pricingCallout',
+];
+
+export const DEFAULT_BLOCKS: PdfBlock[] = [
+  { id: 'b-summary', type: 'summary', visible: true, props: { title: 'Shade Sail Summary' } },
+  { id: 'b-measurements', type: 'measurements', visible: true, props: { title: 'Precise Measurements' } },
+  { id: 'b-anchor', type: 'anchorPoints', visible: true, props: { title: 'Anchor Point Configuration' } },
+  { id: 'b-hardware', type: 'hardwareBreakdown', visible: true, props: { title: 'Corner Hardware Breakdown' } },
+  { id: 'b-price', type: 'priceBreakdown', visible: true, props: { title: 'Price Breakdown' } },
+  { id: 'b-guarantee', type: 'guarantee', visible: true, props: { title: 'Premium Quality Guarantee' } },
+  { id: 'b-callout', type: 'pricingCallout', visible: true, props: { title: 'All-Inclusive Price to Your Door' } },
+];
+
+export function makeDefaultProps(type: BlockType): Record<string, unknown> {
+  switch (type) {
+    case 'customText':
+      return { heading: '', body: 'Add your custom text here.', align: 'left' };
+    case 'customImage':
+      return { url: '', alt: '', width: 400 };
+    case 'customHtml':
+      return { html: '<p>Custom HTML</p>' };
+    case 'divider':
+      return { thickness: 1 };
+    case 'spacer':
+      return { height: 16 };
+    default:
+      return { title: BLOCK_LABELS[type] };
+  }
+}
+
+export function newBlockId(): string {
+  return `b-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function escapeHtml(s: unknown): string {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[c] as string));
+}
+
+/**
+ * Allow a narrow set of HTML tags in customHtml blocks.
+ * Strips <script>, <iframe>, event handlers, and javascript: URLs.
+ */
+export function sanitizeCustomHtml(html: string): string {
+  if (!html) return '';
+  let out = html;
+  out = out.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '');
+  out = out.replace(/<\s*iframe[^>]*>[\s\S]*?<\s*\/\s*iframe\s*>/gi, '');
+  out = out.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, '');
+  out = out.replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  out = out.replace(/javascript:/gi, '');
+  return out;
+}
