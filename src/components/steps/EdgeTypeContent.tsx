@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { X, ZoomIn } from 'lucide-react';
 import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { SaveProgressButton } from '../SaveProgressButton';
 
@@ -78,48 +77,56 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           Select Edge Reinforcement Type
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
           {EDGE_OPTIONS.map((edge) => {
             const hasError = validationErrors.edgeType && !config.edgeType;
-            
+            const isSelected = config.edgeType === edge.id;
+
             return (
-            <Card
-              key={edge.id}
-              className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                config.edgeType === edge.id
-                 ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
-                 : hasError
-                 ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                 : 'hover:border-slate-300'
-              }`}
-              onClick={() => updateConfig({ edgeType: edge.id })}
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h5 className="font-semibold text-slate-900">
-                  {edge.label}
-                </h5>
-                <div className="flex items-center gap-2">
+              <div
+                key={edge.id}
+                onClick={() => updateConfig({ edgeType: edge.id })}
+                className={`group relative bg-white rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col ${
+                  isSelected
+                    ? 'border-2 border-[#01312D] shadow-md'
+                    : hasError
+                    ? 'border-2 border-red-500 bg-red-50'
+                    : 'border border-slate-200 hover:border-slate-300 hover:shadow-md'
+                }`}
+              >
+                <div className="relative p-3 pb-0">
+                  <div className="relative rounded-xl overflow-hidden bg-[#F3FFE3]/60 aspect-[16/9]">
+                    <img
+                      src={edge.imageUrl}
+                      alt={`${edge.label} example`}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEnlargedImage({ url: edge.imageUrl, label: edge.label });
+                      }}
+                      className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312D] shadow-sm hover:bg-white hover:text-[#307C31] transition-colors focus:outline-none focus:ring-2 focus:ring-[#307C31]"
+                      aria-label={`Enlarge ${edge.label} image`}
+                    >
+                      <ZoomIn className="w-4 h-4" strokeWidth={2.25} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-start justify-between gap-3 p-4 pt-3.5">
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-bold text-[#01312D] text-base md:text-lg leading-tight mb-1">
+                      {edge.label}
+                    </h5>
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      {edge.description}
+                    </p>
+                  </div>
                   <Tooltip
                     content={
                       <div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEnlargedImage({ url: edge.imageUrl, label: edge.label });
-                          }}
-                          className="relative group w-full block rounded-lg mb-3 overflow-hidden cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-[#307C31]"
-                          aria-label={`Enlarge ${edge.label} image`}
-                        >
-                          <img
-                            src={edge.imageUrl}
-                            alt={`${edge.label} example`}
-                            className="w-full h-32 object-cover transition-transform duration-200 group-hover:scale-105"
-                          />
-                          <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
-                            <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
-                          </span>
-                        </button>
                         <p className="text-sm text-slate-600 font-medium mb-1">
                           {edge.label}
                         </p>
@@ -127,9 +134,9 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                           {edge.longDescription}
                         </p>
                         <p className="mt-3 text-sm">
-                          <a 
-                            href="https://shadespace.com/pages/styles" 
-                            target="_blank" 
+                          <a
+                            href="https://shadespace.com/pages/styles"
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="font-semibold text-[#307C31] hover:text-[#01312D] hover:underline transition-colors"
                           >
@@ -139,16 +146,15 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                    <span
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] transition-colors"
+                    >
                       ?
                     </span>
                   </Tooltip>
                 </div>
               </div>
-              <p className="text-sm text-slate-600">
-                {edge.description}
-              </p>
-            </Card>
             );
           })}
         </div>
