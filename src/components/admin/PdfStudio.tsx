@@ -494,6 +494,26 @@ const BlockPropsEditor: React.FC<{
         />
       )}
 
+      {block.type === 'diagramImage' && (
+        <div>
+          <label className="block text-xs text-gray-600 mb-1">Max width (px)</label>
+          <input
+            type="number"
+            value={Number(props.maxWidth ?? 520)}
+            onChange={(e) => onProp('maxWidth', Number(e.target.value) || 520)}
+            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+          />
+        </div>
+      )}
+
+      {block.type === 'resumeButton' && (
+        <TextRow
+          label="Button label"
+          value={String(props.label ?? 'Open My Saved Quote')}
+          onChange={(v) => onProp('label', v)}
+        />
+      )}
+
       {block.type === 'customText' && (
         <>
           <TextRow label="Heading" value={String(props.heading ?? '')} onChange={(v) => onProp('heading', v)} />
@@ -661,6 +681,31 @@ function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig): string {
         <div style="font-size:12px;">15-year Fabric &amp; Workmanship Warranty &middot; Weather-resistant materials &middot; Free worldwide shipping</div></div>`;
     case 'pricingCallout':
       return `<div class="callout"><div style="font-size:12px;opacity:.85;">${escapeHtml(title)}</div><div class="price">NZ$650.00</div></div>`;
+    case 'quoteMeta':
+      return `<h2>${escapeHtml(title)}</h2>
+        <div class="row"><span class="muted">Customer Name</span><span class="val">Jane Smith</span></div>
+        <div class="row"><span class="muted">Email</span><span class="val">jane@example.com</span></div>
+        <div class="row"><span class="muted">Quote Reference</span><span class="val">SQ-2026-00123</span></div>
+        <div class="row"><span class="muted">Date</span><span class="val">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>`;
+    case 'diagramImage': {
+      const mw = Number(p.maxWidth) || 520;
+      return `<h2>${escapeHtml(title)}</h2>
+        <div style="text-align:center;padding:16px;border:1px dashed ${cfg.brand.mutedColor};border-radius:8px;color:${cfg.brand.mutedColor};font-size:12px;max-width:${mw}px;margin:0 auto;">Shade sail diagram (rendered from saved quote)</div>`;
+    }
+    case 'billOfMaterials':
+      return `<h2>${escapeHtml(title)}</h2>
+        <div class="row"><span class="muted">Monotec 370 - Domino Black (12.5 m²)</span><span class="val">NZ$580.00</span></div>
+        <div class="row"><span class="muted">Webbing reinforcement</span><span class="val">Included</span></div>
+        <div class="row"><span class="muted">Hardware Tensioning Kit (4-corner pack)</span><span class="val">Included</span></div>
+        <div class="row"><span class="val">Total (all-inclusive)</span><span class="val">NZ$650.00</span></div>`;
+    case 'resumeButton': {
+      const label = (p.label as string) || 'Open My Saved Quote';
+      return `<div style="margin:16px 0;text-align:center;padding:20px;border-radius:10px;background:${cfg.brand.primaryColor};color:#fff;">
+        <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
+        <div style="font-size:12px;opacity:.85;margin-bottom:12px;">Pick up exactly where you left off and add this configuration to your cart.</div>
+        <span style="display:inline-block;background:${cfg.brand.accentColor};color:${cfg.brand.primaryColor};padding:10px 24px;border-radius:6px;font-weight:700;font-size:13px;">${escapeHtml(label)}</span>
+      </div>`;
+    }
     case 'customText': {
       const align = (p.align as string) || 'left';
       const heading = p.heading ? `<div style="font-weight:700;margin-bottom:6px;color:${cfg.brand.primaryColor};">${escapeHtml(p.heading)}</div>` : '';

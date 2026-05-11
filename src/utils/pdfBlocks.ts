@@ -6,6 +6,10 @@ export type BlockType =
   | 'priceBreakdown'
   | 'guarantee'
   | 'pricingCallout'
+  | 'quoteMeta'
+  | 'diagramImage'
+  | 'billOfMaterials'
+  | 'resumeButton'
   | 'customText'
   | 'customImage'
   | 'customHtml'
@@ -27,6 +31,10 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   priceBreakdown: 'Price Breakdown',
   guarantee: 'Premium Quality Guarantee',
   pricingCallout: 'Pricing Callout',
+  quoteMeta: 'Quote Details (Customer + Reference)',
+  diagramImage: 'Shade Sail Diagram',
+  billOfMaterials: 'Itemised Bill of Materials',
+  resumeButton: 'Resume Quote Button',
   customText: 'Custom Text',
   customImage: 'Custom Image',
   customHtml: 'Custom HTML',
@@ -42,16 +50,24 @@ export const DYNAMIC_TYPES: BlockType[] = [
   'priceBreakdown',
   'guarantee',
   'pricingCallout',
+  'quoteMeta',
+  'diagramImage',
+  'billOfMaterials',
+  'resumeButton',
 ];
 
 export const DEFAULT_BLOCKS: PdfBlock[] = [
+  { id: 'b-quoteMeta', type: 'quoteMeta', visible: true, props: { title: 'Quote Details' } },
+  { id: 'b-diagram', type: 'diagramImage', visible: true, props: { title: 'Shade Sail Diagram', maxWidth: 520 } },
   { id: 'b-summary', type: 'summary', visible: true, props: { title: 'Shade Sail Summary' } },
   { id: 'b-measurements', type: 'measurements', visible: true, props: { title: 'Precise Measurements' } },
   { id: 'b-anchor', type: 'anchorPoints', visible: true, props: { title: 'Anchor Point Configuration' } },
   { id: 'b-hardware', type: 'hardwareBreakdown', visible: true, props: { title: 'Corner Hardware Breakdown' } },
+  { id: 'b-bom', type: 'billOfMaterials', visible: true, props: { title: 'Itemised Bill of Materials' } },
   { id: 'b-price', type: 'priceBreakdown', visible: true, props: { title: 'Price Breakdown' } },
   { id: 'b-guarantee', type: 'guarantee', visible: true, props: { title: 'Premium Quality Guarantee' } },
   { id: 'b-callout', type: 'pricingCallout', visible: true, props: { title: 'All-Inclusive Price to Your Door' } },
+  { id: 'b-resume', type: 'resumeButton', visible: true, props: { title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' } },
 ];
 
 export function makeDefaultProps(type: BlockType): Record<string, unknown> {
@@ -66,6 +82,10 @@ export function makeDefaultProps(type: BlockType): Record<string, unknown> {
       return { thickness: 1 };
     case 'spacer':
       return { height: 16 };
+    case 'diagramImage':
+      return { title: 'Shade Sail Diagram', maxWidth: 520 };
+    case 'resumeButton':
+      return { title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' };
     default:
       return { title: BLOCK_LABELS[type] };
   }

@@ -60,6 +60,59 @@ interface ShadeCalculations {
 interface PDFRequest {
   config: ConfiguratorState;
   calculations: ShadeCalculations;
+  quoteId?: string;
+  accessToken?: string;
+}
+
+interface QuoteContext {
+  id: string;
+  accessToken: string;
+  customerFirstName: string | null;
+  customerLastName: string | null;
+  customerEmail: string | null;
+  quoteReference: string | null;
+  quoteName: string | null;
+  customerReference: string | null;
+  diagramPublicUrl: string | null;
+  createdAt: string | null;
+}
+
+const PUBLIC_APP_BASE = 'https://shadespace.com/pages/shade-sail-configurator';
+
+function buildResumeUrl(quoteId: string, accessToken: string): string {
+  return `${PUBLIC_APP_BASE}?quote=${encodeURIComponent(quoteId)}&token=${encodeURIComponent(accessToken)}`;
+}
+
+async function fetchQuoteContext(quoteId?: string, accessToken?: string): Promise<QuoteContext | null> {
+  if (!quoteId) return null;
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceRoleKey) return null;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const { data } = await supabase
+      .from('saved_quotes')
+      .select('id, access_token, customer_first_name, customer_last_name, customer_email, quote_reference, quote_name, customer_reference, diagram_public_url, created_at')
+      .eq('id', quoteId)
+      .maybeSingle();
+    if (!data) return null;
+    const token = accessToken || data.access_token;
+    return {
+      id: data.id,
+      accessToken: token,
+      customerFirstName: data.customer_first_name,
+      customerLastName: data.customer_last_name,
+      customerEmail: data.customer_email,
+      quoteReference: data.quote_reference,
+      quoteName: data.quote_name,
+      customerReference: data.customer_reference,
+      diagramPublicUrl: data.diagram_public_url,
+      createdAt: data.created_at,
+    };
+  } catch (err) {
+    console.warn('[generate-pdf] Failed to fetch quote context:', err);
+    return null;
+  }
 }
 
 interface FabricRecord {
@@ -85,6 +138,10 @@ type PdfBlockType =
   | 'priceBreakdown'
   | 'guarantee'
   | 'pricingCallout'
+  | 'quoteMeta'
+  | 'diagramImage'
+  | 'billOfMaterials'
+  | 'resumeButton'
   | 'customText'
   | 'customImage'
   | 'customHtml'
@@ -146,13 +203,17 @@ function escapeHtmlText(s: unknown): string {
 }
 
 const DEFAULT_BLOCKS_ORDER: PdfBlock[] = [
+  { id: 'b-quoteMeta', type: 'quoteMeta', visible: true, props: { title: 'Quote Details' } },
+  { id: 'b-diagram', type: 'diagramImage', visible: true, props: { title: 'Shade Sail Diagram', maxWidth: 520 } },
   { id: 'b-summary', type: 'summary', visible: true, props: { title: 'Shade Sail Summary' } },
   { id: 'b-measurements', type: 'measurements', visible: true, props: { title: 'Precise Measurements' } },
   { id: 'b-anchor', type: 'anchorPoints', visible: true, props: { title: 'Anchor Point Configuration' } },
   { id: 'b-hardware', type: 'hardwareBreakdown', visible: true, props: { title: 'Corner Hardware Breakdown' } },
+  { id: 'b-bom', type: 'billOfMaterials', visible: true, props: { title: 'Itemised Bill of Materials' } },
   { id: 'b-price', type: 'priceBreakdown', visible: true, props: { title: 'Price Breakdown' } },
   { id: 'b-guarantee', type: 'guarantee', visible: true, props: { title: 'Premium Quality Guarantee' } },
   { id: 'b-callout', type: 'pricingCallout', visible: true, props: { title: 'All-Inclusive Price to Your Door' } },
+  { id: 'b-resume', type: 'resumeButton', visible: true, props: { title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' } },
 ];
 
 const DEFAULT_PDF_TEMPLATE: PdfTemplate = {
@@ -332,11 +393,16 @@ function formatWeight(totalWeightGrams: number, unit: 'metric' | 'imperial'): st
   }
 }
 
-async function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalculations): Promise<string> {
+async function generateHTMLContent(
+  config: ConfiguratorState,
+  calculations: ShadeCalculations,
+  quote: QuoteContext | null,
+): Promise<string> {
   const [{ fabric: selectedFabric, color: selectedColor }, template] = await Promise.all([
     fetchFabricContext(config.fabricType, config.fabricColor),
     fetchActiveTemplate(),
   ]);
+  const resumeUrl = quote ? buildResumeUrl(quote.id, quote.accessToken) : null;
   const brand = template.brand;
   const sections = template.sections;
   const date = new Date().toLocaleDateString('en-US', {
@@ -657,6 +723,130 @@ async function generateHTMLContent(config: ConfiguratorState, calculations: Shad
             </ul>
         </div>`;
 
+  const renderQuoteMeta = (block: PdfBlock) => {
+    const fullName = [quote?.customerFirstName, quote?.customerLastName].filter(Boolean).join(' ').trim();
+    const createdDate = quote?.createdAt
+      ? new Date(quote.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    const rows: Array<[string, string]> = [];
+    if (fullName) rows.push(['Customer Name', fullName]);
+    if (quote?.customerEmail) rows.push(['Email', quote.customerEmail]);
+    if (quote?.quoteReference) rows.push(['Quote Reference', quote.quoteReference]);
+    if (quote?.quoteName || config.quoteName) rows.push(['Quote Name', String(quote?.quoteName || config.quoteName)]);
+    if (quote?.customerReference || config.customerReference) rows.push(['Customer Reference', String(quote?.customerReference || config.customerReference)]);
+    rows.push(['Date', createdDate]);
+    if (rows.length === 0) return '';
+    return `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Quote Details'))}</h2>
+            <div class="config-grid">
+                ${rows.map(([label, value]) => `
+                <div class="config-item">
+                    <span class="config-label">${escapeHtmlText(label)}:</span>
+                    <span class="config-value">${escapeHtmlText(value)}</span>
+                </div>
+                `).join('')}
+            </div>
+        </div>`;
+  };
+
+  const renderDiagramImage = (block: PdfBlock) => {
+    const url = quote?.diagramPublicUrl;
+    if (!url) return '';
+    const maxWidth = Number(block.props?.maxWidth) || 520;
+    return `
+        <div class="section" style="text-align: center;">
+            <h2 class="section-title" style="text-align: left;">${escapeHtmlText(titleOf(block, 'Shade Sail Diagram'))}</h2>
+            <img src="${escapeHtmlText(url)}" alt="Shade sail diagram" style="max-width: ${maxWidth}px; width: 100%; height: auto; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; background: #FFFFFF;" />
+        </div>`;
+  };
+
+  const renderBillOfMaterials = (block: PdfBlock) => {
+    const items: Array<{ name: string; qty: string; amount: string }> = [];
+    const fabricLabel = selectedFabric?.label || 'Shade sail fabric';
+    const colorLabel = config.fabricColor ? ` - ${config.fabricColor}` : '';
+    items.push({
+      name: `${fabricLabel}${colorLabel} (${formatArea(calculations.area * 1000000, config.unit)})`,
+      qty: '1',
+      amount: formatCurrency(sailDisplay, config.currency),
+    });
+    if (config.edgeType === 'webbing') {
+      items.push({
+        name: `Webbing reinforcement (${formatMeasurement(calculations.perimeter * 1000, config.unit)} perimeter)`,
+        qty: '1',
+        amount: 'Included',
+      });
+    } else if (config.edgeType === 'cabled') {
+      items.push({
+        name: `Cabled edge (${formatMeasurement(calculations.perimeter * 1000, config.unit)} perimeter)`,
+        qty: '1',
+        amount: 'Included',
+      });
+    }
+    if (resolvedHardwareMode === 'standard') {
+      items.push({
+        name: `Hardware Tensioning Kit (${config.corners}-corner pack)`,
+        qty: '1',
+        amount: 'Included',
+      });
+    } else if (resolvedHardwareMode === 'manual' && config.cornerHardware) {
+      for (let i = 0; i < config.corners; i++) {
+        const letter = String.fromCharCode(65 + i);
+        const lines = config.cornerHardware[i] || [];
+        lines.forEach((line) => {
+          const skuPart = line.sku ? ` (${line.sku})` : '';
+          const lineLive = line.livePriceCurrency === config.currency && line.livePrice != null
+            ? line.livePrice * line.qty
+            : 0;
+          items.push({
+            name: `Corner ${letter}: ${line.name}${skuPart}`,
+            qty: String(line.qty),
+            amount: formatCurrency(lineLive, config.currency),
+          });
+        });
+      }
+    }
+    return `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Itemised Bill of Materials'))}</h2>
+            <div class="anchor-points">
+                <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 2px solid ${brand.primaryColor}; font-weight: bold; color: ${brand.primaryColor}; font-size: 12px;">
+                    <span style="flex: 1;">Item</span>
+                    <span style="width: 50px; text-align: center;">Qty</span>
+                    <span style="width: 110px; text-align: right;">Amount</span>
+                </div>
+                ${items.map((item) => `
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #E2E8F0; font-size: 11px;">
+                    <span style="flex: 1; color: ${brand.textColor};">${escapeHtmlText(item.name)}</span>
+                    <span style="width: 50px; text-align: center; color: ${brand.mutedColor};">${escapeHtmlText(item.qty)}</span>
+                    <span style="width: 110px; text-align: right; font-weight: bold; color: ${brand.primaryColor};">${escapeHtmlText(item.amount)}</span>
+                </div>
+                `).join('')}
+                <div style="display: flex; justify-content: space-between; padding: 10px 0 2px; font-weight: bold; font-size: 13px;">
+                    <span style="flex: 1; color: ${brand.primaryColor};">Total (all-inclusive)</span>
+                    <span style="width: 110px; text-align: right; color: ${brand.primaryColor};">${formatCurrency(calculations.totalPrice, config.currency)}</span>
+                </div>
+            </div>
+        </div>`;
+  };
+
+  const renderResumeButton = (block: PdfBlock) => {
+    if (!resumeUrl) return '';
+    const label = typeof block.props?.label === 'string' && block.props.label
+      ? String(block.props.label)
+      : 'Open My Saved Quote';
+    const title = titleOf(block, 'Resume Your Quote & Add to Cart');
+    return `
+        <div class="section" style="text-align: center; page-break-inside: avoid;">
+            <div style="background: ${brand.primaryColor}; border-radius: 10px; padding: 24px 20px;">
+                <div style="color: #FFFFFF; font-size: 16px; font-weight: bold; margin-bottom: 8px;">${escapeHtmlText(title)}</div>
+                <div style="color: rgba(255,255,255,0.85); font-size: 12px; margin-bottom: 16px;">Pick up exactly where you left off and add this configuration to your cart.</div>
+                <a href="${escapeHtmlText(resumeUrl)}" style="display: inline-block; background: ${brand.accentColor}; color: ${brand.primaryColor}; text-decoration: none; font-weight: bold; font-size: 14px; padding: 12px 28px; border-radius: 8px;">${escapeHtmlText(label)}</a>
+                <div style="color: rgba(255,255,255,0.7); font-size: 10px; margin-top: 12px; word-break: break-all;">${escapeHtmlText(resumeUrl)}</div>
+            </div>
+        </div>`;
+  };
+
   const renderCustomText = (block: PdfBlock) => {
     const heading = escapeHtmlText(block.props?.heading ?? '');
     const body = escapeHtmlText(block.props?.body ?? '').replace(/\n/g, '<br/>');
@@ -704,6 +894,10 @@ async function generateHTMLContent(config: ConfiguratorState, calculations: Shad
       case 'priceBreakdown': return renderPriceBreakdown(block);
       case 'guarantee': return renderGuarantee(block);
       case 'pricingCallout': return renderPricingCallout(block);
+      case 'quoteMeta': return renderQuoteMeta(block);
+      case 'diagramImage': return renderDiagramImage(block);
+      case 'billOfMaterials': return renderBillOfMaterials(block);
+      case 'resumeButton': return renderResumeButton(block);
       case 'customText': return renderCustomText(block);
       case 'customImage': return renderCustomImage(block);
       case 'customHtml': return renderCustomHtml(block);
@@ -1071,7 +1265,7 @@ serve(async (req) => {
       )
     }
 
-    const { config, calculations }: PDFRequest = await req.json()
+    const { config, calculations, quoteId, accessToken }: PDFRequest = await req.json()
 
     if (!config || !calculations) {
       return new Response(
@@ -1085,8 +1279,11 @@ serve(async (req) => {
 
     console.log('Starting PDF generation for config:', config.corners, 'corners')
 
+    // Fetch quote context for customer info, diagram, and resume link
+    const quoteContext = await fetchQuoteContext(quoteId, accessToken)
+
     // Generate HTML content
-    const htmlContent = await generateHTMLContent(config, calculations)
+    const htmlContent = await generateHTMLContent(config, calculations, quoteContext)
     const activeTemplate = await fetchActiveTemplate()
 
     // Launch Puppeteer browser
