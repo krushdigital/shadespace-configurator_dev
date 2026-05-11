@@ -343,6 +343,8 @@ export function getFabricPriceFromPerimeter(perimeter: number, fabricType: strin
       return closestEntry.extrablock330;
     case 'shadetec320':
       return closestEntry.shadetec320;
+    case 'commercial95':
+      return closestEntry.monotec370;
     default: {
       const avg = (closestEntry.monotec370 + closestEntry.extrablock330 + closestEntry.shadetec320) / 3;
       console.warn(`[pricing fallback] Unknown fabric "${fabricType}" — using average of known fabrics. Live pricing matrix should be checked.`);

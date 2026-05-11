@@ -137,5 +137,32 @@ export const FABRICS: Fabric[] = [
       { name: 'Carbon Black', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Carbon_black.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 97 },
       { name: 'Lava Red', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Lava_red.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 91 }
     ]
+  },
+  {
+    id: 'commercial95',
+    label: 'Commercial 95',
+    description: 'Heavy-duty commercial mesh with stainless steel D-rings and twin-stitched PTFE seams',
+    detailedDescription: 'Commercial95 is a premium commercial-grade shade mesh engineered for maximum longevity. Custom made with a 15-year fabric warranty, it features twin-stitched PTFE thread, stainless steel D-rings at every corner, and heavy-duty webbing inside the hem for exceptional structural integrity.',
+    benefits: [
+      '15-year fabric warranty',
+      'Twin-stitched PTFE seams',
+      'Stainless steel D-rings at corners',
+      'Heavy-duty webbing inside hem',
+      'Premium commercial-grade mesh'
+    ],
+    bestFor: [
+      'Commercial installations',
+      'Schools and public spaces',
+      'High-wind exposure sites',
+      'Long-term shade structures'
+    ],
+    uvProtection: '95%+',
+    pricePerSqm: 120,
+    warrantyYears: 15,
+    madeIn: 'Australia',
+    weightPerSqm: 340,
+    badgeText: 'Commercial',
+    isFireRetardant: false,
+    colors: []
   }
 ];
