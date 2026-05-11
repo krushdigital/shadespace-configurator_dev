@@ -98,47 +98,6 @@ export const FABRICS: Fabric[] = [
     ]
   },
   {
-    id: 'shadetec320',
-    label: 'Shadetec 320',
-    description: 'High quality knitted fabric with high strength and great aesthetics',
-    detailedDescription: 'Shadetec 320 is a high-quality knitted HDPE fabric that offers reliable UV protection and good durability at a more accessible price point. It\'s an excellent entry-level option for those seeking a dependable shade solution without compromising on quality. Its refined appearance and good tear resistance make it a smart choice for residential and light commercial use.',
-    benefits: [
-      'High-quality knitted construction',
-      'Excellent strength & dimensional stability',
-      'Refined, upscale appearance',
-      'Robust & tear resistant',
-      'Excellent color fastness',
-    ],
-    bestFor: [
-      'Residential applications',
-      'Light commercial installations',
-      'Budget-conscious projects',
-    ],
-    uvProtection: '90%+',
-    pricePerSqm: 95,
-    warrantyYears: 10,
-    madeIn: 'South Korea',
-    weightPerSqm: 320,
-    badgeText: 'Best Value',
-    isFireRetardant: false,
-    colors: [
-      { name: 'Canyon Tan', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Canyon_tan.webp?v=1755468808', textColor: '#000000', shadeFactor: 92 },
-      { name: 'Desert Sand', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Desert_sand.webp?v=1755468808', textColor: '#000000', shadeFactor: 87 },
-      { name: 'Deep Sea Navy', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Deep_Sea_navy.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 96 },
-      { name: 'Forest Green', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Forest_green.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 95 },
-      { name: 'Coastal Cream', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Coastal_cream.webp?v=1755468808', textColor: '#000000', shadeFactor: 77 },
-      { name: 'Arctic White', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Artic_white.webp?v=1755468808', textColor: '#000000', shadeFactor: 83.2 },
-      { name: 'Meadow Green', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Meadow_green.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 91 },
-      { name: 'River Sand', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_River_sand.webp?v=1755468808', textColor: '#000000', shadeFactor: 90 },
-      { name: 'Ocean Blue', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Ocean_blue.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 93 },
-      { name: 'Sunshine Yellow', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Sunshine_yellow.webp?v=1755468807', textColor: '#000000', shadeFactor: 80 },
-      { name: 'Alpine Silver', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Alpine_Silver.webp?v=1755468808', textColor: '#000000', shadeFactor: 94 },
-      { name: 'Charcoal Grey', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Charcoal_Grey.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 95 },
-      { name: 'Carbon Black', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Carbon_black.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 97 },
-      { name: 'Lava Red', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Lava_red.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 91 }
-    ]
-  },
-  {
     id: 'commercial95',
     label: 'Commercial 95',
     description: 'Unrivalled UV protection. Architectural fabric.',
@@ -185,6 +144,47 @@ export const FABRICS: Fabric[] = [
       { name: 'Turquoise', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Turquoise_-_Front.jpg?v=1778453773', textColor: '#000000', shadeFactor: 86.0 },
       { name: 'Yellow', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Yellow_-_Front_CM95.jpg?v=1778461803', textColor: '#000000', shadeFactor: 77.6 },
       { name: 'White', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/White_-_Front.jpg?v=1778458804', textColor: '#000000', shadeFactor: 73.9 }
+    ]
+  },
+  {
+    id: 'shadetec320',
+    label: 'Shadetec 320',
+    description: 'High quality knitted fabric with high strength and great aesthetics',
+    detailedDescription: 'Shadetec 320 is a high-quality knitted HDPE fabric that offers reliable UV protection and good durability at a more accessible price point. It\'s an excellent entry-level option for those seeking a dependable shade solution without compromising on quality. Its refined appearance and good tear resistance make it a smart choice for residential and light commercial use.',
+    benefits: [
+      'High-quality knitted construction',
+      'Excellent strength & dimensional stability',
+      'Refined, upscale appearance',
+      'Robust & tear resistant',
+      'Excellent color fastness',
+    ],
+    bestFor: [
+      'Residential applications',
+      'Light commercial installations',
+      'Budget-conscious projects',
+    ],
+    uvProtection: '90%+',
+    pricePerSqm: 95,
+    warrantyYears: 10,
+    madeIn: 'South Korea',
+    weightPerSqm: 320,
+    badgeText: 'Best Value',
+    isFireRetardant: false,
+    colors: [
+      { name: 'Canyon Tan', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Canyon_tan.webp?v=1755468808', textColor: '#000000', shadeFactor: 92 },
+      { name: 'Desert Sand', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Desert_sand.webp?v=1755468808', textColor: '#000000', shadeFactor: 87 },
+      { name: 'Deep Sea Navy', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Deep_Sea_navy.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 96 },
+      { name: 'Forest Green', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Forest_green.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 95 },
+      { name: 'Coastal Cream', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Coastal_cream.webp?v=1755468808', textColor: '#000000', shadeFactor: 77 },
+      { name: 'Arctic White', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Artic_white.webp?v=1755468808', textColor: '#000000', shadeFactor: 83.2 },
+      { name: 'Meadow Green', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Meadow_green.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 91 },
+      { name: 'River Sand', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_River_sand.webp?v=1755468808', textColor: '#000000', shadeFactor: 90 },
+      { name: 'Ocean Blue', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Ocean_blue.webp?v=1755468808', textColor: '#FFFFFF', shadeFactor: 93 },
+      { name: 'Sunshine Yellow', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Sunshine_yellow.webp?v=1755468807', textColor: '#000000', shadeFactor: 80 },
+      { name: 'Alpine Silver', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Alpine_Silver.webp?v=1755468808', textColor: '#000000', shadeFactor: 94 },
+      { name: 'Charcoal Grey', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Charcoal_Grey.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 95 },
+      { name: 'Carbon Black', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Carbon_black.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 97 },
+      { name: 'Lava Red', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Shadetec_-_Lava_red.webp?v=1755468807', textColor: '#FFFFFF', shadeFactor: 91 }
     ]
   }
 ];
