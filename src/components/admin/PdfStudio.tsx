@@ -13,6 +13,53 @@ import {
   newBlockId,
   sanitizeCustomHtml,
 } from '../../utils/pdfBlocks';
+import { ConfiguratorState, ShadeCalculations } from '../../types';
+
+interface LiveQuoteRow {
+  id: string;
+  quote_reference: string | null;
+  quote_name: string | null;
+  customer_first_name: string | null;
+  customer_last_name: string | null;
+  customer_email: string | null;
+  customer_reference: string | null;
+  access_token: string;
+  diagram_public_url: string | null;
+  created_at: string;
+  config_data: ConfiguratorState;
+  calculations_data: ShadeCalculations;
+}
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  NZD: 'NZ$', USD: 'US$', AUD: 'AU$', GBP: '\u00a3', EUR: '\u20ac', CAD: 'CA$',
+};
+
+function formatCurrencyPreview(amount: number, code: string): string {
+  const symbol = CURRENCY_SYMBOLS[code] || code;
+  return `${symbol}${(amount || 0).toFixed(2)}`;
+}
+
+function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'): string {
+  if (!mm || !isFinite(mm)) return 'Not provided';
+  if (unit === 'imperial') {
+    const inches = mm * 0.0393701;
+    if (inches >= 12) {
+      const feet = Math.floor(inches / 12);
+      const rem = inches % 12;
+      return parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
+    }
+    return `${inches.toFixed(1)}"`;
+  }
+  return `${Math.round(mm)}mm`;
+}
+
+function formatAreaPreview(mm2: number, unit: 'metric' | 'imperial'): string {
+  if (unit === 'imperial') {
+    const sqft = mm2 * (0.0393701 * 0.0393701) / 144;
+    return `${sqft.toFixed(1)} ft\u00b2`;
+  }
+  return `${(mm2 / 1000000).toFixed(2)} m\u00b2`;
+}
 
 export interface PdfTemplateConfig {
   brand: {
@@ -112,6 +159,36 @@ export const PdfStudio: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
   const [pane, setPane] = useState<'layout' | 'branding'>('layout');
+  const [dataSource, setDataSource] = useState<'mock' | 'live'>('mock');
+  const [liveQuotes, setLiveQuotes] = useState<LiveQuoteRow[]>([]);
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string>('');
+  const [loadingQuotes, setLoadingQuotes] = useState(false);
+
+  const loadLiveQuotes = async () => {
+    setLoadingQuotes(true);
+    const { data, error } = await supabase
+      .from('saved_quotes')
+      .select('id, quote_reference, quote_name, customer_first_name, customer_last_name, customer_email, customer_reference, access_token, diagram_public_url, created_at, config_data, calculations_data')
+      .order('created_at', { ascending: false })
+      .limit(25);
+    setLoadingQuotes(false);
+    if (error) {
+      setMessage({ kind: 'err', text: `Failed to load quotes: ${error.message}` });
+      return;
+    }
+    const rows = (data || []) as unknown as LiveQuoteRow[];
+    setLiveQuotes(rows);
+    if (rows.length > 0 && !selectedQuoteId) setSelectedQuoteId(rows[0].id);
+  };
+
+  useEffect(() => {
+    if (dataSource === 'live' && liveQuotes.length === 0) loadLiveQuotes();
+  }, [dataSource]);
+
+  const selectedQuote = useMemo(
+    () => liveQuotes.find((q) => q.id === selectedQuoteId) || null,
+    [liveQuotes, selectedQuoteId],
+  );
 
   const loadTemplates = async () => {
     setLoading(true);
@@ -248,7 +325,8 @@ export const PdfStudio: React.FC = () => {
   };
 
   const selected = useMemo(() => blocks.find((b) => b.id === selectedBlockId) || null, [blocks, selectedBlockId]);
-  const previewHtml = useMemo(() => buildPreview(config, blocks), [config, blocks]);
+  const liveData = dataSource === 'live' ? selectedQuote : null;
+  const previewHtml = useMemo(() => buildPreview(config, blocks, liveData), [config, blocks, liveData]);
 
   if (loading) {
     return <Card className="p-6">Loading templates...</Card>;
@@ -298,6 +376,62 @@ export const PdfStudio: React.FC = () => {
             {message.text}
           </div>
         )}
+        <div className="mt-4 border-t border-gray-200 pt-3">
+          <div className="text-xs font-semibold text-gray-700 mb-2">Preview data source</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDataSource('mock')}
+              className={`px-3 py-1.5 text-sm rounded-lg border ${dataSource === 'mock' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+            >
+              Mock sample data
+            </button>
+            <button
+              type="button"
+              onClick={() => setDataSource('live')}
+              className={`px-3 py-1.5 text-sm rounded-lg border ${dataSource === 'live' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+            >
+              Live saved quote
+            </button>
+            {dataSource === 'live' && (
+              <>
+                <select
+                  value={selectedQuoteId}
+                  onChange={(e) => setSelectedQuoteId(e.target.value)}
+                  disabled={loadingQuotes}
+                  className="flex-1 min-w-[240px] border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
+                >
+                  {loadingQuotes && <option>Loading...</option>}
+                  {!loadingQuotes && liveQuotes.length === 0 && <option value="">No saved quotes found</option>}
+                  {liveQuotes.map((q) => {
+                    const name = [q.customer_first_name, q.customer_last_name].filter(Boolean).join(' ').trim() || q.customer_email || 'Anonymous';
+                    const ref = q.quote_reference || q.id.slice(0, 8);
+                    const dt = new Date(q.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    return (
+                      <option key={q.id} value={q.id}>{ref} \u2014 {name} ({dt})</option>
+                    );
+                  })}
+                </select>
+                <button
+                  type="button"
+                  onClick={loadLiveQuotes}
+                  disabled={loadingQuotes}
+                  className="px-3 py-1.5 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Refresh
+                </button>
+              </>
+            )}
+          </div>
+          {dataSource === 'live' && selectedQuote && (
+            <div className="mt-2 text-xs text-gray-500">
+              Previewing with <strong className="text-gray-700">{selectedQuote.quote_reference || selectedQuote.id.slice(0, 8)}</strong>
+              {selectedQuote.config_data?.currency ? ` \u2014 ${selectedQuote.config_data.currency}` : ''}
+              {selectedQuote.diagram_public_url ? ' \u2022 diagram available' : ' \u2022 no diagram'}
+            </div>
+          )}
+        </div>
+
         <div className="mt-4 flex gap-2">
           <button
             type="button"
@@ -618,7 +752,7 @@ const TextRow: React.FC<{ label: string; value: string; onChange: (v: string) =>
   </div>
 );
 
-function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[]): string {
+function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuoteRow | null): string {
   const b = cfg.brand;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body { margin:0; padding:24px; background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; }
@@ -643,7 +777,7 @@ function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[]): string {
         <p class="tagline">${escapeHtml(cfg.header.tagline)}</p>
       </div>
     </div>
-    ${blocks.filter((x) => x.visible).map((x) => renderSampleBlock(x, cfg)).join('')}
+    ${blocks.filter((x) => x.visible).map((x) => renderSampleBlock(x, cfg, live)).join('')}
     <div class="footer">
       <div>${escapeHtml(cfg.footer.line1)}</div>
       <div>${escapeHtml(cfg.footer.line2)}</div>
@@ -651,59 +785,125 @@ function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[]): string {
   </body></html>`;
 }
 
-function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig): string {
+function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {
   const p = block.props || {};
   const title = (p.title as string) || BLOCK_LABELS[block.type];
+  const cfgData = live?.config_data;
+  const calc = live?.calculations_data;
+  const currency = cfgData?.currency || 'NZD';
+  const total = calc?.totalPrice ?? 650;
+  const fabricLabel = cfgData?.fabricType || 'Monotec 370';
+  const fabricColor = cfgData?.fabricColor || 'Domino Black';
+  const corners = cfgData?.corners ?? 4;
+  const unit: 'metric' | 'imperial' = cfgData?.unit || 'metric';
   switch (block.type) {
     case 'summary':
       return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Fabric Material</span><span class="val">Monotec 370</span></div>
-        <div class="row"><span class="muted">Fabric Color</span><span class="val">Domino Black</span></div>
-        <div class="row"><span class="muted">Shade Factor</span><span class="val">88.4%</span></div>
-        <div class="row"><span class="muted">Warranty</span><span class="val">15 Years</span></div>
-        <div class="row"><span class="muted">Corners</span><span class="val">4</span></div>`;
-    case 'measurements':
+        <div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>
+        <div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>
+        <div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>
+        <div class="row"><span class="muted">Total Area</span><span class="val">${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)}</span></div>
+        <div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${cfgData?.edgeType === 'webbing' ? 'Webbing Reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled Edge' : 'Webbing Reinforced'}</span></div>`;
+    case 'measurements': {
+      if (cfgData && cfgData.measurements) {
+        const edges: string[] = [];
+        for (let i = 0; i < corners; i++) {
+          const next = (i + 1) % corners;
+          const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + next)}`;
+          const mm = cfgData.measurements[key];
+          if (mm) edges.push(`<div class="row"><span class="muted">Edge ${key.charAt(0)} to ${key.charAt(1)}</span><span class="val">${formatMeasurementPreview(mm, unit)}</span></div>`);
+        }
+        return `<h2>${escapeHtml(title)}</h2>${edges.join('') || '<div class="row"><span class="muted">No measurements set</span></div>'}`;
+      }
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">Edge A to B</span><span class="val">4000mm</span></div>
         <div class="row"><span class="muted">Edge B to C</span><span class="val">3500mm</span></div>`;
-    case 'anchorPoints':
+    }
+    case 'anchorPoints': {
+      if (cfgData && Array.isArray(cfgData.fixingHeights)) {
+        const rows = cfgData.fixingHeights.slice(0, corners).map((h, i) => {
+          const letter = String.fromCharCode(65 + i);
+          const t = cfgData.fixingTypes?.[i] || 'post';
+          const o = cfgData.eyeOrientations?.[i] || 'horizontal';
+          return `<div class="row"><span class="muted">Corner ${letter}</span><span class="val">${formatMeasurementPreview(h || 0, unit)}, ${t}, ${o} eye</span></div>`;
+        }).join('');
+        return `<h2>${escapeHtml(title)}</h2>${rows}`;
+      }
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">Corner A</span><span class="val">2400mm, post</span></div>`;
+    }
     case 'hardwareBreakdown':
       return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">1x Turnbuckle</span><span class="val">NZ$25.00</span></div>`;
+        <div class="row"><span class="muted">1x Turnbuckle</span><span class="val">${formatCurrencyPreview(25, currency)}</span></div>`;
     case 'priceBreakdown':
       return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Shade sail</span><span class="val">NZ$580.00</span></div>
-        <div class="row"><span class="val">Total</span><span class="val">NZ$650.00</span></div>`;
+        <div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
+        <div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`;
     case 'guarantee':
       return `<div class="guarantee"><div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
         <div style="font-size:12px;">15-year Fabric &amp; Workmanship Warranty &middot; Weather-resistant materials &middot; Free worldwide shipping</div></div>`;
     case 'pricingCallout':
-      return `<div class="callout"><div style="font-size:12px;opacity:.85;">${escapeHtml(title)}</div><div class="price">NZ$650.00</div></div>`;
-    case 'quoteMeta':
+      return `<div class="callout"><div style="font-size:12px;opacity:.85;">${escapeHtml(title)}</div><div class="price">${formatCurrencyPreview(total, currency)}</div></div>`;
+    case 'quoteMeta': {
+      const fullName = [live?.customer_first_name, live?.customer_last_name].filter(Boolean).join(' ').trim();
+      const name = fullName || 'Jane Smith';
+      const email = live?.customer_email || 'jane@example.com';
+      const ref = live?.quote_reference || 'SQ-2026-00123';
+      const date = live?.created_at
+        ? new Date(live.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const custRef = live?.customer_reference || cfgData?.customerReference;
+      const quoteName = live?.quote_name || cfgData?.quoteName;
       return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Customer Name</span><span class="val">Jane Smith</span></div>
-        <div class="row"><span class="muted">Email</span><span class="val">jane@example.com</span></div>
-        <div class="row"><span class="muted">Quote Reference</span><span class="val">SQ-2026-00123</span></div>
-        <div class="row"><span class="muted">Date</span><span class="val">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>`;
+        <div class="row"><span class="muted">Customer Name</span><span class="val">${escapeHtml(name)}</span></div>
+        <div class="row"><span class="muted">Email</span><span class="val">${escapeHtml(email)}</span></div>
+        <div class="row"><span class="muted">Quote Reference</span><span class="val">${escapeHtml(ref)}</span></div>
+        ${quoteName ? `<div class="row"><span class="muted">Quote Name</span><span class="val">${escapeHtml(quoteName)}</span></div>` : ''}
+        ${custRef ? `<div class="row"><span class="muted">Customer Reference</span><span class="val">${escapeHtml(custRef)}</span></div>` : ''}
+        <div class="row"><span class="muted">Date</span><span class="val">${escapeHtml(date)}</span></div>`;
+    }
+    case 'stepSelections': {
+      const manufacturing = cfgData?.measurementOption === 'exact'
+        ? 'Manufacture Shade Sail to the Exact Dimensions I provide'
+        : 'Manufacture Shade Sail to fit my Space';
+      const hwMode = cfgData?.hardwareSelectionMode || (cfgData?.measurementOption === 'adjust' ? 'standard' : 'none');
+      const hwLabel = hwMode === 'standard' ? `Standard tensioning kit included (${corners}-corner pack)` : hwMode === 'manual' ? 'Manual hardware per corner' : 'No tensioning hardware';
+      const fixingLabel = cfgData?.fixingPointsInstalled === true ? 'Already installed' : cfgData?.fixingPointsInstalled === false ? 'Planning installation' : 'Not specified';
+      const edgeLabel = cfgData?.edgeType === 'webbing' ? 'Webbing reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled edge' : 'Webbing reinforced';
+      const rows: Array<[string, string]> = [
+        ['Manufacturing Approach', manufacturing],
+        ['Number of Corners', `${corners}-corner shade sail`],
+        ['Measurement Units', unit === 'metric' ? 'Metric (mm / m)' : 'Imperial (in / ft)'],
+        ['Fabric', `${fabricLabel}${fabricColor ? ` - ${fabricColor}` : ''}`],
+        ['Edge Reinforcement', edgeLabel],
+        ['Tensioning Hardware', hwLabel],
+        ['Fixing Points', fixingLabel],
+      ];
+      return `<h2>${escapeHtml(title)}</h2>${rows.map(([label, value], idx) => `<div class="row"><span class="muted">Step ${idx + 1} - ${escapeHtml(label)}</span><span class="val">${escapeHtml(value)}</span></div>`).join('')}`;
+    }
     case 'diagramImage': {
       const mw = Number(p.maxWidth) || 520;
+      if (live?.diagram_public_url) {
+        return `<h2>${escapeHtml(title)}</h2>
+          <div style="text-align:center;"><img src="${escapeHtml(live.diagram_public_url)}" alt="Shade sail diagram" style="max-width:${mw}px;width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:10px;background:#fff;" /></div>`;
+      }
       return `<h2>${escapeHtml(title)}</h2>
         <div style="text-align:center;padding:16px;border:1px dashed ${cfg.brand.mutedColor};border-radius:8px;color:${cfg.brand.mutedColor};font-size:12px;max-width:${mw}px;margin:0 auto;">Shade sail diagram (rendered from saved quote)</div>`;
     }
     case 'billOfMaterials':
       return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Monotec 370 - Domino Black (12.5 m²)</span><span class="val">NZ$580.00</span></div>
-        <div class="row"><span class="muted">Webbing reinforcement</span><span class="val">Included</span></div>
-        <div class="row"><span class="muted">Hardware Tensioning Kit (4-corner pack)</span><span class="val">Included</span></div>
-        <div class="row"><span class="val">Total (all-inclusive)</span><span class="val">NZ$650.00</span></div>`;
+        <div class="row"><span class="muted">${escapeHtml(fabricLabel)} - ${escapeHtml(fabricColor)} (${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)})</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
+        <div class="row"><span class="muted">Edge reinforcement</span><span class="val">Included</span></div>
+        <div class="row"><span class="muted">Hardware Tensioning Kit (${corners}-corner pack)</span><span class="val">Included</span></div>
+        <div class="row"><span class="val">Total (all-inclusive)</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`;
     case 'resumeButton': {
       const label = (p.label as string) || 'Open My Saved Quote';
+      const url = live ? `https://shadespace.com/pages/shade-sail-configurator?quote=${live.id}&token=${encodeURIComponent(live.access_token)}` : null;
       return `<div style="margin:16px 0;text-align:center;padding:20px;border-radius:10px;background:${cfg.brand.primaryColor};color:#fff;">
         <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
         <div style="font-size:12px;opacity:.85;margin-bottom:12px;">Pick up exactly where you left off and add this configuration to your cart.</div>
         <span style="display:inline-block;background:${cfg.brand.accentColor};color:${cfg.brand.primaryColor};padding:10px 24px;border-radius:6px;font-weight:700;font-size:13px;">${escapeHtml(label)}</span>
+        ${url ? `<div style="font-size:10px;margin-top:10px;opacity:0.7;word-break:break-all;">${escapeHtml(url)}</div>` : ''}
       </div>`;
     }
     case 'customText': {

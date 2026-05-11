@@ -7,6 +7,7 @@ export type BlockType =
   | 'guarantee'
   | 'pricingCallout'
   | 'quoteMeta'
+  | 'stepSelections'
   | 'diagramImage'
   | 'billOfMaterials'
   | 'resumeButton'
@@ -32,6 +33,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   guarantee: 'Premium Quality Guarantee',
   pricingCallout: 'Pricing Callout',
   quoteMeta: 'Quote Details (Customer + Reference)',
+  stepSelections: 'Configurator Step Selections',
   diagramImage: 'Shade Sail Diagram',
   billOfMaterials: 'Itemised Bill of Materials',
   resumeButton: 'Resume Quote Button',
@@ -51,6 +53,7 @@ export const DYNAMIC_TYPES: BlockType[] = [
   'guarantee',
   'pricingCallout',
   'quoteMeta',
+  'stepSelections',
   'diagramImage',
   'billOfMaterials',
   'resumeButton',
@@ -58,6 +61,7 @@ export const DYNAMIC_TYPES: BlockType[] = [
 
 export const DEFAULT_BLOCKS: PdfBlock[] = [
   { id: 'b-quoteMeta', type: 'quoteMeta', visible: true, props: { title: 'Quote Details' } },
+  { id: 'b-steps', type: 'stepSelections', visible: true, props: { title: 'Your Configurator Selections' } },
   { id: 'b-diagram', type: 'diagramImage', visible: true, props: { title: 'Shade Sail Diagram', maxWidth: 520 } },
   { id: 'b-summary', type: 'summary', visible: true, props: { title: 'Shade Sail Summary' } },
   { id: 'b-measurements', type: 'measurements', visible: true, props: { title: 'Precise Measurements' } },

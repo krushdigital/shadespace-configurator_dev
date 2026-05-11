@@ -139,6 +139,7 @@ type PdfBlockType =
   | 'guarantee'
   | 'pricingCallout'
   | 'quoteMeta'
+  | 'stepSelections'
   | 'diagramImage'
   | 'billOfMaterials'
   | 'resumeButton'
@@ -204,6 +205,7 @@ function escapeHtmlText(s: unknown): string {
 
 const DEFAULT_BLOCKS_ORDER: PdfBlock[] = [
   { id: 'b-quoteMeta', type: 'quoteMeta', visible: true, props: { title: 'Quote Details' } },
+  { id: 'b-steps', type: 'stepSelections', visible: true, props: { title: 'Your Configurator Selections' } },
   { id: 'b-diagram', type: 'diagramImage', visible: true, props: { title: 'Shade Sail Diagram', maxWidth: 520 } },
   { id: 'b-summary', type: 'summary', visible: true, props: { title: 'Shade Sail Summary' } },
   { id: 'b-measurements', type: 'measurements', visible: true, props: { title: 'Precise Measurements' } },
@@ -750,6 +752,63 @@ async function generateHTMLContent(
         </div>`;
   };
 
+  const renderStepSelections = (block: PdfBlock) => {
+    const rows: Array<[string, string]> = [];
+    const manufacturing = config.measurementOption === 'adjust'
+      ? 'Manufacture Shade Sail to fit my Space'
+      : 'Manufacture Shade Sail to the Exact Dimensions I provide';
+    rows.push(['Manufacturing Approach', manufacturing]);
+    rows.push(['Number of Corners', `${config.corners}-corner shade sail`]);
+    rows.push(['Measurement Units', config.unit === 'metric' ? 'Metric (mm / m)' : 'Imperial (in / ft)']);
+    rows.push([
+      'Fabric',
+      `${selectedFabric?.label || 'Not selected'}${config.fabricColor ? ` - ${config.fabricColor}` : ''}${isNonFRColor ? ' (not FR certified)' : isFireRetardant ? ' (fire retardant)' : ''}`,
+    ]);
+    rows.push([
+      'Edge Reinforcement',
+      config.edgeType === 'webbing' ? 'Webbing reinforced' : config.edgeType === 'cabled' ? 'Cabled edge' : 'Not selected',
+    ]);
+    const hwMode = resolvedHardwareMode;
+    const hwLabel = hwMode === 'standard'
+      ? `Standard tensioning kit included (${config.corners}-corner pack)`
+      : hwMode === 'manual'
+        ? 'Manual hardware per corner (see breakdown)'
+        : 'No tensioning hardware';
+    rows.push(['Tensioning Hardware', hwLabel]);
+    rows.push([
+      'Fixing Points',
+      config.fixingPointsInstalled === true
+        ? 'Already installed'
+        : config.fixingPointsInstalled === false
+          ? 'Planning installation'
+          : 'Not specified',
+    ]);
+    if (config.fixingTypes && config.fixingTypes.length > 0) {
+      const typeSummary = config.fixingTypes
+        .map((t, i) => `${String.fromCharCode(65 + i)}: ${t}`)
+        .join(', ');
+      rows.push(['Fixing Types', typeSummary]);
+    }
+    if (config.eyeOrientations && config.eyeOrientations.length > 0) {
+      const orient = config.eyeOrientations
+        .map((o, i) => `${String.fromCharCode(65 + i)}: ${o}`)
+        .join(', ');
+      rows.push(['Eye Orientations', orient]);
+    }
+    return `
+        <div class="section">
+            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Your Configurator Selections'))}</h2>
+            <div class="anchor-points">
+                ${rows.map(([label, value], idx) => `
+                <div class="anchor-item">
+                    <span class="anchor-details" style="flex: 0 0 180px;">Step ${idx + 1} - ${escapeHtmlText(label)}:</span>
+                    <span class="anchor-corner" style="flex: 1; text-align: right;">${escapeHtmlText(value)}</span>
+                </div>
+                `).join('')}
+            </div>
+        </div>`;
+  };
+
   const renderDiagramImage = (block: PdfBlock) => {
     const url = quote?.diagramPublicUrl;
     if (!url) return '';
@@ -895,6 +954,7 @@ async function generateHTMLContent(
       case 'guarantee': return renderGuarantee(block);
       case 'pricingCallout': return renderPricingCallout(block);
       case 'quoteMeta': return renderQuoteMeta(block);
+      case 'stepSelections': return renderStepSelections(block);
       case 'diagramImage': return renderDiagramImage(block);
       case 'billOfMaterials': return renderBillOfMaterials(block);
       case 'resumeButton': return renderResumeButton(block);
