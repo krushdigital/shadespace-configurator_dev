@@ -62,30 +62,75 @@ interface PDFRequest {
   calculations: ShadeCalculations;
 }
 
-// Fabric data (simplified version)
-const FABRICS = [
-  {
-    id: 'monotec370',
-    label: 'Monotec 370',
-    uvProtection: '95%+',
-    warrantyYears: 15,
-    madeIn: 'Australia'
-  },
-  {
-    id: 'extrablock330',
-    label: 'ExtraBlock 330',
-    uvProtection: '98%+',
-    warrantyYears: 10,
-    madeIn: 'South Africa'
-  },
-  {
-    id: 'shadetec320',
-    label: 'Shadetec 320',
-    uvProtection: '90%+',
-    warrantyYears: 10,
-    madeIn: 'South Korea'
+interface FabricRecord {
+  id: string;
+  label: string;
+  uvProtection: string;
+  warrantyYears: number;
+  madeIn: string;
+}
+
+interface FabricColorRecord {
+  fabricId: string;
+  name: string;
+  isFireRetardant: boolean;
+}
+
+async function fetchFabricContext(
+  fabricType: string | undefined,
+  fabricColor: string | undefined,
+): Promise<{ fabric: FabricRecord | null; color: FabricColorRecord | null }> {
+  if (!fabricType) return { fabric: null, color: null };
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceRoleKey) return { fabric: null, color: null };
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data: fabricRow } = await supabase
+      .from('fabric_catalog')
+      .select('id, label, uv_protection, warranty_years, made_in')
+      .eq('id', fabricType)
+      .maybeSingle();
+
+    const fabric: FabricRecord | null = fabricRow
+      ? {
+          id: fabricRow.id,
+          label: fabricRow.label,
+          uvProtection: fabricRow.uv_protection,
+          warrantyYears: Number(fabricRow.warranty_years) || 10,
+          madeIn: fabricRow.made_in,
+        }
+      : null;
+
+    let color: FabricColorRecord | null = null;
+    if (fabricColor) {
+      const { data: colorRow } = await supabase
+        .from('fabric_colors')
+        .select('fabric_type_id, color_name, is_fire_retardant')
+        .eq('fabric_type_id', fabricType)
+        .eq('color_name', fabricColor)
+        .maybeSingle();
+      if (colorRow) {
+        color = {
+          fabricId: colorRow.fabric_type_id,
+          name: colorRow.color_name,
+          isFireRetardant: !!colorRow.is_fire_retardant,
+        };
+      }
+    }
+
+    if (!fabric) {
+      console.warn(`[generate-pdf] Unknown fabric id "${fabricType}" — catalog lookup failed`);
+    }
+
+    return { fabric, color };
+  } catch (err) {
+    console.warn('[generate-pdf] Fabric catalog fetch error:', err);
+    return { fabric: null, color: null };
   }
-];
+}
 
 // Utility functions
 function formatMeasurement(mm: number, unit: 'metric' | 'imperial'): string {
@@ -136,12 +181,15 @@ function formatWeight(totalWeightGrams: number, unit: 'metric' | 'imperial'): st
   }
 }
 
-function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalculations): string {
-  const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
-  const date = new Date().toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+async function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalculations): Promise<string> {
+  const { fabric: selectedFabric, color: selectedColor } = await fetchFabricContext(
+    config.fabricType,
+    config.fabricColor,
+  );
+  const date = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   });
 
   // Hardware pack image mapping
@@ -152,15 +200,9 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
     6: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
   };
   
-   // Determine if it's ExtraBlock with non-FR color
-   const isExtrablockNonFRColor = selectedFabric?.id === 'extrablock330' && 
-     config.fabricColor && 
-     ['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor);
-   
-  // Determine if fabric color is fire retardant
-  const isFireRetardant = selectedFabric?.id === 'extrablock330' && 
-    config.fabricColor && 
-    !['Yellow', 'Red', 'Cream', 'Beige'].includes(config.fabricColor);
+  // Fire-retardant status comes from the catalog color record (admin-managed).
+  const isFireRetardant = !!selectedColor?.isFireRetardant;
+  const isNonFRColor = !!selectedColor && !selectedColor.isFireRetardant;
 
   // Generate edge measurements
   const edgeMeasurements = [];
@@ -527,7 +569,7 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                     <span class="config-label">Fabric Color:</span>
                     <span class="config-value">
                         ${config.fabricColor || 'Not selected'}
-                        ${isExtrablockNonFRColor ? '<span style="color: #DC2626; font-size: 10px; background: #FEE2E2; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">(Not FR Certified)</span>' : ''}
+                        ${isNonFRColor ? '<span style="color: #DC2626; font-size: 10px; background: #FEE2E2; padding: 2px 6px; border-radius: 10px; margin-left: 8px;">(Not FR Certified)</span>' : ''}
                     </span>
                 </div>
                 <div class="config-item">
@@ -540,7 +582,7 @@ function generateHTMLContent(config: ConfiguratorState, calculations: ShadeCalcu
                 </div>
                 <div class="config-item">
                     <span class="config-label">Fire Retardant:</span>
-                    <span class="config-value">${isFireRetardant ? 'Yes' : isExtrablockNonFRColor ? 'No (Selected color is not FR certified)' : 'No'}</span>
+                    <span class="config-value">${isFireRetardant ? 'Yes' : isNonFRColor ? 'No (Selected color is not FR certified)' : 'No'}</span>
                 </div>
                 <div class="config-item">
                     <span class="config-label">Edge Reinforcement:</span>
@@ -796,7 +838,7 @@ serve(async (req) => {
     console.log('Starting PDF generation for config:', config.corners, 'corners')
 
     // Generate HTML content
-    const htmlContent = generateHTMLContent(config, calculations)
+    const htmlContent = await generateHTMLContent(config, calculations)
 
     // Launch Puppeteer browser
     const browser = await puppeteer.launch({
