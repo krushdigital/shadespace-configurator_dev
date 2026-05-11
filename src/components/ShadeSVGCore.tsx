@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback, forwardRef } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback, useId, forwardRef } from 'react';
 import { ConfiguratorState, Point } from '../types';
 import { formatMeasurement, getShapeAccuracy, ShapeAccuracy, getDiagonalKeysForCorners } from '../utils/geometry';
 import { FABRICS } from '../data/fabrics';
@@ -45,6 +45,16 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   plainBackground = false
 }, ref) => {
   const [fabricImageBase64, setFabricImageBase64] = useState<string | null>(null);
+
+  const rawUid = useId();
+  const uid = rawUid.replace(/:/g, '');
+  const gridId = `grid-${uid}`;
+  const majorGridId = `majorGrid-${uid}`;
+  const arrowheadId = `arrowhead-${uid}`;
+  const arrowheadHighlightedId = `arrowhead-highlighted-${uid}`;
+  const arrowheadWhiteId = `arrowhead-white-${uid}`;
+  const arrowheadBlackId = `arrowhead-black-${uid}`;
+  const fabricTextureId = `fabricTexture-${uid}`;
 
   const shapeAccuracyInfo = useMemo(() => {
     return getShapeAccuracy(config.measurements, config.corners);
@@ -307,34 +317,34 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       
       {/* Grid */}
       <defs>
-        <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+        <pattern id={gridId} width="10" height="10" patternUnits="userSpaceOnUse">
           <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#e2e8f0" strokeWidth="0.5"/>
         </pattern>
-        <pattern id="majorGrid" width="50" height="50" patternUnits="userSpaceOnUse">
+        <pattern id={majorGridId} width="50" height="50" patternUnits="userSpaceOnUse">
           <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#94a3b8" strokeWidth="1"/>
         </pattern>
-        
+
         {/* Arrow markers for diagonal lines */}
-        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+        <marker id={arrowheadId} markerWidth="10" markerHeight="7"
                 refX="9" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#3B82F6" />
         </marker>
-        <marker id="arrowhead-highlighted" markerWidth="10" markerHeight="7" 
+        <marker id={arrowheadHighlightedId} markerWidth="10" markerHeight="7"
                 refX="9" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#EF4444" />
         </marker>
-        <marker id="arrowhead-white" markerWidth="10" markerHeight="7" 
+        <marker id={arrowheadWhiteId} markerWidth="10" markerHeight="7"
                 refX="9" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#FFFFFF" stroke="#000000" strokeWidth="0.5" />
         </marker>
-        <marker id="arrowhead-black" markerWidth="10" markerHeight="7" 
+        <marker id={arrowheadBlackId} markerWidth="10" markerHeight="7"
                 refX="9" refY="3.5" orient="auto">
           <polygon points="0 0, 10 3.5, 0 7" fill="#000000" />
         </marker>
-        
+
         {/* Fabric texture pattern */}
         {fabricImageBase64 && (
-          <pattern id="fabricTexture" patternUnits="userSpaceOnUse" x="0" y="0" width="600" height="600">
+          <pattern id={fabricTextureId} patternUnits="userSpaceOnUse" x="0" y="0" width="600" height="600">
             <image 
               href={fabricImageBase64} 
               x="0" 
@@ -348,8 +358,8 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       </defs>
       {!forPdfCapture && !plainBackground && (
         <>
-          <rect width="100%" height="100%" fill="url(#grid)" />
-          <rect width="100%" height="100%" fill="url(#majorGrid)" />
+          <rect width="100%" height="100%" fill={`url(#${gridId})`} />
+          <rect width="100%" height="100%" fill={`url(#${majorGridId})`} />
         </>
       )}
 
@@ -358,7 +368,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
         <path
           d={generateSailPath(sailAttachmentPoints)}
           fill={fabricImageBase64
-            ? "url(#fabricTexture)"
+            ? `url(#${fabricTextureId})`
             : forPdfCapture
               ? getSelectedColor()
               : `${getSelectedColor()}20`
@@ -519,7 +529,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
               stroke={isHighlighted ? "#EF4444" : diagonal.hasValue ? (selectedColor?.textColor || "#10B981") : (selectedColor?.textColor || "#F59E0B")}
               strokeWidth={isHighlighted ? "4" : diagonal.hasValue ? "3" : "2"}
               strokeDasharray="8,4"
-              markerEnd={isHighlighted ? "url(#arrowhead-highlighted)" : diagonal.hasValue ? `url(#arrowhead-${selectedColor?.textColor === '#FFFFFF' ? 'white' : 'black'})` : "url(#arrowhead)"}
+              markerEnd={isHighlighted ? `url(#${arrowheadHighlightedId})` : diagonal.hasValue ? `url(#${selectedColor?.textColor === '#FFFFFF' ? arrowheadWhiteId : arrowheadBlackId})` : `url(#${arrowheadId})`}
               className="transition-all duration-200"
               onMouseEnter={() => onMeasurementHover?.(diagonal.key)}
               onMouseLeave={() => onMeasurementHover?.(null)}
