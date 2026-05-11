@@ -121,8 +121,8 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                 }}
               >
                 <div className="text-center flex flex-col h-full">
-                  <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2">
-                    <h5 className="font-semibold text-[#01312D] text-sm lg:text-[15px] whitespace-nowrap">
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2 min-w-0">
+                    <h5 className="font-semibold text-[#01312D] text-sm md:text-[15px] lg:text-sm leading-tight break-words">
                       {fabric.label}
                     </h5>
                     {fabric.isFireRetardant && (
