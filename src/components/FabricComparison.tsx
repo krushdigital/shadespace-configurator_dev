@@ -187,19 +187,19 @@ function SingleView({ current, data, activeView, setActiveView, onSwitch, onSele
   return (
     <div className="flex flex-col md:grid md:grid-cols-[1.05fr_1fr] overflow-hidden h-full min-h-0">
       {/* Fabric tabs - top on mobile */}
-      <div className="md:hidden sticky top-0 z-20 px-3 pt-3 pb-2 pr-11 bg-white/95 backdrop-blur border-b border-slate-100">
-        <div className="flex gap-1 p-1 bg-[#F3FFE3] rounded-full overflow-x-auto snap-x flex-nowrap">
+      <div className="md:hidden sticky top-0 z-20 px-3 pt-3 pb-2 pr-9 bg-white/95 backdrop-blur border-b border-slate-100">
+        <div className="flex gap-1 p-1 bg-[#F3FFE3] rounded-full overflow-x-auto snap-x flex-nowrap scroll-pl-1 scroll-pr-2">
           {data.map(f => (
             <button
               key={f.id}
               onClick={() => onSwitch(f.id)}
-              className={`snap-start flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all ${
+              className={`snap-start flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-all ${
                 f.id === current.id
                   ? 'bg-[#01312D] text-white font-semibold'
                   : 'text-[#01312D]/70'
               }`}
             >
-              <span className="w-2.5 h-2.5 rounded-sm border border-black/10" style={{ background: f._chip }} />
+              <span className="w-2 h-2 rounded-sm border border-black/10 flex-shrink-0" style={{ background: f._chip }} />
               {f._short}
             </button>
           ))}
@@ -256,19 +256,19 @@ function SingleView({ current, data, activeView, setActiveView, onSwitch, onSele
       {/* Right: details */}
       <div className="px-4 pt-3 pb-24 md:p-7 md:pb-7 overflow-y-auto overscroll-contain flex flex-col min-h-0 flex-1">
         {/* Fabric tabs - desktop */}
-        <div className="hidden md:block sticky top-0 z-20 -mx-7 -mt-7 px-7 pt-7 pb-3 mb-4 pr-20 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+        <div className="hidden md:block sticky top-0 z-20 -mx-7 -mt-7 px-7 pt-7 pb-3 mb-4 pr-12 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
           <div className="flex gap-1 p-1 bg-[#F3FFE3] rounded-full overflow-x-auto snap-x flex-nowrap">
             {data.map(f => (
               <button
                 key={f.id}
                 onClick={() => onSwitch(f.id)}
-                className={`snap-start flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                className={`snap-start flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap transition-all ${
                   f.id === current.id
                     ? 'bg-[#01312D] text-white font-semibold'
                     : 'text-[#01312D]/70 hover:text-[#01312D]'
                 }`}
               >
-                <span className="w-3 h-3 rounded-sm border border-black/10" style={{ background: f._chip }} />
+                <span className="w-2.5 h-2.5 rounded-sm border border-black/10 flex-shrink-0" style={{ background: f._chip }} />
                 {f._short}
               </button>
             ))}
@@ -276,8 +276,8 @@ function SingleView({ current, data, activeView, setActiveView, onSwitch, onSele
         </div>
 
         {/* Name */}
-        <div className="flex items-baseline gap-2 flex-wrap mb-1">
-          <h3 className="text-xl md:text-3xl font-bold text-[#01312D] leading-tight">
+        <div className="flex items-baseline gap-2 flex-wrap mb-1 min-w-0">
+          <h3 className="text-lg md:text-2xl lg:text-3xl font-bold text-[#01312D] leading-tight break-words">
             {current._short}
           </h3>
           {current.tag && (
