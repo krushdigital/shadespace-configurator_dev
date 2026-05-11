@@ -141,25 +141,24 @@ export const FABRICS: Fabric[] = [
   {
     id: 'commercial95',
     label: 'Commercial 95',
-    description: 'Heavy-duty commercial mesh with stainless steel D-rings and twin-stitched PTFE seams',
-    detailedDescription: 'Commercial95 is a premium commercial-grade shade mesh engineered for maximum longevity. Custom made with a 15-year fabric warranty, it features twin-stitched PTFE thread, stainless steel D-rings at every corner, and heavy-duty webbing inside the hem for exceptional structural integrity.',
+    description: 'Unrivalled UV protection. Architectural fabric.',
+    detailedDescription: 'Industry-leading UV protection with over 25 years of proven versatility and reliability in the world\'s harshest conditions. A premium HDPE mesh engineered for tension structures and commercial architectural applications, delivering longevity on small-to-medium tension sails for playgrounds, pergolas, and public installations.',
     benefits: [
-      '15-year fabric warranty',
-      'Twin-stitched PTFE seams',
-      'Stainless steel D-rings at corners',
-      'Heavy-duty webbing inside hem',
-      'Premium commercial-grade mesh'
+      'Industry-leading UV protection - blocks up to 95.5% of UV radiation',
+      'Dimensional stability - stentered (heat-set) to minimise re-tensioning',
+      'Strong HDPE mesh - recyclable and won\'t absorb moisture',
+      '15-year warranty - designed for longevity'
     ],
     bestFor: [
-      'Commercial installations',
-      'Schools and public spaces',
-      'High-wind exposure sites',
-      'Long-term shade structures'
+      'Tension structures',
+      'Architectural applications',
+      'Harsh conditions',
+      'Playgrounds, pergolas & public installations'
     ],
-    uvProtection: '95%+',
+    uvProtection: 'Up to 95.5%',
     pricePerSqm: 120,
     warrantyYears: 15,
-    madeIn: 'Australia',
+    madeIn: 'China',
     weightPerSqm: 340,
     badgeText: 'Commercial',
     isFireRetardant: false,
