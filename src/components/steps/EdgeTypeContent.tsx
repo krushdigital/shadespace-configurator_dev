@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { X, ZoomIn } from 'lucide-react';
 import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -29,18 +31,34 @@ const EDGE_OPTIONS = [
     label: 'Cabled Edge',
     description: 'Premium cable edge reinforecment.',
     longDescription: 'Experience superior durability and a sleek finish with our Cabled Edge reinforcement. A marine-grade stainless steel cable is expertly integrated along the entire perimeter of the shade sail, allowing for precise tensioning during installation. Each corner features uniquely styled stainless steel D-rings, which not only securely house the cable but also contribute to an exceptionally professional appearance and enormous structural strength.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edging.webp?v=1755478397'
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.png?v=1778472343'
   },
   {
     id: 'webbing',
     label: 'Webbing Reinforced',
     description: 'Robust reinforcement with webbing tape. Easiest to install.',
     longDescription: 'Our webbing-reinforced design incorporates a unique method, utilizing an exceptionally strong 48mm (2-inch) polyester webbing expertly integrated within the hemline. This webbing is meticulously pre-set and pre-sewn, ensuring optimal tension is achieved effortlessly once the sail is fully stretched into position. This innovative approach guarantees a hassle-free on-site installation: simply tension from each fixing point and enjoy your perfectly taut shade sail.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbed_Edging.webp?v=1755478397'
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge.png?v=1778472343'
   }
 ];
 
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
+  const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string } | null>(null);
+
+  useEffect(() => {
+    if (!enlargedImage) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setEnlargedImage(null);
+    };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [enlargedImage]);
+
   React.useEffect(() => {
     console.log('[EdgeType] Effect triggered', {
       isGuidanceActive: mobileGuidance?.isGuidanceActive,
@@ -84,11 +102,24 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                   <Tooltip
                     content={
                       <div>
-                        <img 
-                          src={edge.imageUrl} 
-                          alt={`${edge.label} example`}
-                          className="w-full h-32 object-cover rounded-lg mb-3"
-                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEnlargedImage({ url: edge.imageUrl, label: edge.label });
+                          }}
+                          className="relative group w-full block rounded-lg mb-3 overflow-hidden cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-[#307C31]"
+                          aria-label={`Enlarge ${edge.label} image`}
+                        >
+                          <img
+                            src={edge.imageUrl}
+                            alt={`${edge.label} example`}
+                            className="w-full h-32 object-cover transition-transform duration-200 group-hover:scale-105"
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-colors">
+                            <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                          </span>
+                        </button>
                         <p className="text-sm text-slate-600 font-medium mb-1">
                           {edge.label}
                         </p>
@@ -194,6 +225,42 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           </Button>
         </div>
       </div>
+
+      {enlargedImage && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fadeIn_0.15s_ease-out]"
+          onClick={() => setEnlargedImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${enlargedImage.label} enlarged image`}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setEnlargedImage(null);
+            }}
+            className="absolute top-4 right-4 w-10 h-10 inline-flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            aria-label="Close enlarged image"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <div
+            className="max-w-4xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={enlargedImage.url}
+              alt={`${enlargedImage.label} - enlarged view`}
+              className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white"
+            />
+            <p className="mt-3 text-center text-white font-semibold text-lg">
+              {enlargedImage.label}
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
