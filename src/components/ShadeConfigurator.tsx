@@ -139,20 +139,20 @@ export function ShadeConfigurator() {
     };
   }, []);
 
-  // Default fabric selection for desktop only (monotec370), mobile has no preselection
+  // Default fabric selection for desktop only, mobile has no preselection
   useEffect(() => {
     const hasNoFabricSelected = !config.fabricType;
     const isInitialLoad = config.step === 0 && !quoteReference;
 
     // Only preselect on initial load, when no quote is being loaded, and no fabric is selected
     if (hasNoFabricSelected && isInitialLoad && !isLoadingQuote) {
-      if (!isMobile) {
-        // Desktop: preselect Monotec 370
-        updateConfig({ fabricType: 'monotec370' });
+      if (!isMobile && FABRICS.length > 0) {
+        const preferred = FABRICS.find(f => f.id === 'monotec370') ?? FABRICS[0];
+        updateConfig({ fabricType: preferred.id });
       }
       // Mobile: explicitly ensure no fabric is preselected (already empty, but being explicit)
     }
-  }, [isMobile, quoteReference, isLoadingQuote]);
+  }, [isMobile, quoteReference, isLoadingQuote, FABRICS]);
 
   const applyPricingSnapshot = (
     quote: QuoteData

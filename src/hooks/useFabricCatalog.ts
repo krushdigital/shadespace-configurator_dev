@@ -148,3 +148,7 @@ export function clearFabricCatalogCache() {
   cachedFabrics = null;
   cacheTimestamp = null;
 }
+
+export function getLiveFabrics(): Fabric[] {
+  return cachedFabrics && cachedFabrics.length > 0 ? cachedFabrics : FABRICS;
+}

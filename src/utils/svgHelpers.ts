@@ -1,5 +1,5 @@
 import { Point } from '../types';
-import { FABRICS } from '../data/fabrics';
+import { getLiveFabrics } from '../hooks/useFabricCatalog';
 
 // Helper function to calculate outward position for labels
 export function getOutwardPosition(
@@ -24,8 +24,8 @@ export function getOutwardPosition(
 
 // Get selected color for corner points based on fabric selection
 export function getSelectedColor(fabricType: string, fabricColor: string): string {
-  const selectedFabric = fabricType ? 
-    FABRICS.find((f: any) => f.id === fabricType) : null;
+  const selectedFabric = fabricType ?
+    getLiveFabrics().find((f: any) => f.id === fabricType) : null;
   const selectedColorObj = selectedFabric?.colors.find((c: any) => c.name === fabricColor);
   
   if (selectedColorObj?.textColor === '#FFFFFF') {

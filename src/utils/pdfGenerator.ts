@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { FABRICS } from '../data/fabrics';
+import { getLiveFabrics } from '../hooks/useFabricCatalog';
 import { formatMeasurement, formatArea, getDiagonalKeysForCorners } from './geometry';
 import { formatCurrency } from './currencyFormatter';
 import { captureSvgToBase64Png } from './svgCapture';
@@ -184,7 +184,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     pdf.setFillColor(...accentGreen);
     pdf.rect(0, 35, pageWidth, 5, 'F');
     
-    const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
+    const selectedFabric = getLiveFabrics().find(f => f.id === config.fabricType);
     const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
     
     // Hardware pack image mapping

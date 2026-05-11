@@ -7,7 +7,7 @@ import { Tooltip } from '../ui/Tooltip';
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { AccordionItem } from '../ui/AccordionItem';
-import { FABRICS } from '../../data/fabrics';
+import { useFabricCatalog } from '../../hooks/useFabricCatalog';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
@@ -71,6 +71,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const addToCartButtonRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
 
+  const { fabrics: FABRICS } = useFabricCatalog();
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
 

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback, useId, forwardRef } from 'react';
 import { ConfiguratorState, Point } from '../types';
 import { formatMeasurement, getShapeAccuracy, ShapeAccuracy, getDiagonalKeysForCorners } from '../utils/geometry';
-import { FABRICS } from '../data/fabrics';
+import { getLiveFabrics } from '../hooks/useFabricCatalog';
 
 interface ShadeSVGCoreProps {
   config: ConfiguratorState;
@@ -68,7 +68,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   }, [readonly]);
 
   // Get selected fabric and color for visual representation
-  const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
+  const selectedFabric = getLiveFabrics().find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
 
   // Calculate turnbuckle dimensions based on view type
