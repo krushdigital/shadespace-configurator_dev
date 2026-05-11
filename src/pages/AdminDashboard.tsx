@@ -15,6 +15,7 @@ import { FabricColorManager } from '../components/admin/FabricColorManager';
 import { EmailStudio } from '../components/admin/EmailStudio';
 import { HardwareSyncCard } from '../components/admin/HardwareSyncCard';
 import { HardwareCatalogManager } from '../components/admin/HardwareCatalogManager';
+import { PdfStudio } from '../components/admin/PdfStudio';
 
 import type { AdminProfile } from '../hooks/useAdminProfile';
 import { UserManagement } from '../components/admin/UserManagement';
@@ -24,7 +25,7 @@ interface AdminDashboardProps {
   profile: AdminProfile;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'hardware' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'team';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'hardware' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'pdf' | 'team';
 
 const detectTimezone = (): string => {
   try {
@@ -63,6 +64,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
     { id: 'email', label: 'Email Studio' },
+    { id: 'pdf', label: 'PDF Studio' },
     { id: 'team', label: 'User Management' },
     { id: 'exclusions', label: 'Exclusion Settings' },
   ];
@@ -194,6 +196,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
         {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
         {activeTab === 'email' && <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+
+        {activeTab === 'pdf' && <PdfStudio />}
 
         {activeTab === 'team' && <UserManagement currentProfile={profile} />}
 

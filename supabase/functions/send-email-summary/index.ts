@@ -195,6 +195,12 @@ function generateEmailHTML(data: any): string {
             <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Fabric Color:</td>
             <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${selectedColor?.name || 'N/A'}</td>
           </tr>
+          ${selectedColor?.shadeFactor != null ? `
+          <tr>
+            <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Shade Factor:</td>
+            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${selectedColor.shadeFactor}%</td>
+          </tr>
+          ` : ''}
           <tr>
             <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Edge Type:</td>
             <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${Edge_Type}</td>
