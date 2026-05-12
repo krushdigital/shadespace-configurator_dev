@@ -14,6 +14,7 @@ import {
   sanitizeCustomHtml,
 } from '../../utils/pdfBlocks';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
+import { getDiagonalKeysForCorners } from '../../utils/geometry';
 
 interface LiveQuoteRow {
   id: string;
@@ -813,11 +814,26 @@ function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQu
           const mm = cfgData.measurements[key];
           if (mm) edges.push(`<div class="row"><span class="muted">Edge ${key.charAt(0)} to ${key.charAt(1)}</span><span class="val">${formatMeasurementPreview(mm, unit)}</span></div>`);
         }
-        return `<h2>${escapeHtml(title)}</h2>${edges.join('') || '<div class="row"><span class="muted">No measurements set</span></div>'}`;
+        const diagonalRows: string[] = [];
+        for (const key of getDiagonalKeysForCorners(corners)) {
+          const mm = cfgData.measurements[key];
+          if (mm) diagonalRows.push(`<div class="row"><span class="muted">Diagonal ${key.charAt(0)} to ${key.charAt(1)}</span><span class="val">${formatMeasurementPreview(mm, unit)}</span></div>`);
+        }
+        const edgesBlock = `<div style="margin-bottom:10px;"><div style="font-weight:700;color:${cfg.brand.accentDark};font-size:12px;margin-bottom:4px;">Edge Lengths</div>${edges.join('') || '<div class="row"><span class="muted">No edge measurements</span></div>'}</div>`;
+        const diagonalsBlock = diagonalRows.length > 0
+          ? `<div><div style="font-weight:700;color:${cfg.brand.accentDark};font-size:12px;margin-bottom:4px;">Diagonal Lengths</div>${diagonalRows.join('')}</div>`
+          : '';
+        return `<h2>${escapeHtml(title)}</h2>${edgesBlock}${diagonalsBlock}`;
       }
       return `<h2>${escapeHtml(title)}</h2>
+        <div style="font-weight:700;color:${cfg.brand.accentDark};font-size:12px;margin-bottom:4px;">Edge Lengths</div>
         <div class="row"><span class="muted">Edge A to B</span><span class="val">4000mm</span></div>
-        <div class="row"><span class="muted">Edge B to C</span><span class="val">3500mm</span></div>`;
+        <div class="row"><span class="muted">Edge B to C</span><span class="val">3500mm</span></div>
+        <div class="row"><span class="muted">Edge C to D</span><span class="val">4200mm</span></div>
+        <div class="row"><span class="muted">Edge D to A</span><span class="val">3300mm</span></div>
+        <div style="font-weight:700;color:${cfg.brand.accentDark};font-size:12px;margin:10px 0 4px;">Diagonal Lengths</div>
+        <div class="row"><span class="muted">Diagonal A to C</span><span class="val">5400mm</span></div>
+        <div class="row"><span class="muted">Diagonal B to D</span><span class="val">5200mm</span></div>`;
     }
     case 'anchorPoints': {
       if (cfgData && Array.isArray(cfgData.fixingHeights)) {
@@ -832,9 +848,49 @@ function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQu
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">Corner A</span><span class="val">2400mm, post</span></div>`;
     }
-    case 'hardwareBreakdown':
+    case 'hardwareBreakdown': {
+      const hwMode: 'standard' | 'manual' | 'none' =
+        cfgData?.hardwareSelectionMode ?? (cfgData?.measurementOption === 'adjust' ? 'standard' : 'none');
+      if (hwMode === 'none') {
+        return `<h2>${escapeHtml(title)}</h2><div class="row"><span class="muted">No tensioning hardware included with this order.</span></div>`;
+      }
+      if (hwMode === 'standard') {
+        return `<h2>${escapeHtml(title)}</h2>
+          <div class="row"><span class="muted">Hardware Tensioning Kit (${corners}-corner pack)</span><span class="val" style="color:#307C31;">Included</span></div>
+          <div style="font-size:11px;color:${cfg.brand.mutedColor};padding:4px 0 0;">Pack contents are listed in the Bill of Materials block.</div>`;
+      }
+      const cornerHw = (cfgData as { cornerHardware?: Record<number, Array<{ name: string; sku?: string; qty: number; livePrice?: number; livePriceCurrency?: string }>> })?.cornerHardware;
+      if (cornerHw) {
+        const rows: string[] = [];
+        for (let i = 0; i < corners; i++) {
+          const letter = String.fromCharCode(65 + i);
+          const lines = cornerHw[i] || [];
+          const cornerTotal = lines.reduce((sum, l) => {
+            const live = l.livePriceCurrency === currency && l.livePrice != null ? l.livePrice : 0;
+            return sum + live * l.qty;
+          }, 0);
+          rows.push(`<div style="padding:8px 0;border-bottom:1px solid #E5E7EB;">
+            <div style="display:flex;justify-content:space-between;font-weight:700;">
+              <span>Corner ${letter}</span><span>${formatCurrencyPreview(cornerTotal, currency)}</span>
+            </div>
+            ${lines.length === 0 ? `<div style="padding-left:12px;font-size:11px;color:${cfg.brand.mutedColor};">No hardware selected</div>` : lines.map(l => {
+              const skuPart = l.sku ? ` (${l.sku})` : '';
+              const lineLive = l.livePriceCurrency === currency && l.livePrice != null ? l.livePrice * l.qty : 0;
+              return `<div style="display:flex;justify-content:space-between;padding-left:12px;font-size:11px;color:${cfg.brand.mutedColor};">
+                <span>${escapeHtml(l.qty)}x ${escapeHtml(l.name)}${escapeHtml(skuPart)}</span>
+                <span>${formatCurrencyPreview(lineLive, currency)}</span>
+              </div>`;
+            }).join('')}
+          </div>`);
+        }
+        return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
+      }
       return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">1x Turnbuckle</span><span class="val">${formatCurrencyPreview(25, currency)}</span></div>`;
+        <div style="padding:8px 0;border-bottom:1px solid #E5E7EB;">
+          <div style="display:flex;justify-content:space-between;font-weight:700;"><span>Corner A</span><span>${formatCurrencyPreview(0, currency)}</span></div>
+          <div style="padding-left:12px;font-size:11px;color:${cfg.brand.mutedColor};">No hardware selected</div>
+        </div>`;
+    }
     case 'priceBreakdown':
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
@@ -888,7 +944,7 @@ function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQu
           <div style="text-align:center;"><img src="${escapeHtml(live.diagram_public_url)}" alt="Shade sail diagram" style="max-width:${mw}px;width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:10px;background:#fff;" /></div>`;
       }
       return `<h2>${escapeHtml(title)}</h2>
-        <div style="text-align:center;padding:16px;border:1px dashed ${cfg.brand.mutedColor};border-radius:8px;color:${cfg.brand.mutedColor};font-size:12px;max-width:${mw}px;margin:0 auto;">Shade sail diagram (rendered from saved quote)</div>`;
+        <div style="text-align:center;padding:16px;border:1px dashed ${cfg.brand.mutedColor};border-radius:8px;color:${cfg.brand.mutedColor};font-size:12px;max-width:${mw}px;margin:0 auto;">Shade sail diagram appears here. The PDF will use the live diagram captured when the quote was created.</div>`;
     }
     case 'billOfMaterials':
       return `<h2>${escapeHtml(title)}</h2>
@@ -919,6 +975,10 @@ function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQu
       return `<hr style="border-top:${Number(p.thickness) || 1}px solid ${cfg.brand.mutedColor};opacity:0.4;" />`;
     case 'spacer':
       return `<div style="height:${Number(p.height) || 16}px;"></div>`;
+    case 'pageBreak':
+      return `<div style="margin:16px 0;border-top:1px dashed ${cfg.brand.mutedColor};position:relative;height:18px;">
+        <span style="position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:${cfg.brand.backgroundColor};padding:0 8px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:${cfg.brand.mutedColor};">Page Break</span>
+      </div>`;
     default:
       return '';
   }

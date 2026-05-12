@@ -62,6 +62,8 @@ interface PDFRequest {
   calculations: ShadeCalculations;
   quoteId?: string;
   accessToken?: string;
+  diagramUrl?: string;
+  canvasImageUrl?: string;
 }
 
 interface QuoteContext {
@@ -147,7 +149,8 @@ type PdfBlockType =
   | 'customImage'
   | 'customHtml'
   | 'divider'
-  | 'spacer';
+  | 'spacer'
+  | 'pageBreak';
 
 interface PdfBlock {
   id: string;
@@ -346,6 +349,59 @@ async function fetchFabricContext(
   }
 }
 
+interface HardwarePackLine {
+  name: string;
+  sku: string | null;
+  qty: number;
+  priceNzd: number;
+}
+
+async function fetchHardwarePack(
+  edgeType: string,
+  corners: number,
+): Promise<{ name: string; lines: HardwarePackLine[]; priceNzdOverride: number | null }> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!supabaseUrl || !serviceRoleKey) return { name: 'Hardware Tensioning Kit', lines: [], priceNzdOverride: null };
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+    const { data: pack } = await supabase
+      .from('hardware_packs')
+      .select('id, name, items, price_nzd_override')
+      .eq('edge_type', edgeType)
+      .eq('corners', corners)
+      .eq('is_default', true)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (!pack) return { name: 'Hardware Tensioning Kit', lines: [], priceNzdOverride: null };
+    const items = Array.isArray(pack.items) ? pack.items as Array<{ catalog_id?: string; qty?: number }> : [];
+    const lines: HardwarePackLine[] = [];
+    if (items.length > 0) {
+      const ids = items.map(i => i.catalog_id).filter(Boolean) as string[];
+      const { data: catalog } = await supabase
+        .from('hardware_catalog')
+        .select('id, name, sku, price_nzd')
+        .in('id', ids);
+      const byId = new Map<string, { name: string; sku: string | null; price_nzd: number }>();
+      (catalog || []).forEach((c) => byId.set(c.id, { name: c.name, sku: c.sku, price_nzd: Number(c.price_nzd) || 0 }));
+      for (const item of items) {
+        if (!item.catalog_id || !item.qty) continue;
+        const c = byId.get(item.catalog_id);
+        if (!c) continue;
+        lines.push({ name: c.name, sku: c.sku, qty: Number(item.qty), priceNzd: c.price_nzd });
+      }
+    }
+    return {
+      name: pack.name || 'Hardware Tensioning Kit',
+      lines,
+      priceNzdOverride: pack.price_nzd_override == null ? null : Number(pack.price_nzd_override),
+    };
+  } catch (err) {
+    console.warn('[generate-pdf] fetchHardwarePack failed:', err);
+    return { name: 'Hardware Tensioning Kit', lines: [], priceNzdOverride: null };
+  }
+}
+
 // Utility functions
 function formatMeasurement(mm: number, unit: 'metric' | 'imperial'): string {
   if (unit === 'imperial') {
@@ -399,10 +455,16 @@ async function generateHTMLContent(
   config: ConfiguratorState,
   calculations: ShadeCalculations,
   quote: QuoteContext | null,
+  diagramOverrideUrl?: string | null,
 ): Promise<string> {
-  const [{ fabric: selectedFabric, color: selectedColor }, template] = await Promise.all([
+  const resolvedHardwareModeForFetch: 'standard' | 'manual' | 'none' =
+    config.hardwareSelectionMode || (config.measurementOption === 'adjust' ? 'standard' : 'none');
+  const [{ fabric: selectedFabric, color: selectedColor }, template, hardwarePack] = await Promise.all([
     fetchFabricContext(config.fabricType, config.fabricColor),
     fetchActiveTemplate(),
+    resolvedHardwareModeForFetch === 'standard'
+      ? fetchHardwarePack(config.edgeType, config.corners)
+      : Promise.resolve({ name: 'Hardware Tensioning Kit', lines: [], priceNzdOverride: null }),
   ]);
   const resumeUrl = quote ? buildResumeUrl(quote.id, quote.accessToken) : null;
   const brand = template.brand;
@@ -444,9 +506,13 @@ async function generateHTMLContent(
     if (config.corners === 4) {
       diagonalKeys.push('AC', 'BD');
     } else if (config.corners === 5) {
-      diagonalKeys.push('AC', 'AD', 'AE', 'BD', 'BE');
+      diagonalKeys.push('AC', 'AD', 'CE', 'BD', 'BE');
     } else if (config.corners === 6) {
       diagonalKeys.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
+    } else if (config.corners === 7) {
+      diagonalKeys.push('AC', 'AD', 'AE', 'AF', 'BD', 'BE', 'BF', 'BG', 'CE', 'CF', 'CG', 'DF', 'DG', 'EG');
+    } else if (config.corners === 8) {
+      diagonalKeys.push('AC', 'AD', 'AE', 'AF', 'AG', 'BD', 'BE', 'BF', 'BG', 'BH', 'CE', 'CF', 'CG', 'CH', 'DF', 'DG', 'DH', 'EG', 'EH', 'FH');
     }
     
     diagonalKeys.forEach(key => {
@@ -642,10 +708,53 @@ async function generateHTMLContent(
         </div>`;
 
   const renderHardwareBreakdown = (block: PdfBlock) => {
-    if (resolvedHardwareMode !== 'manual' || !config.cornerHardware) return '';
+    const title = escapeHtmlText(titleOf(block, 'Corner Hardware Breakdown'));
+    if (resolvedHardwareMode === 'none') {
+      return `
+        <div class="section">
+            <h2 class="section-title">${title}</h2>
+            <div class="anchor-points">
+                <div class="anchor-item"><span class="anchor-details">No tensioning hardware included with this order.</span></div>
+            </div>
+        </div>`;
+    }
+    if (resolvedHardwareMode === 'standard') {
+      const lines = hardwarePack.lines;
+      const packPriceNzd = hardwarePack.priceNzdOverride ?? lines.reduce((s, l) => s + l.priceNzd * l.qty, 0);
+      const linesHtml = lines.length > 0
+        ? lines.map((l) => {
+            const skuPart = l.sku ? ` (${l.sku})` : '';
+            return `<div class="anchor-item">
+                      <span class="anchor-details">${escapeHtmlText(l.qty)}x ${escapeHtmlText(l.name)}${escapeHtmlText(skuPart)}</span>
+                      <span class="anchor-corner" style="color: #307C31;">Included</span>
+                    </div>`;
+          }).join('')
+        : `<div class="anchor-item"><span class="anchor-details">Pack contents tailored to your sail and shipped pre-assembled with your order.</span></div>`;
+      return `
+        <div class="section">
+            <h2 class="section-title">${title}</h2>
+            <div class="anchor-points">
+                <div class="anchor-item">
+                    <span class="anchor-corner">${escapeHtmlText(hardwarePack.name)} (${config.corners}-corner pack)</span>
+                    <span class="anchor-corner" style="color: #307C31;">Included${packPriceNzd > 0 ? ` (worth ${formatCurrency(packPriceNzd, 'NZD')})` : ''}</span>
+                </div>
+                ${linesHtml}
+            </div>
+        </div>`;
+    }
+    // manual
+    if (!config.cornerHardware) {
+      return `
+        <div class="section">
+            <h2 class="section-title">${title}</h2>
+            <div class="anchor-points">
+                <div class="anchor-item"><span class="anchor-details">No corner hardware selected.</span></div>
+            </div>
+        </div>`;
+    }
     return `
         <div class="section">
-            <h2 class="section-title">${escapeHtmlText(titleOf(block, 'Corner Hardware Breakdown'))}</h2>
+            <h2 class="section-title">${title}</h2>
             <div class="anchor-points">
                 ${Array.from({ length: config.corners }, (_, i) => {
                   const letter = String.fromCharCode(65 + i);
@@ -810,7 +919,8 @@ async function generateHTMLContent(
   };
 
   const renderDiagramImage = (block: PdfBlock) => {
-    const url = quote?.diagramPublicUrl;
+    const candidate = quote?.diagramPublicUrl || diagramOverrideUrl || null;
+    const url = candidate && /^https?:\/\//i.test(candidate) ? candidate : null;
     if (!url) return '';
     const maxWidth = Number(block.props?.maxWidth) || 520;
     return `
@@ -819,6 +929,9 @@ async function generateHTMLContent(
             <img src="${escapeHtmlText(url)}" alt="Shade sail diagram" style="max-width: ${maxWidth}px; width: 100%; height: auto; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; background: #FFFFFF;" />
         </div>`;
   };
+
+  const renderPageBreak = () =>
+    `<div style="page-break-before: always; break-before: page; height: 0; line-height: 0; font-size: 0;"></div>`;
 
   const renderBillOfMaterials = (block: PdfBlock) => {
     const items: Array<{ name: string; qty: string; amount: string }> = [];
@@ -844,9 +957,17 @@ async function generateHTMLContent(
     }
     if (resolvedHardwareMode === 'standard') {
       items.push({
-        name: `Hardware Tensioning Kit (${config.corners}-corner pack)`,
+        name: `${hardwarePack.name} (${config.corners}-corner pack)`,
         qty: '1',
         amount: 'Included',
+      });
+      hardwarePack.lines.forEach((l) => {
+        const skuPart = l.sku ? ` (${l.sku})` : '';
+        items.push({
+          name: `  - ${l.name}${skuPart}`,
+          qty: String(l.qty),
+          amount: 'Included',
+        });
       });
     } else if (resolvedHardwareMode === 'manual' && config.cornerHardware) {
       for (let i = 0; i < config.corners; i++) {
@@ -963,6 +1084,7 @@ async function generateHTMLContent(
       case 'customHtml': return renderCustomHtml(block);
       case 'divider': return renderDivider(block);
       case 'spacer': return renderSpacer(block);
+      case 'pageBreak': return renderPageBreak();
       default: return '';
     }
   };
@@ -1325,7 +1447,7 @@ serve(async (req) => {
       )
     }
 
-    const { config, calculations, quoteId, accessToken }: PDFRequest = await req.json()
+    const { config, calculations, quoteId, accessToken, diagramUrl, canvasImageUrl }: PDFRequest = await req.json()
 
     if (!config || !calculations) {
       return new Response(
@@ -1343,7 +1465,8 @@ serve(async (req) => {
     const quoteContext = await fetchQuoteContext(quoteId, accessToken)
 
     // Generate HTML content
-    const htmlContent = await generateHTMLContent(config, calculations, quoteContext)
+    const diagramOverride = diagramUrl || canvasImageUrl || null
+    const htmlContent = await generateHTMLContent(config, calculations, quoteContext, diagramOverride)
     const activeTemplate = await fetchActiveTemplate()
 
     // Launch Puppeteer browser

@@ -15,7 +15,8 @@ export type BlockType =
   | 'customImage'
   | 'customHtml'
   | 'divider'
-  | 'spacer';
+  | 'spacer'
+  | 'pageBreak';
 
 export interface PdfBlock {
   id: string;
@@ -42,6 +43,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   customHtml: 'Custom HTML',
   divider: 'Divider',
   spacer: 'Spacer',
+  pageBreak: 'Page Break',
 };
 
 export const DYNAMIC_TYPES: BlockType[] = [
@@ -86,6 +88,8 @@ export function makeDefaultProps(type: BlockType): Record<string, unknown> {
       return { thickness: 1 };
     case 'spacer':
       return { height: 16 };
+    case 'pageBreak':
+      return {};
     case 'diagramImage':
       return { title: 'Shade Sail Diagram', maxWidth: 520 };
     case 'resumeButton':
