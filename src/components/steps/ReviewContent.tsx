@@ -298,8 +298,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   };
 
 
-  // Add this function to your component
-  const uploadImageToShopify = async (blob: Blob, filename: string): Promise<string | null> => {
+   const uploadImageToShopify = async (blob: Blob, filename: string): Promise<string | null> => {
     try {
       const formData = new FormData();
       formData.append('file', blob, filename);
@@ -314,6 +313,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       }
 
       const result = await response.json();
+console.log('✌️result --->', result);
 
       if (result.success && result.url) {
         return result.url;

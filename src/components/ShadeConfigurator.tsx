@@ -105,6 +105,8 @@ export function ShadeConfigurator() {
   // State to track if user wants to navigate to diagonals section specifically
   const [navigateToDiagonals, setNavigateToDiagonals] = useState(false);
 
+  // Add a ref to track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
@@ -138,6 +140,19 @@ export function ShadeConfigurator() {
       window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
+
+  // Cleanup effect to prevent memory leaks
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Cancel any pending operations if needed
+      if (loading) {
+        setLoading(false);
+        setShowLoadingOverlay(false);
+      }
+    };
+  }, [loading]);
 
   // Default fabric selection for desktop only, mobile has no preselection
   useEffect(() => {
@@ -401,8 +416,6 @@ export function ShadeConfigurator() {
       }
     });
   };
-
-
 
 
   // ============ ENHANCED DEBUGGING FOR UPLOAD FUNCTION ============
@@ -869,47 +882,96 @@ export function ShadeConfigurator() {
     Area: string;
     Perimeter: string;
     createdAt: string;
-    // Edge measurements (A→B, B→C, etc.)
     [edgeKey: string]: string | number | boolean | object | undefined;
     backendEdgeMeasurements: Record<string, string>;
     backendDiagonalMeasurements: Record<string, string>;
     backendAnchorMeasurements: Record<string, string>;
     originalUnit: 'metric' | 'imperial';
   }
+
+  // Helper function to wait with setTimeout
+  const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // Efficient variant availability check
+  const isVariantAvailable = async (variantId: string | number): Promise<boolean> => {
+    try {
+      // Simple fetch to check variant
+      const variantResponse = await fetch(`/variants/${variantId}.js`);
+      if (variantResponse.ok) {
+        const variant = await variantResponse.json();
+        return variant.available === true;
+      }
+      return false;
+    } catch (error) {
+      console.log('Error checking variant availability:', error);
+      return false;
+    }
+  };
+
+  // Poll for variant with exponential backoff
+  const waitForVariant = async (variantId: string | number): Promise<boolean> => {
+    const maxAttempts = 10;
+    const baseDelay = 800;
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      if (!isMountedRef.current) return false;
+      
+      setLoadingStep({
+        text: `Preparing product (attempt ${attempt}/${maxAttempts})...`,
+        progress: 80 + (attempt * 2)
+      });
+      
+      const isAvailable = await isVariantAvailable(variantId);
+      
+      if (isAvailable) {
+        console.log(`✅ Variant available after ${attempt} attempt(s)`);
+        return true;
+      }
+      
+      if (attempt < maxAttempts) {
+        const delay = Math.min(baseDelay * Math.pow(1.3, attempt - 1), 3000);
+        await wait(delay);
+      }
+    }
+    
+    return false;
+  };
+
   const handleAddToCart = async (orderData: OrderData): Promise<void> => {
-    // ===== ADD THIS DEBUG =====
   console.log('🛒 DEBUG 2 - START handleAddToCartFromConfigurator:', {
     totalPrice: calculations.totalPrice,
     currency: config.currency,
     type: typeof calculations.totalPrice
   });
-  // ===== END DEBUG =====
-    console.log('Product being created. Add to cart');
-    setShowLoadingOverlay(true);
-    setLoadingStep({ text: 'Starting order process...', progress: 10 });
-    setLoading(true);
+  
+  console.log('Product being created. Add to cart');
+  setShowLoadingOverlay(true);
+  setLoadingStep({ text: 'Starting order process...', progress: 10 });
+  setLoading(true);
 
-    // Check if this is a converted quote
-    const quoteParams = getQuoteFromUrl();
-    let quoteData: any = null;
+  // Check if this is a converted quote
+  const quoteParams = getQuoteFromUrl();
+  let quoteData: any = null;
 
-    if (quoteReference && quoteParams) {
-      try {
-        quoteData = await getQuoteById(quoteParams.id, quoteParams.token);
-      } catch (error) {
-        console.error('Failed to load quote data for conversion tracking:', error);
-      }
-    }
-
-    const email: string | null = quoteData?.customer_email ?? capturedCustomerDetails?.email ?? null;
-
+  if (quoteReference && quoteParams) {
     try {
-      setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
+      quoteData = await getQuoteById(quoteParams.id, quoteParams.token);
+    } catch (error) {
+      console.error('Failed to load quote data for conversion tracking:', error);
+    }
+  }
 
-      // ============ UPDATED SECTION START: Generate and Upload PDF FIRST ============
-      let pdfUrl = null;
-      let technicalDrawingUrl = orderData.canvasImageUrl || null;
+  const email: string | null = quoteData?.customer_email ?? capturedCustomerDetails?.email ?? null;
 
+  try {
+    setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
+
+    // ============ UPDATED SECTION START: Generate and Upload PDF FIRST ============
+    let pdfUrl = null;
+    let technicalDrawingUrl = orderData.canvasImageUrl || null;
+
+    // Generate PDF and upload technical drawing in parallel (non-blocking)
+    const generatePDFAndUpload = (async () => {
       try {
         setLoadingStep({ text: 'Generating PDF documentation...', progress: 40 });
 
@@ -933,7 +995,6 @@ export function ShadeConfigurator() {
           let pdfBlob: Blob | null = null;
 
           if (typeof pdfResult === 'string' && pdfResult.startsWith('blob:')) {
-            // If it's a blob URL, fetch the blob
             console.log('PDF is blob URL, fetching blob...');
             try {
               const response = await fetch(pdfResult);
@@ -949,298 +1010,236 @@ export function ShadeConfigurator() {
             pdfResult !== null &&
             (pdfResult as any) instanceof Blob
           ) {
-            // If it's a Blob object directly
             console.log('PDF is Blob object:', { size: (pdfResult as Blob).size, type: (pdfResult as Blob).type });
             pdfBlob = pdfResult as Blob;
           } else if (typeof pdfResult === 'string' && pdfResult.startsWith('http')) {
-            // If it's already a URL
             console.log('PDF already has URL:', pdfResult);
             pdfUrl = pdfResult;
           } else {
             console.log('Unknown PDF result format:', pdfResult);
           }
 
-          // Upload PDF blob if we have one
           if (pdfBlob) {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
-
-            // Create proper File object
-            const pdfFile = new File([pdfBlob], pdfFilename, {
-              type: 'application/pdf'
-            });
-
-            console.log('Uploading PDF to Shopify...', {
-              filename: pdfFilename,
-              size: pdfBlob.size,
-              type: pdfBlob.type
-            });
-
+            const pdfFile = new File([pdfBlob], pdfFilename, { type: 'application/pdf' });
+            console.log('Uploading PDF to Shopify...');
             try {
               const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
-              console.log('Upload response:', uploadResponse);
-
               if (uploadResponse) {
                 pdfUrl = uploadResponse;
                 console.log('PDF uploaded successfully, URL:', pdfUrl);
-              } else {
-                console.error('PDF upload failed - no URL returned from uploadFileToShopify');
               }
             } catch (uploadError) {
               console.error('PDF upload error:', uploadError);
             }
-          }
-          else {
-            // Upload base64 if we have one
+          } else if (typeof pdfResult === 'string' && !pdfResult.startsWith('http')) {
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
-            console.log('Uploading PDF to Shopify...', {
-              filename: pdfFilename,
-              file: pdfResult
-            });
-
             async function base64ToBlob(base64: any) {
               const res = await fetch(base64);
               return await res.blob();
             }
             const pdfFile = await base64ToBlob(pdfResult);
-            console.log('pdfFile', pdfFile)
-
             try {
               const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
-              console.log('Upload response:', uploadResponse);
-              pdfUrl = uploadResponse
+              pdfUrl = uploadResponse;
             } catch (error) {
               console.error('Something went wrong while uploading pdf file.');
             }
           }
-        } else {
-          console.log('No PDF result returned from handleGeneratePDFWithDetails');
-        }
-
-        // Also upload the technical drawing image if it exists
-        if (orderData.canvasImageUrl && orderData.canvasImageUrl.startsWith('blob:')) {
-          setLoadingStep({ text: 'Uploading technical drawing...', progress: 45 });
-
-          try {
-            console.log('Fetching technical drawing from blob URL...');
-            const response = await fetch(orderData.canvasImageUrl);
-            const imageBlob = await response.blob();
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const imageFilename = `technical-drawing-${timestamp}.png`;
-
-            const imageFile = new File([imageBlob], imageFilename, {
-              type: 'image/png'
-            });
-
-            console.log('Uploading technical drawing...', {
-              filename: imageFilename,
-              size: imageBlob.size,
-              type: imageBlob.type
-            });
-
-            const imageUploadResponse = await uploadImageToShopify(imageFile, imageFilename);
-            if (imageUploadResponse) {
-              technicalDrawingUrl = imageUploadResponse;
-              console.log('Technical drawing uploaded successfully, URL:', technicalDrawingUrl);
-            } else {
-              console.error('Technical drawing upload failed');
-            }
-          } catch (imageError) {
-            console.error('Failed to upload technical drawing:', imageError);
-          }
         }
       } catch (pdfError) {
         console.error('Failed to generate or upload PDF:', pdfError);
-        // Continue even if PDF generation fails
       }
+    })();
 
-      console.log('Final PDF URL for line item:', pdfUrl);
-      console.log('Final technical drawing URL:', technicalDrawingUrl);
-      // ============ UPDATED SECTION END ============
-
-      // Format measurements for cart display
-      const formatCartProperties = (measurements: any) => {
-        const formatted: Record<string, string> = {};
-
-        Object.keys(measurements).forEach(key => {
-          if (measurements[key] && typeof measurements[key] === 'object' && measurements[key].formatted) {
-            formatted[key] = measurements[key].formatted;
+    // Upload technical drawing in parallel
+    const uploadDrawing = (async () => {
+      if (orderData.canvasImageUrl && orderData.canvasImageUrl.startsWith('blob:')) {
+        setLoadingStep({ text: 'Uploading technical drawing...', progress: 45 });
+        try {
+          console.log('Fetching technical drawing from blob URL...');
+          const response = await fetch(orderData.canvasImageUrl);
+          const imageBlob = await response.blob();
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const imageFilename = `technical-drawing-${timestamp}.png`;
+          const imageFile = new File([imageBlob], imageFilename, { type: 'image/png' });
+          const imageUploadResponse = await uploadImageToShopify(imageFile, imageFilename);
+          if (imageUploadResponse) {
+            technicalDrawingUrl = imageUploadResponse;
+            console.log('Technical drawing uploaded successfully, URL:', technicalDrawingUrl);
           }
-        });
+        } catch (imageError) {
+          console.error('Failed to upload technical drawing:', imageError);
+        }
+      }
+    })();
 
-        return formatted;
-      };
+    // Wait for both operations to complete
+    await Promise.all([generatePDFAndUpload, uploadDrawing]);
 
-      const cartEdgeMeasurements = formatCartProperties(orderData.edgeMeasurements);
-      const cartDiagonalMeasurements = formatCartProperties(orderData.diagonalMeasurementsObj);
-      const cartAnchorMeasurements = formatCartProperties(orderData.anchorPointMeasurements);
+    console.log('Final PDF URL for line item:', pdfUrl);
+    console.log('Final technical drawing URL:', technicalDrawingUrl);
+    // ============ UPDATED SECTION END ============
 
-      // Create backend-only dual measurement objects for Shopify admin
-      const backendEdgeMeasurements: Record<string, string> = {};
-      Object.keys(orderData.edgeMeasurements || {}).forEach(key => {
-        const measurement = config.measurements[key];
-        if (measurement && measurement > 0) {
-          backendEdgeMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+    // Format measurements for cart display
+    const formatCartProperties = (measurements: any) => {
+      const formatted: Record<string, string> = {};
+
+      Object.keys(measurements).forEach(key => {
+        if (measurements[key] && typeof measurements[key] === 'object' && measurements[key].formatted) {
+          formatted[key] = measurements[key].formatted;
         }
       });
 
-      const backendDiagonalMeasurements: Record<string, string> = {};
-      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-      diagonalKeys.forEach(key => {
-        const measurement = config.measurements[key];
-        if (measurement && measurement > 0) {
-          backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+      return formatted;
+    };
+
+    const cartEdgeMeasurements = formatCartProperties(orderData.edgeMeasurements);
+    const cartDiagonalMeasurements = formatCartProperties(orderData.diagonalMeasurementsObj);
+    const cartAnchorMeasurements = formatCartProperties(orderData.anchorPointMeasurements);
+
+    // Create backend-only dual measurement objects for Shopify admin
+    const backendEdgeMeasurements: Record<string, string> = {};
+    Object.keys(orderData.edgeMeasurements || {}).forEach(key => {
+      const measurement = config.measurements[key];
+      if (measurement && measurement > 0) {
+        backendEdgeMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+      }
+    });
+
+    const backendDiagonalMeasurements: Record<string, string> = {};
+    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+    diagonalKeys.forEach(key => {
+      const measurement = config.measurements[key];
+      if (measurement && measurement > 0) {
+        backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+      }
+    });
+
+    // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+    const backendAnchorMeasurements: Record<string, string> = {};
+    if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+      config.fixingHeights.forEach((height, index) => {
+        const corner = String.fromCharCode(65 + index);
+        if (height && height > 0) {
+          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
         }
       });
+    }
 
-      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-      const backendAnchorMeasurements: Record<string, string> = {};
-      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-        config.fixingHeights.forEach((height, index) => {
-          const corner = String.fromCharCode(65 + index);
-          if (height && height > 0) {
-            backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
-          }
-        });
+    // Format arrays for cart display
+    const formatArrayForCart = (array: any[], label: string) => {
+      if (!array || !Array.isArray(array)) return {};
+
+      const result: Record<string, string> = {};
+      array.forEach((item, index) => {
+        const corner = String.fromCharCode(65 + index);
+        result[`${label} ${corner}`] = typeof item === 'string' ? item : String(item);
+      });
+      return result;
+    };
+
+    // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
+    const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
+    const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes ?? [], 'Fixing Type') : {};
+
+    console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
+      totalPrice: orderData.totalPrice,
+      currency: orderData.currency,
+      type: typeof orderData.totalPrice,
+      fullPayload: {
+        totalPrice: orderData.totalPrice,
+        currency: orderData.currency
       }
+    });
+    
+    const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...orderData,
+        canvasImageUrl: technicalDrawingUrl,
+        cartEdgeMeasurements,
+        cartDiagonalMeasurements,
+        cartAnchorMeasurements,
+        cartFixingHeights,
+        cartFixingTypes,
+        backendEdgeMeasurements,
+        backendDiagonalMeasurements,
+        backendAnchorMeasurements,
+        originalUnit: config.unit,
+        pdfUrl: pdfUrl || null,
+        fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
+        quoteReference: quoteReference || null
+      }),
+    });
 
-      // Format arrays for cart display
-      const formatArrayForCart = (array: any[], label: string) => {
-        if (!array || !Array.isArray(array)) return {};
+    const data = await response.json();
+    const { success, product, error, fulfillmentProperties } = data;
 
-        const result: Record<string, string> = {};
-        array.forEach((item, index) => {
-          const corner = String.fromCharCode(65 + index);
-          result[`${label} ${corner}`] = typeof item === 'string' ? item : String(item);
-        });
-        return result;
-      };
+    if (success && product) {
+      console.log('Product created... Adding to cart');
+      setLoadingStep({ text: 'Processing product details...', progress: 60 });
 
-      // Only format cart fixing heights if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-      const cartFixingHeights = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingHeights, 'Fixing Height') : {};
-      const cartFixingTypes = (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser) ? formatArrayForCart(orderData.fixingTypes ?? [], 'Fixing Type') : {};
+      const metafieldProperties: Record<string, string> = {};
 
-// ===== ADD THIS DEBUG =====
-console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
-  totalPrice: orderData.totalPrice,
-  currency: orderData.currency,
-  type: typeof orderData.totalPrice,
-  fullPayload: {
-    totalPrice: orderData.totalPrice,
-    currency: orderData.currency
-    // Don't log the whole payload, it's huge
-  }
-});
-// ===== END DEBUG =====
+      const allowedCartProperties = [
+        'fabric_material',
+        'fabric_color',
+        'fabric_certification_type',
+        'edge_type',
+        'wire_thickness',
+        'corners',
+        'area',
+        'perimeter'
+      ];
+
+      const edgeTypeValue = product.metafields.edges.find((e: any) => e.node.key.toLowerCase() === 'edge_type')?.node.value.toLowerCase();
+
+      product.metafields.edges.forEach((edge: any) => {
+        if (!allowedCartProperties.includes(edge.node.key)) return;
+
+        if (edge.node.key === 'wire_thickness' && (edgeTypeValue === 'webbing' || edgeTypeValue === 'webbing reinforced')) {
+          return;
+        }
+
+        const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+        metafieldProperties[key] = edge.node.value;
+      });
+
+      metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
+      metafieldProperties['Fabric Material'] = orderData.selectedFabric?.label || '';
+      metafieldProperties['Fabric Color'] = orderData.selectedColor?.name || '';
+      metafieldProperties['Fabric Certification Type'] = orderData.Fabric_Type || orderData.selectedFabric?.label || '';
+      metafieldProperties['Edge Type'] = orderData.Edge_Type || 'Cabled Edge';
       
-      const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...orderData,
-          // Pass updated canvas image URL (might be uploaded version)
-          canvasImageUrl: technicalDrawingUrl,
-          // Pass formatted properties for cart display (customer-facing, single unit)
-          cartEdgeMeasurements,
-          cartDiagonalMeasurements,
-          cartAnchorMeasurements,
-          cartFixingHeights,
-          cartFixingTypes,
-          // Pass dual measurements for backend/fulfillment (Shopify admin only)
-          backendEdgeMeasurements,
-          backendDiagonalMeasurements,
-          backendAnchorMeasurements,
-          originalUnit: config.unit,
-          // ========== CRITICAL FULFILLMENT METADATA ==========
-          // Always include PDF URL for admin fulfillment team
-          pdfUrl: pdfUrl || null,
-          // Include fabrication type (e.g., 'custom_dimensions' or 'fabricated_to_fit')
-          fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
-          // Include quote reference for tracking
-          quoteReference: quoteReference || null
-        }),
+      if (orderData.Edge_Type === 'Webbing Reinforced') {
+        metafieldProperties['Webbing Edge Width'] = orderData.Webbing_Edge_Width || 'N/A';
+      } else {
+        metafieldProperties['Wire Thickness'] = orderData.Wire_Thickness || '0.16"';
+      }
+      
+      metafieldProperties['Corners'] = orderData.corners?.toString() || '4';
+      metafieldProperties['Area'] = orderData.Area || '0 in²';
+      metafieldProperties['Perimeter'] = orderData.Perimeter || '40\'';
+      metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Included';
+
+      Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
+        metafieldProperties[`Edge ${key}`] = value;
       });
-
-      const data = await response.json();
-      const { success, product, error, fulfillmentProperties } = data;
-
-      if (success && product) {
-        console.log('Product created... Adding to cart');
-        setLoadingStep({ text: 'Processing product details...', progress: 60 });
-
-        const metafieldProperties: Record<string, string> = {};
-
-        // Only include specific metafields in cart properties (exclude the ones you want to hide)
-        const allowedCartProperties = [
-          'fabric_material',
-          'fabric_color',
-          'fabric_certification_type',
-          'edge_type',
-          'wire_thickness',
-          'corners',
-          'area',
-          'perimeter'
-        ];
-
-        // Find edge type to conditionally exclude wire thickness
-        const edgeTypeValue = product.metafields.edges.find((e: any) => e.node.key.toLowerCase() === 'edge_type')?.node.value.toLowerCase();
-
-        product.metafields.edges.forEach((edge: any) => {
-          if (!allowedCartProperties.includes(edge.node.key)) return;
-
-          // Exclude wire thickness if edge type is webbing or webbing reinforced
-          if (edge.node.key === 'wire_thickness' && (edgeTypeValue === 'webbing' || edgeTypeValue === 'webbing reinforced')) {
-            return;
-          }
-
-          const key = edge.node.key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-          metafieldProperties[key] = edge.node.value;
-        });
-
-        metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
-
-        // Add formatted cart properties (these will show in cart)
-        // Fabric details
-        metafieldProperties['Fabric Material'] = orderData.selectedFabric?.label || '';
-        metafieldProperties['Fabric Color'] = orderData.selectedColor?.name || '';
-        metafieldProperties['Fabric Certification Type'] = orderData.Fabric_Type || orderData.selectedFabric?.label || '';
-        metafieldProperties['Edge Type'] = orderData.Edge_Type || 'Cabled Edge';
-        
-        // Conditionally add Wire Thickness or Webbing Edge Width based on Edge Type
-        if (orderData.Edge_Type === 'Webbing Reinforced') {
-          metafieldProperties['Webbing Edge Width'] = orderData.Webbing_Edge_Width || 'N/A';
-        } else {
-          metafieldProperties['Wire Thickness'] = orderData.Wire_Thickness || '0.16"';
-        }
-        
-        metafieldProperties['Corners'] = orderData.corners?.toString() || '4';
-        metafieldProperties['Area'] = orderData.Area || '0 in²';
-        metafieldProperties['Perimeter'] = orderData.Perimeter || '40\'';
-        metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Included';
-
-        // Edge measurements
-        Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
-          metafieldProperties[`Edge ${key}`] = value;
-        });
-
-        // Diagonal measurements
-        Object.entries(cartDiagonalMeasurements).forEach(([key, value]) => {
-          metafieldProperties[`Diagonal ${key}`] = value;
-        });
-
-        // Anchor measurements
-        Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
-          metafieldProperties[`Anchor Height ${key}`] = value;
-        });
-
-        // Fixing heights and types
-        Object.entries(cartFixingHeights).forEach(([key, value]) => {
-          metafieldProperties[key] = value;
-        });
-
-        Object.entries(cartFixingTypes).forEach(([key, value]) => {
-          metafieldProperties[key] = value;
-        });
+      Object.entries(cartDiagonalMeasurements).forEach(([key, value]) => {
+        metafieldProperties[`Diagonal ${key}`] = value;
+      });
+      Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
+        metafieldProperties[`Anchor Height ${key}`] = value;
+      });
+      Object.entries(cartFixingHeights).forEach(([key, value]) => {
+        metafieldProperties[key] = value;
+      });
+      Object.entries(cartFixingTypes).forEach(([key, value]) => {
+        metafieldProperties[key] = value;
+      });
 
         // ============ CRITICAL FIX: Add PDF URL and Fabrication Type as line item properties ============
         // Add PDF URL as a line item property if available
@@ -1280,57 +1279,48 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
           }
         }
 
-        // Add fabrication type (visible to fulfillment team in admin)
-        const fabricationType = config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit';
-        metafieldProperties['_fabrication_type'] = fabricationType;
-        metafieldProperties['Fabrication Method'] = config.measurementOption === 'adjust'
-          ? 'Custom dimensions provided by customer'
-          : 'Fabricated to fit customer\'s space';
-        console.log('✅ Added fabrication type:', fabricationType);
+      const fabricationTypeValue = config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit';
+      metafieldProperties['_fabrication_type'] = fabricationTypeValue;
+      metafieldProperties['Fabrication Method'] = config.measurementOption === 'adjust'
+        ? 'Custom dimensions provided by customer'
+        : 'Fabricated to fit customer\'s space';
+      console.log('✅ Added fabrication type:', fabricationTypeValue);
 
-        // Add technical drawing URL if available
-        if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http')) {
-          metafieldProperties['_technical_drawing_url'] = technicalDrawingUrl;
-          metafieldProperties['Technical Drawing'] = 'Included';
-          console.log('✅ Added technical drawing URL:', technicalDrawingUrl);
-        }
-        // ============ CRITICAL FIX END ============
+      if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http')) {
+        metafieldProperties['_technical_drawing_url'] = technicalDrawingUrl;
+        metafieldProperties['Technical Drawing'] = 'Included';
+        console.log('✅ Added technical drawing URL:', technicalDrawingUrl);
+      }
 
-        const gid = product?.variants?.edges?.[0]?.node?.id;
-        if (gid) {
-          const variantId = gid.split('/').pop();
+      const gid = product?.variants?.edges?.[0]?.node?.id;
+      if (gid) {
+        const variantId = gid.split('/').pop();
 
-          // Prepare properties object with both regular and private properties
-          const properties: Record<string, string> = {
-            ...metafieldProperties
-          };
+        const properties: Record<string, string> = { ...metafieldProperties };
 
-          // If we have fulfillmentProperties from the API response, add them as private properties
-          // Private properties start with underscore and are only visible in admin
-          if (fulfillmentProperties && typeof fulfillmentProperties === 'object') {
-            Object.entries(fulfillmentProperties).forEach(([key, value]) => {
-              if (key.startsWith('_')) {
-                properties[key] = String(value);
-              }
-            });
-          }
-
-          // Log all properties before sending to cart
-          console.log('📋 ALL PROPERTIES TO BE ADDED TO CART:');
-          Object.entries(properties).forEach(([key, value]) => {
-            console.log(`  ${key}: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+        if (fulfillmentProperties && typeof fulfillmentProperties === 'object') {
+          Object.entries(fulfillmentProperties).forEach(([key, value]) => {
+            if (key.startsWith('_')) {
+              properties[key] = String(value);
+            }
           });
+        }
 
-          const formData = {
-            items: [{
-              id: Number(variantId),
-              quantity: 1,
-              properties: properties
-            }]
-          };
+        console.log('📋 ALL PROPERTIES TO BE ADDED TO CART:');
+        Object.entries(properties).forEach(([key, value]) => {
+          console.log(`  ${key}: ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}`);
+        });
 
-          console.log('Add to cart in progress');
-          console.log('Form data JSON:', JSON.stringify(formData, null, 2)); // Debug log
+        const formData = {
+          items: [{
+            id: Number(variantId),
+            quantity: 1,
+            properties: properties
+          }]
+        };
+
+        console.log('Add to cart in progress');
+        console.log('Form data JSON:', JSON.stringify(formData, null, 2));
 
           const cartState = await cartCurrencyMismatches(config.currency);
           if (cartState.mismatch) {
@@ -1358,191 +1348,70 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
             }
           }
 
-          // ============ SOLUTION 3: ROBUST POLLING/RETRY LOGIC ============
-          setLoadingStep({ text: 'Preparing your item for cart...', progress: 80 });
+        setLoadingStep({ text: 'Preparing your item for cart...', progress: 80 });
 
-          // Helper function to wait
-          const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        // Helper function to wait
+        const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-          // Function to check if variant is available
-          const isVariantAvailable = async (variantId: string | number): Promise<boolean> => {
-            try {
-              // Method 1: Check via variant API
-              const variantResponse = await fetch(`/variants/${variantId}.js`);
-              if (variantResponse.ok) {
-                const variant = await variantResponse.json();
-                if (variant.available === true) {
-                  return true;
-                }
-              }
-
-              // Method 2: Try a test add (this is the most reliable check)
-              // We'll use a very small quantity and then remove it
-              const testResponse = await fetch('/cart/add.js', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  items: [{
-                    id: Number(variantId),
-                    quantity: 1,
-                    properties: { _test: 'true', _temp: Date.now().toString() }
-                  }]
-                })
-              });
-
-              if (testResponse.ok) {
-                // Success! Now we need to remove this test item
-                // First get current cart
-                const cartResponse = await fetch('/cart.js');
-                const cart = await cartResponse.json();
-
-                // Find and remove the test item
-                const testItem = cart.items.find((item: any) =>
-                  item.properties && item.properties._test === 'true'
-                );
-
-                if (testItem) {
-                  // Remove just the test item
-                  const updates: Record<number, number> = {};
-                  updates[testItem.key] = 0;
-
-                  await fetch('/cart/update.js', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ updates })
-                  });
-                }
-
-                return true;
-              }
-
-              return false;
-            } catch (error) {
-              console.log('Error checking variant availability:', error);
-              return false;
+        // Simple variant availability check (no heavy polling)
+        const checkVariant = async (id: string | number): Promise<boolean> => {
+          try {
+            const variantResponse = await fetch(`/variants/${id}.js`);
+            if (variantResponse.ok) {
+              const variant = await variantResponse.json();
+              return variant.available === true;
             }
-          };
-
-          // Poll for availability with exponential backoff
-          let isAvailable = false;
-          let attempts = 0;
-          const maxAttempts = 12; // Will try for ~30 seconds total
-
-          while (!isAvailable && attempts < maxAttempts) {
-            attempts++;
-
-            // Update progress message
-            setLoadingStep({
-              text: attempts === 1
-                ? 'Making product available in store...'
-                : `Product is being prepared (attempt ${attempts}/${maxAttempts})...`,
-              progress: 80 + (attempts * 1.5) // Gradually increase progress up to ~98
-            });
-
-            console.log(`Checking variant availability - Attempt ${attempts}/${maxAttempts}`);
-
-            isAvailable = await isVariantAvailable(variantId);
-
-            if (isAvailable) {
-              console.log(`✅ Variant available after ${attempts} attempt(s)`);
-              break;
-            }
-
-            if (attempts < maxAttempts) {
-              // Exponential backoff: 1s, 1.5s, 2.25s, 3.375s, etc.
-              const waitTime = Math.min(1000 * Math.pow(1.5, attempts - 1), 5000);
-              console.log(`⏳ Waiting ${waitTime}ms before next check...`);
-              await wait(waitTime);
-            }
+            return false;
+          } catch (error) {
+            return false;
           }
+        };
 
-          if (!isAvailable) {
-            console.error('❌ Variant never became available after polling');
-            showToast(
-              'Your product was created but is taking a moment to become available. Please try adding to cart again in a few seconds.',
-              'error'
-            );
-            setShowLoadingOverlay(false);
-            setLoading(false);
-            return;
-          }
+        // Quick check with single retry
+        let isAvailable = await checkVariant(variantId);
+        if (!isAvailable) {
+          await wait(1500);
+          isAvailable = await checkVariant(variantId);
+        }
 
-          // Now that we know it's available, proceed with adding to cart
-          setLoadingStep({ text: 'Adding item to your cart...', progress: 95 });
+        if (!isAvailable && isMountedRef.current) {
+          console.error('❌ Variant not available');
+          showToast(
+            'Your product was created but is taking a moment to become available. Please try adding to cart again in a few seconds.',
+            'error'
+          );
+          setShowLoadingOverlay(false);
+          setLoading(false);
+          return;
+        }
 
-          // Final cart addition with retry logic
-          let cartResponse;
-          let cartAttempts = 0;
-          const maxCartAttempts = 3;
-          let cartSuccess = false;
-          let cartData = null;
+        setLoadingStep({ text: 'Adding item to your cart...', progress: 92 });
 
-          while (!cartSuccess && cartAttempts < maxCartAttempts) {
-            cartAttempts++;
+        // Single cart addition attempt
+        const cartResponse = await fetch('/cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
 
-            try {
-              console.log(`Cart addition attempt ${cartAttempts}/${maxCartAttempts}`);
-
-              cartResponse = await fetch('/cart/add.js', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
-              });
-
-              if (cartResponse.ok) {
-                cartSuccess = true;
-                cartData = await cartResponse.json();
-                console.log(`✅ Added to cart successfully on attempt ${cartAttempts}`);
-                break;
-              }
-
-              const errorText = await cartResponse.text();
-              console.log(`Attempt ${cartAttempts} failed:`, cartResponse.status, errorText);
-
-              // Only retry on 422 sold out errors
-              if (cartResponse.status === 422 && errorText.includes('sold out')) {
-                if (cartAttempts < maxCartAttempts) {
-                  const waitTime = 1000 * cartAttempts; // 1s, 2s, 3s
-                  console.log(`Waiting ${waitTime}ms before retry...`);
-                  await wait(waitTime);
-                }
-              } else {
-                // Different error, don't retry
-                throw new Error(`Add to cart failed: ${cartResponse.status} ${errorText}`);
-              }
-            } catch (error) {
-              console.error('Error in cart addition attempt:', error);
-              if (cartAttempts >= maxCartAttempts) {
-                throw error;
-              }
-              await wait(1500);
-            }
-          }
-
-          if (!cartSuccess) {
-            throw new Error('Failed to add to cart after multiple attempts');
-          }
-          // ============ END SOLUTION 3 ============
-
+        if (cartResponse.ok) {
+          const cartData = await cartResponse.json();
           console.log('Cart response data:', cartData);
 
-          // Check if properties were added to cart
           if (cartData.items && cartData.items[0] && cartData.items[0].properties) {
             console.log('📦 Properties in cart item:', cartData.items[0].properties);
             if (pdfUrl && cartData.items[0].properties['_quote_pdf_url']) {
               console.log('✅ PDF URL successfully added to cart!');
-            } else {
-              console.log('❌ PDF URL NOT found in cart item properties');
             }
           }
 
-          // Track add to cart event for admin dashboard
           const customerName = capturedCustomerDetails
             ? `${capturedCustomerDetails.firstName} ${capturedCustomerDetails.lastName}`.trim()
             : quoteData?.customer_first_name
               ? `${quoteData.customer_first_name} ${quoteData.customer_last_name || ''}`.trim()
               : undefined;
 
+          // Fire and forget tracking - don't await
           eventTrackers.addToCart(
             quoteReference || (quoteParams?.id || null),
             email || null,
@@ -1554,7 +1423,6 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
             config.corners
           );
 
-          // Track quote conversion if applicable
           if (quoteData && quoteParams) {
             try {
               const createdAt = new Date(quoteData.created_at);
@@ -1569,7 +1437,6 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
                 conversion_source: 'loaded_quote',
               });
 
-              // Mark quote as converted
               await markQuoteConverted(quoteParams.id, quoteParams.token);
             } catch (error) {
               console.error('Failed to track quote conversion:', error);
@@ -1577,24 +1444,200 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
           }
 
           setLoadingStep({ text: 'Order complete! Redirecting...', progress: 100 });
+          await wait(300);
           window.location.href = '/cart';
         } else {
-          console.error('No variant found in product');
-          setShowLoadingOverlay(false);
-          setLoading(false);
+          const errorText = await cartResponse.text();
+          throw new Error(`Add to cart failed: ${cartResponse.status} ${errorText}`);
         }
-      } else if (!success && error) {
-        console.error('Product creation failed:', error);
+      } else {
+        console.error('No variant found in product');
         setShowLoadingOverlay(false);
         setLoading(false);
       }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
+    } else if (!success && error) {
+      console.error('Product creation failed:', error);
       setShowLoadingOverlay(false);
       setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Error adding to cart:', error);
+    showToast('Failed to add item to cart. Please try again.', 'error');
+    setShowLoadingOverlay(false);
+    setLoading(false);
+  }
+};
 
+  const handleAddToCartFromConfigurator = async (): Promise<void> => {
+    // Prevent multiple simultaneous calls
+    if (loading) {
+      console.log('Already processing, skipping...');
+      return;
+    }
+    
+    console.log('🛒 Starting add to cart process from configurator');
+    setLoading(true);
+    setShowLoadingOverlay(true);
+    setLoadingStep({ text: 'Starting order process...', progress: 10 });
+
+    try {
+      // First, get the canvas image URL
+      const svgElement = canvasRef.current?.getSVGElement?.();
+      let canvasImageUrl = null;
+
+      if (svgElement) {
+        try {
+          setLoadingStep({ text: 'Generating technical drawing...', progress: 20 });
+          const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+          canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
+
+          if (!canvasImageUrl) {
+            console.warn('Failed to upload canvas image to Shopify, proceeding without image');
+          }
+        } catch (error) {
+          console.error('Error processing canvas image:', error);
+        }
+      }
+
+      // Prepare the edge measurements
+      const edgeMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
+      for (let i = 0; i < config.corners; i++) {
+        const nextIndex = (i + 1) % config.corners;
+        const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+        const measurement = config.measurements[edgeKey];
+
+        if (measurement && measurement > 0) {
+          edgeMeasurements[edgeKey] = {
+            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+            formatted: formatMeasurement(measurement, config.unit)
+          };
+        }
+      }
+
+      // Prepare diagonal measurements
+      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
+      const diagonalMeasurementsObj: { [key: string]: { unit: string; formatted: string } } = {};
+      diagonalKeys.forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          diagonalMeasurementsObj[key] = {
+            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+            formatted: formatMeasurement(measurement, config.unit)
+          };
+        }
+      });
+
+      // Prepare anchor point measurements
+      const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+        config.fixingHeights.forEach((height, index) => {
+          if (height && height > 0) {
+            const corner = String.fromCharCode(65 + index);
+            anchorPointMeasurements[corner] = {
+              unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
+              formatted: formatMeasurement(height, config.unit)
+            };
+          }
+        });
+      }
+
+      // Prepare backend measurements
+      const backendEdgeMeasurements: Record<string, string> = {};
+      for (let i = 0; i < config.corners; i++) {
+        const nextIndex = (i + 1) % config.corners;
+        const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+        const measurement = config.measurements[edgeKey];
+        if (measurement && measurement > 0) {
+          backendEdgeMeasurements[edgeKey] = formatDualMeasurement(measurement, config.unit);
+        }
+      }
+
+      const backendDiagonalMeasurements: Record<string, string> = {};
+      diagonalKeys.forEach(key => {
+        const measurement = config.measurements[key];
+        if (measurement && measurement > 0) {
+          backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
+        }
+      });
+
+      const backendAnchorMeasurements: Record<string, string> = {};
+      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
+        config.fixingHeights.forEach((height, index) => {
+          const corner = String.fromCharCode(65 + index);
+          if (height && height > 0) {
+            backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
+          }
+        });
+      }
+
+      const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
+      const selectedColorLocal = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
+      const hardwareIncluded = config.measurementOption === 'adjust';
+      const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
+
+      // Create the order data
+      const orderData: any = {
+        fabricType: config.fabricType,
+        fabricColor: config.fabricColor,
+        edgeType: config.edgeType,
+        corners: config.corners,
+        unit: config.unit,
+        currency: config.currency,
+        measurementOption: config.measurementOption,
+        hardware_included: hardwareText,
+        measurements: config.measurements,
+        area: calculations.area,
+        perimeter: calculations.perimeter,
+        totalPrice: calculations.totalPrice,
+        totalWeightGrams: calculations.totalWeightGrams,
+        selectedFabric: selectedFabricLocal,
+        selectedColor: selectedColorLocal,
+        canvasImageUrl: canvasImageUrl,
+        warranty: selectedFabricLocal?.warrantyYears || "",
+        ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
+          fixingHeights: config.fixingHeights,
+          fixingTypes: config.fixingTypes,
+        }),
+        edgeMeasurements: edgeMeasurements,
+        diagonalMeasurementsObj: diagonalMeasurementsObj,
+        anchorPointMeasurements: anchorPointMeasurements,
+        Fabric_Type: selectedFabricLocal?.isFireRetardant && selectedColorLocal && !selectedColorLocal.isFireRetardant ?
+          'Not FR Certified' : selectedFabricLocal?.label,
+        Shade_Factor: selectedColorLocal?.shadeFactor,
+        Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
+        Wire_Thickness: config.unit === 'imperial' ?
+          calculations?.wireThickness !== undefined ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"` : 'N/A'
+          : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
+        Area: formatArea(calculations.area * 1000000, config.unit),
+        Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
+        createdAt: new Date().toISOString(),
+        backendEdgeMeasurements,
+        backendDiagonalMeasurements,
+        backendAnchorMeasurements,
+        originalUnit: config.unit
+      };
+
+      console.log('🚨 Order data prepared:', {
+        totalPrice: orderData.totalPrice,
+        currency: orderData.currency,
+        type: typeof orderData.totalPrice
+      });
+
+      // Call the main add to cart function
+      setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
+      await handleAddToCart(orderData);
+      
+    } catch (error) {
+      console.error('Error in add to cart process:', error);
+      if (isMountedRef.current) {
+        showToast('Failed to add item to cart. Please try again.', 'error');
+        setShowLoadingOverlay(false);
+        setLoading(false);
+      }
+    }
+  };
 
   // Auto-center shape when moving between steps
   const centerShape = (points: Point[]): Point[] => {
@@ -2128,160 +2171,6 @@ console.log('🌐 DEBUG 5 - SENDING TO BACKEND:', {
       </div>
     );
   }
-
-  // Add this function in ShadeConfigurator.tsx, somewhere before the return statement:
-  const handleAddToCartFromConfigurator = async (): Promise<void> => {
-    console.log('Product being created. Add to cart');
-    setShowLoadingOverlay(true);
-    // setLoadingStep({ text: 'Starting order process...', progress: 10 });
-    setLoading(true);
-    // First, get the canvas image URL
-    const svgElement = canvasRef.current?.getSVGElement?.();
-    let canvasImageUrl = null;
-
-    if (svgElement) {
-      try {
-        const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-        canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
-
-        if (!canvasImageUrl) {
-          console.warn('Failed to upload canvas image to Shopify, proceeding without image');
-        }
-      } catch (error) {
-        console.error('Error processing canvas image:', error);
-      }
-    }
-
-    // Prepare the edge measurements
-    const edgeMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-    for (let i = 0; i < config.corners; i++) {
-      const nextIndex = (i + 1) % config.corners;
-      const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-      const measurement = config.measurements[edgeKey];
-
-      if (measurement && measurement > 0) {
-        edgeMeasurements[edgeKey] = {
-          unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-          formatted: formatMeasurement(measurement, config.unit)
-        };
-      }
-    }
-
-    // Prepare diagonal measurements
-    const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-    const diagonalMeasurementsObj: { [key: string]: { unit: string; formatted: string } } = {};
-    diagonalKeys.forEach(key => {
-      const measurement = config.measurements[key];
-      if (measurement && measurement > 0) {
-        diagonalMeasurementsObj[key] = {
-          unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-          formatted: formatMeasurement(measurement, config.unit)
-        };
-      }
-    });
-
-    // Prepare anchor point measurements
-    const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-    if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-      config.fixingHeights.forEach((height, index) => {
-        if (height && height > 0) {
-          const corner = String.fromCharCode(65 + index);
-          anchorPointMeasurements[corner] = {
-            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-            formatted: formatMeasurement(height, config.unit)
-          };
-        }
-      });
-    }
-
-    // Prepare backend measurements
-    const backendEdgeMeasurements: Record<string, string> = {};
-    for (let i = 0; i < config.corners; i++) {
-      const nextIndex = (i + 1) % config.corners;
-      const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-      const measurement = config.measurements[edgeKey];
-      if (measurement && measurement > 0) {
-        backendEdgeMeasurements[edgeKey] = formatDualMeasurement(measurement, config.unit);
-      }
-    }
-
-    const backendDiagonalMeasurements: Record<string, string> = {};
-    diagonalKeys.forEach(key => {
-      const measurement = config.measurements[key];
-      if (measurement && measurement > 0) {
-        backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
-      }
-    });
-
-    const backendAnchorMeasurements: Record<string, string> = {};
-    if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-      config.fixingHeights.forEach((height, index) => {
-        const corner = String.fromCharCode(65 + index);
-        if (height && height > 0) {
-          backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
-        }
-      });
-    }
-
-    const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
-    const selectedColorLocal = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
-    const hardwareIncluded = config.measurementOption === 'adjust';
-    const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
-
-    // Create the order data
-    const orderData: any = {
-      fabricType: config.fabricType,
-      fabricColor: config.fabricColor,
-      edgeType: config.edgeType,
-      corners: config.corners,
-      unit: config.unit,
-      currency: config.currency,
-      measurementOption: config.measurementOption,
-      hardware_included: hardwareText,
-      measurements: config.measurements,
-      area: calculations.area,
-      perimeter: calculations.perimeter,
-      totalPrice: calculations.totalPrice,
-      totalWeightGrams: calculations.totalWeightGrams,
-      selectedFabric: selectedFabricLocal,
-      selectedColor: selectedColorLocal,
-      canvasImageUrl: canvasImageUrl,
-      warranty: selectedFabricLocal?.warrantyYears || "",
-      ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
-        fixingHeights: config.fixingHeights,
-        fixingTypes: config.fixingTypes,
-      }),
-      edgeMeasurements: edgeMeasurements,
-      diagonalMeasurementsObj: diagonalMeasurementsObj,
-      anchorPointMeasurements: anchorPointMeasurements,
-      Fabric_Type: selectedFabricLocal?.isFireRetardant && selectedColorLocal && !selectedColorLocal.isFireRetardant ?
-        'Not FR Certified' : selectedFabricLocal?.label,
-      Shade_Factor: selectedColorLocal?.shadeFactor,
-      Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
-      Wire_Thickness: config.unit === 'imperial' ?
-        calculations?.wireThickness !== undefined ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"` : 'N/A'
-        : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
-      Area: formatArea(calculations.area * 1000000, config.unit),
-      Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
-      createdAt: new Date().toISOString(),
-      backendEdgeMeasurements,
-      backendDiagonalMeasurements,
-      backendAnchorMeasurements,
-      originalUnit: config.unit
-    };
-
-    // ===== ADD THIS DEBUG =====
-console.log('🚨 DEBUG 3.5 - FINAL orderData before API call:', {
-  totalPrice: orderData.totalPrice,
-  currency: orderData.currency,
-  type: typeof orderData.totalPrice
-});
-// ===== END DEBUG =====
-    // Add to cart immediately (without waiting for image upload)
-    await handleAddToCart(orderData);
-  };
 
   return (
     <>
