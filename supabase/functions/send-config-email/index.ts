@@ -149,6 +149,27 @@ Deno.serve(async (req: Request) => {
         .eq("id", resolvedQuoteId);
     }
 
+    let storedPdfPath: string | null = null;
+    if (typeof pdf === "string" && pdf.length > 0 && resolvedQuoteId) {
+      try {
+        const base64 = pdf.startsWith("data:") ? pdf.split(",")[1] : pdf;
+        const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+        const path = `quote-pdfs/${resolvedQuoteId}/ShadeSpace-Quote-${reference}-${Date.now()}.pdf`;
+        const { error: upErr } = await supabase.storage.from("quote-assets")
+          .upload(path, bytes, { contentType: "application/pdf", upsert: true });
+        if (!upErr) {
+          storedPdfPath = path;
+          await supabase.from("saved_quotes")
+            .update({ pdf_path: path })
+            .eq("id", resolvedQuoteId);
+        } else {
+          console.error("pdf upload failed", upErr);
+        }
+      } catch (e) {
+        console.error("pdf upload threw", e);
+      }
+    }
+
     const { data: cfgRow } = await supabase
       .from("email_pipeline_config")
       .select("use_studio_transactional")

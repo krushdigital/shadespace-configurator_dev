@@ -89,8 +89,9 @@ function applyTemplateTransforms(
 function rewriteLinksForTracking(html: string, queueId: string, unsubUrl: string): string {
   return html.replace(/href="([^"]+)"/g, (_m, url) => {
     if (url.startsWith("mailto:") || url.includes("{{unsubscribe_url}}") || url === unsubUrl) return `href="${url}"`;
+    if (url.includes("/pages/shade-sail-configurator")) return `href="${url}"`;
     const encoded = encodeURIComponent(url);
-    return `href="${BASE_URL}/functions/v1/track-click?q=${queueId}&u=${encoded}"`;
+    return `href="${SB_URL}/functions/v1/track-click?q=${queueId}&u=${encoded}"`;
   });
 }
 
@@ -317,57 +318,40 @@ Deno.serve(async (req: Request) => {
     const resolvedAttachments: Array<{ filename: string; content: string; type?: string }> = [];
     let autoPdfDiagnostic: string | null = null;
 
+    const callerHasPdf = Array.isArray(attachments) && attachments.some((a: any) => a?.type === "application/pdf" || a?.filename?.endsWith?.(".pdf"));
     const shouldAutoPdf = (template?.attach_pdf === true || body?.generatePdfFromQuote === true)
       && quote
       && quote.id
       && quote.id !== "00000000-0000-0000-0000-000000000000"
-      && quote.config_data
-      && quote.calculations_data
-      && !(Array.isArray(attachments) && attachments.some((a: any) => a?.type === "application/pdf" || a?.filename?.endsWith?.(".pdf")));
+      && !callerHasPdf;
 
     if (shouldAutoPdf) {
-      try {
-        const pdfRes = await fetch(`${SB_URL}/functions/v1/generate-pdf`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${SB_SERVICE}`,
-            "apikey": SB_SERVICE,
-          },
-          body: JSON.stringify({
-            config: quote.config_data,
-            calculations: quote.calculations_data,
-            quoteId: quote.id,
-            accessToken: quote.access_token,
-            diagramUrl: quote.resolved_diagram_url || quote.diagram_public_url || null,
-          }),
-        });
-        if (pdfRes.ok) {
-          const pdfBuf = new Uint8Array(await pdfRes.arrayBuffer());
-          if (pdfBuf.length === 0) {
-            autoPdfDiagnostic = "generate-pdf returned 200 but empty body";
-          } else {
+      const storedPath = (quote as any).pdf_path as string | null;
+      if (storedPath) {
+        try {
+          const { data: file, error: dErr } = await supabase.storage.from("quote-assets").download(storedPath);
+          if (file) {
+            const buf = new Uint8Array(await file.arrayBuffer());
             let bin = "";
-            for (let i = 0; i < pdfBuf.length; i++) bin += String.fromCharCode(pdfBuf[i]);
+            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
             const ref = quote.quote_reference || "Quote";
             resolvedAttachments.push({
               filename: `ShadeSpace-Quote-${ref}.pdf`,
               content: btoa(bin),
               type: "application/pdf",
             });
-            autoPdfDiagnostic = `attached pdf bytes=${pdfBuf.length}`;
+            autoPdfDiagnostic = `attached stored pdf bytes=${buf.length} path=${storedPath}`;
+          } else {
+            autoPdfDiagnostic = `stored pdf download failed: ${dErr?.message || "unknown"} path=${storedPath}`;
           }
-        } else {
-          const errText = await pdfRes.text();
-          autoPdfDiagnostic = `generate-pdf ${pdfRes.status}: ${errText.slice(0, 400)}`;
-          console.error("auto-pdf generation failed", pdfRes.status, errText.slice(0, 300));
+        } catch (pdfErr) {
+          autoPdfDiagnostic = `stored pdf read threw: ${pdfErr instanceof Error ? pdfErr.message : String(pdfErr)}`;
         }
-      } catch (pdfErr) {
-        autoPdfDiagnostic = `auto-pdf threw: ${pdfErr instanceof Error ? pdfErr.message : String(pdfErr)}`;
-        console.error("auto-pdf generation threw", pdfErr);
+      } else {
+        autoPdfDiagnostic = "no stored pdf for this quote — customer has not requested a PDF quote yet, so nothing to attach";
       }
-    } else {
-      autoPdfDiagnostic = `auto-pdf skipped (attach_pdf=${template?.attach_pdf}, requested=${body?.generatePdfFromQuote}, quoteId=${quote?.id || 'none'}, hasConfig=${!!quote?.config_data}, hasCalc=${!!quote?.calculations_data})`;
+    } else if (template?.attach_pdf === true || body?.generatePdfFromQuote === true) {
+      autoPdfDiagnostic = `auto-pdf skipped (callerHasPdf=${callerHasPdf}, quoteId=${quote?.id || 'none'})`;
     }
 
     if (Array.isArray(attachments) && attachments.length > 0) {
