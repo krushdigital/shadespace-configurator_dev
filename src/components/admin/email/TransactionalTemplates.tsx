@@ -140,7 +140,8 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
   const sendTest = async () => {
     if (!draft || !testTo) return;
     setSending(true);
-    setTestStatus('Sending...');
+    const wantsPdf = !!previewQuoteId && (draft as any).attach_pdf === true;
+    setTestStatus(wantsPdf ? 'Generating PDF and sending...' : 'Sending...');
     try {
       const headers = await getAdminAuthHeaders();
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
@@ -151,10 +152,11 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
           toEmail: testTo,
           testMode: !previewQuoteId,
           quoteId: previewQuoteId || null,
+          generatePdfFromQuote: wantsPdf,
         }),
       });
       const json = await res.json();
-      setTestStatus(res.ok && json?.ok ? `Sent to ${testTo}` : `Failed: ${JSON.stringify(json?.error || json)}`);
+      setTestStatus(res.ok && json?.ok ? `Sent to ${testTo}${wantsPdf ? ' with PDF attached' : ''}` : `Failed: ${JSON.stringify(json?.error || json)}`);
       if (selected) loadRecent(selected.id);
     } catch (e) {
       setTestStatus(`Error: ${e instanceof Error ? e.message : e}`);
@@ -346,6 +348,13 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
               <div className="text-xs text-gray-500 mt-2">
                 Uses {previewQuoteId ? 'the selected real quote' : 'sample data'} to render the email. Delivered via Resend.
               </div>
+              {(draft as any).attach_pdf && (
+                <div className="mt-2 text-[11px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5">
+                  {previewQuoteId
+                    ? 'A PDF quote will be auto-generated from the selected quote and attached.'
+                    : 'Select a real quote above to attach a PDF. Sample data sends without an attachment.'}
+                </div>
+              )}
               {testStatus && <div className="mt-2 text-xs text-gray-700">{testStatus}</div>}
             </Card>
 

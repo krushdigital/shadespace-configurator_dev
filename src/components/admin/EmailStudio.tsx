@@ -32,6 +32,7 @@ export interface EmailTemplate {
   transactional?: boolean;
   include_header?: boolean;
   include_signature?: boolean;
+  attach_pdf?: boolean;
 }
 
 export interface EmailSender {

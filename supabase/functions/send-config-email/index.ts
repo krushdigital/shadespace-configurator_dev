@@ -194,7 +194,7 @@ Deno.serve(async (req: Request) => {
               customer_name: customerName,
               quote_reference: reference,
               quote_name: quoteName || "Shade Sail Configuration",
-              resume_url: quoteUrl || "https://shadespace.com",
+              ...(quoteUrl ? { resume_url: quoteUrl } : {}),
               pricing_locked_until: pricingLockedUntil
                 ? new Date(pricingLockedUntil).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
                 : "",

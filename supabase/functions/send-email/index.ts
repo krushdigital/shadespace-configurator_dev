@@ -13,8 +13,8 @@ const CONFIGURATOR_URL = Deno.env.get("CONFIGURATOR_URL") || `${BASE_URL}/pages/
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-function buildResumeUrl(id?: string, token?: string): string {
-  if (!id || !token) return CONFIGURATOR_URL;
+function buildResumeUrl(id?: string, token?: string): string | null {
+  if (!id || !token) return null;
   return `${CONFIGURATOR_URL}?quote=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`;
 }
 
@@ -130,7 +130,7 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
   const firstName = quote?.customer_first_name || (quote?.customer_email?.split("@")[0]) || "there";
   const lastName = quote?.customer_last_name || "";
   const customerName = [quote?.customer_first_name, lastName].filter(Boolean).join(" ") || firstName;
-  const resumeUrl = buildResumeUrl(quote?.id, quote?.access_token);
+  const resumeUrl = buildResumeUrl(quote?.id, quote?.access_token) || extra.resume_url || extra.quote_url || CONFIGURATOR_URL;
   const labels = ["Fabric & Colour", "Style", "Corners", "Measurement Options", "Dimensions", "Heights & Anchor Points", "Review"];
 
   const currency = cfg?.currency || "";
@@ -186,6 +186,10 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
     perimeter: typeof perimeter === "number" ? `${perimeter}mm` : (perimeter || ""),
     warranty_years: warrantyYears,
     canvas_image: extra.canvas_image || quote?.diagram_url || quote?.resolved_diagram_url || "",
+    ...extra,
+    resume_url: resumeUrl,
+    quote_url: resumeUrl,
+    pdf_url: quote?.pdf_url || resumeUrl,
     edge_measurements_html: rowsHtml("Precise Measurements", edgeMeasurements, (k) => `${k.charAt(0)} \u2192 ${k.charAt(1)}`),
     diagonal_measurements_html: rowsHtml("Diagonal Measurements", diagonalMeasurements, (k) => `Diagonal ${k.charAt(0)} \u2192 ${k.charAt(1)}`),
     anchor_measurements_html: rowsHtml("Anchor Point Heights", anchorMeasurements, (k) => `Corner ${k}`),
@@ -202,7 +206,6 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
     sender_first_name: sender?.signature_name || "the ShadeSpace team",
     support_phone: sender?.signature_phone || "",
     unsubscribe_url: unsubUrl,
-    ...extra,
   };
 }
 
@@ -312,6 +315,50 @@ Deno.serve(async (req: Request) => {
     const text = renderTemplate(template.text_body, ctx);
 
     const resolvedAttachments: Array<{ filename: string; content: string; type?: string }> = [];
+
+    const shouldAutoPdf = (template?.attach_pdf === true || body?.generatePdfFromQuote === true)
+      && quote
+      && quote.id
+      && quote.id !== "00000000-0000-0000-0000-000000000000"
+      && quote.config_data
+      && quote.calculations_data
+      && !(Array.isArray(attachments) && attachments.some((a: any) => a?.type === "application/pdf" || a?.filename?.endsWith?.(".pdf")));
+
+    if (shouldAutoPdf) {
+      try {
+        const pdfRes = await fetch(`${SB_URL}/functions/v1/generate-pdf`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${SB_SERVICE}`,
+          },
+          body: JSON.stringify({
+            config: quote.config_data,
+            calculations: quote.calculations_data,
+            quoteId: quote.id,
+            accessToken: quote.access_token,
+            diagramUrl: quote.resolved_diagram_url || quote.diagram_public_url || null,
+          }),
+        });
+        if (pdfRes.ok) {
+          const pdfBuf = new Uint8Array(await pdfRes.arrayBuffer());
+          let bin = "";
+          for (let i = 0; i < pdfBuf.length; i++) bin += String.fromCharCode(pdfBuf[i]);
+          const ref = quote.quote_reference || "Quote";
+          resolvedAttachments.push({
+            filename: `ShadeSpace-Quote-${ref}.pdf`,
+            content: btoa(bin),
+            type: "application/pdf",
+          });
+        } else {
+          const errText = await pdfRes.text();
+          console.error("auto-pdf generation failed", pdfRes.status, errText.slice(0, 300));
+        }
+      } catch (pdfErr) {
+        console.error("auto-pdf generation threw", pdfErr instanceof Error ? pdfErr.message : pdfErr);
+      }
+    }
+
     if (Array.isArray(attachments) && attachments.length > 0) {
       for (const att of attachments) {
         if (att?.content) {

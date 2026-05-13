@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
               customer_name: [firstName, lastName].filter(Boolean).join(" ") || firstName || "there",
               quote_reference: quoteReference || "",
               quote_name: quoteName || "Shade Sail Configuration",
-              resume_url: quoteUrl || "https://shadespace.com",
+              ...(quoteUrl ? { resume_url: quoteUrl } : {}),
               pricing_locked_until: pricingLockedUntil || expiresAt
                 ? new Date(pricingLockedUntil || expiresAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
                 : "",
