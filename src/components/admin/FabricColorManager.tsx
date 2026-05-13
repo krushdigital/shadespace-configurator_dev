@@ -1,6 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAdminAuthHeaders } from '../../utils/adminAuth';
-import { Eye, EyeOff, Plus, Trash2, ChevronDown, ChevronUp, CreditCard as Edit2, Check, X, Flame, Package } from 'lucide-react';
+import { Eye, EyeOff, Plus, Trash2, ChevronDown, ChevronUp, CreditCard as Edit2, Check, X, Flame, Package, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface DbFabric {
   id: string;
@@ -245,10 +262,45 @@ function FullManagementView({ fabrics, colors, expandedFabric, setExpandedFabric
   setError: (msg: string) => void;
 }) {
   const [showAddFabric, setShowAddFabric] = useState(false);
+  const [orderedIds, setOrderedIds] = useState<string[]>(fabrics.map(f => f.id));
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  useEffect(() => {
+    setOrderedIds(fabrics.map(f => f.id));
+  }, [fabrics]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const fabricsById = new Map(fabrics.map(f => [f.id, f]));
+  const orderedFabrics = orderedIds.map(id => fabricsById.get(id)).filter((f): f is DbFabric => !!f);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = orderedIds.indexOf(String(active.id));
+    const newIndex = orderedIds.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(orderedIds, oldIndex, newIndex);
+    setOrderedIds(next);
+    setSavingOrder(true);
+    const result = await apiCall('fabrics/reorder', 'PUT', { order: next });
+    setSavingOrder(false);
+    if (result.success) {
+      setSuccess('Fabric order updated');
+      onRefresh();
+    } else {
+      setError(result.error || 'Failed to save new order');
+      setOrderedIds(fabrics.map(f => f.id));
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-500">Drag the handle to reorder fabric types. Order applies to the configurator and comparison widget.</p>
         <button
           onClick={() => setShowAddFabric(!showAddFabric)}
           className="flex items-center gap-1 px-3 py-2 text-sm font-semibold bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors"
@@ -257,6 +309,8 @@ function FullManagementView({ fabrics, colors, expandedFabric, setExpandedFabric
           Add Fabric Type
         </button>
       </div>
+
+      {savingOrder && <div className="text-xs text-gray-500">Saving order…</div>}
 
       {showAddFabric && (
         <AddFabricForm
@@ -267,25 +321,60 @@ function FullManagementView({ fabrics, colors, expandedFabric, setExpandedFabric
         />
       )}
 
-      {fabrics.map(fabric => {
-        const fabricColors = colors.filter(c => c.fabric_type_id === fabric.id).sort((a, b) => a.display_order - b.display_order);
-        const isExpanded = expandedFabric === fabric.id;
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-4">
+            {orderedFabrics.map(fabric => {
+              const fabricColors = colors.filter(c => c.fabric_type_id === fabric.id).sort((a, b) => a.display_order - b.display_order);
+              const isExpanded = expandedFabric === fabric.id;
 
-        return (
-          <FabricCard
-            key={fabric.id}
-            fabric={fabric}
-            colors={fabricColors}
-            isExpanded={isExpanded}
-            onToggleExpand={() => setExpandedFabric(isExpanded ? null : fabric.id)}
-            toggleColorStock={toggleColorStock}
-            bulkStockUpdate={bulkStockUpdate}
-            onRefresh={onRefresh}
-            setSuccess={setSuccess}
-            setError={setError}
-          />
-        );
-      })}
+              return (
+                <SortableFabricCard
+                  key={fabric.id}
+                  fabric={fabric}
+                  colors={fabricColors}
+                  isExpanded={isExpanded}
+                  onToggleExpand={() => setExpandedFabric(isExpanded ? null : fabric.id)}
+                  toggleColorStock={toggleColorStock}
+                  bulkStockUpdate={bulkStockUpdate}
+                  onRefresh={onRefresh}
+                  setSuccess={setSuccess}
+                  setError={setError}
+                />
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
+
+function SortableFabricCard(props: {
+  fabric: DbFabric;
+  colors: DbColor[];
+  isExpanded: boolean;
+  onToggleExpand: () => void;
+  toggleColorStock: (c: DbColor) => void;
+  bulkStockUpdate: (fabricId: string, inStock: boolean) => void;
+  onRefresh: () => void;
+  setSuccess: (msg: string) => void;
+  setError: (msg: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.fabric.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+    zIndex: isDragging ? 20 : 'auto',
+    boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.12)' : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style}>
+      <FabricCard
+        {...props}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
     </div>
   );
 }
@@ -382,7 +471,7 @@ function AddFabricForm({ onClose, onSuccess, setError, nextOrder }: {
   );
 }
 
-function FabricCard({ fabric, colors: fabricColors, isExpanded, onToggleExpand, toggleColorStock, bulkStockUpdate, onRefresh, setSuccess, setError }: {
+function FabricCard({ fabric, colors: fabricColors, isExpanded, onToggleExpand, toggleColorStock, bulkStockUpdate, onRefresh, setSuccess, setError, dragHandleProps }: {
   fabric: DbFabric;
   colors: DbColor[];
   isExpanded: boolean;
@@ -392,6 +481,7 @@ function FabricCard({ fabric, colors: fabricColors, isExpanded, onToggleExpand, 
   onRefresh: () => void;
   setSuccess: (msg: string) => void;
   setError: (msg: string) => void;
+  dragHandleProps?: Record<string, unknown>;
 }) {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState<Partial<DbFabric>>({});
@@ -430,6 +520,18 @@ function FabricCard({ fabric, colors: fabricColors, isExpanded, onToggleExpand, 
     <div className={`border rounded-lg overflow-hidden ${fabric.is_active ? 'border-gray-200' : 'border-gray-200 opacity-60'}`}>
       <div className="bg-gray-50 px-4 py-3 flex items-center justify-between cursor-pointer" onClick={onToggleExpand}>
         <div className="flex items-center gap-3">
+          {dragHandleProps && (
+            <button
+              type="button"
+              {...dragHandleProps}
+              onClick={e => e.stopPropagation()}
+              className="text-gray-400 hover:text-gray-700 cursor-grab active:cursor-grabbing touch-none"
+              aria-label={`Drag to reorder ${fabric.label}`}
+              title="Drag to reorder"
+            >
+              <GripVertical className="w-5 h-5" />
+            </button>
+          )}
           <button className="text-gray-400">{isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}</button>
           <h4 className="font-semibold text-gray-900">{fabric.label}</h4>
           {fabric.is_fire_retardant && <Flame className="w-4 h-4 text-orange-500" />}
