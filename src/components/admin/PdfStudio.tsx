@@ -973,26 +973,64 @@ function buildSampleCalc(): Partial<ShadeCalculations> {
   };
 }
 
+type HtmlDensityPreset = {
+  body: number;
+  title: number;
+  tagline: number;
+  h2: number;
+  row: number;
+  rowPad: number;
+  small: number;
+  priceLg: number;
+  sectionMargin: number;
+  twoColGap: number;
+};
+
+const HTML_DENSITY_PRESETS: Record<'comfortable' | 'compact' | 'ultra', HtmlDensityPreset> = {
+  comfortable: { body: 14, title: 22, tagline: 12, h2: 16, row: 13, rowPad: 6, small: 11, priceLg: 22, sectionMargin: 20, twoColGap: 16 },
+  compact:     { body: 13, title: 18, tagline: 11, h2: 14, row: 12, rowPad: 4, small: 10, priceLg: 18, sectionMargin: 14, twoColGap: 12 },
+  ultra:       { body: 12, title: 16, tagline: 10, h2: 12, row: 11, rowPad: 3, small: 9,  priceLg: 16, sectionMargin: 10, twoColGap: 8 },
+};
+
+function densityCss(scope: string, p: HtmlDensityPreset, brand: PdfTemplateConfig['brand']): string {
+  return `
+    ${scope} { font-size:${p.body}px; }
+    ${scope} h2 { font-size:${p.h2}px; color:${brand.primaryColor}; border-bottom:2px solid ${brand.accentColor}; padding-bottom:${Math.max(2, Math.round(p.rowPad - 1))}px; margin:${p.sectionMargin}px 0 ${Math.max(6, Math.round(p.sectionMargin / 2))}px; }
+    ${scope} .row { display:flex; justify-content:space-between; padding:${p.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${p.row}px; }
+    ${scope} .callout { margin-top:${p.sectionMargin}px; padding:${Math.max(10, p.rowPad * 2 + 6)}px; border-radius:12px; background:${brand.primaryColor}; color:#fff; text-align:center; }
+    ${scope} .callout .price { font-size:${p.priceLg}px; font-weight:700; color:${brand.accentColor}; }
+    ${scope} .guarantee { margin-top:${p.sectionMargin}px; padding:${Math.max(10, p.rowPad * 2 + 6)}px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${brand.accentColor} 20%); border:2px solid ${brand.accentDark}; color:${brand.primaryColor}; font-size:${p.row}px; }
+  `;
+}
+
 function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuoteRow | null): string {
   const b = cfg.brand;
+  const baseDensity = (cfg.layout?.density || 'comfortable') as 'comfortable' | 'compact' | 'ultra';
+  const basePreset = HTML_DENSITY_PRESETS[baseDensity];
+  const overrideStyles: string[] = [];
+  for (const d of ['comfortable', 'compact', 'ultra'] as const) {
+    overrideStyles.push(densityCss(`.density-${d}`, HTML_DENSITY_PRESETS[d], b));
+  }
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body { margin:0; padding:24px; background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; }
+    body { margin:0; padding:24px; background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; font-size:${basePreset.body}px; }
     .header { display:flex; align-items:center; gap:12px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 100%); border:2px solid ${b.accentDark}; margin-bottom:16px; }
     .logo-img { max-height:40px; max-width:180px; object-fit:contain; }
-    .title { font-size:22px; font-weight:700; color:${b.primaryColor}; margin:0; }
-    .tagline { font-size:12px; color:${b.accentDark}; margin:4px 0 0 0; }
-    h2 { font-size:16px; color:${b.primaryColor}; border-bottom:2px solid ${b.accentColor}; padding-bottom:6px; margin:20px 0 10px; }
-    .row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #E5E7EB; font-size:13px; }
+    .title { font-size:${basePreset.title}px; font-weight:700; color:${b.primaryColor}; margin:0; }
+    .tagline { font-size:${basePreset.tagline}px; color:${b.accentDark}; margin:4px 0 0 0; }
+    h2 { font-size:${basePreset.h2}px; color:${b.primaryColor}; border-bottom:2px solid ${b.accentColor}; padding-bottom:${Math.max(2, basePreset.rowPad - 1)}px; margin:${basePreset.sectionMargin}px 0 ${Math.max(6, Math.round(basePreset.sectionMargin / 2))}px; }
+    .row { display:flex; justify-content:space-between; padding:${basePreset.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${basePreset.row}px; }
     .muted { color:${b.mutedColor}; }
     .val { color:${b.textColor}; font-weight:600; }
-    .callout { margin-top:16px; padding:16px; border-radius:12px; background:${b.primaryColor}; color:#fff; text-align:center; }
-    .callout .price { font-size:22px; font-weight:700; color:${b.accentColor}; }
-    .guarantee { margin-top:16px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; }
-    .footer { margin-top:24px; text-align:center; font-size:11px; color:${b.mutedColor}; }
+    .callout { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:${b.primaryColor}; color:#fff; text-align:center; }
+    .callout .price { font-size:${basePreset.priceLg}px; font-weight:700; color:${b.accentColor}; }
+    .guarantee { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; font-size:${basePreset.row}px; }
+    .footer { margin-top:24px; text-align:center; font-size:${basePreset.small}px; color:${b.mutedColor}; }
     hr { border:none; border-top:1px solid ${b.mutedColor}; margin:8px 0; opacity:0.4; }
-    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; margin-top:4px; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:${basePreset.twoColGap}px; align-items:start; margin-top:4px; }
     .two-col > .col { min-width:0; }
     .two-col h2 { margin-top:8px; }
+    .block-wrap { display:block; }
+    ${overrideStyles.join('\n')}
   </style></head><body>
     <div class="header">
       ${b.logoUrl ? `<img class="logo-img" src="${escapeHtml(b.logoUrl)}" alt="logo" />` : ''}
@@ -1009,14 +1047,25 @@ function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuot
   </body></html>`;
 }
 
+function densityForBlock(block: PdfBlock, cfg: PdfTemplateConfig): 'comfortable' | 'compact' | 'ultra' {
+  const o = (block.props?.densityOverride as string | undefined) || undefined;
+  if (o === 'comfortable' || o === 'compact' || o === 'ultra') return o;
+  return (cfg.layout?.density || 'comfortable') as 'comfortable' | 'compact' | 'ultra';
+}
+
+function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {
+  const d = densityForBlock(block, cfg);
+  return `<div class="block-wrap density-${d}">${renderSampleBlock(block, cfg, live)}</div>`;
+}
+
 function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {
   const out: string[] = [];
   let leftBuf: PdfBlock[] = [];
   let rightBuf: PdfBlock[] = [];
   const flush = () => {
     if (leftBuf.length === 0 && rightBuf.length === 0) return;
-    const leftHtml = leftBuf.map((x) => renderSampleBlock(x, cfg, live)).join('');
-    const rightHtml = rightBuf.map((x) => renderSampleBlock(x, cfg, live)).join('');
+    const leftHtml = leftBuf.map((x) => wrapBlock(x, cfg, live)).join('');
+    const rightHtml = rightBuf.map((x) => wrapBlock(x, cfg, live)).join('');
     out.push(`<div class="two-col"><div class="col">${leftHtml}</div><div class="col">${rightHtml}</div></div>`);
     leftBuf = [];
     rightBuf = [];
@@ -1025,7 +1074,7 @@ function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: L
     const col = getBlockColumn(block);
     if (col === 'full') {
       flush();
-      out.push(renderSampleBlock(block, cfg, live));
+      out.push(wrapBlock(block, cfg, live));
     } else if (col === 'left') {
       leftBuf.push(block);
     } else {
