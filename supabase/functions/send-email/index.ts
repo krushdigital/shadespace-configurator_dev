@@ -315,6 +315,7 @@ Deno.serve(async (req: Request) => {
     const text = renderTemplate(template.text_body, ctx);
 
     const resolvedAttachments: Array<{ filename: string; content: string; type?: string }> = [];
+    let autoPdfDiagnostic: string | null = null;
 
     const shouldAutoPdf = (template?.attach_pdf === true || body?.generatePdfFromQuote === true)
       && quote
@@ -331,6 +332,7 @@ Deno.serve(async (req: Request) => {
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${SB_SERVICE}`,
+            "apikey": SB_SERVICE,
           },
           body: JSON.stringify({
             config: quote.config_data,
@@ -342,21 +344,30 @@ Deno.serve(async (req: Request) => {
         });
         if (pdfRes.ok) {
           const pdfBuf = new Uint8Array(await pdfRes.arrayBuffer());
-          let bin = "";
-          for (let i = 0; i < pdfBuf.length; i++) bin += String.fromCharCode(pdfBuf[i]);
-          const ref = quote.quote_reference || "Quote";
-          resolvedAttachments.push({
-            filename: `ShadeSpace-Quote-${ref}.pdf`,
-            content: btoa(bin),
-            type: "application/pdf",
-          });
+          if (pdfBuf.length === 0) {
+            autoPdfDiagnostic = "generate-pdf returned 200 but empty body";
+          } else {
+            let bin = "";
+            for (let i = 0; i < pdfBuf.length; i++) bin += String.fromCharCode(pdfBuf[i]);
+            const ref = quote.quote_reference || "Quote";
+            resolvedAttachments.push({
+              filename: `ShadeSpace-Quote-${ref}.pdf`,
+              content: btoa(bin),
+              type: "application/pdf",
+            });
+            autoPdfDiagnostic = `attached pdf bytes=${pdfBuf.length}`;
+          }
         } else {
           const errText = await pdfRes.text();
+          autoPdfDiagnostic = `generate-pdf ${pdfRes.status}: ${errText.slice(0, 400)}`;
           console.error("auto-pdf generation failed", pdfRes.status, errText.slice(0, 300));
         }
       } catch (pdfErr) {
-        console.error("auto-pdf generation threw", pdfErr instanceof Error ? pdfErr.message : pdfErr);
+        autoPdfDiagnostic = `auto-pdf threw: ${pdfErr instanceof Error ? pdfErr.message : String(pdfErr)}`;
+        console.error("auto-pdf generation threw", pdfErr);
       }
+    } else {
+      autoPdfDiagnostic = `auto-pdf skipped (attach_pdf=${template?.attach_pdf}, requested=${body?.generatePdfFromQuote}, quoteId=${quote?.id || 'none'}, hasConfig=${!!quote?.config_data}, hasCalc=${!!quote?.calculations_data})`;
     }
 
     if (Array.isArray(attachments) && attachments.length > 0) {
@@ -420,6 +431,7 @@ Deno.serve(async (req: Request) => {
       subject_snapshot: subject,
       html_snapshot: html,
       attachments: resolvedAttachments.map(({ filename, type }) => ({ filename, type })),
+      error: autoPdfDiagnostic,
     }).eq("id", queueRow.id);
 
     await supabase.from("email_events").insert({ queue_id: queueRow.id, event_type: "sent" });
