@@ -15,7 +15,7 @@ import {
 } from '../../utils/pdfBlocks';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { getDiagonalKeysForCorners } from '../../utils/geometry';
-import { generatePDF, PdfDensity } from '../../utils/pdfGenerator';
+import { generatePdfFromBlocks, PdfDensity } from '../../utils/pdfGenerator';
 
 interface LiveQuoteRow {
   id: string;
@@ -350,20 +350,29 @@ export const PdfStudio: React.FC = () => {
     try {
       const sourceConfig = liveData?.config_data || (buildSampleConfig() as ConfiguratorState);
       const sourceCalc = liveData?.calculations_data || (buildSampleCalc() as ShadeCalculations);
-      const url = await generatePDF(
+      const url = await generatePdfFromBlocks(
         sourceConfig,
         sourceCalc,
-        undefined,
-        false,
-        liveData ? {
-          firstName: liveData.customer_first_name || undefined,
-          lastName: liveData.customer_last_name || undefined,
-          email: liveData.customer_email || undefined,
-          quoteName: liveData.quote_name || undefined,
-        } : undefined,
+        blocks,
         {
-          density: config.layout?.density,
-          columns: config.layout?.columns,
+          layout: {
+            density: config.layout?.density,
+            columns: config.layout?.columns,
+          },
+          chrome: {
+            brand: config.brand,
+            header: config.header,
+            footer: config.footer,
+            paper: config.paper,
+          },
+          customer: liveData ? {
+            firstName: liveData.customer_first_name || undefined,
+            lastName: liveData.customer_last_name || undefined,
+            email: liveData.customer_email || undefined,
+            quoteName: liveData.quote_name || undefined,
+            customerReference: liveData.customer_reference || undefined,
+            quoteUrl: `https://shadespace.com/pages/shade-sail-configurator?quote=${liveData.id}&token=${encodeURIComponent(liveData.access_token)}`,
+          } : undefined,
           returnBlob: true,
         },
       );
@@ -381,7 +390,8 @@ export const PdfStudio: React.FC = () => {
     return () => {
       if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
     };
-  }, [previewMode, config.layout?.density, config.layout?.columns, liveData?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewMode, config.layout?.density, config.layout?.columns, liveData?.id, blocks]);
 
   if (loading) {
     return <Card className="p-6">Loading templates...</Card>;
@@ -754,6 +764,41 @@ const BlockPropsEditor: React.FC<{
         />
         Visible
       </label>
+
+      {block.type !== 'pageBreak' && (
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Column placement</label>
+          <div className="flex gap-1">
+            {(['full', 'left', 'right'] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => onProp('column', c)}
+                className={`flex-1 px-2 py-1.5 text-xs rounded border capitalize ${
+                  ((props.column as string) || 'full') === c ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {c === 'full' ? 'Full width' : `${c} col`}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-500 mt-1">Consecutive Left + Right blocks render side-by-side. Full-width resets to a single column.</p>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">Density override</label>
+        <select
+          value={String(props.densityOverride ?? '')}
+          onChange={(e) => onProp('densityOverride', e.target.value || undefined)}
+          className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+        >
+          <option value="">Inherit from template</option>
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+          <option value="ultra">Ultra</option>
+        </select>
+      </div>
 
       {DYNAMIC_TYPES.includes(block.type) && (
         <TextRow
