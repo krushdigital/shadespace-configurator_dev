@@ -27,6 +27,7 @@ interface RecentSend {
   subject_snapshot: string | null;
   html_snapshot: string | null;
   error: string | null;
+  attach_status: string | null;
 }
 
 export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ senders }) => {
@@ -83,7 +84,7 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
   const loadRecent = useCallback(async (templateId: string) => {
     const { data } = await supabase
       .from('email_queue')
-      .select('id, recipient_email, status, sent_at, created_at, attachments, subject_snapshot, html_snapshot, error')
+      .select('id, recipient_email, status, sent_at, created_at, attachments, subject_snapshot, html_snapshot, error, attach_status')
       .eq('template_id', templateId)
       .order('created_at', { ascending: false })
       .limit(10);
@@ -401,6 +402,15 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
             <div className="p-4 space-y-3">
               <div className="text-xs text-gray-600">Subject: <strong>{drawerSend.subject_snapshot}</strong></div>
               {drawerSend.error && <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">{drawerSend.error}</div>}
+              {drawerSend.attach_status && (
+                <div className={`text-xs rounded p-2 border ${
+                  drawerSend.attach_status.startsWith('attached')
+                    ? 'text-green-800 bg-green-50 border-green-200'
+                    : 'text-amber-800 bg-amber-50 border-amber-200'
+                }`}>
+                  Attachment: {drawerSend.attach_status}
+                </div>
+              )}
               <div className="bg-gray-100 p-2 rounded">
                 <div className="bg-white rounded shadow-sm" dangerouslySetInnerHTML={{ __html: drawerSend.html_snapshot || '' }} />
               </div>

@@ -415,7 +415,8 @@ Deno.serve(async (req: Request) => {
       subject_snapshot: subject,
       html_snapshot: html,
       attachments: resolvedAttachments.map(({ filename, type }) => ({ filename, type })),
-      error: autoPdfDiagnostic,
+      attach_status: autoPdfDiagnostic,
+      error: null,
     }).eq("id", queueRow.id);
 
     await supabase.from("email_events").insert({ queue_id: queueRow.id, event_type: "sent" });
