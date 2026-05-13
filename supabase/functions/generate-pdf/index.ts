@@ -265,17 +265,16 @@ function normalizeBlocks(input: unknown): PdfBlock[] {
     });
 }
 
-async function fetchActiveTemplate(): Promise<PdfTemplate> {
+async function fetchActiveTemplate(pdfTemplateId?: string | null): Promise<PdfTemplate> {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     if (!supabaseUrl || !serviceRoleKey) return DEFAULT_PDF_TEMPLATE;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const { data } = await supabase
-      .from('pdf_templates')
-      .select('config, blocks')
-      .eq('is_active', true)
-      .maybeSingle();
+    const query = supabase.from('pdf_templates').select('config, blocks');
+    const { data } = pdfTemplateId
+      ? await query.eq('id', pdfTemplateId).maybeSingle()
+      : await query.eq('is_active', true).maybeSingle();
     if (!data) return DEFAULT_PDF_TEMPLATE;
     const cfg = (data.config || {}) as Partial<PdfTemplate>;
     return {
@@ -1447,7 +1446,7 @@ serve(async (req) => {
       )
     }
 
-    const { config, calculations, quoteId, accessToken, diagramUrl, canvasImageUrl }: PDFRequest = await req.json()
+    const { config, calculations, quoteId, accessToken, diagramUrl, canvasImageUrl, pdfTemplateId }: PDFRequest & { pdfTemplateId?: string | null } = await req.json()
 
     if (!config || !calculations) {
       return new Response(
@@ -1467,7 +1466,7 @@ serve(async (req) => {
     // Generate HTML content
     const diagramOverride = diagramUrl || canvasImageUrl || null
     const htmlContent = await generateHTMLContent(config, calculations, quoteContext, diagramOverride)
-    const activeTemplate = await fetchActiveTemplate()
+    const activeTemplate = await fetchActiveTemplate(pdfTemplateId || null)
 
     // Launch Puppeteer browser
     const browser = await puppeteer.launch({

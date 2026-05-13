@@ -216,6 +216,17 @@ export const AutomationEditor: React.FC<{ automation: EmailAutomation; templates
                 <option value="">-- none --</option>
                 {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
+              {(() => {
+                const tpl = templates.find(t => t.id === draft.template_id);
+                if (!tpl || !tpl.attach_pdf) return null;
+                const pattern = tpl.pdf_filename_pattern || 'ShadeSpace-Quote-{quote_reference}.pdf';
+                const designLabel = tpl.pdf_template_id ? 'a specific PDF design' : 'the active PDF template';
+                return (
+                  <p className="text-[11px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5 mt-1">
+                    Will attach {designLabel} as <span className="font-mono">{pattern}</span>. Edit on the template itself.
+                  </p>
+                );
+              })()}
             </div>
             <div>
               <label className="text-xs text-gray-500 block mb-1">Sender</label>
