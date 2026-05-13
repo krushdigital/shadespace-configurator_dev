@@ -8,6 +8,7 @@ import {
   DEFAULT_BLOCKS,
   DYNAMIC_TYPES,
   PdfBlock,
+  getBlockColumn,
   escapeHtml,
   makeDefaultProps,
   newBlockId,
@@ -989,6 +990,9 @@ function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuot
     .guarantee { margin-top:16px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; }
     .footer { margin-top:24px; text-align:center; font-size:11px; color:${b.mutedColor}; }
     hr { border:none; border-top:1px solid ${b.mutedColor}; margin:8px 0; opacity:0.4; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:start; margin-top:4px; }
+    .two-col > .col { min-width:0; }
+    .two-col h2 { margin-top:8px; }
   </style></head><body>
     <div class="header">
       ${b.logoUrl ? `<img class="logo-img" src="${escapeHtml(b.logoUrl)}" alt="logo" />` : ''}
@@ -997,12 +1001,39 @@ function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuot
         <p class="tagline">${escapeHtml(cfg.header.tagline)}</p>
       </div>
     </div>
-    ${blocks.filter((x) => x.visible).map((x) => renderSampleBlock(x, cfg, live)).join('')}
+    ${renderGroupedBlocks(blocks.filter((x) => x.visible), cfg, live)}
     <div class="footer">
       <div>${escapeHtml(cfg.footer.line1)}</div>
       <div>${escapeHtml(cfg.footer.line2)}</div>
     </div>
   </body></html>`;
+}
+
+function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {
+  const out: string[] = [];
+  let leftBuf: PdfBlock[] = [];
+  let rightBuf: PdfBlock[] = [];
+  const flush = () => {
+    if (leftBuf.length === 0 && rightBuf.length === 0) return;
+    const leftHtml = leftBuf.map((x) => renderSampleBlock(x, cfg, live)).join('');
+    const rightHtml = rightBuf.map((x) => renderSampleBlock(x, cfg, live)).join('');
+    out.push(`<div class="two-col"><div class="col">${leftHtml}</div><div class="col">${rightHtml}</div></div>`);
+    leftBuf = [];
+    rightBuf = [];
+  };
+  for (const block of blocks) {
+    const col = getBlockColumn(block);
+    if (col === 'full') {
+      flush();
+      out.push(renderSampleBlock(block, cfg, live));
+    } else if (col === 'left') {
+      leftBuf.push(block);
+    } else {
+      rightBuf.push(block);
+    }
+  }
+  flush();
+  return out.join('');
 }
 
 function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {
