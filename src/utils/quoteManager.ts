@@ -29,6 +29,13 @@ export interface QuoteData {
   config_data: ConfiguratorState;
   calculations_data: ShadeCalculations;
   pricing_snapshot?: Record<string, unknown> | null;
+  locked_total?: number | null;
+  locked_total_currency?: string | null;
+  locked_total_base_nzd?: number | null;
+  locked_fx_rate?: number | null;
+  locked_market_markup?: number | null;
+  locked_zonos_dhl_markup?: number | null;
+  locked_at?: string | null;
   created_at: string;
   expires_at: string;
   pricing_locked_until: string;
