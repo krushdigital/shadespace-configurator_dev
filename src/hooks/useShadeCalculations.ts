@@ -22,12 +22,19 @@ import {
   getEdgeFeatureFromDB
 } from './useBasePricing';
 
+export interface LockedTotalOverride {
+  total: number;
+  currency: string;
+  baseNzd?: number | null;
+}
+
 export function useShadeCalculations(
   config: ConfiguratorState,
   pricingSettingsMap?: Record<string, PricingSetting>,
   basePricingData?: BasePricingData | null,
   hardwarePacks?: HardwarePack[] | null,
   hardwareItems?: HardwareItem[] | null,
+  lockedOverride?: LockedTotalOverride | null,
 ): ShadeCalculations {
   return useMemo(() => {
     let perimeterMM = 0;
@@ -190,7 +197,15 @@ export function useShadeCalculations(
     const fabricCost = fabricCostNZD * combinedFactor;
     const edgeCost = edgeCostNZD * combinedFactor;
     const hardwareCost = cornerCostNZD * combinedFactor + hardwareLiveSubtotal;
-    const totalPrice = Math.ceil(sailConverted + hardwareLiveSubtotal);
+    const computedTotal = Math.ceil(sailConverted + hardwareLiveSubtotal);
+    // While a quote is locked, the saved on-screen total is the source of truth.
+    // We never recompute it against current pricing tables / FX / markup.
+    const useLocked =
+      !!lockedOverride &&
+      Number.isFinite(lockedOverride.total) &&
+      lockedOverride.total > 0 &&
+      lockedOverride.currency === config.currency;
+    const totalPrice = useLocked ? lockedOverride!.total : computedTotal;
     const sailOnlyPriceNzd = sailOnlyBaseNZD;
     const hardwareOnlyPriceNzd = hardwareCostNZD;
 
@@ -246,6 +261,9 @@ export function useShadeCalculations(
     pricingSettingsMap,
     basePricingData,
     hardwarePacks,
-    hardwareItems
+    hardwareItems,
+    lockedOverride?.total,
+    lockedOverride?.currency,
+    lockedOverride?.baseNzd
   ]);
 }
