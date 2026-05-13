@@ -159,27 +159,40 @@ export function HardwareContent({
               mode === 'standard' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
-            <div className="flex items-start gap-3 w-full">
-              {HARDWARE_PACK_IMAGES[config.corners] ? (
-                <img
-                  src={HARDWARE_PACK_IMAGES[config.corners]}
-                  alt={`${config.corners} corner hardware kit`}
-                  className="h-14 w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white object-contain"
-                />
-              ) : (
-                <div className="h-14 w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white flex items-center justify-center">
-                  <Package className="h-6 w-6 text-[#307C31]" />
+            {({ openInfo }) => (
+              <div className="flex items-start gap-3 w-full">
+                {HARDWARE_PACK_IMAGES[config.corners] ? (
+                  <img
+                    src={HARDWARE_PACK_IMAGES[config.corners]}
+                    alt={`${config.corners} corner hardware kit`}
+                    className="h-14 w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white object-contain"
+                  />
+                ) : (
+                  <div className="h-14 w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white flex items-center justify-center">
+                    <Package className="h-6 w-6 text-[#307C31]" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label="View hardware kit contents"
+                      onClick={(e) => openInfo(e)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') openInfo(e);
+                      }}
+                      className="inline-flex items-center justify-center -m-1 p-1 rounded-full text-slate-400 hover:text-[#307C31] hover:bg-slate-100 cursor-pointer"
+                    >
+                      <Info className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail.</div>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</span>
-                  <Info className="h-4 w-4 text-slate-400" />
-                </div>
-                <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail.</div>
+                {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31] flex-shrink-0" />}
               </div>
-              {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31] flex-shrink-0" />}
-            </div>
+            )}
           </StandardPackPreview>
         )}
 

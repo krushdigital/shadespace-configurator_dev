@@ -12,11 +12,15 @@ export const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
   8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
 };
 
+interface StandardPackPreviewApi {
+  openInfo: (e?: React.SyntheticEvent) => void;
+}
+
 interface StandardPackPreviewProps {
   pack: HardwarePack | null;
   itemsById: Map<string, HardwareItem>;
   corners: number;
-  children: React.ReactNode;
+  children: React.ReactNode | ((api: StandardPackPreviewApi) => React.ReactNode);
   triggerClassName?: string;
   onTriggerClick?: () => void;
 }
@@ -117,7 +121,6 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
         type="button"
         onClick={() => {
           if (onTriggerClick) onTriggerClick();
-          if (isMobile) { if (open) handleClose(); else handleOpen(); }
         }}
         onMouseEnter={!isMobile ? handleOpen : undefined}
         onMouseLeave={!isMobile ? handleClose : undefined}
@@ -126,7 +129,18 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
         className={triggerClassName ?? "inline-flex items-center gap-1 rounded border-b border-dotted border-slate-400 text-left hover:text-[#01312D] focus:outline-none focus:ring-2 focus:ring-[#307C31] focus:ring-offset-1"}
         aria-expanded={open}
       >
-        {children}
+        {typeof children === 'function'
+          ? children({
+              openInfo: (e?: React.SyntheticEvent) => {
+                if (e) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                }
+                if (open) handleClose();
+                else handleOpen();
+              },
+            })
+          : children}
       </button>
       {open && content && !isMobile && createPortal(
         <div
