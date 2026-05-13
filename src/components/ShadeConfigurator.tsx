@@ -92,6 +92,17 @@ export function ShadeConfigurator() {
     targetCountry?: string;
   } | null>(null);
   const [loadedPricingSnapshot, setLoadedPricingSnapshot] = useState<Record<string, PricingSetting> | null>(null);
+  const [lockedQuote, setLockedQuote] = useState<{
+    total: number;
+    currency: string;
+    baseNzd: number | null;
+    fxRate: number | null;
+    marketMarkup: number | null;
+    zonosDhlMarkup: number | null;
+    quoteId: string;
+    quoteReference: string;
+    lockedAt: string | null;
+  } | null>(null);
 
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
@@ -115,7 +126,21 @@ export function ShadeConfigurator() {
   const { data: basePricingData } = useBasePricing();
   const { packs: hardwarePacks, items: hardwareItems } = useHardwareCatalog();
   const activePricingMap = loadedPricingSnapshot || pricingSettingsMap;
-  const calculations = useShadeCalculations(config, activePricingMap, basePricingData, hardwarePacks, hardwareItems);
+  const lockedOverride = useMemo(
+    () =>
+      lockedQuote && lockedQuote.currency === config.currency
+        ? { total: lockedQuote.total, currency: lockedQuote.currency, baseNzd: lockedQuote.baseNzd ?? null }
+        : null,
+    [lockedQuote, config.currency]
+  );
+  const calculations = useShadeCalculations(
+    config,
+    activePricingMap,
+    basePricingData,
+    hardwarePacks,
+    hardwareItems,
+    lockedOverride
+  );
 
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({
@@ -250,6 +275,27 @@ export function ShadeConfigurator() {
 
         setConfig(quote.config_data);
         setQuoteReference(quote.quote_reference);
+
+        // Restore the locked total verbatim if we are within the lock window.
+        // This bypasses the pricing engine so Market / FX / markup never reruns.
+        if (
+          quote.pricing_status === 'locked' &&
+          typeof quote.locked_total === 'number' &&
+          quote.locked_total > 0 &&
+          quote.locked_total_currency
+        ) {
+          setLockedQuote({
+            total: quote.locked_total,
+            currency: quote.locked_total_currency,
+            baseNzd: quote.locked_total_base_nzd ?? null,
+            fxRate: quote.locked_fx_rate ?? null,
+            marketMarkup: quote.locked_market_markup ?? null,
+            zonosDhlMarkup: quote.locked_zonos_dhl_markup ?? null,
+            quoteId: quote.id,
+            quoteReference: quote.quote_reference,
+            lockedAt: quote.locked_at ?? null,
+          });
+        }
 
         applyPricingSnapshot(quote);
 
@@ -1155,6 +1201,17 @@ export function ShadeConfigurator() {
       }
     });
     
+    // If this is a locked quote being added to cart, the authoritative total comes
+    // from the saved locked_total — never the recomputed value.
+    const authoritativeTotal =
+      lockedQuote && lockedQuote.currency === config.currency
+        ? lockedQuote.total
+        : (typeof orderData.totalPrice === 'number'
+            ? orderData.totalPrice
+            : Number(orderData.totalPrice));
+    const authoritativeCurrency = lockedQuote?.currency || orderData.currency || config.currency;
+    const authoritativeBaseNzd = lockedQuote?.baseNzd ?? null;
+
     const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
       method: 'POST',
       body: JSON.stringify({
@@ -1171,7 +1228,18 @@ export function ShadeConfigurator() {
         originalUnit: config.unit,
         pdfUrl: pdfUrl || null,
         fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
-        quoteReference: quoteReference || null
+        quoteReference: quoteReference || null,
+        totalPrice: authoritativeTotal,
+        currency: authoritativeCurrency,
+        lockedTotal: lockedQuote?.total ?? null,
+        lockedCurrency: lockedQuote?.currency ?? null,
+        lockedBaseNzd: authoritativeBaseNzd,
+        lockedFxRate: lockedQuote?.fxRate ?? null,
+        lockedMarketMarkup: lockedQuote?.marketMarkup ?? null,
+        lockedZonosDhlMarkup: lockedQuote?.zonosDhlMarkup ?? null,
+        lockedQuoteId: lockedQuote?.quoteId ?? null,
+        lockedQuoteReference: lockedQuote?.quoteReference ?? null,
+        lockedAt: lockedQuote?.lockedAt ?? null,
       }),
     });
 
@@ -1278,6 +1346,24 @@ export function ShadeConfigurator() {
             }
           }
         }
+
+      // Authoritative locked-total properties so Shopify cart / Markets / cart-transforms
+      // can anchor on a non-recomputed figure. `_locked_*` keys are hidden from the
+      // customer; the visible "Quote Total" mirrors them for transparency.
+      metafieldProperties['_locked_total'] = String(authoritativeTotal);
+      metafieldProperties['_locked_currency'] = String(authoritativeCurrency);
+      if (authoritativeBaseNzd != null) {
+        metafieldProperties['_locked_base_nzd'] = String(authoritativeBaseNzd);
+      }
+      if (lockedQuote) {
+        metafieldProperties['_locked_quote_id'] = lockedQuote.quoteId;
+        metafieldProperties['_locked_quote_reference'] = lockedQuote.quoteReference;
+        if (lockedQuote.fxRate != null) metafieldProperties['_locked_fx_rate'] = String(lockedQuote.fxRate);
+        if (lockedQuote.marketMarkup != null) metafieldProperties['_locked_market_markup'] = String(lockedQuote.marketMarkup);
+        if (lockedQuote.zonosDhlMarkup != null) metafieldProperties['_locked_zonos_dhl_markup'] = String(lockedQuote.zonosDhlMarkup);
+        if (lockedQuote.lockedAt) metafieldProperties['_locked_at'] = lockedQuote.lockedAt;
+        metafieldProperties['Quote Total'] = `${authoritativeCurrency} ${authoritativeTotal}`;
+      }
 
       const fabricationTypeValue = config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit';
       metafieldProperties['_fabrication_type'] = fabricationTypeValue;

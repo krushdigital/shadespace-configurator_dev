@@ -160,6 +160,23 @@ Deno.serve(async (req: Request) => {
       const customerIp = rawIpHeader === 'unknown' ? 'unknown' : (rawIpHeader.split(',')[0].trim() || 'unknown');
       const geo = await lookupGeo(customerIp);
 
+      // Capture an authoritative locked total at save time. Restored verbatim on resume
+      // while pricing is locked, and forwarded to Shopify so cart layers anchor on it.
+      const quoteCurrency: string | null = config?.currency || null;
+      const lockedTotal: number | null =
+        typeof calculations?.totalPrice === 'number' ? calculations.totalPrice : null;
+      const sailOnlyNzd = Number(calculations?.hardwareBreakdown?.sailOnlyPriceNzd ?? 0);
+      const hardwareOnlyNzd = Number(calculations?.hardwareBreakdown?.hardwareOnlyPriceNzd ?? 0);
+      const lockedBaseNzd: number | null =
+        Number.isFinite(sailOnlyNzd + hardwareOnlyNzd) ? sailOnlyNzd + hardwareOnlyNzd : null;
+      const snapshotEntry =
+        pricingSnapshot && quoteCurrency
+          ? (pricingSnapshot as Record<string, any>)[quoteCurrency]
+          : null;
+      const lockedFxRate = snapshotEntry?.exchange_rate ?? null;
+      const lockedMarketMarkup = snapshotEntry?.market_markup ?? null;
+      const lockedZonosDhlMarkup = snapshotEntry?.zonos_dhl_markup ?? null;
+
       const { data: quote, error: insertError } = await supabase
         .from('saved_quotes')
         .insert({
@@ -176,6 +193,13 @@ Deno.serve(async (req: Request) => {
           total_steps: totalSteps ?? 7,
           status: quoteStatus,
           pricing_snapshot: pricingSnapshot ?? null,
+          locked_total: lockedTotal,
+          locked_total_currency: quoteCurrency,
+          locked_total_base_nzd: lockedBaseNzd,
+          locked_fx_rate: lockedFxRate,
+          locked_market_markup: lockedMarketMarkup,
+          locked_zonos_dhl_markup: lockedZonosDhlMarkup,
+          locked_at: new Date().toISOString(),
           customer_first_name: firstName || null,
           customer_last_name: lastName || null,
           customer_ip: customerIp,
