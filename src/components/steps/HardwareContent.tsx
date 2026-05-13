@@ -319,8 +319,8 @@ export function HardwareContent({
       )}
 
       <div className="pt-2">
-        <div className="flex sm:hidden flex-col gap-2">
-          <div className="flex gap-2">
+        <div className="flex sm:hidden flex-col gap-3">
+          <div className="flex gap-3">
             {showBackButton && (
               <Button variant="outline" size="md" onClick={onPrev} className="flex-1">
                 Back
@@ -334,13 +334,13 @@ export function HardwareContent({
             onClick={onNext}
             size="md"
             disabled={mode === 'manual' && !allManualConfigured}
-            className="w-full"
+            className="w-full py-4 sm:py-2"
           >
             {nextStepTitle ? `Continue to ${nextStepTitle}` : 'Next'}
           </Button>
         </div>
 
-        <div className="hidden sm:flex gap-4">
+        <div className="hidden sm:flex items-center gap-4">
           {showBackButton && (
             <Button variant="outline" size="md" onClick={onPrev} className="w-auto">
               Back
