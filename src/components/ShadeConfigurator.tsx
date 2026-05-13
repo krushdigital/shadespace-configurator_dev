@@ -19,7 +19,8 @@ import { ConfiguratorState, EdgeType } from '../types';
 import { useFabricCatalog } from '../hooks/useFabricCatalog';
 import { Point } from '../types';
 import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy } from '../utils/geometry';
-import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
+import { generatePdfFromBlocks, CustomerDetails } from '../utils/pdfGenerator';
+import { loadActivePdfTemplate } from '../utils/activePdfTemplate';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
 import { getShopifyDisplayCurrency } from '../utils/currencyDetection';
@@ -382,7 +383,14 @@ export function ShadeConfigurator() {
         quoteUrl
       };
 
-      const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
+      const template = await loadActivePdfTemplate();
+      const pdf = await generatePdfFromBlocks(config, calculations, template.blocks, {
+        layout: template.layout,
+        chrome: template.chrome,
+        customer: customerDetails,
+        svgElement,
+        isEmailSummary: true,
+      });
 
       // Track PDF generation event
       const quoteParams = getQuoteFromUrl();

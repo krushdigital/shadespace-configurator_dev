@@ -3,7 +3,8 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { getAdminAuthHeaders } from '../../utils/adminAuth';
-import { generatePDF, CustomerDetails } from '../../utils/pdfGenerator';
+import { generatePdfFromBlocks, CustomerDetails } from '../../utils/pdfGenerator';
+import { loadActivePdfTemplate } from '../../utils/activePdfTemplate';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 
 interface SavedQuotesTableProps {
@@ -134,7 +135,13 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
         customerReference: quote.customer_reference,
         quoteUrl: getQuoteUrl(quote),
       };
-      await generatePDF(quote.config_data, quote.calculations_data, undefined, false, customerDetails);
+      const template = await loadActivePdfTemplate();
+      await generatePdfFromBlocks(quote.config_data, quote.calculations_data, template.blocks, {
+        layout: template.layout,
+        chrome: template.chrome,
+        customer: customerDetails,
+        isEmailSummary: false,
+      });
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       alert('Failed to generate PDF. The quote may have incomplete configuration data.');
