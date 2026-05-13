@@ -704,14 +704,29 @@ export function ShadeConfigurator() {
         quoteReference: quoteReference || undefined,
       };
 
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
       const response = await fetch(
-        '/apps/shade_space/api/v1/public/email-summary-send',
+        `${supabaseUrl}/functions/v1/send-config-email`,
         {
           method: "POST",
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'apikey': supabaseAnonKey,
           },
-          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email, firstName, lastName, quoteUrl }),
+          body: JSON.stringify({
+            pdf: pdfBase64,
+            ...orderData,
+            email,
+            firstName,
+            lastName,
+            quoteUrl,
+            quoteId: orderData.quoteReference ? undefined : undefined,
+            quoteReference: orderData.quoteReference,
+            totalPrice: calculations.totalPrice,
+            currency: config.currency,
+          }),
         }
       );
 
