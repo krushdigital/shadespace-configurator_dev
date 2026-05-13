@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { SlidersHorizontal, Package, CheckCircle2, Ban, Info } from 'lucide-react';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
+import { SaveProgressButton } from '../SaveProgressButton';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
 import { useHardwareCatalog, getDefaultPack, HardwareItem } from '../../hooks/useHardwareCatalog';
@@ -21,6 +22,7 @@ interface HardwareContentProps {
   pricingSettingsMap?: Record<string, PricingSetting>;
   setHighlightedCorner?: (corner: number | null) => void;
   highlightedCorner?: number | null;
+  onSaveQuote?: () => void;
 }
 
 export function HardwareContent({
@@ -34,6 +36,7 @@ export function HardwareContent({
   pricingSettingsMap,
   setHighlightedCorner,
   highlightedCorner = null,
+  onSaveQuote,
 }: HardwareContentProps) {
   const { items, categories, packs, loading } = useHardwareCatalog();
   const [modalCorner, setModalCorner] = useState<number | null>(null);
@@ -302,15 +305,46 @@ export function HardwareContent({
         </div>
       )}
 
-      <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 pt-2">
-        {showBackButton ? <Button variant="secondary" onClick={onPrev}>Back</Button> : <span />}
-        <Button
-          onClick={onNext}
-          disabled={mode === 'manual' && !allManualConfigured}
-          className="min-w-[180px]"
-        >
-          {nextStepTitle ? `Next: ${nextStepTitle}` : 'Next'}
-        </Button>
+      <div className="pt-2">
+        <div className="flex sm:hidden flex-col gap-2">
+          <div className="flex gap-2">
+            {showBackButton && (
+              <Button variant="outline" size="md" onClick={onPrev} className="flex-1">
+                Back
+              </Button>
+            )}
+            {onSaveQuote && (
+              <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
+            )}
+          </div>
+          <Button
+            onClick={onNext}
+            size="md"
+            disabled={mode === 'manual' && !allManualConfigured}
+            className="w-full"
+          >
+            {nextStepTitle ? `Continue to ${nextStepTitle}` : 'Next'}
+          </Button>
+        </div>
+
+        <div className="hidden sm:flex gap-4">
+          {showBackButton && (
+            <Button variant="outline" size="md" onClick={onPrev} className="w-auto">
+              Back
+            </Button>
+          )}
+          {onSaveQuote && (
+            <SaveProgressButton onClick={onSaveQuote} className="w-auto" />
+          )}
+          <Button
+            onClick={onNext}
+            size="md"
+            disabled={mode === 'manual' && !allManualConfigured}
+            className="flex-1"
+          >
+            {nextStepTitle ? `Continue to ${nextStepTitle}` : 'Next'}
+          </Button>
+        </div>
       </div>
 
       {!loading && modalCorner !== null && (
