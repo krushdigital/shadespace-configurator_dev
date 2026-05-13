@@ -98,6 +98,55 @@ export const FABRICS: Fabric[] = [
     ]
   },
   {
+    id: 'commercial95',
+    label: 'Commercial 95',
+    description: 'Unrivalled UV protection. Architectural fabric.',
+    detailedDescription: 'Industry-leading UV protection with over 25 years of proven versatility and reliability in the world\'s harshest conditions. A premium HDPE mesh engineered for tension structures and commercial architectural applications, delivering longevity on small-to-medium tension sails for playgrounds, pergolas, and public installations.',
+    benefits: [
+      'Industry-leading UV protection - blocks up to 95.5% of UV radiation',
+      'Dimensional stability - stentered (heat-set) to minimise re-tensioning',
+      'Strong HDPE mesh - recyclable and won\'t absorb moisture',
+      '15-year warranty - designed for longevity'
+    ],
+    bestFor: [
+      'Tension structures',
+      'Architectural applications',
+      'Harsh conditions',
+      'Playgrounds, pergolas & public installations'
+    ],
+    uvProtection: 'Up to 95.5%',
+    pricePerSqm: 120,
+    warrantyYears: 15,
+    madeIn: 'China',
+    weightPerSqm: 340,
+    badgeText: 'Commercial',
+    isFireRetardant: false,
+    colors: [
+      { name: 'Aquamarine', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Aquamarine_-_Front.jpg?v=1778453775', textColor: '#000000', shadeFactor: 89.5 },
+      { name: 'Aquatic Blue', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Aquatic_Blue_-_Front.jpg?v=1778453773', textColor: '#FFFFFF', shadeFactor: 85.6 },
+      { name: 'Black', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Black_-_Front.jpg?v=1778453774', textColor: '#FFFFFF', shadeFactor: 94.6 },
+      { name: 'Bluebird', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Bluebird_-_Front.jpg?v=1778453775', textColor: '#FFFFFF', shadeFactor: 91.2 },
+      { name: 'Bright Green', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Bright_Green_-_Front.jpg?v=1778453775', textColor: '#000000', shadeFactor: 88.6 },
+      { name: 'Brunswick Green', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Brunswick_Green_-_Front.jpg?v=1778453982', textColor: '#FFFFFF', shadeFactor: 93.8 },
+      { name: 'Charcoal', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Charcoal_-_Front.jpg?v=1778453775', textColor: '#FFFFFF', shadeFactor: 93.1 },
+      { name: 'Cherry Red', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Cherry_Red_-_Front.jpg?v=1778453775', textColor: '#FFFFFF', shadeFactor: 78.4 },
+      { name: 'Deep Ochre', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Deep_Ochre_-_Front.jpg?v=1778453775', textColor: '#FFFFFF', shadeFactor: 92.8 },
+      { name: 'Desert Sand', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Desert_Sand_-_Front.jpg?v=1778453775', textColor: '#000000', shadeFactor: 86.1 },
+      { name: 'Driftwood', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Driftwood_-_Front.jpg?v=1778453775', textColor: '#000000', shadeFactor: 90.0 },
+      { name: 'Gun Metal', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Gun_Metal_-_Front.jpg?v=1778453774', textColor: '#FFFFFF', shadeFactor: 91.4 },
+      { name: 'Natural', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Natural_-_Front.jpg?v=1778453775', textColor: '#000000', shadeFactor: 76.2 },
+      { name: 'Navy Blue', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Navy_Blue_-_Front.jpg?v=1778453774', textColor: '#FFFFFF', shadeFactor: 93.6 },
+      { name: 'Orange', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Orange_-_Front.jpg?v=1778453775', textColor: '#000000', shadeFactor: 80.6 },
+      { name: 'Rivergum', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Rivergum_-_Front.jpg?v=1778453773', textColor: '#FFFFFF', shadeFactor: 88.7 },
+      { name: 'Sky Blue', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Sky_Blue_-_Front.jpg?v=1778453773', textColor: '#000000', shadeFactor: 89.0 },
+      { name: 'Steel Grey', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Steel_Grey_-_Front.jpg?v=1778453774', textColor: '#FFFFFF', shadeFactor: 90.9 },
+      { name: 'Stone', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Stone_-_Front.jpg?v=1778453774', textColor: '#000000', shadeFactor: 89.3 },
+      { name: 'Turquoise', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Turquoise_-_Front.jpg?v=1778453773', textColor: '#000000', shadeFactor: 86.0 },
+      { name: 'Yellow', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Yellow_-_Front_CM95.jpg?v=1778461803', textColor: '#000000', shadeFactor: 77.6 },
+      { name: 'White', imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/White_-_Front.jpg?v=1778458804', textColor: '#000000', shadeFactor: 73.9 }
+    ]
+  },
+  {
     id: 'shadetec320',
     label: 'Shadetec 320',
     description: 'High quality knitted fabric with high strength and great aesthetics',

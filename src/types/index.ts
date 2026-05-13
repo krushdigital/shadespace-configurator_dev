@@ -24,6 +24,18 @@ export interface ConfiguratorState {
   diagonalsInitiallyProvided?: boolean;
   heightsProvidedByUser?: boolean;
   hasManuallyAdjustedShape?: boolean;
+  hardwareSelectionMode?: 'standard' | 'manual' | 'none';
+  cornerHardware?: { [cornerIndex: number]: CornerHardwareLine[] };
+}
+
+export interface CornerHardwareLine {
+  catalogId: string;
+  qty: number;
+  name: string;
+  sku: string | null;
+  priceNzd: number;
+  livePrice?: number;
+  livePriceCurrency?: string;
 }
 
 export interface ShadeCalculations {
@@ -32,6 +44,17 @@ export interface ShadeCalculations {
   fabricCost: number;
   edgeCost: number;
   hardwareCost: number;
+  hardwareBreakdown?: {
+    mode: 'standard' | 'manual' | 'none';
+    subtotalNzd: number;
+    perCornerNzd: number[];
+    sailOnlyPriceNzd: number;
+    hardwareOnlyPriceNzd: number;
+    liveCurrency?: string;
+    hardwareOnlyLivePrice?: number;
+    perCornerLivePrice?: number[];
+    standardPackLivePrice?: number | null;
+  };
   totalPrice: number;
   webbingWidth: number;
   wireThickness?: number;
@@ -56,6 +79,23 @@ export interface Fabric {
   weightPerSqm: number;
   badgeText?: string;
   isFireRetardant?: boolean;
+  shortName?: string;
+  tag?: string;
+  chipColor?: string;
+  tagline?: string;
+  imageLifestyleUrl?: string;
+  imageSwatchUrl?: string;
+  imageMacroUrl?: string;
+  highlights?: string[];
+  specExtras?: FabricSpec[];
+}
+
+export interface FabricSpec {
+  label: string;
+  value: string;
+  numeric?: number;
+  higherBetter?: boolean;
+  featured?: boolean;
 }
 
 export interface FabricColor {

@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { FABRICS } from '../data/fabrics';
+import { getLiveFabrics } from '../hooks/useFabricCatalog';
 import { formatMeasurement, formatArea, getDiagonalKeysForCorners } from './geometry';
 import { formatCurrency } from './currencyFormatter';
 import { captureSvgToBase64Png } from './svgCapture';
@@ -184,7 +184,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     pdf.setFillColor(...accentGreen);
     pdf.rect(0, 35, pageWidth, 5, 'F');
     
-    const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
+    const selectedFabric = getLiveFabrics().find(f => f.id === config.fabricType);
     const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
     
     // Hardware pack image mapping
@@ -386,8 +386,13 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
         ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
         : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`],
       ['Measurement Units:', config.unit === 'metric' ? 'Metric: mm' : 'Imperial: Inches'],
-      ['Manufacturing Option:', config.measurementOption === 'adjust' ? 'Adjust to fit space (hardware included)' : 'Exact dimensions (hardware not included)'],
-      ...(config.measurementOption === 'adjust' ? [['Tensioning Hardware Included:', 'Yes - Turnbuckles & Shackles']] : []),
+      ['Manufacturing Option:', config.measurementOption === 'adjust' ? 'Adjust to fit space' : 'Exact dimensions'],
+      ...((() => {
+        const mode = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+        if (mode === 'standard') return [['Tensioning Hardware Included:', 'Yes - Hardware Tensioning Kit']];
+        if (mode === 'manual') return [['Tensioning Hardware:', 'Manual per corner (see breakdown below)']];
+        return [];
+      })()),
       ['Fixing Points Installed:', config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'],
     ];
     
@@ -410,7 +415,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     
     configDetails.forEach(([label, value]) => {
       const isColorRow = label === 'Fabric Color:';
-      const isHardwareRow = label === 'Tensioning Hardware Included:';
+      const isHardwareRow = label === 'Tensioning Hardware Included:' || label === 'Tensioning Hardware:';
       pdf.setTextColor(...textMedium);
       pdf.text(label, 20, yPos);
       pdf.setTextColor(...textDark);
@@ -438,7 +443,125 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     });
     
     yPos += 20; // Reduced spacing after configuration summary
-    
+
+    // Hardware breakdown (manual mode)
+    const resolvedHardwareMode: 'standard' | 'manual' | 'none' =
+      config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+    const hwBreakdown = calculations.hardwareBreakdown;
+    const hwLiveTotal = hwBreakdown?.hardwareOnlyLivePrice ?? 0;
+    const perCornerLive = hwBreakdown?.perCornerLivePrice ?? [];
+    const sailDisplay = Math.max(0, calculations.totalPrice - Math.round(hwLiveTotal));
+
+    if (
+      resolvedHardwareMode === 'manual' &&
+      config.cornerHardware
+    ) {
+      pdf.setTextColor(...primaryDark);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Corner Hardware Breakdown', 15, yPos);
+      yPos += 8;
+
+      pdf.setFontSize(10);
+      for (let i = 0; i < config.corners; i++) {
+        const letter = String.fromCharCode(65 + i);
+        const lines = config.cornerHardware[i] || [];
+        const cornerLive = perCornerLive[i] ?? 0;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(...textDark);
+        pdf.text(`Corner ${letter}`, 20, yPos);
+        pdf.text(
+          formatCurrency(cornerLive, config.currency),
+          pageWidth - 20,
+          yPos,
+          { align: 'right' }
+        );
+        yPos += 6;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(...textMedium);
+        if (lines.length === 0) {
+          pdf.text('No hardware selected', 25, yPos);
+          yPos += 6;
+        } else {
+          for (const line of lines) {
+            const skuPart = line.sku ? ` (${line.sku})` : '';
+            const lineLive = line.livePriceCurrency === config.currency && line.livePrice != null
+              ? line.livePrice * line.qty
+              : 0;
+            pdf.text(`${line.qty}x ${line.name}${skuPart}`, 25, yPos);
+            pdf.text(
+              formatCurrency(lineLive, config.currency),
+              pageWidth - 20,
+              yPos,
+              { align: 'right' }
+            );
+            yPos += 5;
+          }
+        }
+        yPos += 2;
+      }
+      yPos += 6;
+    }
+
+    // Price breakdown
+    if (hwBreakdown) {
+      pdf.setTextColor(...primaryDark);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Price Breakdown', 15, yPos);
+      yPos += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(...textMedium);
+      pdf.text('Shade sail:', 20, yPos);
+      pdf.setTextColor(...textDark);
+      pdf.text(
+        formatCurrency(sailDisplay, config.currency),
+        pageWidth - 20,
+        yPos,
+        { align: 'right' }
+      );
+      yPos += 6;
+
+      if (resolvedHardwareMode === 'standard') {
+        pdf.setTextColor(...textMedium);
+        pdf.text('Hardware Tensioning Kit:', 20, yPos);
+        pdf.setTextColor(...primaryGreen);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Included', pageWidth - 20, yPos, { align: 'right' });
+        pdf.setFont('helvetica', 'normal');
+        yPos += 6;
+      } else if (resolvedHardwareMode === 'manual' && hwLiveTotal > 0) {
+        pdf.setTextColor(...textMedium);
+        pdf.text('Corner hardware:', 20, yPos);
+        pdf.setTextColor(...textDark);
+        pdf.text(
+          formatCurrency(hwLiveTotal, config.currency),
+          pageWidth - 20,
+          yPos,
+          { align: 'right' }
+        );
+        yPos += 6;
+      }
+
+      pdf.setDrawColor(...textLight);
+      pdf.setLineWidth(0.2);
+      pdf.line(20, yPos - 1, pageWidth - 20, yPos - 1);
+      yPos += 3;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(...primaryDark);
+      pdf.text('Total:', 20, yPos);
+      pdf.text(
+        formatCurrency(calculations.totalPrice, config.currency),
+        pageWidth - 20,
+        yPos,
+        { align: 'right' }
+      );
+      pdf.setFont('helvetica', 'normal');
+      yPos += 10;
+    }
+
     // Measurements section
     pdf.setTextColor(...primaryDark);
     pdf.setFontSize(12);

@@ -101,6 +101,11 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
       updates.fixingTypes = undefined;
       updates.eyeOrientations = undefined;
       updates.heightsProvidedByUser = false;
+      updates.hardwareSelectionMode = 'none';
+      updates.cornerHardware = {};
+    } else {
+      updates.hardwareSelectionMode = 'standard';
+      updates.cornerHardware = {};
     }
 
     updateConfig(updates);

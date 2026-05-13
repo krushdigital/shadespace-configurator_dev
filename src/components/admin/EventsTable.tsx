@@ -23,7 +23,7 @@ interface UserEvent {
   created_at: string;
 }
 
-export const EventsTable: React.FC<EventsTableProps & { excludeInternal?: boolean }> = ({ dateRange, excludeInternal }) => {
+export const EventsTable: React.FC<EventsTableProps & { excludeInternal?: boolean; timezone?: string }> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [events, setEvents] = useState<UserEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -77,6 +77,7 @@ export const EventsTable: React.FC<EventsTableProps & { excludeInternal?: boolea
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      timeZone: timezone,
     });
   };
 

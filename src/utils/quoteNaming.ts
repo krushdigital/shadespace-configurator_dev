@@ -1,5 +1,5 @@
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { FABRICS } from '../data/fabrics';
+import { getLiveFabrics } from '../hooks/useFabricCatalog';
 
 export const MAX_QUOTE_NAME_LENGTH = 100;
 export const MAX_REFERENCE_LENGTH = 50;
@@ -12,7 +12,7 @@ export function generateDefaultQuoteName(
   const fabricType = config.fabricType;
   const fabricColor = config.fabricColor;
 
-  const selectedFabric = FABRICS.find(f => f.id === fabricType);
+  const selectedFabric = getLiveFabrics().find(f => f.id === fabricType);
   const fabricLabel = selectedFabric?.label || 'Custom';
 
   const now = new Date();

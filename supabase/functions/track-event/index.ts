@@ -61,7 +61,8 @@ Deno.serve(async (req: Request) => {
     }
 
     const userAgent = req.headers.get('user-agent') || 'unknown';
-    const customerIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rawIpHeader = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const customerIp = rawIpHeader === 'unknown' ? 'unknown' : (rawIpHeader.split(',')[0].trim() || 'unknown');
 
     let deviceType = 'unknown';
     if (userAgent) {
@@ -82,6 +83,7 @@ Deno.serve(async (req: Request) => {
         quote_id: quoteId,
         customer_email: customerEmail,
         customer_ip: customerIp,
+        customer_ip_raw: rawIpHeader,
         user_agent: userAgent,
         device_type: deviceType,
         success: success,

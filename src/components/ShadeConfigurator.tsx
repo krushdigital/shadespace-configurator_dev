@@ -8,9 +8,10 @@ import { EdgeTypeContent } from './steps/EdgeTypeContent';
 import { CornersContent } from './steps/CornersContent';
 import { CombinedMeasurementContent } from './steps/CombinedMeasurementContent';
 import { DimensionsContent } from './steps/DimensionsContent';
-import { FixingPointsContent } from './steps/FixingPointsContent';
+import { HardwareContent } from './steps/HardwareContent';
 import { ReviewContent } from './steps/ReviewContent';
 import { useShadeCalculations } from '../hooks/useShadeCalculations';
+import { useHardwareCatalog } from '../hooks/useHardwareCatalog';
 import { usePricingSettings } from '../hooks/usePricingSettings';
 import { useBasePricing } from '../hooks/useBasePricing';
 import { useMobileGuidance } from '../hooks/useMobileGuidance';
@@ -112,8 +113,9 @@ export function ShadeConfigurator() {
 
   const { settingsMap: pricingSettingsMap } = usePricingSettings();
   const { data: basePricingData } = useBasePricing();
+  const { packs: hardwarePacks, items: hardwareItems } = useHardwareCatalog();
   const activePricingMap = loadedPricingSnapshot || pricingSettingsMap;
-  const calculations = useShadeCalculations(config, activePricingMap, basePricingData);
+  const calculations = useShadeCalculations(config, activePricingMap, basePricingData, hardwarePacks, hardwareItems);
 
   // Mobile guidance hook
   const mobileGuidance = useMobileGuidance({
@@ -152,20 +154,20 @@ export function ShadeConfigurator() {
     };
   }, [loading]);
 
-  // Default fabric selection for desktop only (monotec370), mobile has no preselection
+  // Default fabric selection for desktop only, mobile has no preselection
   useEffect(() => {
     const hasNoFabricSelected = !config.fabricType;
     const isInitialLoad = config.step === 0 && !quoteReference;
 
     // Only preselect on initial load, when no quote is being loaded, and no fabric is selected
     if (hasNoFabricSelected && isInitialLoad && !isLoadingQuote) {
-      if (!isMobile) {
-        // Desktop: preselect Monotec 370
-        updateConfig({ fabricType: 'monotec370' });
+      if (!isMobile && FABRICS.length > 0) {
+        const preferred = FABRICS.find(f => f.id === 'monotec370') ?? FABRICS[0];
+        updateConfig({ fabricType: preferred.id });
       }
       // Mobile: explicitly ensure no fabric is preselected (already empty, but being explicit)
     }
-  }, [isMobile, quoteReference, isLoadingQuote]);
+  }, [isMobile, quoteReference, isLoadingQuote, FABRICS]);
 
   const applyPricingSnapshot = (
     quote: QuoteData
@@ -637,6 +639,10 @@ export function ShadeConfigurator() {
         backendDiagonalMeasurements: backendDiagonalMeasurementsEmail,
         backendAnchorMeasurements: backendAnchorMeasurementsEmail,
         originalUnit: config.unit,
+        measurementOption: config.measurementOption,
+        hardwareSelectionMode: config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none'),
+        cornerHardware: config.cornerHardware,
+        hardwareBreakdown: calculations.hardwareBreakdown,
         firstName,
         lastName,
         quoteName,
@@ -701,20 +707,6 @@ export function ShadeConfigurator() {
           });
         }
 
-
-        // customer subscription
-
-        const subscription_response = await fetch('/apps/shade_space/api/v1/customers/subscribe', { method: "POST", body: JSON.stringify({ email, firstName, lastName }) })
-
-        const subscription_data = await subscription_response.json()
-
-        const { success, message, error } = subscription_data
-
-        if (success && message && !error) {
-          showToast(message, 'success')
-        } else if (!success && !message && error) {
-          showToast(error, 'error')
-        }
 
         return true;
       } else {
@@ -1249,16 +1241,43 @@ export function ShadeConfigurator() {
         metafieldProperties[key] = value;
       });
 
-      if (pdfUrl) {
-        const pdfUrlString = String(pdfUrl).trim();
-        if (pdfUrlString.startsWith('http')) {
-          metafieldProperties['_quote_pdf_url'] = pdfUrlString;
-          metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteReference || 'custom'}.pdf`;
-          metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
-          metafieldProperties['Technical Documentation'] = 'Included (PDF)';
-          console.log('✅ Added PDF URL to line item properties:', pdfUrlString);
+        // ============ CRITICAL FIX: Add PDF URL and Fabrication Type as line item properties ============
+        // Add PDF URL as a line item property if available
+        if (pdfUrl) {
+          // Ensure it's a valid URL string
+          const pdfUrlString = String(pdfUrl).trim();
+          if (pdfUrlString.startsWith('http')) {
+            metafieldProperties['_quote_pdf_url'] = pdfUrlString;
+            metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteReference || 'custom'}.pdf`;
+            metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
+
+            // Also add a customer-facing property
+            metafieldProperties['Technical Documentation'] = 'Included (PDF)';
+
+            console.log('✅ Added PDF URL to line item properties:', pdfUrlString);
+          } else {
+            console.log('❌ PDF URL is not a valid HTTP URL:', pdfUrlString);
+          }
+        } else {
+          console.log('❌ No PDF URL available to add to line item');
         }
-      }
+
+        // Corner hardware line items
+        {
+          const mode = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+          const label = mode === 'manual' ? 'Manual per corner' : mode === 'standard' ? 'Hardware Tensioning Kit' : 'No hardware';
+          metafieldProperties['Hardware Selection'] = label;
+          if (mode === 'manual' && config.cornerHardware) {
+            for (let i = 0; i < config.corners; i++) {
+              const lines = config.cornerHardware[i] || [];
+              const letter = String.fromCharCode(65 + i);
+              lines.forEach((line, lineIdx) => {
+                const skuPart = line.sku ? ` (${line.sku})` : '';
+                metafieldProperties[`Corner ${letter} Hardware ${lineIdx + 1}`] = `${line.qty}x ${line.name}${skuPart}`;
+              });
+            }
+          }
+        }
 
       const fabricationTypeValue = config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit';
       metafieldProperties['_fabrication_type'] = fabricationTypeValue;
@@ -1650,11 +1669,7 @@ export function ShadeConfigurator() {
   };
 
   // Helper function to check if a step should be skipped
-  const shouldSkipStep = (step: number): boolean => {
-    // Always skip Step 5 (Heights & Anchor Points) - now integrated into Step 4 as optional
-    if (step === 5) {
-      return true;
-    }
+  const shouldSkipStep = (_step: number): boolean => {
     return false;
   };
 
@@ -1716,8 +1731,14 @@ export function ShadeConfigurator() {
 
         // Heights are never required to complete this step - they can be added during review
         return allEdgesProvided;
-      case 5: // Heights & Anchor Points
-        // Step 5 is now always skipped (integrated into Step 4 as optional)
+      case 5: // Hardware Selection
+        if (config.hardwareSelectionMode === 'manual') {
+          const ch = config.cornerHardware || {};
+          for (let i = 0; i < config.corners; i++) {
+            if (!ch[i] || ch[i].length === 0) return false;
+          }
+          return true;
+        }
         return true;
       case 6: // Review
         return true;
@@ -1859,8 +1880,16 @@ export function ShadeConfigurator() {
           }
         }
         break;
-      case 5: // Heights & Anchor Points
-        // Step 5 is now skipped - heights are optional in Step 4
+      case 5: // Hardware Selection
+        if (config.hardwareSelectionMode === 'manual') {
+          const ch = config.cornerHardware || {};
+          for (let i = 0; i < config.corners; i++) {
+            if (!ch[i] || ch[i].length === 0) {
+              errors.cornerHardware = `Please select hardware for all ${config.corners} corners before continuing.`;
+              break;
+            }
+          }
+        }
         break;
     }
 
@@ -1890,7 +1919,7 @@ export function ShadeConfigurator() {
     // If no validation errors, proceed to next step
     const nextStepIndex = getActualNextStep(openStep);
 
-    const stepNames = ['Fabric & Color', 'Style', 'Fixing Points', 'Measurement Options', 'Dimensions', 'Heights & Anchor Points', 'Review & Purchase'];
+    const stepNames = ['Fabric & Color', 'Style', 'Fixing Points', 'Measurement Options', 'Dimensions', 'Hardware Selection', 'Review & Purchase'];
     eventTrackers.stepChange(nextStepIndex, stepNames[nextStepIndex] || `Step ${nextStepIndex}`, 'forward', {
       fabricType: config.fabricType,
       fabricColor: config.fabricColor,
@@ -1911,7 +1940,8 @@ export function ShadeConfigurator() {
   };
 
   const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
-    const prevStepIndex = getActualPrevStep(openStep);
+    const wantsDimensions = options?.navigateToHeights || options?.navigateToDiagonals;
+    const prevStepIndex = wantsDimensions ? 4 : getActualPrevStep(openStep);
 
     // Auto-center shape when moving to previous step
     const centeredPoints = centerShape(config.points);
@@ -1926,7 +1956,7 @@ export function ShadeConfigurator() {
       setNavigateToDiagonals(true);
     }
 
-    setConfig(prev => ({ ...prev, step: prevStepIndex }));
+    setConfig(prev => ({ ...prev, step: Math.max(prev.step, prevStepIndex) }));
     updateConfig({ points: centeredPoints });
     setOpenStep(prevStepIndex);
 
@@ -1985,9 +2015,17 @@ export function ShadeConfigurator() {
           }
         }
         return edgeCount === config.corners ? `${edgeCount} edge measurements entered` : `${edgeCount}/${config.corners} edges measured`;
-      case 5: // Heights & Anchor Points
-        // Step 5 is now integrated into Step 4 as optional
-        return 'Integrated into Dimensions step';
+      case 5: // Hardware Selection
+        {
+          const m = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+          if (m === 'manual') {
+            const ch = config.cornerHardware || {};
+            const configured = Array.from({ length: config.corners }, (_, i) => (ch[i]?.length || 0) > 0).filter(Boolean).length;
+            return `Manual (${configured}/${config.corners} corners)`;
+          }
+          if (m === 'none') return 'No hardware';
+          return 'Standard hardware pack';
+        }
       case 6: // Review
         return 'Ready for purchase';
       default:
@@ -2003,14 +2041,13 @@ export function ShadeConfigurator() {
       'Fixing Points',
       'Measurement Options',
       'Dimensions',
-      'Heights & Anchor Points',
+      'Hardware Selection',
       'Review & Purchase'
     ];
 
     const actualNextStep = getActualNextStep(currentStep);
 
-    // Special case: If we're on step 4 (Dimensions) and step 5 will be skipped,
-    // the next step title should be "Review & Purchase"
+    // If we're on Dimensions and Hardware step is skipped, jump to Review
     if (currentStep === 4 && shouldSkipStep(5)) {
       return 'Review & Purchase';
     }
@@ -2046,9 +2083,9 @@ export function ShadeConfigurator() {
       component: DimensionsContent
     },
     {
-      title: 'Heights & Anchor Points',
-      subtitle: 'Configure attachment points',
-      component: FixingPointsContent
+      title: 'Hardware Selection',
+      subtitle: 'Choose corner hardware',
+      component: HardwareContent
     },
     {
       title: 'Review & Purchase',
@@ -2153,9 +2190,9 @@ export function ShadeConfigurator() {
           )}
         </div>
 
-        <div className={`grid grid-cols-1 gap-8 ${openStep === 4 ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-8 ${(openStep === 4 || openStep === 5) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${openStep === 4 // Dimensions step (50% of 4 cols)
+          <div className={`space-y-2 min-h-0 ${(openStep === 4 || openStep === 5) // Dimensions or Hardware step (50% of 4 cols)
             ? 'lg:col-span-2'
             : (openStep >= 5 && !shouldSkipStep(5)) // Review step (66.7% of 3 cols when step 5 is not skipped)
               ? 'lg:col-span-2'
@@ -2233,6 +2270,7 @@ export function ShadeConfigurator() {
                     setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
                     navigateToDiagonals={index === 4 ? navigateToDiagonals : undefined}
                     setNavigateToDiagonals={index === 4 ? setNavigateToDiagonals : undefined}
+                    pricingSettingsMap={activePricingMap}
                   />
                 </AccordionStep>
               );
@@ -2282,8 +2320,31 @@ export function ShadeConfigurator() {
             );
           })()}
 
-          {/* Desktop Pricing Summary - Sticky Sidebar (Dimensions & Review steps) */}
-          {(openStep >= 5 && (!shouldSkipStep(5) || openStep === 6)) && (
+          {/* Sticky Diagram for Hardware Step - Desktop Only */}
+          {openStep === 5 && !isMobile && (
+            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
+              <h4 className="text-lg font-semibold text-slate-900 mb-4">
+                Sail Diagram
+              </h4>
+              <p className="text-sm text-slate-600 mb-3">
+                Hover over a corner below to preview which corner on the sail you are configuring.
+              </p>
+              <ShapeCanvas
+                config={config}
+                updateConfig={updateConfig}
+                readonly={true}
+                snapToGrid={true}
+                highlightedMeasurement={highlightedMeasurement}
+                highlightedCorner={highlightedCorner}
+                isMobile={isMobile}
+                measurementOption={config.measurementOption}
+                unit={config.unit}
+              />
+            </div>
+          )}
+
+          {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
+          {(openStep === 6) && (
             <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <PriceSummaryDisplay
                 config={config}
@@ -2322,6 +2383,19 @@ export function ShadeConfigurator() {
         onCustomerDetailsCaptured={setCapturedCustomerDetails}
         onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
         onEmailPDFQuote={handleEmailPDFQuote}
+        getCanvasImageUrl={async () => {
+          const svgElement = canvasRef.current?.getSVGElement?.();
+          if (!svgElement) return null;
+          try {
+            const blob = await convertSvgToPng(svgElement, 600, 500);
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+            return await uploadImageToShopify(blob, filename);
+          } catch (err) {
+            console.warn('Failed to capture diagram for saved quote:', err);
+            return null;
+          }
+        }}
       />
     </>
   );

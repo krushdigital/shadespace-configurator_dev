@@ -6,11 +6,23 @@ import { getAdminAuthHeaders } from '../../utils/adminAuth';
 interface DataExportProps {
   dateRange: { start: string; end: string };
   excludeInternal?: boolean;
+  timezone?: string;
 }
 
-export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeInternal }) => {
+export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [exporting, setExporting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const formatDateTz = (iso: string) => {
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleString('sv-SE', { timeZone: timezone }).replace(' ', 'T');
+    } catch {
+      return iso;
+    }
+  };
+
+  const suffix = excludeInternal ? 'externals-only' : 'all';
 
   const downloadCSV = (filename: string, csv: string) => {
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -63,12 +75,12 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
           cfg.corners || '', cfg.fabricType || '', cfg.fabricColor || '', cfg.edgeType || '',
           cfg.measurementOption || '', cfg.unit || '',
           q.current_step != null && q.total_steps ? `${q.current_step + 1}/${q.total_steps}` : '',
-          q.created_at,
+          formatDateTz(q.created_at),
         ].map(escapeCsv).join(',');
       });
 
       downloadCSV(
-        `shadespace-quotes-full-${dateRange.start}-to-${dateRange.end}.csv`,
+        `shadespace-quotes-${suffix}-${dateRange.start}-to-${dateRange.end}.csv`,
         [csvHeaders.map(escapeCsv).join(','), ...rows].join('\n')
       );
     } catch (err) {
@@ -102,11 +114,11 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
       const rows = events.map((e: any) => [
         e.event_type, e.customer_email || '', e.event_data?.customerName || '',
         e.device_type, e.success ? 'true' : 'false', e.error_message || '',
-        e.quote_id || '', JSON.stringify(e.event_data || {}), e.created_at,
+        e.quote_id || '', JSON.stringify(e.event_data || {}), formatDateTz(e.created_at),
       ].map(escapeCsv).join(','));
 
       downloadCSV(
-        `shadespace-events-full-${dateRange.start}-to-${dateRange.end}.csv`,
+        `shadespace-events-${suffix}-${dateRange.start}-to-${dateRange.end}.csv`,
         [csvHeaders.map(escapeCsv).join(','), ...rows].join('\n')
       );
     } catch (err) {
@@ -183,11 +195,11 @@ export const DataExport: React.FC<DataExportProps> = ({ dateRange, excludeIntern
         .map(c => [
           c.email, c.name, c.quoteCount, c.cartCount, c.pdfCount,
           c.emailCount, c.totalValue.toFixed(2), Array.from(c.currencies).join('; '),
-          c.firstSeen, c.lastSeen,
+          formatDateTz(c.firstSeen), formatDateTz(c.lastSeen),
         ].map(escapeCsv).join(','));
 
       downloadCSV(
-        `shadespace-customers-${dateRange.start}-to-${dateRange.end}.csv`,
+        `shadespace-customers-${suffix}-${dateRange.start}-to-${dateRange.end}.csv`,
         [csvHeaders.map(escapeCsv).join(','), ...rows].join('\n')
       );
     } catch (err) {

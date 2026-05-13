@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { ConfiguratorState, ShadeCalculations } from '../types';
+import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../types';
+import type { HardwarePack, HardwareItem } from './useHardwareCatalog';
+import { getLiveHardwarePrice, getLivePackPrice } from './useHardwareCatalog';
 import {
   CORNER_COSTS,
   CABLED_CORNER_COSTS,
@@ -23,7 +25,9 @@ import {
 export function useShadeCalculations(
   config: ConfiguratorState,
   pricingSettingsMap?: Record<string, PricingSetting>,
-  basePricingData?: BasePricingData | null
+  basePricingData?: BasePricingData | null,
+  hardwarePacks?: HardwarePack[] | null,
+  hardwareItems?: HardwareItem[] | null,
 ): ShadeCalculations {
   return useMemo(() => {
     let perimeterMM = 0;
@@ -77,41 +81,107 @@ export function useShadeCalculations(
     let cornerCostNZD = 0;
     let hardwareCostNZD = 0;
 
+    let embeddedHardwareCostNZD = 0;
     if (basePricingData) {
       fabricCostNZD = getFabricPriceFromDB(basePricingData, adjustedPerimeter, config.fabricType, edgeType);
       edgeCostNZD = 0;
       cornerCostNZD = getCornerCostFromDB(basePricingData, config.corners, edgeType);
-      if (config.measurementOption === 'adjust') {
-        hardwareCostNZD = getHardwareCostFromDB(basePricingData, config.corners, edgeType);
-      }
+      embeddedHardwareCostNZD = getHardwareCostFromDB(basePricingData, config.corners, edgeType);
     } else {
       if (config.edgeType === 'webbing') {
         fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'webbing');
         edgeCostNZD = 0;
         cornerCostNZD = CORNER_COSTS[config.corners as keyof typeof CORNER_COSTS] || 0;
-        if (config.measurementOption === 'adjust') {
-          hardwareCostNZD = HARDWARE_COSTS[config.corners as keyof typeof HARDWARE_COSTS] || 0;
-        }
+        embeddedHardwareCostNZD = HARDWARE_COSTS[config.corners as keyof typeof HARDWARE_COSTS] || 0;
       } else if (config.edgeType === 'cabled') {
         fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'cabled');
         edgeCostNZD = 0;
         cornerCostNZD = CABLED_CORNER_COSTS[config.corners as keyof typeof CABLED_CORNER_COSTS] || 0;
-        if (config.measurementOption === 'adjust') {
-          hardwareCostNZD = CABLED_HARDWARE_COSTS[config.corners as keyof typeof CABLED_HARDWARE_COSTS] || 0;
-        }
+        embeddedHardwareCostNZD = CABLED_HARDWARE_COSTS[config.corners as keyof typeof CABLED_HARDWARE_COSTS] || 0;
       }
     }
 
-    const baseNZD = fabricCostNZD + edgeCostNZD + cornerCostNZD + hardwareCostNZD;
+    const perCornerNzd: number[] = new Array(config.corners).fill(0);
+    const perCornerLivePrice: number[] = new Array(config.corners).fill(0);
+    const resolvedMode: 'standard' | 'manual' | 'none' =
+      config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+    const breakdownMode: 'standard' | 'manual' | 'none' = resolvedMode;
+    let breakdownSubtotalNzd = 0;
 
     const pricing = pricingSettingsMap
       ? getPricingForCurrency(pricingSettingsMap, config.currency)
       : { marketMarkup: 1.0, zonosDhlMarkup: 1.0, exchangeRate: 1.0, symbol: 'NZ$' };
 
-    const markedUpNZD = baseNZD * pricing.marketMarkup;
-    const zonosDhlCostNZD = baseNZD * (pricing.zonosDhlMarkup - 1);
-    const totalNZD = markedUpNZD + zonosDhlCostNZD;
-    const convertedTotal = totalNZD * pricing.exchangeRate;
+    const hardwareItemsById = new Map<string, HardwareItem>();
+    if (hardwareItems) for (const it of hardwareItems) hardwareItemsById.set(it.id, it);
+
+    let hardwareLiveSubtotal = 0;
+    let standardPackLivePrice: number | null = null;
+
+    if (resolvedMode === 'standard') {
+      let standardTotal = embeddedHardwareCostNZD;
+      let pack: HardwarePack | undefined;
+      if (hardwarePacks && hardwarePacks.length > 0) {
+        pack = hardwarePacks.find(p => p.edge_type === edgeType && p.corners === config.corners);
+        if (pack && pack.price_nzd_override != null) {
+          standardTotal = Number(pack.price_nzd_override);
+        }
+      }
+      hardwareCostNZD = standardTotal;
+      const per = config.corners > 0 ? standardTotal / config.corners : 0;
+      for (let i = 0; i < config.corners; i++) perCornerNzd[i] = per;
+      breakdownSubtotalNzd = standardTotal;
+
+      if (pack) {
+        const live = getLivePackPrice(pack, config.currency, pricing.exchangeRate);
+        if (live != null) {
+          standardPackLivePrice = live;
+          hardwareLiveSubtotal = live;
+        }
+      }
+      if (standardPackLivePrice == null) {
+        standardPackLivePrice = standardTotal * pricing.exchangeRate;
+        hardwareLiveSubtotal = standardPackLivePrice;
+      }
+      const perLive = config.corners > 0 ? hardwareLiveSubtotal / config.corners : 0;
+      for (let i = 0; i < config.corners; i++) perCornerLivePrice[i] = perLive;
+    } else if (resolvedMode === 'manual') {
+      let manualSubtotal = 0;
+      if (config.cornerHardware) {
+        for (let i = 0; i < config.corners; i++) {
+          const lines = config.cornerHardware[i] || [];
+          let cornerNzd = 0;
+          let cornerLive = 0;
+          for (const line of lines) {
+            cornerNzd += line.priceNzd * line.qty;
+            const catalogItem = hardwareItemsById.get(line.catalogId);
+            const livePerUnit = catalogItem
+              ? getLiveHardwarePrice(catalogItem, config.currency, pricing.exchangeRate)
+              : (line.livePriceCurrency === config.currency && line.livePrice != null
+                  ? line.livePrice
+                  : line.priceNzd * pricing.exchangeRate);
+            cornerLive += livePerUnit * line.qty;
+          }
+          perCornerNzd[i] = cornerNzd;
+          perCornerLivePrice[i] = cornerLive;
+          manualSubtotal += cornerNzd;
+          hardwareLiveSubtotal += cornerLive;
+        }
+      }
+      hardwareCostNZD = manualSubtotal;
+      breakdownSubtotalNzd = manualSubtotal;
+    } else {
+      hardwareCostNZD = 0;
+      breakdownSubtotalNzd = 0;
+    }
+
+    const sailOnlyBaseNZD = fabricCostNZD + edgeCostNZD + cornerCostNZD;
+
+    // Sail portion goes through market/DHL markup + FX; hardware uses Shopify
+    // presentment price directly (already in buyer's currency).
+    const markedUpSailNZD = sailOnlyBaseNZD * pricing.marketMarkup;
+    const zonosSailNZD = sailOnlyBaseNZD * (pricing.zonosDhlMarkup - 1);
+    const sailConverted = (markedUpSailNZD + zonosSailNZD) * pricing.exchangeRate;
 
     const markedUpFactor = pricing.marketMarkup * pricing.exchangeRate;
     const zonosFactor = (pricing.zonosDhlMarkup - 1) * pricing.exchangeRate;
@@ -119,8 +189,10 @@ export function useShadeCalculations(
 
     const fabricCost = fabricCostNZD * combinedFactor;
     const edgeCost = edgeCostNZD * combinedFactor;
-    const hardwareCost = (cornerCostNZD + hardwareCostNZD) * combinedFactor;
-    const totalPrice = Math.ceil(convertedTotal);
+    const hardwareCost = cornerCostNZD * combinedFactor + hardwareLiveSubtotal;
+    const totalPrice = Math.ceil(sailConverted + hardwareLiveSubtotal);
+    const sailOnlyPriceNzd = sailOnlyBaseNZD;
+    const hardwareOnlyPriceNzd = hardwareCostNZD;
 
     const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
     const fabricWeightPerSqm = selectedFabric?.weightPerSqm || 370;
@@ -133,7 +205,7 @@ export function useShadeCalculations(
     const perimeterWeightPerMeter = config.edgeType === 'cabled' ? 140 : 100;
     const perimeterWeightGrams = Math.round(perimeterM) * perimeterWeightPerMeter;
 
-    const hardwareWeightGrams = config.measurementOption === 'adjust'
+    const hardwareWeightGrams = resolvedMode !== 'none'
       ? config.corners * 380
       : 0;
 
@@ -145,6 +217,17 @@ export function useShadeCalculations(
       fabricCost,
       edgeCost,
       hardwareCost,
+      hardwareBreakdown: {
+        mode: breakdownMode,
+        subtotalNzd: breakdownSubtotalNzd,
+        perCornerNzd,
+        sailOnlyPriceNzd,
+        hardwareOnlyPriceNzd,
+        liveCurrency: config.currency,
+        hardwareOnlyLivePrice: hardwareLiveSubtotal,
+        perCornerLivePrice,
+        standardPackLivePrice,
+      },
       totalPrice,
       webbingWidth,
       wireThickness,
@@ -158,7 +241,11 @@ export function useShadeCalculations(
     config.measurementOption,
     config.currency,
     config.unit,
+    config.hardwareSelectionMode,
+    config.cornerHardware,
     pricingSettingsMap,
-    basePricingData
+    basePricingData,
+    hardwarePacks,
+    hardwareItems
   ]);
 }

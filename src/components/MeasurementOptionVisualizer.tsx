@@ -21,17 +21,6 @@ export function MeasurementOptionVisualizer({
   validationErrors = {}
 }: MeasurementOptionVisualizerProps) {
 
-  const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
-    3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
-    4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
-    5: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/5_Corner_Sails.jpg?v=1724717405',
-    6: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-    7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-    8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-  };
-
-  const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[corners];
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card
@@ -169,47 +158,6 @@ export function MeasurementOptionVisualizer({
               <p className="text-xs text-slate-700 mb-2 leading-relaxed font-medium">
                 <span className="text-[#01312D] font-semibold">Why Choose:</span> Your space measurements don't translate directly to sail size - we do the math to ensure a perfect, professional fit.
               </p>
-
-              <div className="flex items-center gap-1.5 text-xs">
-                <svg className="w-4 h-4 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="font-semibold text-[#01312D] text-xs">Tensioning Hardware Included</span>
-                <Tooltip
-                  content={
-                    <div>
-                      <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Pack Included</h4>
-                      {corners > 0 && hardwarePackImageUrl && (
-                        <img
-                          src={hardwarePackImageUrl}
-                          alt={`${corners} Corner Hardware Pack`}
-                          className="w-full h-auto object-cover rounded-lg mb-3"
-                        />
-                      )}
-                      <p className="text-sm text-slate-600 mb-3">
-                        Complete stainless steel tensioning hardware kit included with your sail.
-                      </p>
-                      <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
-                        <a
-                          href="https://shadespace.com/pages/hardware"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
-                        >
-                          More information about hardware
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                          </svg>
-                        </a>
-                      </div>
-                    </div>
-                  }
-                >
-                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                    ?
-                  </span>
-                </Tooltip>
-              </div>
             </div>
           </div>
         </Card>
@@ -336,42 +284,6 @@ export function MeasurementOptionVisualizer({
               <p className="text-xs text-slate-700 mb-2 leading-relaxed font-medium">
                 <span className="text-[#01312D] font-semibold">Why Choose:</span> You want to receive a sail to the exact dimensions you provide and take care of everything else.
               </p>
-
-              <div className="flex items-center gap-1.5 text-xs">
-                <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span className="font-semibold text-slate-900 text-xs">Tensioning Hardware Not Included</span>
-                <span className="inline-flex items-center">
-                  <Tooltip
-                    content={
-                      <div>
-                        <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
-                        <p className="text-sm text-slate-600 mb-3">
-                          With this option, you'll receive the shade sail with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles etc.) must be sourced separately.
-                        </p>
-                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                          <a
-                            href="https://shadespace.com/pages/hardware"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
-                          >
-                            Shop Hardware
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                            </svg>
-                          </a>
-                        </div>
-                      </div>
-                    }
-                  >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                      ?
-                    </span>
-                  </Tooltip>
-                </span>
-              </div>
             </div>
           </div>
         </Card>

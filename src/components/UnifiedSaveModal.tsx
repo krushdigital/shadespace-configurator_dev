@@ -46,6 +46,7 @@ interface UnifiedSaveModalProps {
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
   onCustomerDetailsCaptured?: (details: { firstName: string; lastName: string; email: string; quoteReference?: string }) => void;
+  getCanvasImageUrl?: () => Promise<string | null>;
 }
 
 export function UnifiedSaveModal({
@@ -61,6 +62,7 @@ export function UnifiedSaveModal({
   onEmailPDFQuote,
   onSaveComplete,
   onCustomerDetailsCaptured,
+  getCanvasImageUrl,
 }: UnifiedSaveModalProps) {
   const isEmailMode = shouldShowEmailOption;
   const [modalStep, setModalStep] = useState<ModalStep>('form');
@@ -129,6 +131,15 @@ export function UnifiedSaveModal({
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : undefined;
       const sanitizedReference = customerReference.trim() ? sanitizeCustomerReference(customerReference) : undefined;
 
+      let capturedCanvasUrl: string | null = null;
+      if (getCanvasImageUrl) {
+        try {
+          capturedCanvasUrl = await getCanvasImageUrl();
+        } catch (err) {
+          console.warn('Canvas capture failed, continuing without diagram:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -139,7 +150,8 @@ export function UnifiedSaveModal({
         totalSteps,
         pricingSnapshot,
         firstName.trim(),
-        lastName.trim()
+        lastName.trim(),
+        capturedCanvasUrl
       );
 
       console.log('Save quote result:', result);
@@ -235,20 +247,6 @@ export function UnifiedSaveModal({
       });
 
 
-      // customer subscription
-
-        const subscription_response = await fetch('/apps/shade_space/api/v1/customers/subscribe', { method: "POST", body: JSON.stringify({ email, firstName, lastName }) })
-
-        const subscription_data = await subscription_response.json()
-
-        const { success, message, error } = subscription_data
-
-        if (success && message && !error) {
-          showToast(message, 'success')
-        } else if (!success && !message && error) {
-          showToast(error, 'error')
-        }
-
       onCustomerDetailsCaptured?.({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
@@ -279,6 +277,15 @@ export function UnifiedSaveModal({
       const finalQuoteName = quoteName.trim() ? sanitizeQuoteName(quoteName) : defaultQuoteName;
       const sanitizedReference = customerReference.trim() ? sanitizeCustomerReference(customerReference) : null;
 
+      let capturedCanvasUrl: string | null = null;
+      if (getCanvasImageUrl) {
+        try {
+          capturedCanvasUrl = await getCanvasImageUrl();
+        } catch (err) {
+          console.warn('Canvas capture failed, continuing without diagram:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -289,7 +296,8 @@ export function UnifiedSaveModal({
         totalSteps,
         pricingSnapshot,
         firstName.trim(),
-        lastName.trim()
+        lastName.trim(),
+        capturedCanvasUrl
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
@@ -511,6 +519,7 @@ export function UnifiedSaveModal({
                     placeholder="your@email.com"
                     className="w-full"
                   />
+                  <p className="text-[11px] text-slate-500 mt-1.5">By saving, you'll receive helpful updates about your shade sail configuration. Unsubscribe any time from the link in the email.</p>
                 </div>
 
                 <div>

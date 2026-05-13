@@ -12,19 +12,36 @@ import { FunnelAnalysis } from '../components/admin/FunnelAnalysis';
 import { DataExport } from '../components/admin/DataExport';
 import { ExclusionManager } from '../components/admin/ExclusionManager';
 import { FabricColorManager } from '../components/admin/FabricColorManager';
+import { EmailStudio } from '../components/admin/EmailStudio';
+import { HardwareSyncCard } from '../components/admin/HardwareSyncCard';
+import { HardwareCatalogManager } from '../components/admin/HardwareCatalogManager';
+import { PdfStudio } from '../components/admin/PdfStudio';
+
+import type { AdminProfile } from '../hooks/useAdminProfile';
+import { UserManagement } from '../components/admin/UserManagement';
 
 interface AdminDashboardProps {
   onLogout: () => void;
+  profile: AdminProfile;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions';
+type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'hardware' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'pdf' | 'team';
 
-export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+const detectTimezone = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+};
+
+export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profile }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [excludeInternal, setExcludeInternal] = useState(() => {
     try { return localStorage.getItem('admin_exclude_internal') === 'true'; } catch { return false; }
   });
+  const timezone = detectTimezone();
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0],
@@ -42,9 +59,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     { id: 'events', label: 'User Events' },
     { id: 'funnel', label: 'Funnel & Insights' },
     { id: 'fabrics', label: 'Fabrics & Colors' },
+    { id: 'hardware', label: 'Hardware Catalog' },
     { id: 'pricing', label: 'Currency Pricing' },
     { id: 'base-pricing', label: 'Base Pricing' },
     { id: 'exports', label: 'Data Export' },
+    { id: 'email', label: 'Email Studio' },
+    { id: 'pdf', label: 'PDF Studio' },
+    { id: 'team', label: 'User Management' },
     { id: 'exclusions', label: 'Exclusion Settings' },
   ];
 
@@ -58,6 +79,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
               <span className="text-sm text-gray-500">Analytics Dashboard</span>
             </div>
             <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-xs text-gray-600">
+                {profile.email}
+                <span className={`ml-2 px-2 py-0.5 rounded text-[10px] font-semibold ${profile.role === 'super_admin' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                  {profile.role === 'super_admin' ? 'SUPER ADMIN' : 'ADMIN'}
+                </span>
+              </span>
               <Button onClick={() => setShowChangePassword(true)} variant="outline" size="sm">
                 Change Password
               </Button>
@@ -91,7 +118,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Card className="mb-6 border border-gray-200 shadow-sm">
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
             <label className="text-sm font-semibold text-gray-700">Date Range:</label>
             <input
               type="date"
@@ -143,23 +170,36 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
         {activeTab === 'overview' && (
           <div className="space-y-6">
             <AnalyticsSummary dateRange={dateRange} excludeInternal={excludeInternal} />
-            <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} />
+            <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />
           </div>
         )}
 
-        {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} />}
+        {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
-        {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} />}
+        {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
         {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} excludeInternal={excludeInternal} />}
 
         {activeTab === 'fabrics' && <FabricColorManager />}
 
+        {activeTab === 'hardware' && (
+          <div className="space-y-6">
+            <HardwareSyncCard />
+            <HardwareCatalogManager />
+          </div>
+        )}
+
         {activeTab === 'pricing' && <PricingManager />}
 
         {activeTab === 'base-pricing' && <BasePricingManager />}
 
-        {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} />}
+        {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+
+        {activeTab === 'email' && <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+
+        {activeTab === 'pdf' && <PdfStudio />}
+
+        {activeTab === 'team' && <UserManagement currentProfile={profile} />}
 
         {activeTab === 'exclusions' && <ExclusionManager />}
       </div>
