@@ -335,8 +335,19 @@ Deno.serve(async (req: Request) => {
             let bin = "";
             for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
             const ref = quote.quote_reference || "Quote";
+            const pattern = (template as any)?.pdf_filename_pattern as string | null | undefined;
+            const sanitize = (s: unknown) => String(s ?? "").replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_");
+            const filename = pattern
+              ? renderTemplate(pattern, {
+                  quote_reference: ref,
+                  quote_name: sanitize(quote.quote_name),
+                  customer_first_name: sanitize(quote.customer_first_name),
+                  customer_last_name: sanitize(quote.customer_last_name),
+                })
+              : `ShadeSpace-Quote-${ref}.pdf`;
+            const safeFilename = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
             resolvedAttachments.push({
-              filename: `ShadeSpace-Quote-${ref}.pdf`,
+              filename: safeFilename,
               content: btoa(bin),
               type: "application/pdf",
             });

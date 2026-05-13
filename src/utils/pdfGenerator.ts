@@ -135,8 +135,54 @@ export interface CustomerDetails {
   quoteUrl?: string;
 }
 
+export type PdfDensity = 'comfortable' | 'compact' | 'ultra';
+
+export interface PdfLayoutOptions {
+  density?: PdfDensity;
+  columns?: 1 | 2;
+  baseFontPt?: number;
+  rowGapMm?: number;
+  sectionGapMm?: number;
+  returnBlob?: boolean;
+}
+
+interface ResolvedLayout {
+  density: PdfDensity;
+  columns: 1 | 2;
+  fontTitle: number;
+  fontSection: number;
+  fontBody: number;
+  fontSmall: number;
+  rowGap: number;
+  sectionGap: number;
+  configRowGap: number;
+}
+
+function resolveLayout(opts?: PdfLayoutOptions): ResolvedLayout {
+  const density: PdfDensity = opts?.density || 'comfortable';
+  const columns: 1 | 2 = opts?.columns || 1;
+  const presets: Record<PdfDensity, Omit<ResolvedLayout, 'density' | 'columns'>> = {
+    comfortable: { fontTitle: 20, fontSection: 12, fontBody: 10, fontSmall: 8, rowGap: 5, sectionGap: 8, configRowGap: 7 },
+    compact:     { fontTitle: 16, fontSection: 10, fontBody:  9, fontSmall: 7, rowGap: 4, sectionGap: 6, configRowGap: 5.5 },
+    ultra:       { fontTitle: 14, fontSection:  9, fontBody:  8, fontSmall: 7, rowGap: 3.5, sectionGap: 4, configRowGap: 4.5 },
+  };
+  const preset = presets[density];
+  return {
+    density,
+    columns,
+    fontTitle: preset.fontTitle,
+    fontSection: preset.fontSection,
+    fontBody: opts?.baseFontPt ?? preset.fontBody,
+    fontSmall: preset.fontSmall,
+    rowGap: opts?.rowGapMm ?? preset.rowGap,
+    sectionGap: opts?.sectionGapMm ?? preset.sectionGap,
+    configRowGap: preset.configRowGap,
+  };
+}
+
 export async function generatePDF(
-config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined, customerDetails?: CustomerDetails): Promise<string | void> {
+config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElement | undefined, isEmailSummary?: boolean | undefined, customerDetails?: CustomerDetails, layoutOptions?: PdfLayoutOptions): Promise<string | void> {
+  const layout = resolveLayout(layoutOptions);
   console.log('🚀 Starting PDF generation...');
   console.log('📱 User agent:', navigator.userAgent);
   console.log('📊 Config corners:', config.corners);
@@ -282,10 +328,10 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
 
     // Main title
     pdf.setTextColor(...textDark);
-    pdf.setFontSize(20);
+    pdf.setFontSize(layout.fontTitle);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Custom Shade Sail Quote', 15, yPos);
-    yPos += 12;
+    yPos += layout.density === 'comfortable' ? 12 : layout.density === 'compact' ? 9 : 7;
 
     // Customer Details Section (if provided)
     if (customerDetails && (customerDetails.firstName || customerDetails.quoteName)) {
@@ -396,53 +442,64 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       ['Fixing Points Installed:', config.fixingPointsInstalled === true ? 'Yes - Already Installed' : config.fixingPointsInstalled === false ? 'No - Planning Installation' : 'Not specified'],
     ];
     
-    // Configuration summary card
-    const configSummaryHeight = configDetails.length * 7 + 20;
+    // Configuration summary card. In 2-column mode the rows are split across two
+    // columns inside the card so the section uses roughly half the vertical space.
+    const cfgRowsPerCol = layout.columns === 2 ? Math.ceil(configDetails.length / 2) : configDetails.length;
+    const configSummaryHeight = cfgRowsPerCol * layout.configRowGap + (layout.density === 'comfortable' ? 20 : 14);
     pdf.setFillColor(...backgroundLight);
     pdf.rect(10, yPos - 5, pageWidth - 20, configSummaryHeight, 'F');
     pdf.setDrawColor(...textLight);
     pdf.setLineWidth(0.2);
     pdf.rect(10, yPos - 5, pageWidth - 20, configSummaryHeight, 'S');
-    
+
     pdf.setTextColor(...primaryDark);
-    pdf.setFontSize(12);
+    pdf.setFontSize(layout.fontSection);
     pdf.setFont('helvetica', 'bold');
     pdf.text('Configuration Summary', 15, yPos);
-    yPos += 10;
-    
-    pdf.setFontSize(10);
+    const configHeaderY = yPos;
+    yPos += layout.density === 'comfortable' ? 10 : 7;
+
+    pdf.setFontSize(layout.fontBody);
     pdf.setFont('helvetica', 'normal');
-    
-    configDetails.forEach(([label, value]) => {
-      const isColorRow = label === 'Fabric Color:';
-      const isHardwareRow = label === 'Tensioning Hardware Included:' || label === 'Tensioning Hardware:';
+
+    const configStartY = yPos;
+    const colSplit = layout.columns === 2 ? Math.ceil(configDetails.length / 2) : configDetails.length;
+    const col2X = pageWidth / 2 + 5;
+    configDetails.forEach((entry, idx) => {
+      const [label, value] = entry as [string, string];
+      const inCol2 = layout.columns === 2 && idx >= colSplit;
+      if (inCol2 && idx === colSplit) yPos = configStartY;
+      const labelX = inCol2 ? col2X : 20;
+      const valueX = inCol2 ? col2X + 40 : 80;
+      const _label = label;
+      const _value = value;
+      // Render row
+      const isColorRow = _label === 'Fabric Color:';
+      const isHardwareRow = _label === 'Tensioning Hardware Included:' || _label === 'Tensioning Hardware:';
       pdf.setTextColor(...textMedium);
-      pdf.text(label, 20, yPos);
+      pdf.text(_label, labelX, yPos);
       pdf.setTextColor(...textDark);
       pdf.setFont('helvetica', 'bold');
-      pdf.text(value, 80, yPos);
-      
-      // Add fabric swatch image next to color
+      pdf.text(_value, valueX, yPos);
       if (isColorRow && fabricSwatchBase64) {
         const swatchSize = 6;
-        const valueWidth = pdf.getTextWidth(value);
-        const swatchX = 80 + valueWidth + 5; // Position after the color name with 5mm gap
-        pdf.addImage(fabricSwatchBase64, 'PNG', swatchX, yPos - 4, swatchSize, swatchSize);
+        const valueWidth = pdf.getTextWidth(_value);
+        pdf.addImage(fabricSwatchBase64, 'PNG', valueX + valueWidth + 5, yPos - 4, swatchSize, swatchSize);
       }
-      
-      // Add hardware pack image next to hardware info
       if (isHardwareRow && hardwarePackBase64) {
         const swatchSize = 8;
-        const valueWidth = pdf.getTextWidth(value);
-        const swatchX = 80 + valueWidth + 5; // Position after the hardware text with 5mm gap
-        pdf.addImage(hardwarePackBase64, 'PNG', swatchX, yPos - 5, swatchSize, swatchSize);
+        const valueWidth = pdf.getTextWidth(_value);
+        pdf.addImage(hardwarePackBase64, 'PNG', valueX + valueWidth + 5, yPos - 5, swatchSize, swatchSize);
       }
-      
       pdf.setFont('helvetica', 'normal');
-      yPos += 7;
+      yPos += layout.configRowGap;
     });
-    
-    yPos += 20; // Reduced spacing after configuration summary
+    // After 2-column rendering, snap yPos to the bottom of the card so the next
+    // section starts below it (not in the middle of a row).
+    if (layout.columns === 2) {
+      yPos = configHeaderY + configSummaryHeight;
+    }
+    yPos += layout.sectionGap;
 
     // Hardware breakdown (manual mode)
     const resolvedHardwareMode: 'standard' | 'manual' | 'none' =
@@ -583,7 +640,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     const diagonalMeasurementsCount = diagonalMeasurements.length;
 
     const maxMeasurementsCount = Math.max(edgeMeasurementsCount, diagonalMeasurementsCount);
-    const measurementCardHeight = Math.max(maxMeasurementsCount * 5 + 15, 40); // Reduced height for page 1
+    const measurementCardHeight = Math.max(maxMeasurementsCount * layout.rowGap + 15, 30);
 
     const leftColX = 10;
     const rightColX = pageWidth / 2 + 5;
@@ -604,24 +661,24 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       pdf.text('Edge Lengths', leftColX + 5, yPos);
       let currentEdgeY = yPos + 10;
       
-      pdf.setFontSize(8);
+      pdf.setFontSize(layout.fontSmall);
       pdf.setFont('helvetica', 'normal');
-      
+
       for (let i = 0; i < config.corners; i++) {
         const nextIndex = (i + 1) % config.corners;
         const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
         const measurement = config.measurements[edgeKey];
-        
+
         const label = `Edge ${String.fromCharCode(65 + i)} to ${String.fromCharCode(65 + nextIndex)}:`;
         const value = measurement ? formatMeasurementForPDF(measurement, config.unit) : 'Not provided';
-        
+
         pdf.setTextColor(...textMedium);
         pdf.text(label, leftColX + 5, currentEdgeY);
         pdf.setTextColor(...textDark);
         pdf.setFont('helvetica', 'bold');
         pdf.text(value, leftColX + 50, currentEdgeY);
         pdf.setFont('helvetica', 'normal');
-        currentEdgeY += 5;
+        currentEdgeY += layout.rowGap;
       }
 
       // Diagonal measurements card
@@ -646,7 +703,7 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
         pdf.setFont('helvetica', 'bold');
         pdf.text(value, rightColX + 50, currentDiagonalY);
         pdf.setFont('helvetica', 'normal');
-        currentDiagonalY += 5;
+        currentDiagonalY += layout.rowGap;
       });
     } else {
       // Two-column layout: Edge Lengths (left) and Anchor Point Configuration (right)
@@ -663,24 +720,24 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
       pdf.text('Edge Lengths', leftColX + 5, yPos);
       let currentEdgeY = yPos + 10;
       
-      pdf.setFontSize(8);
+      pdf.setFontSize(layout.fontSmall);
       pdf.setFont('helvetica', 'normal');
-      
+
       for (let i = 0; i < config.corners; i++) {
         const nextIndex = (i + 1) % config.corners;
         const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
         const measurement = config.measurements[edgeKey];
-        
+
         const label = `Edge ${String.fromCharCode(65 + i)} to ${String.fromCharCode(65 + nextIndex)}:`;
         const value = measurement ? formatMeasurementForPDF(measurement, config.unit) : 'Not provided';
-        
+
         pdf.setTextColor(...textMedium);
         pdf.text(label, leftColX + 5, currentEdgeY);
         pdf.setTextColor(...textDark);
         pdf.setFont('helvetica', 'bold');
         pdf.text(value, leftColX + 50, currentEdgeY);
         pdf.setFont('helvetica', 'normal');
-        currentEdgeY += 5;
+        currentEdgeY += layout.rowGap;
       }
     }
     
@@ -920,6 +977,11 @@ config: ConfiguratorState, calculations: ShadeCalculations, svgElement?: SVGElem
     
     console.log('💾 Preparing PDF download...');
 
+    // For in-app previews (PDF Studio), return a blob URL without triggering a download.
+    if (layoutOptions?.returnBlob) {
+      const pdfBlob = pdf.output('blob');
+      return URL.createObjectURL(pdfBlob);
+    }
 
         // For email summary, return base64 string
     if (isEmailSummary) {

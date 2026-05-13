@@ -17,6 +17,12 @@ interface QuoteOption {
   diagram_image_path: string | null;
 }
 
+interface PdfTemplateOption {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
 interface RecentSend {
   id: string;
   recipient_email: string;
@@ -49,6 +55,17 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
 
   const [recent, setRecent] = useState<RecentSend[]>([]);
   const [drawerSend, setDrawerSend] = useState<RecentSend | null>(null);
+
+  const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateOption[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('pdf_templates')
+      .select('id, name, is_active')
+      .order('is_active', { ascending: false })
+      .order('name')
+      .then(({ data }) => setPdfTemplates(data || []));
+  }, []);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -131,6 +148,8 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
       html_body: draft.html_body,
       text_body: draft.text_body,
       default_sender_id: draft.default_sender_id,
+      pdf_template_id: draft.pdf_template_id ?? null,
+      pdf_filename_pattern: draft.pdf_filename_pattern ?? null,
     }).eq('id', draft.id);
     setSaving(false);
     if (error) { alert(`Save failed: ${error.message}`); return; }
@@ -260,6 +279,37 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
                 </select>
                 <p className="text-[11px] text-gray-500 mt-1">Customer-facing "From" line for this email. Click Save to apply.</p>
               </div>
+
+              {(draft as any).attach_pdf && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
+                  <div className="text-xs font-semibold text-blue-900">PDF attachment</div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-blue-900 mb-1">PDF template</label>
+                    <select
+                      value={draft.pdf_template_id || ''}
+                      onChange={e => setDraft({ ...draft, pdf_template_id: e.target.value || null })}
+                      className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white"
+                    >
+                      <option value="">Use currently active PDF template</option>
+                      {pdfTemplates.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}{p.is_active ? ' (active)' : ''}</option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-blue-800/80 mt-1">Pick which PDF design renders for this email. Leave blank to follow whichever template is set as active in PDF Studio.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-blue-900 mb-1">Filename pattern</label>
+                    <input
+                      type="text"
+                      value={draft.pdf_filename_pattern || ''}
+                      onChange={e => setDraft({ ...draft, pdf_filename_pattern: e.target.value })}
+                      placeholder="ShadeSpace-Quote-{quote_reference}.pdf"
+                      className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white font-mono"
+                    />
+                    <p className="text-[11px] text-blue-800/80 mt-1">Available tokens: {'{quote_reference}'}, {'{quote_name}'}, {'{customer_first_name}'}, {'{customer_last_name}'}.</p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">Preview with a real quote</label>

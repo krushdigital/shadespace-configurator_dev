@@ -15,6 +15,7 @@ import {
 } from '../../utils/pdfBlocks';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { getDiagonalKeysForCorners } from '../../utils/geometry';
+import { generatePDF, PdfDensity } from '../../utils/pdfGenerator';
 
 interface LiveQuoteRow {
   id: string;
@@ -85,6 +86,10 @@ export interface PdfTemplateConfig {
     showPricingCallout: boolean;
   };
   paper: 'A4' | 'Letter';
+  layout?: {
+    density: 'comfortable' | 'compact' | 'ultra';
+    columns: 1 | 2;
+  };
 }
 
 interface PdfTemplateRow {
@@ -122,15 +127,21 @@ const DEFAULT_CONFIG: PdfTemplateConfig = {
     showPricingCallout: true,
   },
   paper: 'A4',
+  layout: { density: 'comfortable', columns: 1 },
 };
 
 function mergeConfig(input: Partial<PdfTemplateConfig> | null | undefined): PdfTemplateConfig {
+  const layoutInput = input?.layout || {};
   return {
     brand: { ...DEFAULT_CONFIG.brand, ...(input?.brand || {}) },
     header: { ...DEFAULT_CONFIG.header, ...(input?.header || {}) },
     footer: { ...DEFAULT_CONFIG.footer, ...(input?.footer || {}) },
     sections: { ...DEFAULT_CONFIG.sections, ...(input?.sections || {}) },
     paper: (input?.paper as 'A4' | 'Letter') || DEFAULT_CONFIG.paper,
+    layout: {
+      density: (layoutInput.density as PdfDensity) || DEFAULT_CONFIG.layout!.density,
+      columns: (layoutInput.columns === 2 ? 2 : 1) as 1 | 2,
+    },
   };
 }
 
@@ -164,6 +175,10 @@ export const PdfStudio: React.FC = () => {
   const [liveQuotes, setLiveQuotes] = useState<LiveQuoteRow[]>([]);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string>('');
   const [loadingQuotes, setLoadingQuotes] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'html' | 'pdf'>('html');
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string>('');
+  const [pdfPreviewLoading, setPdfPreviewLoading] = useState(false);
+  const [pdfPreviewError, setPdfPreviewError] = useState<string | null>(null);
 
   const loadLiveQuotes = async () => {
     setLoadingQuotes(true);
@@ -328,6 +343,45 @@ export const PdfStudio: React.FC = () => {
   const selected = useMemo(() => blocks.find((b) => b.id === selectedBlockId) || null, [blocks, selectedBlockId]);
   const liveData = dataSource === 'live' ? selectedQuote : null;
   const previewHtml = useMemo(() => buildPreview(config, blocks, liveData), [config, blocks, liveData]);
+
+  const renderPdfPreview = async () => {
+    setPdfPreviewLoading(true);
+    setPdfPreviewError(null);
+    try {
+      const sourceConfig = liveData?.config_data || (buildSampleConfig() as ConfiguratorState);
+      const sourceCalc = liveData?.calculations_data || (buildSampleCalc() as ShadeCalculations);
+      const url = await generatePDF(
+        sourceConfig,
+        sourceCalc,
+        undefined,
+        false,
+        liveData ? {
+          firstName: liveData.customer_first_name || undefined,
+          lastName: liveData.customer_last_name || undefined,
+          email: liveData.customer_email || undefined,
+          quoteName: liveData.quote_name || undefined,
+        } : undefined,
+        {
+          density: config.layout?.density,
+          columns: config.layout?.columns,
+          returnBlob: true,
+        },
+      );
+      if (typeof url === 'string') setPdfPreviewUrl(url);
+    } catch (err) {
+      setPdfPreviewError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPdfPreviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (previewMode !== 'pdf') return;
+    renderPdfPreview();
+    return () => {
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    };
+  }, [previewMode, config.layout?.density, config.layout?.columns, liveData?.id]);
 
   if (loading) {
     return <Card className="p-6">Loading templates...</Card>;
@@ -551,6 +605,38 @@ export const PdfStudio: React.FC = () => {
               <TextRow label="Line 1" value={config.footer.line1} onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line1: v } })} />
               <TextRow label="Line 2" value={config.footer.line2} onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line2: v } })} />
             </Section>
+            <Section title="Layout density">
+              <div className="flex flex-wrap gap-2">
+                {(['comfortable', 'compact', 'ultra'] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setConfig({ ...config, layout: { density: d, columns: config.layout?.columns || 1 } })}
+                    className={`px-3 py-1.5 rounded-lg border text-sm capitalize ${
+                      (config.layout?.density || 'comfortable') === d ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">Comfortable matches the original spacing. Compact tightens fonts and gaps. Ultra is the densest setting for long quotes.</p>
+              <div className="mt-3 flex gap-2">
+                {([1, 2] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setConfig({ ...config, layout: { density: config.layout?.density || 'comfortable', columns: c } })}
+                    className={`px-3 py-1.5 rounded-lg border text-sm ${
+                      (config.layout?.columns || 1) === c ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {c} column{c > 1 ? 's' : ''}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">Two columns is applied to the Configuration Summary block to reduce vertical space.</p>
+            </Section>
             <Section title="Paper">
               <div className="flex gap-2">
                 {(['A4', 'Letter'] as const).map((p) => (
@@ -572,15 +658,63 @@ export const PdfStudio: React.FC = () => {
         )}
 
         <Card className="p-0 border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 text-sm font-semibold text-gray-700">
-            Live preview
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-gray-700">Live preview</div>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPreviewMode('html')}
+                className={`px-3 py-1.5 text-xs rounded border ${previewMode === 'html' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+              >
+                HTML mockup
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewMode('pdf')}
+                className={`px-3 py-1.5 text-xs rounded border ${previewMode === 'pdf' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+              >
+                Rendered PDF
+              </button>
+              {previewMode === 'pdf' && (
+                <button
+                  type="button"
+                  onClick={renderPdfPreview}
+                  disabled={pdfPreviewLoading}
+                  className="px-3 py-1.5 text-xs rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {pdfPreviewLoading ? 'Rendering...' : 'Refresh'}
+                </button>
+              )}
+            </div>
           </div>
-          <iframe
-            title="pdf-preview"
-            srcDoc={previewHtml}
-            className="w-full bg-white"
-            style={{ height: '820px', border: 'none' }}
-          />
+          {previewMode === 'html' ? (
+            <iframe
+              title="pdf-preview"
+              srcDoc={previewHtml}
+              className="w-full bg-white"
+              style={{ height: '820px', border: 'none' }}
+            />
+          ) : (
+            <div className="w-full bg-gray-100" style={{ height: '820px' }}>
+              {pdfPreviewError ? (
+                <div className="p-4 text-sm text-red-700 bg-red-50 border border-red-200 m-4 rounded">
+                  Failed to render PDF: {pdfPreviewError}
+                </div>
+              ) : pdfPreviewUrl ? (
+                <iframe
+                  title="rendered-pdf"
+                  src={`${pdfPreviewUrl}#view=FitH`}
+                  className="w-full h-full bg-white"
+                  style={{ border: 'none' }}
+                />
+              ) : (
+                <div className="p-6 text-sm text-gray-500">{pdfPreviewLoading ? 'Generating PDF...' : 'PDF preview not loaded.'}</div>
+              )}
+              <div className="px-3 py-2 text-[11px] text-gray-500 bg-gray-50 border-t border-gray-200">
+                Tip: scroll inside the PDF viewer to see all pages. Larger quotes (more corners and dimensions) will produce additional pages here.
+              </div>
+            </div>
+          )}
         </Card>
 
         {pane === 'layout' && (
@@ -752,6 +886,46 @@ const TextRow: React.FC<{ label: string; value: string; onChange: (v: string) =>
     <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" />
   </div>
 );
+
+function buildSampleConfig(): Partial<ConfiguratorState> {
+  return {
+    step: 6,
+    fabricType: 'monotec370',
+    fabricColor: 'Domino Black',
+    edgeType: 'webbing',
+    corners: 4,
+    unit: 'metric',
+    measurementOption: 'exact',
+    points: [{ x: 0, y: 0 }, { x: 4000, y: 0 }, { x: 4000, y: 3500 }, { x: 0, y: 3500 }],
+    measurements: { AB: 4000, BC: 3500, CD: 4200, DA: 3300, AC: 5400, BD: 5200 },
+    fixingHeights: [2400, 2400, 2200, 2200],
+    fixingTypes: ['post', 'post', 'building', 'building'],
+    eyeOrientations: ['horizontal', 'horizontal', 'vertical', 'vertical'],
+    fixingPointsInstalled: false,
+    currency: 'NZD',
+    hardwareSelectionMode: 'standard',
+  };
+}
+
+function buildSampleCalc(): Partial<ShadeCalculations> {
+  return {
+    area: 14.7,
+    perimeter: 15000,
+    fabricCost: 600,
+    edgeCost: 0,
+    hardwareCost: 200,
+    totalPrice: 1299,
+    webbingWidth: 50,
+    totalWeightGrams: 4400,
+    hardwareBreakdown: {
+      mode: 'standard',
+      subtotalNzd: 200,
+      perCornerNzd: [50, 50, 50, 50],
+      sailOnlyPriceNzd: 1099,
+      hardwareOnlyPriceNzd: 200,
+    },
+  };
+}
 
 function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuoteRow | null): string {
   const b = cfg.brand;
