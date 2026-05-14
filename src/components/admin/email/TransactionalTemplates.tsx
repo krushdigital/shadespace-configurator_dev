@@ -4,6 +4,8 @@ import { Button } from '../../ui/Button';
 import { supabase } from '../../../lib/supabase';
 import { getAdminAuthHeaders } from '../../../utils/adminAuth';
 import type { EmailTemplate, EmailSender } from '../EmailStudio';
+import { loadActivePdfTemplate } from '../../../utils/activePdfTemplate';
+import { generatePdfFromBlocks, CustomerDetails } from '../../../utils/pdfGenerator';
 
 interface QuoteOption {
   id: string;
@@ -36,7 +38,13 @@ interface RecentSend {
   attach_status: string | null;
 }
 
-export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ senders }) => {
+interface TransactionalTemplatesProps {
+  senders: EmailSender[];
+  isSuperAdmin?: boolean;
+  onOpenPdfStudio?: () => void;
+}
+
+export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ senders, isSuperAdmin = false, onOpenPdfStudio }) => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selected, setSelected] = useState<EmailTemplate | null>(null);
   const [draft, setDraft] = useState<EmailTemplate | null>(null);
@@ -144,17 +152,81 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
   const save = async () => {
     if (!draft) return;
     setSaving(true);
-    const { error } = await supabase.from('email_templates').update({
+    const payload: Partial<EmailTemplate> = {
       html_body: draft.html_body,
       text_body: draft.text_body,
       default_sender_id: draft.default_sender_id,
       pdf_template_id: draft.pdf_template_id ?? null,
       pdf_filename_pattern: draft.pdf_filename_pattern ?? null,
-    }).eq('id', draft.id);
+    };
+    if (isSuperAdmin) {
+      payload.subject = draft.subject;
+    }
+    const { error } = await supabase.from('email_templates').update(payload).eq('id', draft.id);
     setSaving(false);
     if (error) { alert(`Save failed: ${error.message}`); return; }
     await load();
     await runPreview();
+  };
+
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenerateStatus, setRegenerateStatus] = useState<string | null>(null);
+
+  const regenerateStoredPdf = async () => {
+    if (!previewQuoteId) {
+      setRegenerateStatus('Pick a real quote above first.');
+      return;
+    }
+    setRegenerating(true);
+    setRegenerateStatus('Loading quote...');
+    try {
+      const { data: q, error: qErr } = await supabase
+        .from('saved_quotes')
+        .select('id, quote_reference, quote_name, customer_email, customer_first_name, customer_last_name, config_data, calculations_data')
+        .eq('id', previewQuoteId)
+        .maybeSingle();
+      if (qErr || !q) throw new Error(qErr?.message || 'Quote not found');
+
+      setRegenerateStatus('Rendering PDF from active template...');
+      const tpl = await loadActivePdfTemplate(true);
+      const customer: CustomerDetails = {
+        firstName: q.customer_first_name || undefined,
+        lastName: q.customer_last_name || undefined,
+        email: q.customer_email || undefined,
+        quoteName: q.quote_name,
+        customerReference: null,
+      };
+      const dataUrl = (await generatePdfFromBlocks(
+        (q as any).config_data,
+        (q as any).calculations_data,
+        tpl.blocks,
+        { layout: tpl.layout, chrome: tpl.chrome, customer, isEmailSummary: true },
+      )) as string;
+      if (!dataUrl) throw new Error('PDF render returned no output');
+
+      const base64 = dataUrl.startsWith('data:') ? dataUrl.split(',')[1] : dataUrl;
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const ref = q.quote_reference || 'Quote';
+      const path = `quote-pdfs/${q.id}/ShadeSpace-Quote-${ref}-${Date.now()}.pdf`;
+
+      setRegenerateStatus('Uploading to storage...');
+      const { error: upErr } = await supabase.storage
+        .from('quote-assets')
+        .upload(path, bytes, { contentType: 'application/pdf', upsert: true });
+      if (upErr) throw new Error(upErr.message);
+
+      const { error: updErr } = await supabase
+        .from('saved_quotes')
+        .update({ pdf_path: path })
+        .eq('id', q.id);
+      if (updErr) throw new Error(updErr.message);
+
+      setRegenerateStatus(`Regenerated using current active PDF template. Stored at ${path}`);
+    } catch (e) {
+      setRegenerateStatus(`Failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const sendTest = async () => {
@@ -204,7 +276,7 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
           <div>
             <div className="text-sm font-semibold text-amber-900">Service emails</div>
             <div className="text-xs text-amber-800 mt-0.5">
-              These templates are sent automatically when customers save progress or request a PDF quote. Subjects are locked to protect customer expectations, and these emails bypass the unsubscribe list.
+              These templates are sent automatically when customers save progress or request a PDF quote. {isSuperAdmin ? 'Super admins can edit subjects and re-bind the attached PDF design.' : 'Subjects are locked for admins to protect customer expectations.'} These emails bypass the unsubscribe list.
             </div>
           </div>
         </div>
@@ -220,10 +292,16 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
             >
               <div className="flex items-center justify-between">
                 <div className="font-semibold text-sm text-gray-900">{t.name}</div>
-                <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                  Locked
-                </span>
+                {isSuperAdmin ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                    Editable
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                    Locked
+                  </span>
+                )}
               </div>
               <div className="text-[11px] text-gray-500 mt-1 truncate" title={t.subject}>{t.subject}</div>
               {selected?.id === t.id && lastSent && (
@@ -250,17 +328,27 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1 flex items-center gap-1">
                   Subject
-                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    Locked
-                  </span>
+                  {isSuperAdmin ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                      Super admin
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                      Locked
+                    </span>
+                  )}
                 </label>
                 <input
                   value={draft.subject}
-                  readOnly
-                  className="w-full border border-gray-200 bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-700"
-                  title="Subject is locked for transactional templates to protect customer expectations"
+                  readOnly={!isSuperAdmin}
+                  onChange={isSuperAdmin ? (e) => setDraft({ ...draft, subject: e.target.value }) : undefined}
+                  className={`w-full border rounded-md px-3 py-2 text-sm ${isSuperAdmin ? 'border-gray-300 bg-white text-gray-900' : 'border-gray-200 bg-gray-50 text-gray-700'}`}
+                  title={isSuperAdmin ? 'Editable as super admin. Click Save to apply.' : 'Subject is locked for transactional templates to protect customer expectations'}
                 />
+                {isSuperAdmin && (
+                  <p className="text-[11px] text-gray-500 mt-1">Tokens like {'{quote_reference}'} are rendered at send time.</p>
+                )}
               </div>
 
               <div>
@@ -280,34 +368,87 @@ export const TransactionalTemplates: React.FC<{ senders: EmailSender[] }> = ({ s
                 <p className="text-[11px] text-gray-500 mt-1">Customer-facing "From" line for this email. Click Save to apply.</p>
               </div>
 
-              {(draft as any).attach_pdf && (
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
-                  <div className="text-xs font-semibold text-blue-900">PDF attachment</div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-blue-900 mb-1">PDF template</label>
-                    <select
-                      value={draft.pdf_template_id || ''}
-                      onChange={e => setDraft({ ...draft, pdf_template_id: e.target.value || null })}
-                      className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white"
-                    >
-                      <option value="">Use currently active PDF template</option>
-                      {pdfTemplates.map(p => (
-                        <option key={p.id} value={p.id}>{p.name}{p.is_active ? ' (active)' : ''}</option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-blue-800/80 mt-1">Pick which PDF design renders for this email. Leave blank to follow whichever template is set as active in PDF Studio.</p>
+              {(() => {
+                const boundId = draft.pdf_template_id || '';
+                const bound = boundId ? pdfTemplates.find(p => p.id === boundId) : null;
+                const active = pdfTemplates.find(p => p.is_active);
+                const effective = bound || active;
+                return (
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div>
+                        <div className="text-xs font-semibold text-blue-900">Attached PDF design</div>
+                        <div className="text-[12px] text-blue-900 mt-0.5">
+                          {effective ? (
+                            <>
+                              <strong>{effective.name}</strong>
+                              <span className="ml-2 text-[11px] text-blue-700">
+                                {bound ? '(bound to this email)' : '(follows PDF Studio active template)'}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-blue-800">No PDF template configured.</span>
+                          )}
+                        </div>
+                      </div>
+                      {onOpenPdfStudio && (
+                        <Button size="sm" variant="outline" onClick={onOpenPdfStudio}>
+                          Open in PDF Studio
+                        </Button>
+                      )}
+                    </div>
+                    {isSuperAdmin && (
+                      <>
+                        <div>
+                          <label className="block text-[11px] font-medium text-blue-900 mb-1">PDF template binding</label>
+                          <select
+                            value={draft.pdf_template_id || ''}
+                            onChange={e => setDraft({ ...draft, pdf_template_id: e.target.value || null })}
+                            className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white"
+                          >
+                            <option value="">Use currently active PDF template</option>
+                            {pdfTemplates.map(p => (
+                              <option key={p.id} value={p.id}>{p.name}{p.is_active ? ' (active)' : ''}</option>
+                            ))}
+                          </select>
+                          <p className="text-[11px] text-blue-800/80 mt-1">Pick a specific PDF design or leave blank to follow whichever template is active in PDF Studio.</p>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-blue-900 mb-1">Filename pattern</label>
+                          <input
+                            type="text"
+                            value={draft.pdf_filename_pattern || ''}
+                            onChange={e => setDraft({ ...draft, pdf_filename_pattern: e.target.value })}
+                            placeholder="ShadeSpace-Quote-{quote_reference}.pdf"
+                            className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white font-mono"
+                          />
+                          <p className="text-[11px] text-blue-800/80 mt-1">Available tokens: {'{quote_reference}'}, {'{quote_name}'}, {'{customer_first_name}'}, {'{customer_last_name}'}.</p>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-blue-900 mb-1">Filename pattern</label>
-                    <input
-                      type="text"
-                      value={draft.pdf_filename_pattern || ''}
-                      onChange={e => setDraft({ ...draft, pdf_filename_pattern: e.target.value })}
-                      placeholder="ShadeSpace-Quote-{quote_reference}.pdf"
-                      className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white font-mono"
-                    />
-                    <p className="text-[11px] text-blue-800/80 mt-1">Available tokens: {'{quote_reference}'}, {'{quote_name}'}, {'{customer_first_name}'}, {'{customer_last_name}'}.</p>
+                );
+              })()}
+
+              {isSuperAdmin && draft.template_key === 'pdf_quote_delivery' && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2">
+                  <div className="text-xs font-semibold text-amber-900">Regenerate stored PDF (super admin)</div>
+                  <p className="text-[11px] text-amber-800">
+                    If a saved quote still has an old hardcoded PDF on file, pick the quote in the "Preview with a real quote" dropdown above and click below to render a fresh PDF using the current active PDF Studio template and overwrite the stored copy.
+                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button size="sm" onClick={regenerateStoredPdf} disabled={regenerating || !previewQuoteId}>
+                      {regenerating ? 'Regenerating...' : 'Regenerate stored PDF for selected quote'}
+                    </Button>
+                    {!previewQuoteId && (
+                      <span className="text-[11px] text-amber-700">Pick a real quote above to enable.</span>
+                    )}
                   </div>
+                  {regenerateStatus && (
+                    <div className="text-[11px] text-amber-900 bg-white border border-amber-200 rounded px-2 py-1.5 break-all">
+                      {regenerateStatus}
+                    </div>
+                  )}
                 </div>
               )}
 

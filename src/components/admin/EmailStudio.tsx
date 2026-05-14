@@ -15,6 +15,8 @@ interface EmailStudioProps {
   dateRange: { start: string; end: string };
   excludeInternal?: boolean;
   timezone?: string;
+  isSuperAdmin?: boolean;
+  onOpenPdfStudio?: () => void;
 }
 
 export interface EmailTemplate {
@@ -64,7 +66,7 @@ export interface EmailAutomation {
   respect_exclusions: boolean;
 }
 
-export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInternal, timezone }) => {
+export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInternal, timezone, isSuperAdmin = false, onOpenPdfStudio }) => {
   const [sub, setSub] = useState<SubTab>('transactional');
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [senders, setSenders] = useState<EmailSender[]>([]);
@@ -181,7 +183,7 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
 
       {loading && <div className="p-6 text-sm text-gray-500">Loading...</div>}
 
-      {!loading && sub === 'transactional' && <TransactionalTemplates senders={senders} />}
+      {!loading && sub === 'transactional' && <TransactionalTemplates senders={senders} isSuperAdmin={isSuperAdmin} onOpenPdfStudio={onOpenPdfStudio} />}
 
       {!loading && sub === 'templates' && (
         <TemplatesList
