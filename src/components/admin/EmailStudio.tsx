@@ -33,6 +33,8 @@ export interface EmailTemplate {
   include_header?: boolean;
   include_signature?: boolean;
   attach_pdf?: boolean;
+  pdf_template_id?: string | null;
+  pdf_filename_pattern?: string | null;
 }
 
 export interface EmailSender {

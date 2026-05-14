@@ -42,7 +42,10 @@ interface UnifiedSaveModalProps {
     quoteName: string,
     customerReference: string | null,
     pdfBase64: string,
-    quoteUrl?: string
+    quoteUrl?: string,
+    savedQuoteId?: string,
+    savedQuoteReference?: string,
+    pricingLockedUntil?: string,
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
   onCustomerDetailsCaptured?: (details: { firstName: string; lastName: string; email: string; quoteReference?: string }) => void;
@@ -345,7 +348,10 @@ export function UnifiedSaveModal({
             finalQuoteName,
             sanitizedReference,
             pdfBase64,
-            quoteUrl
+            quoteUrl,
+            result.id,
+            result.reference,
+            result.pricingLockedUntil,
           );
 
           if (success) {

@@ -191,6 +191,40 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, data });
     }
 
+    if (req.method === "PUT" && subPath === "fabrics/reorder") {
+      const { order } = await req.json();
+      if (!Array.isArray(order) || order.length === 0)
+        return jsonResponse({ error: "Missing order array" }, 400);
+
+      const nowIso = new Date().toISOString();
+      const updated: Array<{ id: string; display_order: number }> = [];
+
+      for (let i = 0; i < order.length; i++) {
+        const id = order[i];
+        if (typeof id !== "string" || !id) continue;
+        await supabase
+          .from("fabric_catalog")
+          .update({ display_order: i, updated_at: nowIso })
+          .eq("id", id);
+        await supabase
+          .from("fabric_types")
+          .update({ display_order: i, updated_at: nowIso })
+          .eq("id", id);
+        updated.push({ id, display_order: i });
+      }
+
+      await supabase.from("pricing_change_log").insert({
+        table_name: "fabric_catalog",
+        operation: "reorder",
+        previous_data: null,
+        new_data: updated,
+        changed_by: changedBy,
+        description: `Reordered ${updated.length} fabric type(s)`,
+      });
+
+      return jsonResponse({ success: true, updated });
+    }
+
     if (req.method === "PUT" && subPath === "fabrics") {
       const body = await req.json();
       const { id, ...updates } = body;

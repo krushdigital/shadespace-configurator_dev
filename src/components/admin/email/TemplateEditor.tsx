@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { supabase } from '../../../lib/supabase';
@@ -53,6 +53,15 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
   const [testTo, setTestTo] = useState('');
   const [testStatus, setTestStatus] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [pdfTemplates, setPdfTemplates] = useState<{ id: string; name: string; is_active: boolean }[]>([]);
+
+  useEffect(() => {
+    supabase.from('pdf_templates').select('id, name, is_active').order('name').then(({ data }) => {
+      setPdfTemplates(data || []);
+    });
+  }, []);
+
+  const selectedPdfTemplateMissing = !!draft.pdf_template_id && pdfTemplates.length > 0 && !pdfTemplates.find(p => p.id === draft.pdf_template_id);
 
   const activeSender = useMemo(
     () => senders.find(s => s.id === draft.default_sender_id) || senders.find(s => s.is_default) || senders[0],
@@ -98,6 +107,9 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
       description: draft.description,
       include_header: draft.include_header ?? true,
       include_signature: draft.include_signature ?? false,
+      attach_pdf: draft.attach_pdf ?? false,
+      pdf_template_id: draft.pdf_template_id ?? null,
+      pdf_filename_pattern: draft.pdf_filename_pattern ?? null,
     }).eq('id', draft.id);
     setSaving(false);
     if (error) alert(`Save failed: ${error.message}`); else alert('Saved');
@@ -233,6 +245,61 @@ export const TemplateEditor: React.FC<{ template: EmailTemplate; senders: EmailS
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="mb-4 p-3 border border-blue-200 rounded-md bg-blue-50">
+            <div className="text-xs font-semibold text-blue-900 uppercase tracking-wide mb-2">PDF attachment</div>
+            <label className="flex items-start gap-2 text-sm text-gray-800 mb-3">
+              <input
+                type="checkbox"
+                checked={!!draft.attach_pdf}
+                onChange={e => setDraft({ ...draft, attach_pdf: e.target.checked })}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-medium">Attach a PDF to this email</span>
+                <span className="block text-xs text-gray-500">When enabled, the chosen PDF design is attached using the customer's quote data.</span>
+              </span>
+            </label>
+
+            {draft.attach_pdf && (
+              <div className="space-y-2 pl-6">
+                <div>
+                  <label className="block text-[11px] font-medium text-blue-900 mb-1">PDF template</label>
+                  <select
+                    value={draft.pdf_template_id || ''}
+                    onChange={e => setDraft({ ...draft, pdf_template_id: e.target.value || null })}
+                    className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white"
+                  >
+                    <option value="">Use currently active PDF template</option>
+                    {pdfTemplates.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}{p.is_active ? ' (active)' : ''}</option>
+                    ))}
+                  </select>
+                  {!draft.pdf_template_id ? (
+                    <p className="text-[11px] text-blue-800/80 mt-1">Will use whichever PDF template is marked active in PDF Studio.</p>
+                  ) : (
+                    <p className="text-[11px] text-blue-800/80 mt-1">This email will always render with the chosen design, even if the active design changes.</p>
+                  )}
+                  {selectedPdfTemplateMissing && (
+                    <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 mt-1">
+                      The selected PDF template no longer exists. Pick another or clear this to fall back to the active template.
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[11px] font-medium text-blue-900 mb-1">Filename pattern</label>
+                  <input
+                    type="text"
+                    value={draft.pdf_filename_pattern || ''}
+                    onChange={e => setDraft({ ...draft, pdf_filename_pattern: e.target.value })}
+                    placeholder="ShadeSpace-Quote-{quote_reference}.pdf"
+                    className="w-full border border-blue-300 rounded-md px-2 py-1.5 text-sm bg-white font-mono"
+                  />
+                  <p className="text-[11px] text-blue-800/80 mt-1">Available tokens: {'{quote_reference}'}, {'{quote_name}'}, {'{customer_first_name}'}, {'{customer_last_name}'}.</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {mode === 'visual' && (

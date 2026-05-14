@@ -199,9 +199,12 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
     anchor_measurements_rows: measurementRowsOnly(anchorMeasurements, (k) => `Corner ${k}`),
     width: cfg?.measurements?.width || "",
     height: cfg?.measurements?.height || "",
-    pricing_locked_until: quote?.pricing_locked_until
-      ? new Date(quote.pricing_locked_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-      : "",
+    pricing_locked_until:
+      typeof extra.pricing_locked_until === "string" && extra.pricing_locked_until
+        ? extra.pricing_locked_until
+        : quote?.pricing_locked_until
+          ? new Date(quote.pricing_locked_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+          : "",
     no_price_yet: !totalPrice,
     days_since_saved: quote?.created_at ? Math.round((Date.now() - new Date(quote.created_at).getTime()) / 86400000) : "",
     sender_first_name: sender?.signature_name || "the ShadeSpace team",
@@ -326,17 +329,61 @@ Deno.serve(async (req: Request) => {
       && !callerHasPdf;
 
     if (shouldAutoPdf) {
+      const boundPdfTemplateId = (template as any)?.pdf_template_id as string | null | undefined;
       const storedPath = (quote as any).pdf_path as string | null;
-      if (storedPath) {
+      const ref = quote.quote_reference || "Quote";
+      const pattern = (template as any)?.pdf_filename_pattern as string | null | undefined;
+      const sanitize = (s: unknown) => String(s ?? "").replace(/[\\/:*?"<>|]/g, "_").replace(/\s+/g, "_");
+      const filename = pattern
+        ? renderTemplate(pattern, {
+            quote_reference: ref,
+            quote_name: sanitize(quote.quote_name),
+            customer_first_name: sanitize(quote.customer_first_name),
+            customer_last_name: sanitize(quote.customer_last_name),
+          })
+        : `ShadeSpace-Quote-${ref}.pdf`;
+      const safeFilename = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
+
+      if (boundPdfTemplateId && quote.config_data && quote.calculations_data) {
+        try {
+          const renderRes = await fetch(`${SB_URL}/functions/v1/generate-pdf`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SB_SERVICE}` },
+            body: JSON.stringify({
+              config: quote.config_data,
+              calculations: quote.calculations_data,
+              quoteId: quote.id,
+              accessToken: quote.access_token,
+              pdfTemplateId: boundPdfTemplateId,
+            }),
+          });
+          if (renderRes.ok) {
+            const buf = new Uint8Array(await renderRes.arrayBuffer());
+            let bin = "";
+            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+            resolvedAttachments.push({
+              filename: safeFilename,
+              content: btoa(bin),
+              type: "application/pdf",
+            });
+            autoPdfDiagnostic = `attached freshly-rendered pdf bytes=${buf.length} pdfTemplateId=${boundPdfTemplateId}`;
+          } else {
+            autoPdfDiagnostic = `fresh render failed status=${renderRes.status}, falling back to stored pdf`;
+          }
+        } catch (renderErr) {
+          autoPdfDiagnostic = `fresh render threw: ${renderErr instanceof Error ? renderErr.message : String(renderErr)}`;
+        }
+      }
+
+      if (resolvedAttachments.length === 0 && storedPath) {
         try {
           const { data: file, error: dErr } = await supabase.storage.from("quote-assets").download(storedPath);
           if (file) {
             const buf = new Uint8Array(await file.arrayBuffer());
             let bin = "";
             for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-            const ref = quote.quote_reference || "Quote";
             resolvedAttachments.push({
-              filename: `ShadeSpace-Quote-${ref}.pdf`,
+              filename: safeFilename,
               content: btoa(bin),
               type: "application/pdf",
             });
@@ -347,8 +394,8 @@ Deno.serve(async (req: Request) => {
         } catch (pdfErr) {
           autoPdfDiagnostic = `stored pdf read threw: ${pdfErr instanceof Error ? pdfErr.message : String(pdfErr)}`;
         }
-      } else {
-        autoPdfDiagnostic = "no stored pdf for this quote — customer has not requested a PDF quote yet, so nothing to attach";
+      } else if (resolvedAttachments.length === 0) {
+        autoPdfDiagnostic = "no stored pdf for this quote and no bound pdf template render succeeded — nothing to attach";
       }
     } else if (template?.attach_pdf === true || body?.generatePdfFromQuote === true) {
       autoPdfDiagnostic = `auto-pdf skipped (callerHasPdf=${callerHasPdf}, quoteId=${quote?.id || 'none'})`;

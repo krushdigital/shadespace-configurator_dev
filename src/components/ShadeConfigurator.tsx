@@ -19,7 +19,8 @@ import { ConfiguratorState, EdgeType } from '../types';
 import { useFabricCatalog } from '../hooks/useFabricCatalog';
 import { Point } from '../types';
 import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy } from '../utils/geometry';
-import { generatePDF, CustomerDetails } from '../utils/pdfGenerator';
+import { generatePdfFromBlocks, CustomerDetails } from '../utils/pdfGenerator';
+import { loadActivePdfTemplate } from '../utils/activePdfTemplate';
 import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
 import { getShopifyDisplayCurrency } from '../utils/currencyDetection';
@@ -382,7 +383,14 @@ export function ShadeConfigurator() {
         quoteUrl
       };
 
-      const pdf = await generatePDF(config, calculations, svgElement, true, customerDetails);
+      const template = await loadActivePdfTemplate();
+      const pdf = await generatePdfFromBlocks(config, calculations, template.blocks, {
+        layout: template.layout,
+        chrome: template.chrome,
+        customer: customerDetails,
+        svgElement,
+        isEmailSummary: true,
+      });
 
       // Track PDF generation event
       const quoteParams = getQuoteFromUrl();
@@ -545,7 +553,10 @@ export function ShadeConfigurator() {
     quoteName: string,
     customerReference: string | null,
     pdfBase64: string,
-    quoteUrl?: string
+    quoteUrl?: string,
+    savedQuoteId?: string,
+    savedQuoteReference?: string,
+    pricingLockedUntil?: string,
   ): Promise<boolean> => {
     try {
 
@@ -693,17 +704,41 @@ export function ShadeConfigurator() {
         lastName,
         quoteName,
         customerReference,
-        quoteReference: quoteReference || undefined,
+        quoteReference: savedQuoteReference || quoteReference || undefined,
       };
 
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+      const effectiveQuoteId = savedQuoteId || null;
+      const effectiveQuoteReference = savedQuoteReference || quoteReference || null;
+      if (calculations.totalPrice == null || !config.currency) {
+        console.warn('email-quote: missing price/currency before send', {
+          totalPrice: calculations.totalPrice,
+          currency: config.currency,
+        });
+      }
       const response = await fetch(
-        '/apps/shade_space/api/v1/public/email-summary-send',
+        `${supabaseUrl}/functions/v1/send-config-email`,
         {
           method: "POST",
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnonKey}`,
+            'apikey': supabaseAnonKey,
           },
-          body: JSON.stringify({ pdf: pdfBase64, ...orderData, email, firstName, lastName, quoteUrl }),
+          body: JSON.stringify({
+            pdf: pdfBase64,
+            ...orderData,
+            email,
+            firstName,
+            lastName,
+            quoteUrl,
+            quoteId: effectiveQuoteId,
+            quoteReference: effectiveQuoteReference,
+            pricingLockedUntil: pricingLockedUntil || undefined,
+            totalPrice: calculations.totalPrice,
+            currency: config.currency,
+          }),
         }
       );
 

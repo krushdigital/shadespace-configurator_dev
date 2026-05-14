@@ -8,6 +8,7 @@ import {
   DEFAULT_BLOCKS,
   DYNAMIC_TYPES,
   PdfBlock,
+  getBlockColumn,
   escapeHtml,
   makeDefaultProps,
   newBlockId,
@@ -15,6 +16,7 @@ import {
 } from '../../utils/pdfBlocks';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { getDiagonalKeysForCorners } from '../../utils/geometry';
+import { generatePdfFromBlocks, PdfDensity } from '../../utils/pdfGenerator';
 
 interface LiveQuoteRow {
   id: string;
@@ -85,6 +87,10 @@ export interface PdfTemplateConfig {
     showPricingCallout: boolean;
   };
   paper: 'A4' | 'Letter';
+  layout?: {
+    density: 'comfortable' | 'compact' | 'ultra';
+    columns: 1 | 2;
+  };
 }
 
 interface PdfTemplateRow {
@@ -122,15 +128,21 @@ const DEFAULT_CONFIG: PdfTemplateConfig = {
     showPricingCallout: true,
   },
   paper: 'A4',
+  layout: { density: 'comfortable', columns: 1 },
 };
 
 function mergeConfig(input: Partial<PdfTemplateConfig> | null | undefined): PdfTemplateConfig {
+  const layoutInput = input?.layout || {};
   return {
     brand: { ...DEFAULT_CONFIG.brand, ...(input?.brand || {}) },
     header: { ...DEFAULT_CONFIG.header, ...(input?.header || {}) },
     footer: { ...DEFAULT_CONFIG.footer, ...(input?.footer || {}) },
     sections: { ...DEFAULT_CONFIG.sections, ...(input?.sections || {}) },
     paper: (input?.paper as 'A4' | 'Letter') || DEFAULT_CONFIG.paper,
+    layout: {
+      density: (layoutInput.density as PdfDensity) || DEFAULT_CONFIG.layout!.density,
+      columns: (layoutInput.columns === 2 ? 2 : 1) as 1 | 2,
+    },
   };
 }
 
@@ -164,6 +176,10 @@ export const PdfStudio: React.FC = () => {
   const [liveQuotes, setLiveQuotes] = useState<LiveQuoteRow[]>([]);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string>('');
   const [loadingQuotes, setLoadingQuotes] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'html' | 'pdf'>('html');
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string>('');
+  const [pdfPreviewLoading, setPdfPreviewLoading] = useState(false);
+  const [pdfPreviewError, setPdfPreviewError] = useState<string | null>(null);
 
   const loadLiveQuotes = async () => {
     setLoadingQuotes(true);
@@ -328,6 +344,65 @@ export const PdfStudio: React.FC = () => {
   const selected = useMemo(() => blocks.find((b) => b.id === selectedBlockId) || null, [blocks, selectedBlockId]);
   const liveData = dataSource === 'live' ? selectedQuote : null;
   const previewHtml = useMemo(() => buildPreview(config, blocks, liveData), [config, blocks, liveData]);
+
+  const renderPdfPreview = async () => {
+    setPdfPreviewLoading(true);
+    setPdfPreviewError(null);
+    try {
+      const sourceConfig = liveData?.config_data || (buildSampleConfig() as ConfiguratorState);
+      const sourceCalc = liveData?.calculations_data || (buildSampleCalc() as ShadeCalculations);
+      const url = await generatePdfFromBlocks(
+        sourceConfig,
+        sourceCalc,
+        blocks,
+        {
+          layout: {
+            density: config.layout?.density,
+            columns: config.layout?.columns,
+          },
+          chrome: {
+            brand: config.brand,
+            header: config.header,
+            footer: config.footer,
+            paper: config.paper,
+          },
+          customer: liveData ? {
+            firstName: liveData.customer_first_name || undefined,
+            lastName: liveData.customer_last_name || undefined,
+            email: liveData.customer_email || undefined,
+            quoteName: liveData.quote_name || undefined,
+            customerReference: liveData.customer_reference || undefined,
+            quoteUrl: `https://shadespace.com/pages/shade-sail-configurator?quote=${liveData.id}&token=${encodeURIComponent(liveData.access_token)}`,
+          } : undefined,
+          returnBlob: true,
+        },
+      );
+      if (typeof url === 'string') setPdfPreviewUrl(url);
+    } catch (err) {
+      setPdfPreviewError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPdfPreviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (previewMode !== 'pdf') return;
+    renderPdfPreview();
+    return () => {
+      if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    previewMode,
+    config.layout?.density,
+    config.layout?.columns,
+    liveData?.id,
+    blocks,
+    config.brand,
+    config.header,
+    config.footer,
+    config.paper,
+  ]);
 
   if (loading) {
     return <Card className="p-6">Loading templates...</Card>;
@@ -551,6 +626,38 @@ export const PdfStudio: React.FC = () => {
               <TextRow label="Line 1" value={config.footer.line1} onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line1: v } })} />
               <TextRow label="Line 2" value={config.footer.line2} onChange={(v) => setConfig({ ...config, footer: { ...config.footer, line2: v } })} />
             </Section>
+            <Section title="Layout density">
+              <div className="flex flex-wrap gap-2">
+                {(['comfortable', 'compact', 'ultra'] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setConfig({ ...config, layout: { density: d, columns: config.layout?.columns || 1 } })}
+                    className={`px-3 py-1.5 rounded-lg border text-sm capitalize ${
+                      (config.layout?.density || 'comfortable') === d ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">Comfortable matches the original spacing. Compact tightens fonts and gaps. Ultra is the densest setting for long quotes.</p>
+              <div className="mt-3 flex gap-2">
+                {([1, 2] as const).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setConfig({ ...config, layout: { density: config.layout?.density || 'comfortable', columns: c } })}
+                    className={`px-3 py-1.5 rounded-lg border text-sm ${
+                      (config.layout?.columns || 1) === c ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {c} column{c > 1 ? 's' : ''}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-500 mt-1">Two columns is applied to the Configuration Summary block to reduce vertical space.</p>
+            </Section>
             <Section title="Paper">
               <div className="flex gap-2">
                 {(['A4', 'Letter'] as const).map((p) => (
@@ -572,15 +679,63 @@ export const PdfStudio: React.FC = () => {
         )}
 
         <Card className="p-0 border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 text-sm font-semibold text-gray-700">
-            Live preview
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
+            <div className="text-sm font-semibold text-gray-700">Live preview</div>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPreviewMode('html')}
+                className={`px-3 py-1.5 text-xs rounded border ${previewMode === 'html' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+              >
+                HTML mockup
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewMode('pdf')}
+                className={`px-3 py-1.5 text-xs rounded border ${previewMode === 'pdf' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+              >
+                Rendered PDF
+              </button>
+              {previewMode === 'pdf' && (
+                <button
+                  type="button"
+                  onClick={renderPdfPreview}
+                  disabled={pdfPreviewLoading}
+                  className="px-3 py-1.5 text-xs rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {pdfPreviewLoading ? 'Rendering...' : 'Refresh'}
+                </button>
+              )}
+            </div>
           </div>
-          <iframe
-            title="pdf-preview"
-            srcDoc={previewHtml}
-            className="w-full bg-white"
-            style={{ height: '820px', border: 'none' }}
-          />
+          {previewMode === 'html' ? (
+            <iframe
+              title="pdf-preview"
+              srcDoc={previewHtml}
+              className="w-full bg-white"
+              style={{ height: '820px', border: 'none' }}
+            />
+          ) : (
+            <div className="w-full bg-gray-100" style={{ height: '820px' }}>
+              {pdfPreviewError ? (
+                <div className="p-4 text-sm text-red-700 bg-red-50 border border-red-200 m-4 rounded">
+                  Failed to render PDF: {pdfPreviewError}
+                </div>
+              ) : pdfPreviewUrl ? (
+                <iframe
+                  title="rendered-pdf"
+                  src={`${pdfPreviewUrl}#view=FitH`}
+                  className="w-full h-full bg-white"
+                  style={{ border: 'none' }}
+                />
+              ) : (
+                <div className="p-6 text-sm text-gray-500">{pdfPreviewLoading ? 'Generating PDF...' : 'PDF preview not loaded.'}</div>
+              )}
+              <div className="px-3 py-2 text-[11px] text-gray-500 bg-gray-50 border-t border-gray-200">
+                Tip: scroll inside the PDF viewer to see all pages. Larger quotes (more corners and dimensions) will produce additional pages here.
+              </div>
+            </div>
+          )}
         </Card>
 
         {pane === 'layout' && (
@@ -620,6 +775,41 @@ const BlockPropsEditor: React.FC<{
         />
         Visible
       </label>
+
+      {block.type !== 'pageBreak' && (
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1">Column placement</label>
+          <div className="flex gap-1">
+            {(['full', 'left', 'right'] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => onProp('column', c)}
+                className={`flex-1 px-2 py-1.5 text-xs rounded border capitalize ${
+                  ((props.column as string) || 'full') === c ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {c === 'full' ? 'Full width' : `${c} col`}
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-gray-500 mt-1">Consecutive Left + Right blocks render side-by-side. Full-width resets to a single column.</p>
+        </div>
+      )}
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1">Density override</label>
+        <select
+          value={String(props.densityOverride ?? '')}
+          onChange={(e) => onProp('densityOverride', e.target.value || undefined)}
+          className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+        >
+          <option value="">Inherit from template</option>
+          <option value="comfortable">Comfortable</option>
+          <option value="compact">Compact</option>
+          <option value="ultra">Ultra</option>
+        </select>
+      </div>
 
       {DYNAMIC_TYPES.includes(block.type) && (
         <TextRow
@@ -753,23 +943,104 @@ const TextRow: React.FC<{ label: string; value: string; onChange: (v: string) =>
   </div>
 );
 
+function buildSampleConfig(): Partial<ConfiguratorState> {
+  return {
+    step: 6,
+    fabricType: 'monotec370',
+    fabricColor: 'Domino Black',
+    edgeType: 'webbing',
+    corners: 4,
+    unit: 'metric',
+    measurementOption: 'exact',
+    points: [{ x: 0, y: 0 }, { x: 4000, y: 0 }, { x: 4000, y: 3500 }, { x: 0, y: 3500 }],
+    measurements: { AB: 4000, BC: 3500, CD: 4200, DA: 3300, AC: 5400, BD: 5200 },
+    fixingHeights: [2400, 2400, 2200, 2200],
+    fixingTypes: ['post', 'post', 'building', 'building'],
+    eyeOrientations: ['horizontal', 'horizontal', 'vertical', 'vertical'],
+    fixingPointsInstalled: false,
+    currency: 'NZD',
+    hardwareSelectionMode: 'standard',
+  };
+}
+
+function buildSampleCalc(): Partial<ShadeCalculations> {
+  return {
+    area: 14.7,
+    perimeter: 15000,
+    fabricCost: 600,
+    edgeCost: 0,
+    hardwareCost: 200,
+    totalPrice: 1299,
+    webbingWidth: 50,
+    totalWeightGrams: 4400,
+    hardwareBreakdown: {
+      mode: 'standard',
+      subtotalNzd: 200,
+      perCornerNzd: [50, 50, 50, 50],
+      sailOnlyPriceNzd: 1099,
+      hardwareOnlyPriceNzd: 200,
+    },
+  };
+}
+
+type HtmlDensityPreset = {
+  body: number;
+  title: number;
+  tagline: number;
+  h2: number;
+  row: number;
+  rowPad: number;
+  small: number;
+  priceLg: number;
+  sectionMargin: number;
+  twoColGap: number;
+};
+
+const HTML_DENSITY_PRESETS: Record<'comfortable' | 'compact' | 'ultra', HtmlDensityPreset> = {
+  comfortable: { body: 14, title: 22, tagline: 12, h2: 16, row: 13, rowPad: 6, small: 11, priceLg: 22, sectionMargin: 20, twoColGap: 16 },
+  compact:     { body: 13, title: 18, tagline: 11, h2: 14, row: 12, rowPad: 4, small: 10, priceLg: 18, sectionMargin: 14, twoColGap: 12 },
+  ultra:       { body: 12, title: 16, tagline: 10, h2: 12, row: 11, rowPad: 3, small: 9,  priceLg: 16, sectionMargin: 10, twoColGap: 8 },
+};
+
+function densityCss(scope: string, p: HtmlDensityPreset, brand: PdfTemplateConfig['brand']): string {
+  return `
+    ${scope} { font-size:${p.body}px; }
+    ${scope} h2 { font-size:${p.h2}px; color:${brand.primaryColor}; border-bottom:2px solid ${brand.accentColor}; padding-bottom:${Math.max(2, Math.round(p.rowPad - 1))}px; margin:${p.sectionMargin}px 0 ${Math.max(6, Math.round(p.sectionMargin / 2))}px; }
+    ${scope} .row { display:flex; justify-content:space-between; padding:${p.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${p.row}px; }
+    ${scope} .callout { margin-top:${p.sectionMargin}px; padding:${Math.max(10, p.rowPad * 2 + 6)}px; border-radius:12px; background:${brand.primaryColor}; color:#fff; text-align:center; }
+    ${scope} .callout .price { font-size:${p.priceLg}px; font-weight:700; color:${brand.accentColor}; }
+    ${scope} .guarantee { margin-top:${p.sectionMargin}px; padding:${Math.max(10, p.rowPad * 2 + 6)}px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${brand.accentColor} 20%); border:2px solid ${brand.accentDark}; color:${brand.primaryColor}; font-size:${p.row}px; }
+  `;
+}
+
 function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuoteRow | null): string {
   const b = cfg.brand;
+  const baseDensity = (cfg.layout?.density || 'comfortable') as 'comfortable' | 'compact' | 'ultra';
+  const basePreset = HTML_DENSITY_PRESETS[baseDensity];
+  const overrideStyles: string[] = [];
+  for (const d of ['comfortable', 'compact', 'ultra'] as const) {
+    overrideStyles.push(densityCss(`.density-${d}`, HTML_DENSITY_PRESETS[d], b));
+  }
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body { margin:0; padding:24px; background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; }
+    body { margin:0; padding:24px; background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; font-size:${basePreset.body}px; }
     .header { display:flex; align-items:center; gap:12px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 100%); border:2px solid ${b.accentDark}; margin-bottom:16px; }
     .logo-img { max-height:40px; max-width:180px; object-fit:contain; }
-    .title { font-size:22px; font-weight:700; color:${b.primaryColor}; margin:0; }
-    .tagline { font-size:12px; color:${b.accentDark}; margin:4px 0 0 0; }
-    h2 { font-size:16px; color:${b.primaryColor}; border-bottom:2px solid ${b.accentColor}; padding-bottom:6px; margin:20px 0 10px; }
-    .row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #E5E7EB; font-size:13px; }
+    .title { font-size:${basePreset.title}px; font-weight:700; color:${b.primaryColor}; margin:0; }
+    .tagline { font-size:${basePreset.tagline}px; color:${b.accentDark}; margin:4px 0 0 0; }
+    h2 { font-size:${basePreset.h2}px; color:${b.primaryColor}; border-bottom:2px solid ${b.accentColor}; padding-bottom:${Math.max(2, basePreset.rowPad - 1)}px; margin:${basePreset.sectionMargin}px 0 ${Math.max(6, Math.round(basePreset.sectionMargin / 2))}px; }
+    .row { display:flex; justify-content:space-between; padding:${basePreset.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${basePreset.row}px; }
     .muted { color:${b.mutedColor}; }
     .val { color:${b.textColor}; font-weight:600; }
-    .callout { margin-top:16px; padding:16px; border-radius:12px; background:${b.primaryColor}; color:#fff; text-align:center; }
-    .callout .price { font-size:22px; font-weight:700; color:${b.accentColor}; }
-    .guarantee { margin-top:16px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; }
-    .footer { margin-top:24px; text-align:center; font-size:11px; color:${b.mutedColor}; }
+    .callout { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:${b.primaryColor}; color:#fff; text-align:center; }
+    .callout .price { font-size:${basePreset.priceLg}px; font-weight:700; color:${b.accentColor}; }
+    .guarantee { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; font-size:${basePreset.row}px; }
+    .footer { margin-top:24px; text-align:center; font-size:${basePreset.small}px; color:${b.mutedColor}; }
     hr { border:none; border-top:1px solid ${b.mutedColor}; margin:8px 0; opacity:0.4; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:${basePreset.twoColGap}px; align-items:start; margin-top:4px; }
+    .two-col > .col { min-width:0; }
+    .two-col h2 { margin-top:8px; }
+    .block-wrap { display:block; }
+    ${overrideStyles.join('\n')}
   </style></head><body>
     <div class="header">
       ${b.logoUrl ? `<img class="logo-img" src="${escapeHtml(b.logoUrl)}" alt="logo" />` : ''}
@@ -778,12 +1049,50 @@ function buildPreview(cfg: PdfTemplateConfig, blocks: PdfBlock[], live: LiveQuot
         <p class="tagline">${escapeHtml(cfg.header.tagline)}</p>
       </div>
     </div>
-    ${blocks.filter((x) => x.visible).map((x) => renderSampleBlock(x, cfg, live)).join('')}
+    ${renderGroupedBlocks(blocks.filter((x) => x.visible), cfg, live)}
     <div class="footer">
       <div>${escapeHtml(cfg.footer.line1)}</div>
       <div>${escapeHtml(cfg.footer.line2)}</div>
     </div>
   </body></html>`;
+}
+
+function densityForBlock(block: PdfBlock, cfg: PdfTemplateConfig): 'comfortable' | 'compact' | 'ultra' {
+  const o = (block.props?.densityOverride as string | undefined) || undefined;
+  if (o === 'comfortable' || o === 'compact' || o === 'ultra') return o;
+  return (cfg.layout?.density || 'comfortable') as 'comfortable' | 'compact' | 'ultra';
+}
+
+function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {
+  const d = densityForBlock(block, cfg);
+  return `<div class="block-wrap density-${d}">${renderSampleBlock(block, cfg, live)}</div>`;
+}
+
+function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {
+  const out: string[] = [];
+  let leftBuf: PdfBlock[] = [];
+  let rightBuf: PdfBlock[] = [];
+  const flush = () => {
+    if (leftBuf.length === 0 && rightBuf.length === 0) return;
+    const leftHtml = leftBuf.map((x) => wrapBlock(x, cfg, live)).join('');
+    const rightHtml = rightBuf.map((x) => wrapBlock(x, cfg, live)).join('');
+    out.push(`<div class="two-col"><div class="col">${leftHtml}</div><div class="col">${rightHtml}</div></div>`);
+    leftBuf = [];
+    rightBuf = [];
+  };
+  for (const block of blocks) {
+    const col = getBlockColumn(block);
+    if (col === 'full') {
+      flush();
+      out.push(wrapBlock(block, cfg, live));
+    } else if (col === 'left') {
+      leftBuf.push(block);
+    } else {
+      rightBuf.push(block);
+    }
+  }
+  flush();
+  return out.join('');
 }
 
 function renderSampleBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: LiveQuoteRow | null): string {

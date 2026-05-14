@@ -63,6 +63,23 @@ export function HardwareSelectionModal({
     setTooltipPos(null);
   }, [open, initialSelection, items]);
 
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+    const body = document.body;
+    const html = document.documentElement;
+    const prevBodyOverflow = body.style.overflow;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyTouch = body.style.touchAction;
+    body.style.overflow = 'hidden';
+    html.style.overflow = 'hidden';
+    body.style.touchAction = 'none';
+    return () => {
+      body.style.overflow = prevBodyOverflow;
+      html.style.overflow = prevHtmlOverflow;
+      body.style.touchAction = prevBodyTouch;
+    };
+  }, [open]);
+
   useLayoutEffect(() => {
     if (!hoverItem || !hoverAnchor) {
       setTooltipPos(null);
@@ -144,9 +161,16 @@ export function HardwareSelectionModal({
   };
 
   if (!open) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-3 sm:p-6" onClick={onClose}>
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-3 sm:p-6 overscroll-contain"
+      onClick={onClose}
+      onWheel={e => e.stopPropagation()}
+      onTouchMove={e => e.stopPropagation()}
+      style={{ touchAction: 'none' }}
+    >
       <div
         className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
         style={{ maxHeight: 'min(90vh, 900px)' }}
@@ -183,7 +207,7 @@ export function HardwareSelectionModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 pb-3">
+        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-3" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
           {grouped.length === 0 && (
             <div className="py-12 text-center text-sm text-slate-500">No hardware matches your search.</div>
           )}
@@ -305,8 +329,11 @@ export function HardwareSelectionModal({
 
         {detailItem && typeof document !== 'undefined' && createPortal(
           <div
-            className="fixed inset-0 z-[85] flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4"
+            className="fixed inset-0 z-[85] flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 overscroll-contain"
             onClick={() => setDetailItem(null)}
+            onWheel={e => e.stopPropagation()}
+            onTouchMove={e => e.stopPropagation()}
+            style={{ touchAction: 'none' }}
           >
             <div
               className="relative flex w-full sm:max-w-md flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white shadow-2xl max-h-[85vh]"
@@ -327,7 +354,7 @@ export function HardwareSelectionModal({
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto px-5 py-4">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-4" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
                 <div className="mb-3 flex h-48 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
                   {detailItem.image_url ? (
                     <img src={detailItem.image_url} alt={detailItem.name} className="h-full w-full object-contain" />
@@ -395,6 +422,7 @@ export function HardwareSelectionModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

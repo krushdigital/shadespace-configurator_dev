@@ -18,11 +18,23 @@ export type BlockType =
   | 'spacer'
   | 'pageBreak';
 
+export type BlockColumn = 'full' | 'left' | 'right';
+
 export interface PdfBlock {
   id: string;
   type: BlockType;
   visible: boolean;
   props: Record<string, unknown>;
+}
+
+export function getBlockColumn(block: PdfBlock): BlockColumn {
+  const v = block.props?.column;
+  return v === 'left' || v === 'right' ? v : 'full';
+}
+
+export function getBlockDensityOverride(block: PdfBlock): 'comfortable' | 'compact' | 'ultra' | undefined {
+  const v = block.props?.densityOverride;
+  return v === 'comfortable' || v === 'compact' || v === 'ultra' ? v : undefined;
 }
 
 export const BLOCK_LABELS: Record<BlockType, string> = {
@@ -77,25 +89,26 @@ export const DEFAULT_BLOCKS: PdfBlock[] = [
 ];
 
 export function makeDefaultProps(type: BlockType): Record<string, unknown> {
+  const base = { column: 'full' as BlockColumn };
   switch (type) {
     case 'customText':
-      return { heading: '', body: 'Add your custom text here.', align: 'left' };
+      return { ...base, heading: '', body: 'Add your custom text here.', align: 'left' };
     case 'customImage':
-      return { url: '', alt: '', width: 400 };
+      return { ...base, url: '', alt: '', width: 400 };
     case 'customHtml':
-      return { html: '<p>Custom HTML</p>' };
+      return { ...base, html: '<p>Custom HTML</p>' };
     case 'divider':
-      return { thickness: 1 };
+      return { ...base, thickness: 1 };
     case 'spacer':
-      return { height: 16 };
+      return { ...base, height: 16 };
     case 'pageBreak':
       return {};
     case 'diagramImage':
-      return { title: 'Shade Sail Diagram', maxWidth: 520 };
+      return { ...base, title: 'Shade Sail Diagram', maxWidth: 520 };
     case 'resumeButton':
-      return { title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' };
+      return { ...base, title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' };
     default:
-      return { title: BLOCK_LABELS[type] };
+      return { ...base, title: BLOCK_LABELS[type] };
   }
 }
 
