@@ -237,6 +237,13 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: "template not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    if (template.is_active === false && !previewOnly) {
+      return new Response(
+        JSON.stringify({ ok: true, skipped: true, reason: "template_inactive" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (!template.transactional) {
       const { data: unsub } = await supabase.from("email_unsubscribes").select("email").eq("email", toEmail.toLowerCase()).maybeSingle();
       if (unsub && !testMode) {

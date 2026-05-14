@@ -229,9 +229,16 @@ Deno.serve(async (req: Request) => {
     if (useStudio) {
       const { data: template } = await supabase
         .from("email_templates")
-        .select("id")
+        .select("id, is_active")
         .eq("template_key", "pdf_quote_delivery")
         .maybeSingle();
+
+      if (template && template.is_active === false) {
+        return new Response(
+          JSON.stringify({ ok: true, skipped: true, reason: "template_inactive" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
 
       if (template?.id) {
         const attachments = pdf

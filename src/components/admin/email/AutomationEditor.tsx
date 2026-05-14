@@ -29,6 +29,19 @@ export const AutomationEditor: React.FC<{ automation: EmailAutomation; templates
 
   const save = async () => {
     setSaving(true);
+    const wasActive = automation.is_active;
+    const nowActive = draft.is_active;
+    const { data: { user } } = await supabase.auth.getUser();
+    const auditPatch: Record<string, unknown> = {};
+    if (wasActive !== nowActive) {
+      if (nowActive) {
+        auditPatch.paused_at = null;
+        auditPatch.paused_by = null;
+      } else {
+        auditPatch.paused_at = new Date().toISOString();
+        auditPatch.paused_by = user?.id || null;
+      }
+    }
     const { error } = await supabase.from('email_automations').update({
       name: draft.name,
       description: draft.description,
@@ -40,6 +53,7 @@ export const AutomationEditor: React.FC<{ automation: EmailAutomation; templates
       sender_id: draft.sender_id,
       max_sends_per_quote: draft.max_sends_per_quote,
       respect_exclusions: draft.respect_exclusions,
+      ...auditPatch,
     }).eq('id', draft.id);
 
     await supabase.from('email_automation_conditions').delete().eq('automation_id', draft.id);

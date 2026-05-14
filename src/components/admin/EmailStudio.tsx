@@ -111,7 +111,12 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
 
   const pauseAll = async () => {
     if (!confirm('Pause every automation? No emails will be sent until you re-enable them.')) return;
-    await supabase.from('email_automations').update({ is_active: false }).neq('id', '00000000-0000-0000-0000-000000000000');
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from('email_automations').update({
+      is_active: false,
+      paused_at: new Date().toISOString(),
+      paused_by: user?.id || null,
+    }).neq('id', '00000000-0000-0000-0000-000000000000');
     refresh();
   };
 
@@ -282,7 +287,12 @@ const AutomationsList: React.FC<{ automations: EmailAutomation[]; templates: Ema
   };
 
   const toggle = async (a: EmailAutomation) => {
-    await supabase.from('email_automations').update({ is_active: !a.is_active }).eq('id', a.id);
+    const nextActive = !a.is_active;
+    const { data: { user } } = await supabase.auth.getUser();
+    const patch = nextActive
+      ? { is_active: true, paused_at: null, paused_by: null }
+      : { is_active: false, paused_at: new Date().toISOString(), paused_by: user?.id || null };
+    await supabase.from('email_automations').update(patch).eq('id', a.id);
     onRefresh();
   };
 
@@ -293,10 +303,20 @@ const AutomationsList: React.FC<{ automations: EmailAutomation[]; templates: Ema
         <Button size="sm" onClick={onCreate}>New automation</Button>
       </div>
       <div className="divide-y divide-gray-100">
-        {automations.map(a => (
+        {automations.map(a => {
+          const linkedTpl = templates.find(t => t.id === a.template_id);
+          const templatePaused = linkedTpl && linkedTpl.is_active === false;
+          return (
           <div key={a.id} className="flex items-start justify-between p-4 hover:bg-gray-50">
             <div className="flex-1 cursor-pointer" onClick={() => onEdit(a)}>
-              <div className="font-medium text-gray-900">{a.name}</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="font-medium text-gray-900">{a.name}</div>
+                {templatePaused && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-700 font-medium" title="The linked email template is paused — this automation will not send.">
+                    Template paused
+                  </span>
+                )}
+              </div>
               <div className="text-xs text-gray-600 mt-1">{summary(a)}</div>
             </div>
             <div className="flex items-center gap-3">
@@ -312,7 +332,8 @@ const AutomationsList: React.FC<{ automations: EmailAutomation[]; templates: Ema
               >Delete</button>
             </div>
           </div>
-        ))}
+          );
+        })}
         {automations.length === 0 && <div className="p-6 text-center text-sm text-gray-500">No automations yet.</div>}
       </div>
     </Card>
