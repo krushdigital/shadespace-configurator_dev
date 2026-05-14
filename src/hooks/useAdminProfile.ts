@@ -25,7 +25,21 @@ export function useAdminProfile() {
       .eq('auth_user_id', session.user.id)
       .maybeSingle();
 
-    if (!data || data.status !== 'active') {
+    if (!data) {
+      setProfile(null);
+      setUnauthorised(true);
+    } else if (data.status === 'pending') {
+      const { error: activateErr } = await supabase.from('admin_users')
+        .update({ status: 'active', activated_at: new Date().toISOString() })
+        .eq('id', data.id);
+      if (activateErr) {
+        setProfile(null);
+        setUnauthorised(true);
+      } else {
+        setProfile({ ...data, status: 'active' } as AdminProfile);
+        setUnauthorised(false);
+      }
+    } else if (data.status !== 'active') {
       setProfile(null);
       setUnauthorised(true);
     } else {

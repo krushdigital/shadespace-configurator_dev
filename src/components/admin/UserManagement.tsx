@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { getAdminAuthHeaders } from '../../utils/adminAuth';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import type { AdminProfile } from '../../hooks/useAdminProfile';
+import type { TabPermission } from '../../hooks/useTabPermissions';
 
 interface AdminUserRow {
   id: string;
@@ -22,9 +23,11 @@ interface AdminUserRow {
 
 interface Props {
   currentProfile: AdminProfile;
+  tabPermissions?: TabPermission[];
+  onPermissionsChange?: () => void;
 }
 
-export const UserManagement: React.FC<Props> = ({ currentProfile }) => {
+export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions = [], onPermissionsChange }) => {
   const isSuper = currentProfile.role === 'super_admin';
   const [rows, setRows] = useState<AdminUserRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,6 +165,14 @@ export const UserManagement: React.FC<Props> = ({ currentProfile }) => {
         </>
       )}
 
+      {isSuper && tabPermissions.length > 0 && (
+        <TabPermissionsPanel
+          permissions={tabPermissions}
+          currentProfile={currentProfile}
+          onPermissionsChange={onPermissionsChange}
+        />
+      )}
+
       {showInvite && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setShowInvite(false)}>
           <Card className="max-w-md w-full p-5 max-h-[90vh] overflow-y-auto overscroll-contain" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
@@ -192,6 +203,45 @@ export const UserManagement: React.FC<Props> = ({ currentProfile }) => {
         </div>
       )}
     </div>
+  );
+};
+
+const TabPermissionsPanel: React.FC<{
+  permissions: TabPermission[];
+  currentProfile: AdminProfile;
+  onPermissionsChange?: () => void;
+}> = ({ permissions, currentProfile, onPermissionsChange }) => {
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const toggle = async (tabId: string, current: boolean) => {
+    setSaving(tabId);
+    const { error } = await supabase
+      .from('admin_tab_permissions')
+      .update({ allowed_for_admin: !current, updated_at: new Date().toISOString(), updated_by: currentProfile.id })
+      .eq('tab_id', tabId);
+    if (!error && onPermissionsChange) onPermissionsChange();
+    setSaving(null);
+  };
+
+  return (
+    <Card className="p-0 overflow-hidden">
+      <h2 className="font-semibold text-gray-900 p-4 border-b border-gray-200">Admin Tab Permissions</h2>
+      <p className="px-4 pt-2 pb-3 text-xs text-gray-500">Control which tabs regular Admins can access. Super Admins always have full access.</p>
+      <div className="divide-y divide-gray-100">
+        {permissions.map(p => (
+          <div key={p.tab_id} className="flex items-center justify-between px-4 py-3">
+            <span className="text-sm text-gray-800">{p.tab_label}</span>
+            <button
+              onClick={() => toggle(p.tab_id, p.allowed_for_admin)}
+              disabled={saving === p.tab_id}
+              className={`relative w-10 h-5 rounded-full transition-colors ${p.allowed_for_admin ? 'bg-green-500' : 'bg-gray-300'}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${p.allowed_for_admin ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 };
 
