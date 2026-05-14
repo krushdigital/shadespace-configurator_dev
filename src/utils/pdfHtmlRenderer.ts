@@ -160,6 +160,12 @@ export async function renderQuotePdfFromHtml(
         undefined,
         'FAST',
       );
+
+      const linkUrl = el.dataset.linkUrl || el.querySelector<HTMLElement>('[data-link-url]')?.dataset.linkUrl;
+      if (linkUrl) {
+        pdf.link(MARGIN_LEFT_MM, MARGIN_TOP_MM + cursorMm, contentWidthMm, blockHeightMm, { url: linkUrl });
+      }
+
       cursorMm += blockHeightMm;
 
       if (el.dataset.forceBreakAfter === '1') {

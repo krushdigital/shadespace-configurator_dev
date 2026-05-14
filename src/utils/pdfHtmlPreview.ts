@@ -339,8 +339,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       const label = (p.label as string) || 'Open My Saved Quote';
       const url = live?.id && live?.access_token
         ? `https://shadespace.com/pages/shade-sail-configurator?quote=${live.id}&token=${encodeURIComponent(live.access_token)}`
-        : null;
-      return `<div style="margin:16px 0;text-align:center;padding:20px;border-radius:10px;background:${cfg.brand.primaryColor};color:#fff;">
+        : (live as Record<string, unknown> | null)?.resumeUrl as string | null ?? null;
+      return `<div data-link-url="${url ? escapeHtml(url) : ''}" style="margin:16px 0;text-align:center;padding:20px;border-radius:10px;background:${cfg.brand.primaryColor};color:#fff;">
         <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
         <div style="font-size:12px;opacity:.85;margin-bottom:12px;">Pick up exactly where you left off and add this configuration to your cart.</div>
         <span style="display:inline-block;background:${cfg.brand.accentColor};color:${cfg.brand.primaryColor};padding:10px 24px;border-radius:6px;font-weight:700;font-size:13px;">${escapeHtml(label)}</span>
