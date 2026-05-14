@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
 import { supabase } from '../../../lib/supabase';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 import type { EmailSender } from '../EmailStudio';
 
 export const SendersManager: React.FC<{ senders: EmailSender[]; onRefresh: () => void }> = ({ senders, onRefresh }) => {
   const [editing, setEditing] = useState<Partial<EmailSender> | null>(null);
+  useBodyScrollLock(!!editing);
 
   const save = async () => {
     if (!editing) return;
@@ -61,8 +63,8 @@ export const SendersManager: React.FC<{ senders: EmailSender[]; onRefresh: () =>
       </div>
 
       {editing && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditing(null)}>
-          <div className="bg-white rounded-lg max-w-md w-full p-5 space-y-3" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setEditing(null)}>
+          <div className="bg-white rounded-lg max-w-md w-full p-5 space-y-3 max-h-[90vh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold">{editing.id ? 'Edit sender' : 'New sender'}</h3>
             {[
               ['label', 'Label (internal)'],

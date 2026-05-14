@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Package, X } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import type { HardwareItem, HardwarePack } from '../hooks/useHardwareCatalog';
 
 export const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
@@ -58,6 +59,8 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
     updatePosition();
     setOpen(true);
   };
+
+  useBodyScrollLock(open && isMobile);
   const handleClose = () => setOpen(false);
 
   const packLines = pack
@@ -153,9 +156,9 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
         document.body,
       )}
       {open && content && isMobile && createPortal(
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/50 p-0" onClick={handleClose}>
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/50 p-0 overscroll-contain" onClick={handleClose}>
           <div className="w-full" onClick={e => e.stopPropagation()}>
-            <div className="rounded-t-2xl bg-white p-4 shadow-2xl">
+            <div className="rounded-t-2xl bg-white p-4 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain">
               {content}
             </div>
           </div>
