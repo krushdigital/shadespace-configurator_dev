@@ -34,6 +34,7 @@ export interface PdfTemplateConfig {
   layout?: {
     density: 'comfortable' | 'compact' | 'ultra';
     columns: 1 | 2;
+    columnGap?: number;
   };
 }
 
@@ -411,7 +412,7 @@ export function buildQuotePreviewHtml(
     .guarantee { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; font-size:${basePreset.row}px; }
     .footer { margin-top:24px; text-align:center; font-size:${basePreset.small}px; color:${b.mutedColor}; }
     hr { border:none; border-top:1px solid ${b.mutedColor}; margin:8px 0; opacity:0.4; }
-    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:${basePreset.twoColGap}px; align-items:start; margin-top:4px; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:${cfg.layout?.columnGap ?? basePreset.twoColGap}px; align-items:start; margin-top:4px; }
     .two-col > .col { min-width:0; overflow-wrap:anywhere; }
     .two-col h2 { margin-top:8px; }
     .block-wrap { display:block; }
