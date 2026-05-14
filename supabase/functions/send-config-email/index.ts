@@ -110,14 +110,14 @@ Deno.serve(async (req: Request) => {
       id: string;
       quote_reference: string | null;
       pricing_locked_until: string | null;
-      total_price: number | null;
-      currency: string | null;
+      locked_total: number | null;
+      locked_total_currency: string | null;
     } | null = null;
 
     if (resolvedQuoteId) {
       const { data: qr } = await supabase
         .from("saved_quotes")
-        .select("id, quote_reference, pricing_locked_until, total_price, currency")
+        .select("id, quote_reference, pricing_locked_until, locked_total, locked_total_currency")
         .eq("id", resolvedQuoteId)
         .maybeSingle();
       resolvedQuoteRow = qr || null;
@@ -125,7 +125,7 @@ Deno.serve(async (req: Request) => {
     if (!resolvedQuoteRow && quoteReference) {
       const { data: qr } = await supabase
         .from("saved_quotes")
-        .select("id, quote_reference, pricing_locked_until, total_price, currency")
+        .select("id, quote_reference, pricing_locked_until, locked_total, locked_total_currency")
         .eq("quote_reference", quoteReference)
         .maybeSingle();
       if (qr) {
@@ -148,10 +148,10 @@ Deno.serve(async (req: Request) => {
     const resolvedTotalPrice =
       typeof totalPrice === "number"
         ? totalPrice
-        : resolvedQuoteRow?.total_price != null
-          ? Number(resolvedQuoteRow.total_price)
+        : resolvedQuoteRow?.locked_total != null
+          ? Number(resolvedQuoteRow.locked_total)
           : null;
-    const resolvedCurrency = currency || resolvedQuoteRow?.currency || "";
+    const resolvedCurrency = currency || resolvedQuoteRow?.locked_total_currency || "";
 
     // If canvasImage is a data URL (which email clients commonly strip or bloat),
     // upload it to Supabase Storage and use the public URL instead.
