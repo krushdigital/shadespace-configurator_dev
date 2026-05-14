@@ -195,7 +195,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
 
         {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 
-        {activeTab === 'email' && <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+        {activeTab === 'email' && <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} isSuperAdmin={profile.role === 'super_admin'} onOpenPdfStudio={() => setActiveTab('pdf')} />}
 
         {activeTab === 'pdf' && <PdfStudio />}
 
