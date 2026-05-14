@@ -1244,8 +1244,26 @@ export function ShadeConfigurator() {
         : (typeof orderData.totalPrice === 'number'
             ? orderData.totalPrice
             : Number(orderData.totalPrice));
-    const authoritativeCurrency = lockedQuote?.currency || orderData.currency || config.currency;
-    const authoritativeBaseNzd = lockedQuote?.baseNzd ?? null;
+    // Always use the selected Shopify currency if available, otherwise fallback
+    let selectedCurrency = null;
+    if (typeof window !== 'undefined' && (window as any)?.Shopify?.currency?.active) {
+      selectedCurrency = ((window as any).Shopify.currency.active || '').toUpperCase();
+    }
+    const authoritativeCurrency = selectedCurrency || lockedQuote?.currency || orderData.currency || config.currency;
+    // Always provide NZD base price for non-NZD currencies
+    let authoritativeBaseNzd = lockedQuote?.baseNzd ?? null;
+    if (!authoritativeBaseNzd && authoritativeCurrency !== 'NZD') {
+      let fxRate = null;
+      if (typeof window !== 'undefined' && (window as any)?.Shopify?.currency?.rate) {
+        fxRate = parseFloat((window as any).Shopify.currency.rate);
+      } else if (orderData.fxRate) {
+        fxRate = parseFloat(String(orderData.fxRate));
+      }
+      if (fxRate && fxRate > 0 && typeof authoritativeTotal === 'number') {
+        // Avoid price drift by rounding to 2 decimals
+        authoritativeBaseNzd = Math.round((authoritativeTotal / fxRate) * 100) / 100;
+      }
+    }
 
     const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
       method: 'POST',
@@ -1265,7 +1283,7 @@ export function ShadeConfigurator() {
         fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
         quoteReference: quoteReference || null,
         totalPrice: authoritativeTotal,
-        currency: authoritativeCurrency,
+        currency: authoritativeCurrency, // Always send selected currency
         lockedTotal: lockedQuote?.total ?? null,
         lockedCurrency: lockedQuote?.currency ?? null,
         lockedBaseNzd: authoritativeBaseNzd,
