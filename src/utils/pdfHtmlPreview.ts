@@ -106,7 +106,10 @@ function densityCss(scope: string, p: HtmlDensityPreset, brand: PdfTemplateConfi
   return `
     ${scope} { font-size:${p.body}px; }
     ${scope} h2 { font-size:${p.h2}px; color:${brand.primaryColor}; border-bottom:2px solid ${brand.accentColor}; padding-bottom:${Math.max(2, Math.round(p.rowPad - 1))}px; margin:${p.sectionMargin}px 0 ${Math.max(6, Math.round(p.sectionMargin / 2))}px; }
-    ${scope} .row { display:flex; justify-content:space-between; padding:${p.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${p.row}px; gap:12px; }
+    ${scope} .row { display:flex; justify-content:space-between; align-items:flex-start; padding:${p.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${p.row}px; gap:10px; }
+    ${scope} .row > .muted, ${scope} .row > .val { min-width:0; overflow-wrap:anywhere; word-break:break-word; }
+    ${scope} .row > .muted { flex:1 1 auto; }
+    ${scope} .row > .val { flex:0 1 auto; max-width:60%; }
     ${scope} .callout { margin-top:${p.sectionMargin}px; padding:${Math.max(10, p.rowPad * 2 + 6)}px; border-radius:12px; background:${brand.primaryColor}; color:#fff; text-align:center; }
     ${scope} .callout .price { font-size:${p.priceLg}px; font-weight:700; color:${brand.accentColor}; }
     ${scope} .guarantee { margin-top:${p.sectionMargin}px; padding:${Math.max(10, p.rowPad * 2 + 6)}px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${brand.accentColor} 20%); border:2px solid ${brand.accentDark}; color:${brand.primaryColor}; font-size:${p.row}px; }
@@ -375,14 +378,18 @@ export function buildQuotePreviewHtml(
     ? `width:794px; margin:0; padding:32px 36px;`
     : `margin:0; padding:24px;`;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
-    body { ${bodySizing} background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; font-size:${basePreset.body}px; line-height:1.45; }
+    body { ${bodySizing} background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; font-size:${basePreset.body}px; line-height:1.45; box-sizing:border-box; overflow-wrap:anywhere; }
+    *, *::before, *::after { box-sizing:border-box; }
     .header { display:flex; align-items:center; gap:12px; padding:16px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 100%); border:2px solid ${b.accentDark}; margin-bottom:16px; }
     .header .meta { flex:1; }
     .logo-img { max-height:40px; max-width:180px; object-fit:contain; }
     .title { font-size:${basePreset.title}px; font-weight:700; color:${b.primaryColor}; margin:0; }
     .tagline { font-size:${basePreset.tagline}px; color:${b.accentDark}; margin:4px 0 0 0; }
     h2 { font-size:${basePreset.h2}px; color:${b.primaryColor}; border-bottom:2px solid ${b.accentColor}; padding-bottom:${Math.max(2, basePreset.rowPad - 1)}px; margin:${basePreset.sectionMargin}px 0 ${Math.max(6, Math.round(basePreset.sectionMargin / 2))}px; }
-    .row { display:flex; justify-content:space-between; padding:${basePreset.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${basePreset.row}px; gap:12px; }
+    .row { display:flex; justify-content:space-between; align-items:flex-start; padding:${basePreset.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${basePreset.row}px; gap:10px; }
+    .row > .muted, .row > .val { min-width:0; overflow-wrap:anywhere; word-break:break-word; }
+    .row > .muted { flex:1 1 auto; }
+    .row > .val { flex:0 1 auto; max-width:60%; }
     .muted { color:${b.mutedColor}; }
     .val { color:${b.textColor}; font-weight:600; text-align:right; }
     .callout { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:${b.primaryColor}; color:#fff; text-align:center; }
@@ -391,7 +398,7 @@ export function buildQuotePreviewHtml(
     .footer { margin-top:24px; text-align:center; font-size:${basePreset.small}px; color:${b.mutedColor}; }
     hr { border:none; border-top:1px solid ${b.mutedColor}; margin:8px 0; opacity:0.4; }
     .two-col { display:grid; grid-template-columns:1fr 1fr; gap:${basePreset.twoColGap}px; align-items:start; margin-top:4px; }
-    .two-col > .col { min-width:0; }
+    .two-col > .col { min-width:0; overflow-wrap:anywhere; }
     .two-col h2 { margin-top:8px; }
     .block-wrap { display:block; }
     img { display:inline-block; max-width:100%; }

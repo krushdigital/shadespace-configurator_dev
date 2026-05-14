@@ -8,6 +8,7 @@ import { AutomationEditor } from './email/AutomationEditor';
 import { EmailAnalytics } from './email/EmailAnalytics';
 import { SendersManager } from './email/SendersManager';
 import { TransactionalTemplates } from './email/TransactionalTemplates';
+import { ToggleSwitch } from '../ui/ToggleSwitch';
 
 type SubTab = 'transactional' | 'templates' | 'automations' | 'senders' | 'analytics';
 
@@ -319,13 +320,18 @@ const AutomationsList: React.FC<{ automations: EmailAutomation[]; templates: Ema
               </div>
               <div className="text-xs text-gray-600 mt-1">{summary(a)}</div>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => toggle(a)}
-                className={`text-xs px-2 py-1 rounded-full ${a.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}
-              >
-                {a.is_active ? 'Active' : 'Paused'}
-              </button>
+            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium ${a.is_active ? 'text-green-700' : 'text-gray-500'}`}>
+                  {a.is_active ? 'Active' : 'Paused'}
+                </span>
+                <ToggleSwitch
+                  enabled={a.is_active}
+                  onChange={() => toggle(a)}
+                  onLabel="Active"
+                  offLabel="Paused"
+                />
+              </div>
               <button
                 onClick={() => { if (confirm('Delete automation?')) supabase.from('email_automations').delete().eq('id', a.id).then(onRefresh); }}
                 className="text-xs text-red-600 hover:underline"

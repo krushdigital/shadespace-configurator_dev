@@ -66,15 +66,19 @@ export async function renderQuotePdfFromHtml(
     });
 
     const pxPerMm = canvas.width / dims.width;
-    const pageHeightPx = Math.floor(dims.height * pxPerMm);
+    const FOOTER_RESERVE_MM = 12;
+    const usableHeightMm = dims.height - FOOTER_RESERVE_MM;
+    const pageHeightPx = Math.floor(usableHeightMm * pxPerMm);
+    const cssScale = canvas.height / body.scrollHeight;
+
+    const breaks = computePageBreaks(body, canvas.height, pageHeightPx, cssScale);
 
     const pdf = new jsPDF('p', 'mm', paper === 'Letter' ? 'letter' : 'a4');
 
-    let renderedY = 0;
-    let pageIndex = 0;
-
-    while (renderedY < canvas.height) {
-      const sliceHeight = Math.min(pageHeightPx, canvas.height - renderedY);
+    for (let i = 0; i < breaks.length; i++) {
+      const start = breaks[i];
+      const end = i + 1 < breaks.length ? breaks[i + 1] : canvas.height;
+      const sliceHeight = Math.max(1, end - start);
       const sliceCanvas = document.createElement('canvas');
       sliceCanvas.width = canvas.width;
       sliceCanvas.height = sliceHeight;
@@ -82,25 +86,12 @@ export async function renderQuotePdfFromHtml(
       if (!sctx) throw new Error('canvas 2d context unavailable');
       sctx.fillStyle = '#ffffff';
       sctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-      sctx.drawImage(
-        canvas,
-        0,
-        renderedY,
-        canvas.width,
-        sliceHeight,
-        0,
-        0,
-        canvas.width,
-        sliceHeight,
-      );
+      sctx.drawImage(canvas, 0, start, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
 
-      if (pageIndex > 0) pdf.addPage();
+      if (i > 0) pdf.addPage();
       const imgData = sliceCanvas.toDataURL('image/png');
       const sliceMmHeight = sliceHeight / pxPerMm;
-      pdf.addImage(imgData, 'PNG', 0, 0, dims.width, sliceMmHeight, undefined, 'FAST');
-
-      pageIndex += 1;
-      renderedY += sliceHeight;
+      pdf.addImage(imgData, 'PNG', 0, 0, dims.width, Math.min(sliceMmHeight, usableHeightMm), undefined, 'FAST');
     }
 
     // Page numbers
@@ -125,6 +116,106 @@ export async function renderQuotePdfFromHtml(
   } finally {
     iframe.remove();
   }
+}
+
+/**
+ * Compute page-break Y offsets (in canvas pixels) using DOM-aware atomic units.
+ * Walks top-level layout blocks plus their nested column children so that two-column
+ * rows split cleanly when one column is much taller than the other.
+ */
+function computePageBreaks(
+  body: HTMLElement,
+  canvasHeight: number,
+  pageHeightPx: number,
+  cssScale: number,
+): number[] {
+  const atoms: Array<{ top: number; bottom: number; hardBreak?: boolean }> = [];
+
+  const collectAtoms = (root: HTMLElement) => {
+    const children = Array.from(root.children) as HTMLElement[];
+    for (const el of children) {
+      if (el.getAttribute('data-pagebreak') === '1') {
+        atoms.push({
+          top: el.offsetTop,
+          bottom: el.offsetTop + el.offsetHeight,
+          hardBreak: true,
+        });
+        continue;
+      }
+      if (el.classList.contains('two-col')) {
+        const cols = Array.from(el.querySelectorAll(':scope > .col')) as HTMLElement[];
+        const colChildren: HTMLElement[][] = cols.map((c) => Array.from(c.children) as HTMLElement[]);
+        const maxLen = Math.max(...colChildren.map((c) => c.length), 0);
+        for (let i = 0; i < maxLen; i++) {
+          const tops: number[] = [];
+          const bottoms: number[] = [];
+          for (const list of colChildren) {
+            const child = list[i];
+            if (!child) continue;
+            tops.push(child.offsetTop + (child.offsetParent === el ? 0 : child.offsetParent ? (child.offsetParent as HTMLElement).offsetTop : 0));
+            bottoms.push(tops[tops.length - 1] + child.offsetHeight);
+          }
+          if (tops.length === 0) continue;
+          // Use document-relative offsets via getBoundingClientRect for accuracy
+          const rects = colChildren.map((list) => list[i]).filter(Boolean).map((c) => c!.getBoundingClientRect());
+          const bodyRect = body.getBoundingClientRect();
+          const top = Math.min(...rects.map((r) => r.top - bodyRect.top));
+          const bottom = Math.max(...rects.map((r) => r.bottom - bodyRect.top));
+          atoms.push({ top, bottom });
+        }
+        continue;
+      }
+      const rect = el.getBoundingClientRect();
+      const bodyRect = body.getBoundingClientRect();
+      atoms.push({ top: rect.top - bodyRect.top, bottom: rect.bottom - bodyRect.top });
+    }
+  };
+
+  collectAtoms(body);
+  atoms.sort((a, b) => a.top - b.top);
+
+  const breaksCss: number[] = [0];
+  let pageStartCss = 0;
+  for (const atom of atoms) {
+    if (atom.hardBreak) {
+      if (atom.top > pageStartCss + 1) {
+        breaksCss.push(atom.top);
+        pageStartCss = atom.top;
+      }
+      continue;
+    }
+    const atomHeight = atom.bottom - atom.top;
+    const pageHeightCss = pageHeightPx / cssScale;
+    if (atom.bottom - pageStartCss > pageHeightCss) {
+      if (atomHeight > pageHeightCss) {
+        // Atom itself exceeds a page; let it span — start a new page at its top if not already there.
+        if (atom.top > pageStartCss + 1) {
+          breaksCss.push(atom.top);
+          pageStartCss = atom.top;
+        }
+        // Then advance page starts in pageHeightCss increments through this atom.
+        while (atom.bottom - pageStartCss > pageHeightCss) {
+          pageStartCss += pageHeightCss;
+          breaksCss.push(pageStartCss);
+        }
+      } else {
+        breaksCss.push(atom.top);
+        pageStartCss = atom.top;
+      }
+    }
+  }
+
+  // Convert CSS px to canvas px and clamp
+  const breaksCanvas = breaksCss
+    .map((y) => Math.round(y * cssScale))
+    .map((y) => Math.max(0, Math.min(canvasHeight, y)));
+  // Deduplicate and ensure ascending
+  const dedup: number[] = [];
+  for (const b of breaksCanvas) {
+    if (dedup.length === 0 || b > dedup[dedup.length - 1] + 1) dedup.push(b);
+  }
+  if (dedup.length === 0 || dedup[0] !== 0) dedup.unshift(0);
+  return dedup;
 }
 
 async function waitForImages(doc: Document, timeoutMs = 8000): Promise<void> {
