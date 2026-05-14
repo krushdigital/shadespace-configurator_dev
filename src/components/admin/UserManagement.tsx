@@ -34,6 +34,12 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
   const [inviting, setInviting] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
   useBodyScrollLock(showInvite);
+  useEffect(() => {
+    if (!showInvite) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowInvite(false); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [showInvite]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'super_admin'>('admin');
@@ -175,9 +181,14 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
 
       {showInvite && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setShowInvite(false)}>
-          <Card className="max-w-md w-full p-5 max-h-[90vh] overflow-y-auto overscroll-contain" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-3">Invite a new admin</h3>
-            <div className="space-y-3">
+          <Card className="max-w-md w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 pb-3">
+              <h3 className="text-lg font-bold">Invite a new admin</h3>
+              <button onClick={() => setShowInvite(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 pb-3 space-y-3">
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Email</label>
                 <input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm" placeholder="name@company.com" />
@@ -194,10 +205,10 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
                 </select>
               </div>
               <p className="text-xs text-gray-500">They will receive an email invitation. They can sign in with Google once accepted.</p>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setShowInvite(false)}>Cancel</Button>
-                <Button onClick={invite} disabled={inviting || !inviteEmail}>{inviting ? 'Sending...' : 'Send invite'}</Button>
-              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-2 flex-shrink-0">
+              <Button variant="outline" onClick={() => setShowInvite(false)}>Cancel</Button>
+              <Button onClick={invite} disabled={inviting || !inviteEmail}>{inviting ? 'Sending...' : 'Send invite'}</Button>
             </div>
           </Card>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
@@ -25,6 +25,11 @@ export const CsvUploadModal: React.FC<CsvUploadModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   useBodyScrollLock(true);
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
   const parseCsvLine = (line: string): string[] => {
     const fields: string[] = [];
@@ -106,8 +111,8 @@ export const CsvUploadModal: React.FC<CsvUploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overscroll-contain">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col overscroll-contain">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overscroll-contain" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">{title}</h2>

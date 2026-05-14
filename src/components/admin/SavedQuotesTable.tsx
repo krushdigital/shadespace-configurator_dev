@@ -47,6 +47,16 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   useBodyScrollLock(!!selectedQuote || !!quoteToDelete);
 
   useEffect(() => {
+    const isOpen = !!selectedQuote || !!quoteToDelete;
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setSelectedQuote(null); setQuoteToDelete(null); }
+    };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [selectedQuote, quoteToDelete]);
+
+  useEffect(() => {
     fetchQuotes();
   }, [dateRange, statusFilter, excludeInternal]);
 
@@ -347,15 +357,18 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       </Card>
 
       {selectedQuote && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain">
-          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto overscroll-contain p-8">
-            <div className="flex justify-between items-start mb-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain" onClick={() => setSelectedQuote(null)}>
+          <Card className="max-w-3xl w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start p-8 pb-4 flex-shrink-0">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{selectedQuote.quote_name}</h2>
                 <p className="text-sm text-gray-600 mt-1">{selectedQuote.quote_reference}</p>
               </div>
-              <button onClick={() => setSelectedQuote(null)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+              <button onClick={() => setSelectedQuote(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
+            <div className="flex-1 overflow-y-auto px-8">
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
@@ -474,7 +487,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
+            </div>
+            <div className="px-8 py-4 border-t border-gray-200 flex justify-end gap-2 flex-shrink-0 flex-wrap">
               <Button
                 onClick={() => toggleExclusion(selectedQuote)}
                 variant="outline"
@@ -496,19 +510,26 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       )}
 
       {quoteToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain">
-          <Card className="max-w-md w-full p-6 max-h-[90vh] overflow-y-auto overscroll-contain">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Confirm Delete</h2>
-            <p className="text-gray-700 mb-6">
-              Are you sure you want to delete quote <strong>{quoteToDelete.quote_reference}</strong>?
-              This will also delete all associated events and cannot be undone.
-            </p>
-            <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-6">
-              <p className="text-sm text-yellow-800">
-                <strong>Warning:</strong> This action is permanent.
-              </p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain" onClick={() => setQuoteToDelete(null)}>
+          <Card className="max-w-md w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start p-6 pb-0 flex-shrink-0">
+              <h2 className="text-xl font-bold text-gray-900">Confirm Delete</h2>
+              <button onClick={() => setQuoteToDelete(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              <p className="text-gray-700 mb-6">
+                Are you sure you want to delete quote <strong>{quoteToDelete.quote_reference}</strong>?
+                This will also delete all associated events and cannot be undone.
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                <p className="text-sm text-yellow-800">
+                  <strong>Warning:</strong> This action is permanent.
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 flex-shrink-0">
               <Button onClick={() => setQuoteToDelete(null)} variant="outline" disabled={isDeleting}>Cancel</Button>
               <Button onClick={handleDeleteQuote} disabled={isDeleting} className="bg-red-600 hover:bg-red-700 text-white">
                 {isDeleting ? 'Deleting...' : 'Delete Quote'}
