@@ -392,7 +392,17 @@ export const PdfStudio: React.FC = () => {
       if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [previewMode, config.layout?.density, config.layout?.columns, liveData?.id, blocks]);
+  }, [
+    previewMode,
+    config.layout?.density,
+    config.layout?.columns,
+    liveData?.id,
+    blocks,
+    config.brand,
+    config.header,
+    config.footer,
+    config.paper,
+  ]);
 
   if (loading) {
     return <Card className="p-6">Loading templates...</Card>;

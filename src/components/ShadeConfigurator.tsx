@@ -553,7 +553,10 @@ export function ShadeConfigurator() {
     quoteName: string,
     customerReference: string | null,
     pdfBase64: string,
-    quoteUrl?: string
+    quoteUrl?: string,
+    savedQuoteId?: string,
+    savedQuoteReference?: string,
+    pricingLockedUntil?: string,
   ): Promise<boolean> => {
     try {
 
@@ -701,11 +704,19 @@ export function ShadeConfigurator() {
         lastName,
         quoteName,
         customerReference,
-        quoteReference: quoteReference || undefined,
+        quoteReference: savedQuoteReference || quoteReference || undefined,
       };
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
       const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+      const effectiveQuoteId = savedQuoteId || null;
+      const effectiveQuoteReference = savedQuoteReference || quoteReference || null;
+      if (calculations.totalPrice == null || !config.currency) {
+        console.warn('email-quote: missing price/currency before send', {
+          totalPrice: calculations.totalPrice,
+          currency: config.currency,
+        });
+      }
       const response = await fetch(
         `${supabaseUrl}/functions/v1/send-config-email`,
         {
@@ -722,8 +733,9 @@ export function ShadeConfigurator() {
             firstName,
             lastName,
             quoteUrl,
-            quoteId: orderData.quoteReference ? undefined : undefined,
-            quoteReference: orderData.quoteReference,
+            quoteId: effectiveQuoteId,
+            quoteReference: effectiveQuoteReference,
+            pricingLockedUntil: pricingLockedUntil || undefined,
             totalPrice: calculations.totalPrice,
             currency: config.currency,
           }),

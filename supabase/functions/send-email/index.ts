@@ -199,9 +199,12 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
     anchor_measurements_rows: measurementRowsOnly(anchorMeasurements, (k) => `Corner ${k}`),
     width: cfg?.measurements?.width || "",
     height: cfg?.measurements?.height || "",
-    pricing_locked_until: quote?.pricing_locked_until
-      ? new Date(quote.pricing_locked_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-      : "",
+    pricing_locked_until:
+      typeof extra.pricing_locked_until === "string" && extra.pricing_locked_until
+        ? extra.pricing_locked_until
+        : quote?.pricing_locked_until
+          ? new Date(quote.pricing_locked_until).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+          : "",
     no_price_yet: !totalPrice,
     days_since_saved: quote?.created_at ? Math.round((Date.now() - new Date(quote.created_at).getTime()) / 86400000) : "",
     sender_first_name: sender?.signature_name || "the ShadeSpace team",

@@ -105,17 +105,53 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to add customer to Shopify:", shopifyError);
     }
 
-    const reference = quoteReference || `SS-${Date.now()}`;
-
     let resolvedQuoteId = quoteId || null;
-    if (!resolvedQuoteId && quoteReference) {
+    let resolvedQuoteRow: {
+      id: string;
+      quote_reference: string | null;
+      pricing_locked_until: string | null;
+      total_price: number | null;
+      currency: string | null;
+    } | null = null;
+
+    if (resolvedQuoteId) {
       const { data: qr } = await supabase
         .from("saved_quotes")
-        .select("id")
+        .select("id, quote_reference, pricing_locked_until, total_price, currency")
+        .eq("id", resolvedQuoteId)
+        .maybeSingle();
+      resolvedQuoteRow = qr || null;
+    }
+    if (!resolvedQuoteRow && quoteReference) {
+      const { data: qr } = await supabase
+        .from("saved_quotes")
+        .select("id, quote_reference, pricing_locked_until, total_price, currency")
         .eq("quote_reference", quoteReference)
         .maybeSingle();
-      resolvedQuoteId = qr?.id || null;
+      if (qr) {
+        resolvedQuoteRow = qr;
+        resolvedQuoteId = qr.id;
+      }
     }
+
+    const resolvedReference = quoteReference || resolvedQuoteRow?.quote_reference || null;
+    if (!resolvedReference) {
+      console.warn("send-config-email: no quote_reference resolved; email will omit reference", {
+        quoteId,
+        quoteReference,
+      });
+    }
+    const reference = resolvedReference || "";
+
+    const resolvedPricingLockedUntil =
+      pricingLockedUntil || resolvedQuoteRow?.pricing_locked_until || null;
+    const resolvedTotalPrice =
+      typeof totalPrice === "number"
+        ? totalPrice
+        : resolvedQuoteRow?.total_price != null
+          ? Number(resolvedQuoteRow.total_price)
+          : null;
+    const resolvedCurrency = currency || resolvedQuoteRow?.currency || "";
 
     // If canvasImage is a data URL (which email clients commonly strip or bloat),
     // upload it to Supabase Storage and use the public URL instead.
@@ -226,9 +262,15 @@ Deno.serve(async (req: Request) => {
               quote_reference: reference,
               quote_name: quoteName || "Shade Sail Configuration",
               ...(quoteUrl ? { resume_url: quoteUrl } : {}),
-              pricing_locked_until: pricingLockedUntil
-                ? new Date(pricingLockedUntil).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-                : "",
+              ...(resolvedPricingLockedUntil
+                ? {
+                    pricing_locked_until: new Date(resolvedPricingLockedUntil).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }),
+                  }
+                : {}),
               canvas_image: resolvedCanvasUrl || "",
               fabric_type: Fabric_Type || "",
               fabric_color: fabricColor || "",
@@ -240,9 +282,19 @@ Deno.serve(async (req: Request) => {
               area: formatArea(Area),
               perimeter: formatLinear(Perimeter),
               warranty_years: warranty || "15",
-              price_formatted: typeof totalPrice === "number"
-                ? `${(currency === "NZD" ? "NZ$" : currency === "USD" ? "US$" : currency === "AUD" ? "AU$" : currency || "")}${totalPrice.toFixed(2)}`
-                : "",
+              ...(resolvedTotalPrice != null
+                ? {
+                    price_formatted: `${
+                      resolvedCurrency === "NZD"
+                        ? "NZ$"
+                        : resolvedCurrency === "USD"
+                          ? "US$"
+                          : resolvedCurrency === "AUD"
+                            ? "AU$"
+                            : resolvedCurrency || ""
+                    }${resolvedTotalPrice.toFixed(2)}`,
+                  }
+                : {}),
               product_name: (Fabric_Type && fabricColor && corners)
                 ? `Custom ${Fabric_Type} Shade Sail - ${fabricColor} - ${corners} Corner`
                 : "Custom Shade Sail",
