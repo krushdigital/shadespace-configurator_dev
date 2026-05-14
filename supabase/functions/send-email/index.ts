@@ -344,35 +344,8 @@ Deno.serve(async (req: Request) => {
         : `ShadeSpace-Quote-${ref}.pdf`;
       const safeFilename = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
 
-      if (boundPdfTemplateId && quote.config_data && quote.calculations_data) {
-        try {
-          const renderRes = await fetch(`${SB_URL}/functions/v1/generate-pdf`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SB_SERVICE}` },
-            body: JSON.stringify({
-              config: quote.config_data,
-              calculations: quote.calculations_data,
-              quoteId: quote.id,
-              accessToken: quote.access_token,
-              pdfTemplateId: boundPdfTemplateId,
-            }),
-          });
-          if (renderRes.ok) {
-            const buf = new Uint8Array(await renderRes.arrayBuffer());
-            let bin = "";
-            for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-            resolvedAttachments.push({
-              filename: safeFilename,
-              content: btoa(bin),
-              type: "application/pdf",
-            });
-            autoPdfDiagnostic = `attached freshly-rendered pdf bytes=${buf.length} pdfTemplateId=${boundPdfTemplateId}`;
-          } else {
-            autoPdfDiagnostic = `fresh render failed status=${renderRes.status}, falling back to stored pdf`;
-          }
-        } catch (renderErr) {
-          autoPdfDiagnostic = `fresh render threw: ${renderErr instanceof Error ? renderErr.message : String(renderErr)}`;
-        }
+      if (boundPdfTemplateId) {
+        autoPdfDiagnostic = `legacy generate-pdf path is disabled; pdfTemplateId=${boundPdfTemplateId} ignored. Use stored pdf or caller-provided attachment.`;
       }
 
       if (resolvedAttachments.length === 0 && storedPath) {
