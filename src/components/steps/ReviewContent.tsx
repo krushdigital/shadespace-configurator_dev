@@ -924,6 +924,7 @@ console.log('✌️result --->', result);
           <div className="lg:col-span-4 space-y-4">
             {/* Hardware & Price Breakdown - Collapsible */}
             <AccordionItem
+              defaultOpen={!isMobile}
               trigger={
                 <span className="flex items-center gap-2 text-sm font-semibold">
                   <span>Hardware & Price Breakdown</span>
@@ -1109,6 +1110,7 @@ console.log('✌️result --->', result);
                 </AccordionItem>
               ) : (
                 <AccordionItem
+                  defaultOpen={true}
                   trigger={
                     <span className="flex items-center gap-2 text-sm font-semibold">
                       <span>Precise Measurements</span>
@@ -1206,6 +1208,7 @@ console.log('✌️result --->', result);
                   </AccordionItem>
                 ) : (
                   <AccordionItem
+                    defaultOpen={true}
                     trigger={
                       <span className="flex items-center gap-2 text-sm font-semibold">
                         <span>Anchor Point Heights</span>
