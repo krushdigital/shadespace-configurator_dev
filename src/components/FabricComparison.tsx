@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Check, GitCompare } from 'lucide-react';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { Fabric, FabricSpec } from '../types';
 
 type ViewKey = 'lifestyle' | 'swatch' | 'macro';
@@ -106,6 +107,8 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  useBodyScrollLock(open);
+
   if (!open) return null;
 
   const current = data.find(f => f.id === currentId) || data[0];
@@ -122,7 +125,7 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] flex items-stretch md:items-center justify-center bg-black/70 md:p-5"
+      className="fixed inset-0 z-[10000] flex items-stretch md:items-center justify-center bg-black/70 md:p-5 overscroll-contain"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="relative w-full max-w-[1100px] h-[100dvh] md:h-auto md:max-h-[92vh] overflow-hidden md:rounded-xl bg-white shadow-2xl flex flex-col">

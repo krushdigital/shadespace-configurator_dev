@@ -3,6 +3,7 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
 import { getAdminAuthHeaders } from '../../utils/adminAuth';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import type { AdminProfile } from '../../hooks/useAdminProfile';
 
 interface AdminUserRow {
@@ -29,6 +30,7 @@ export const UserManagement: React.FC<Props> = ({ currentProfile }) => {
   const [loading, setLoading] = useState(true);
   const [inviting, setInviting] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  useBodyScrollLock(showInvite);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'super_admin'>('admin');
@@ -161,8 +163,8 @@ export const UserManagement: React.FC<Props> = ({ currentProfile }) => {
       )}
 
       {showInvite && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(false)}>
-          <Card className="max-w-md w-full p-5" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setShowInvite(false)}>
+          <Card className="max-w-md w-full p-5 max-h-[90vh] overflow-y-auto overscroll-contain" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-3">Invite a new admin</h3>
             <div className="space-y-3">
               <div>

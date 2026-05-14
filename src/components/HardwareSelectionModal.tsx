@@ -7,6 +7,7 @@ import type { CornerHardwareLine } from '../types';
 import type { HardwareItem, HardwareCategory, HardwarePack } from '../hooks/useHardwareCatalog';
 import { groupItemsByCategory, useHardwareSearch, getLiveHardwarePrice } from '../hooks/useHardwareCatalog';
 import { getPricingForCurrency, PricingSetting } from '../hooks/usePricingSettings';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface HardwareSelectionModalProps {
   open: boolean;
@@ -63,22 +64,7 @@ export function HardwareSelectionModal({
     setTooltipPos(null);
   }, [open, initialSelection, items]);
 
-  useEffect(() => {
-    if (!open || typeof document === 'undefined') return;
-    const body = document.body;
-    const html = document.documentElement;
-    const prevBodyOverflow = body.style.overflow;
-    const prevHtmlOverflow = html.style.overflow;
-    const prevBodyTouch = body.style.touchAction;
-    body.style.overflow = 'hidden';
-    html.style.overflow = 'hidden';
-    body.style.touchAction = 'none';
-    return () => {
-      body.style.overflow = prevBodyOverflow;
-      html.style.overflow = prevHtmlOverflow;
-      body.style.touchAction = prevBodyTouch;
-    };
-  }, [open]);
+  useBodyScrollLock(open);
 
   useLayoutEffect(() => {
     if (!hoverItem || !hoverAnchor) {

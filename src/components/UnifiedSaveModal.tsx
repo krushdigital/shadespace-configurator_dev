@@ -5,6 +5,7 @@ import { ConfiguratorState, ShadeCalculations } from '../types';
 import { saveQuote, generateQuoteUrl } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { useToast } from './ui/ToastProvider';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { analytics } from '../utils/analytics';
 import {
   generateDefaultQuoteName,
@@ -116,6 +117,8 @@ export function UnifiedSaveModal({
       });
     }
   }, [isOpen, calculations.totalPrice, config.currency, config.corners, config.fabricType, shouldShowEmailOption]);
+
+  useBodyScrollLock(isOpen);
 
   if (!isOpen) return null;
 
@@ -461,8 +464,8 @@ export function UnifiedSaveModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overscroll-contain">
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain">
         <div className="p-6">
           {modalStep === 'form' && (
             <>

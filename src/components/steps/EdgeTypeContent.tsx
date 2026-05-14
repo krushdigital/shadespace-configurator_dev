@@ -5,6 +5,7 @@ import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { SaveProgressButton } from '../SaveProgressButton';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface EdgeTypeContentProps {
   config: ConfiguratorState;
@@ -44,17 +45,16 @@ const EDGE_OPTIONS = [
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
   const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string } | null>(null);
 
+  useBodyScrollLock(!!enlargedImage);
+
   useEffect(() => {
     if (!enlargedImage) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setEnlargedImage(null);
     };
     window.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     return () => {
       window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
     };
   }, [enlargedImage]);
 
@@ -234,7 +234,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
 
       {enlargedImage && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fadeIn_0.15s_ease-out]"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fadeIn_0.15s_ease-out] overscroll-contain"
           onClick={() => setEnlargedImage(null)}
           role="dialog"
           aria-modal="true"

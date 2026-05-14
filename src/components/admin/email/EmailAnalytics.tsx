@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Card } from '../../ui/Card';
 import { supabase } from '../../../lib/supabase';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 
 interface Props {
   dateRange: { start: string; end: string };
@@ -35,6 +36,7 @@ export const EmailAnalytics: React.FC<Props> = ({ dateRange, timezone = 'UTC' })
   const [automations, setAutomations] = useState<any[]>([]);
   const [senders, setSenders] = useState<any[]>([]);
   const [preview, setPreview] = useState<QueueRow | null>(null);
+  useBodyScrollLock(!!preview);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -169,8 +171,8 @@ export const EmailAnalytics: React.FC<Props> = ({ dateRange, timezone = 'UTC' })
       </Card>
 
       {preview && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto p-5" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setPreview(null)}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto overscroll-contain p-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-gray-900">{preview.subject_snapshot}</h3>
               <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-700">x</button>

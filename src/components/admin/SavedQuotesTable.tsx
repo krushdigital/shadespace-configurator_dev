@@ -6,6 +6,7 @@ import { getAdminAuthHeaders } from '../../utils/adminAuth';
 import { generatePdfFromBlocks, CustomerDetails } from '../../utils/pdfGenerator';
 import { loadActivePdfTemplate } from '../../utils/activePdfTemplate';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface SavedQuotesTableProps {
   dateRange: { start: string; end: string };
@@ -43,6 +44,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
   const [togglingExclusion, setTogglingExclusion] = useState(false);
+  useBodyScrollLock(!!selectedQuote || !!quoteToDelete);
 
   useEffect(() => {
     fetchQuotes();
@@ -345,8 +347,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       </Card>
 
       {selectedQuote && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto p-8">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain">
+          <Card className="max-w-3xl w-full max-h-[90vh] overflow-y-auto overscroll-contain p-8">
             <div className="flex justify-between items-start mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{selectedQuote.quote_name}</h2>
@@ -494,8 +496,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       )}
 
       {quoteToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain">
+          <Card className="max-w-md w-full p-6 max-h-[90vh] overflow-y-auto overscroll-contain">
             <h2 className="text-xl font-bold text-gray-900 mb-4">Confirm Delete</h2>
             <p className="text-gray-700 mb-6">
               Are you sure you want to delete quote <strong>{quoteToDelete.quote_reference}</strong>?

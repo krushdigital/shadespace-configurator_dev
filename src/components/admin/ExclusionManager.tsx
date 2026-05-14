@@ -9,6 +9,42 @@ interface ExcludedIp {
   ip_address: string;
   label: string;
   created_at: string;
+  match_mode?: 'exact' | 'prefix' | 'cidr' | 'range';
+  range_start?: string | null;
+  range_end?: string | null;
+}
+
+const MATCH_TYPE_LABEL: Record<string, string> = {
+  exact: 'Exact',
+  prefix: 'Prefix',
+  cidr: 'CIDR',
+  range: 'Range',
+};
+
+const MATCH_TYPE_CLASS: Record<string, string> = {
+  exact: 'bg-gray-100 text-gray-700',
+  prefix: 'bg-blue-50 text-blue-700',
+  cidr: 'bg-emerald-50 text-emerald-700',
+  range: 'bg-amber-50 text-amber-700',
+};
+
+function formatExcludedIp(ip: ExcludedIp): string {
+  if (ip.match_mode === 'range' && ip.range_start && ip.range_end) {
+    return `${ip.range_start} \u2013 ${ip.range_end}`;
+  }
+  return ip.ip_address;
+}
+
+function validateIpInput(input: string): string | null {
+  const s = input.trim();
+  if (!s) return 'Enter an IP, CIDR, or range.';
+  if (s.includes('-') && !s.includes('/')) {
+    const parts = s.split(/\s*-\s*/);
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      return 'Range must be "start-end" (e.g. 1.2.3.4-1.2.3.20).';
+    }
+  }
+  return null;
 }
 
 interface ExcludedEmail {
@@ -59,6 +95,11 @@ export const ExclusionManager: React.FC = () => {
   const addIp = async () => {
     const trimmed = newIp.trim();
     if (!trimmed) return;
+    const validationError = validateIpInput(trimmed);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
 
     try {
       setAddingIp(true);
@@ -80,7 +121,9 @@ export const ExclusionManager: React.FC = () => {
       } else {
         const err = await res.text();
         if (err.includes('duplicate')) {
-          alert('This IP address is already in the exclusion list.');
+          alert('This IP rule is already in the exclusion list.');
+        } else {
+          alert(`Failed to add: ${err}`);
         }
       }
     } catch (error) {
@@ -226,10 +269,17 @@ export const ExclusionManager: React.FC = () => {
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Excluded IP Addresses</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Excluded IP Addresses</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Accepts a single IP (<span className="font-mono">1.2.3.4</span>),
+          a CIDR (<span className="font-mono">10.0.0.0/24</span>),
+          a range (<span className="font-mono">1.2.3.4-1.2.3.20</span>),
+          or a prefix (<span className="font-mono">203.118.</span>).
+          The match type is detected automatically.
+        </p>
         <div className="flex gap-3 mb-4">
           <Input
-            placeholder="IP address (e.g. 203.118.45.12)"
+            placeholder="IP, CIDR, or range"
             value={newIp}
             onChange={(e) => setNewIp(e.target.value)}
             className="max-w-xs"
@@ -243,7 +293,7 @@ export const ExclusionManager: React.FC = () => {
             onKeyDown={(e) => e.key === 'Enter' && addIp()}
           />
           <Button onClick={addIp} disabled={addingIp || !newIp.trim()} size="sm">
-            {addingIp ? 'Adding...' : 'Add IP'}
+            {addingIp ? 'Adding...' : 'Add Rule'}
           </Button>
         </div>
 
@@ -254,28 +304,37 @@ export const ExclusionManager: React.FC = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">IP Address</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Match</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Type</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Label</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Added</th>
                   <th className="px-4 py-2 text-right text-xs font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {ips.map((ip) => (
-                  <tr key={ip.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-2 text-sm font-mono text-gray-900">{ip.ip_address}</td>
-                    <td className="px-4 py-2 text-sm text-gray-700">{ip.label}</td>
-                    <td className="px-4 py-2 text-sm text-gray-500">{formatDate(ip.created_at)}</td>
-                    <td className="px-4 py-2 text-right">
-                      <button
-                        onClick={() => removeIp(ip.id)}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {ips.map((ip) => {
+                  const mode = ip.match_mode || 'exact';
+                  return (
+                    <tr key={ip.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-4 py-2 text-sm font-mono text-gray-900">{formatExcludedIp(ip)}</td>
+                      <td className="px-4 py-2 text-sm">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${MATCH_TYPE_CLASS[mode] || MATCH_TYPE_CLASS.exact}`}>
+                          {MATCH_TYPE_LABEL[mode] || mode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-sm text-gray-700">{ip.label}</td>
+                      <td className="px-4 py-2 text-sm text-gray-500">{formatDate(ip.created_at)}</td>
+                      <td className="px-4 py-2 text-right">
+                        <button
+                          onClick={() => removeIp(ip.id)}
+                          className="text-red-600 hover:text-red-800 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

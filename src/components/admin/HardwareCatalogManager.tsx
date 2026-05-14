@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../ui/ToastProvider';
 import { Wrench, Eye, EyeOff, Star, AlertTriangle, ImageOff, Copy, X, Search, GitMerge } from 'lucide-react';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface CatalogRow {
   id: string;
@@ -50,6 +51,7 @@ export const HardwareCatalogManager: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [mergeGroupKey, setMergeGroupKey] = useState<string | null>(null);
+  useBodyScrollLock(!!mergeGroupKey);
   const [newCategoryLabel, setNewCategoryLabel] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
 
@@ -491,8 +493,8 @@ export const HardwareCatalogManager: React.FC = () => {
       </div>
 
       {mergeGroupKey && mergeGroup.length > 0 && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4" onClick={() => setMergeGroupKey(null)}>
-          <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-4 overscroll-contain" onClick={() => setMergeGroupKey(null)}>
+          <div className="w-full max-w-xl rounded-2xl bg-white p-5 shadow-2xl max-h-[90vh] overflow-y-auto overscroll-contain" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-3">
               <div>
                 <h4 className="text-lg font-bold text-slate-900">Merge duplicates</h4>

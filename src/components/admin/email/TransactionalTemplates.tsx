@@ -7,6 +7,7 @@ import { getAdminAuthHeaders } from '../../../utils/adminAuth';
 import type { EmailTemplate, EmailSender } from '../EmailStudio';
 import { loadActivePdfTemplate } from '../../../utils/activePdfTemplate';
 import { generatePdfFromBlocks, CustomerDetails } from '../../../utils/pdfGenerator';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 
 interface QuoteOption {
   id: string;
@@ -64,6 +65,7 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
 
   const [recent, setRecent] = useState<RecentSend[]>([]);
   const [drawerSend, setDrawerSend] = useState<RecentSend | null>(null);
+  useBodyScrollLock(!!drawerSend);
 
   const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateOption[]>([]);
   const [pauseAllBusy, setPauseAllBusy] = useState(false);
@@ -650,8 +652,8 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
       </div>
 
       {drawerSend && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-stretch justify-end" onClick={() => setDrawerSend(null)}>
-          <div className="bg-white w-full max-w-xl h-full overflow-auto shadow-xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-stretch justify-end overscroll-contain" onClick={() => setDrawerSend(null)}>
+          <div className="bg-white w-full max-w-xl h-full overflow-auto overscroll-contain shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-gray-900">{drawerSend.recipient_email}</div>

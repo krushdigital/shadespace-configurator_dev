@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Button } from '../ui/Button';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface CsvUploadModalProps {
   title: string;
@@ -23,6 +24,7 @@ export const CsvUploadModal: React.FC<CsvUploadModalProps> = ({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useBodyScrollLock(true);
 
   const parseCsvLine = (line: string): string[] => {
     const fields: string[] = [];
@@ -104,8 +106,8 @@ export const CsvUploadModal: React.FC<CsvUploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overscroll-contain">
+      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col overscroll-contain">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">{title}</h2>
@@ -120,7 +122,7 @@ export const CsvUploadModal: React.FC<CsvUploadModalProps> = ({
           </p>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+        <div className="p-6 overflow-y-auto overscroll-contain flex-1 space-y-4">
           <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-slate-700 mb-1">Expected CSV Format</h3>
             <code className="text-xs text-slate-600 font-mono">{expectedHeaders}</code>
