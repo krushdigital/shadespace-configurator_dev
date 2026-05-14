@@ -375,7 +375,7 @@ export function buildQuotePreviewHtml(
     overrideStyles.push(densityCss(`.density-${d}`, HTML_DENSITY_PRESETS[d], b));
   }
   const bodySizing = options.pageMode
-    ? `width:794px; margin:0; padding:32px 36px;`
+    ? `width:688px; margin:0; padding:0;`
     : `margin:0; padding:24px;`;
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body { ${bodySizing} background:${b.backgroundColor}; font-family:${b.fontFamily}; color:${b.textColor}; font-size:${basePreset.body}px; line-height:1.45; box-sizing:border-box; overflow-wrap:anywhere; }
@@ -389,7 +389,7 @@ export function buildQuotePreviewHtml(
     .row { display:flex; justify-content:space-between; align-items:flex-start; padding:${basePreset.rowPad}px 0; border-bottom:1px solid #E5E7EB; font-size:${basePreset.row}px; gap:10px; }
     .row > .muted, .row > .val { min-width:0; overflow-wrap:anywhere; word-break:break-word; }
     .row > .muted { flex:1 1 auto; }
-    .row > .val { flex:0 1 auto; max-width:60%; }
+    .row > .val { flex:0 1 auto; min-width:0; }
     .muted { color:${b.mutedColor}; }
     .val { color:${b.textColor}; font-weight:600; text-align:right; }
     .callout { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:${b.primaryColor}; color:#fff; text-align:center; }
