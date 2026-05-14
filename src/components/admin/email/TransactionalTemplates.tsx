@@ -65,6 +65,7 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
   const [drawerSend, setDrawerSend] = useState<RecentSend | null>(null);
 
   const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateOption[]>([]);
+  const [pauseAllBusy, setPauseAllBusy] = useState(false);
 
   useEffect(() => {
     supabase
@@ -229,8 +230,41 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
     }
   };
 
+  const togglePaused = async (t: EmailTemplate) => {
+    const nextActive = !t.is_active;
+    const { data: { user } } = await supabase.auth.getUser();
+    const patch: Record<string, unknown> = nextActive
+      ? { is_active: true, paused_at: null, paused_by: null }
+      : { is_active: false, paused_at: new Date().toISOString(), paused_by: user?.id || null };
+    const { error } = await supabase.from('email_templates').update(patch).eq('id', t.id);
+    if (error) { alert(`Update failed: ${error.message}`); return; }
+    await load();
+    if (selected?.id === t.id) {
+      const updated = { ...t, ...patch } as EmailTemplate;
+      setSelected(updated);
+      setDraft(prev => prev ? { ...prev, ...patch } as EmailTemplate : prev);
+    }
+  };
+
+  const pauseAllTransactional = async () => {
+    if (!confirm('Pause every transactional email template? Customers will not receive PDF quotes or save-progress emails until you re-enable them.')) return;
+    setPauseAllBusy(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('email_templates').update({
+        is_active: false,
+        paused_at: new Date().toISOString(),
+        paused_by: user?.id || null,
+      }).eq('transactional', true);
+      if (error) { alert(`Pause failed: ${error.message}`); return; }
+      await load();
+    } finally {
+      setPauseAllBusy(false);
+    }
+  };
+
   const sendTest = async () => {
-    if (!draft || !testTo) return;
+    if (!draft || !testTo || draft.is_active === false) return;
     setSending(true);
     const wantsPdf = !!previewQuoteId && (draft as any).attach_pdf === true;
     setTestStatus(wantsPdf ? 'Generating PDF and sending...' : 'Sending...');
@@ -273,10 +307,23 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
       <Card className="p-4 bg-amber-50 border-amber-200 border">
         <div className="flex items-start gap-3">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2" className="flex-shrink-0 mt-0.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          <div>
-            <div className="text-sm font-semibold text-amber-900">Service emails</div>
-            <div className="text-xs text-amber-800 mt-0.5">
-              These templates are sent automatically when customers save progress or request a PDF quote. {isSuperAdmin ? 'Super admins can edit subjects and re-bind the attached PDF design.' : 'Subjects are locked for admins to protect customer expectations.'} These emails bypass the unsubscribe list.
+          <div className="flex-1">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <div className="text-sm font-semibold text-amber-900">Service emails</div>
+                <div className="text-xs text-amber-800 mt-0.5">
+                  These templates are sent automatically when customers save progress or request a PDF quote. {isSuperAdmin ? 'Super admins can edit subjects and re-bind the attached PDF design.' : 'Subjects are locked for admins to protect customer expectations.'} These emails bypass the unsubscribe list.
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={pauseAllTransactional}
+                disabled={pauseAllBusy}
+                className="text-red-600 border-red-300"
+              >
+                {pauseAllBusy ? 'Pausing...' : 'Pause all'}
+              </Button>
             </div>
           </div>
         </div>
@@ -290,18 +337,13 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
               onClick={() => { setSelected(t); setDraft(t); }}
               className={`w-full text-left rounded-lg border p-3 transition-colors ${selected?.id === t.id ? 'border-lime-500 bg-lime-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="font-semibold text-sm text-gray-900">{t.name}</div>
-                {isSuperAdmin ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
-                    Editable
+              <div className="flex items-center justify-between gap-1">
+                <div className="font-semibold text-sm text-gray-900 truncate">{t.name}</div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${t.is_active === false ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    {t.is_active === false ? 'Paused' : 'Active'}
                   </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                    Locked
-                  </span>
-                )}
+                </div>
               </div>
               <div className="text-[11px] text-gray-500 mt-1 truncate" title={t.subject}>{t.subject}</div>
               {selected?.id === t.id && lastSent && (
@@ -317,13 +359,28 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
         {draft && (
           <div className="space-y-4">
             <Card className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <div className="text-sm font-semibold text-gray-900">{draft.name}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{draft.template_key}</div>
                 </div>
-                <Button size="sm" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => togglePaused(draft)}
+                    className={`text-xs px-2.5 py-1 rounded-full font-medium ${draft.is_active === false ? 'bg-red-100 text-red-800 hover:bg-red-200' : 'bg-green-100 text-green-800 hover:bg-green-200'}`}
+                    title={draft.is_active === false ? 'Click to resume sends' : 'Click to pause sends'}
+                  >
+                    {draft.is_active === false ? 'Paused' : 'Active'}
+                  </button>
+                  <Button size="sm" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
+                </div>
               </div>
+
+              {draft.is_active === false && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-900">
+                  <strong>This template is paused.</strong> Customers will not receive this email until it is resumed. Test sends are disabled.
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1 flex items-center gap-1">
@@ -533,13 +590,18 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
                   placeholder="recipient@example.com"
                   className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
                 />
-                <Button size="sm" onClick={sendTest} disabled={sending || !testTo}>
+                <Button size="sm" onClick={sendTest} disabled={sending || !testTo || draft.is_active === false}>
                   {sending ? 'Sending...' : 'Send test'}
                 </Button>
               </div>
               <div className="text-xs text-gray-500 mt-2">
                 Uses {previewQuoteId ? 'the selected real quote' : 'sample data'} to render the email. Delivered via Resend.
               </div>
+              {draft.is_active === false && (
+                <div className="mt-2 text-[11px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-1.5">
+                  Test send is disabled while this template is paused. Resume the template to send tests.
+                </div>
+              )}
               {(draft as any).attach_pdf && (
                 <div className="mt-2 text-[11px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1.5">
                   {previewQuoteId

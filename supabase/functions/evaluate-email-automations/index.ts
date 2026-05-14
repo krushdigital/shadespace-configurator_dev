@@ -45,6 +45,15 @@ Deno.serve(async (req: Request) => {
     const unsubSet = new Set((unsubRows || []).map((r: any) => String(r.email).toLowerCase()));
 
     for (const a of automations) {
+      if (a.template_id) {
+        const { data: tpl } = await supabase
+          .from("email_templates")
+          .select("is_active")
+          .eq("id", a.template_id)
+          .maybeSingle();
+        if (tpl && tpl.is_active === false) continue;
+      }
+
       const { data: conds } = await supabase.from("email_automation_conditions").select("*").eq("automation_id", a.id);
 
       let candidates: any[] = [];

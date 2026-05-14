@@ -65,9 +65,16 @@ Deno.serve(async (req: Request) => {
     if (useStudio) {
       const { data: template } = await supabase
         .from("email_templates")
-        .select("id")
+        .select("id, is_active")
         .eq("template_key", "configuration_saved")
         .maybeSingle();
+
+      if (template && template.is_active === false) {
+        return new Response(
+          JSON.stringify({ success: true, emailSent: false, skipped: true, reason: "template_inactive" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       if (template?.id) {
         const sendRes = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
