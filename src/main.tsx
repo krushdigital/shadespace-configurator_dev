@@ -5,6 +5,9 @@ import App from "./App";
 import "./index.css";
 import { preloadCurrencyMap } from "./utils/currencySync";
 
+declare const __BUILD_VERSION__: string;
+console.info(`[ShadeSpace] bundle version: ${typeof __BUILD_VERSION__ === "string" ? __BUILD_VERSION__ : "unknown"}`);
+
 preloadCurrencyMap();
 
 const container = document.getElementById("SHADE_SPACE");
