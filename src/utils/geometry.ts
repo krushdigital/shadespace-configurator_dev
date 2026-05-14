@@ -31,21 +31,23 @@ export function convertUnitToMm(value: number, unit: 'metric' | 'imperial'): num
 export function formatMeasurement(mm: number, unit: 'metric' | 'imperial', displayRawInches: boolean = false): string {
   if (unit === 'imperial') {
     const inches = mm * MM_TO_INCHES;
-    
+
     // If displayRawInches is true, show only inches (for typo suggestions)
     if (displayRawInches) {
       return `${inches.toFixed(1)}"`;
     }
-    
-    // Otherwise, show feet and inches as before
+
+    let imperial: string;
     if (inches >= 12) {
       const feet = Math.floor(inches / 12);
       const remainingInches = inches % 12;
-      return parseFloat(remainingInches.toFixed(1)) > 0
-        ? `${feet}'${remainingInches.toFixed(1)}"` 
+      imperial = parseFloat(remainingInches.toFixed(1)) > 0
+        ? `${feet}'${remainingInches.toFixed(1)}"`
         : `${feet}'`;
+    } else {
+      imperial = `${inches.toFixed(1)}"`;
     }
-    return `${inches.toFixed(1)}"`;
+    return `${imperial} (${Math.round(mm)}mm)`;
   }
   return `${Math.round(mm)}mm`;
 }
@@ -82,7 +84,9 @@ export function formatArea(mm2: number, unit: 'metric' | 'imperial'): string {
   if (unit === 'imperial') {
     const sqInches = mm2 * (MM_TO_INCHES * MM_TO_INCHES);
     const sqFeet = sqInches / 144;
-    return sqFeet >= 1 ? `${sqFeet.toFixed(1)} ft²` : `${Math.round(sqInches)} in²`;
+    const m2 = mm2 / 1000000;
+    const imperial = sqFeet >= 1 ? `${sqFeet.toFixed(1)} ft²` : `${Math.round(sqInches)} in²`;
+    return `${imperial} (${m2.toFixed(2)} m²)`;
   }
   const m2 = mm2 / 1000000;
   return `${m2.toFixed(2)} m²`;

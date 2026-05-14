@@ -66,12 +66,15 @@ export function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'
   if (!mm || !isFinite(mm)) return 'Not provided';
   if (unit === 'imperial') {
     const inches = mm * 0.0393701;
+    let imperial: string;
     if (inches >= 12) {
       const feet = Math.floor(inches / 12);
       const rem = inches % 12;
-      return parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
+      imperial = parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
+    } else {
+      imperial = `${inches.toFixed(1)}"`;
     }
-    return `${inches.toFixed(1)}"`;
+    return `${imperial} (${Math.round(mm)}mm)`;
   }
   return `${Math.round(mm)}mm`;
 }
@@ -79,7 +82,8 @@ export function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'
 export function formatAreaPreview(mm2: number, unit: 'metric' | 'imperial'): string {
   if (unit === 'imperial') {
     const sqft = mm2 * (0.0393701 * 0.0393701) / 144;
-    return `${sqft.toFixed(1)} ft\u00b2`;
+    const m2 = mm2 / 1000000;
+    return `${sqft.toFixed(1)} ft\u00b2 (${m2.toFixed(2)} m\u00b2)`;
   }
   return `${(mm2 / 1000000).toFixed(2)} m\u00b2`;
 }
