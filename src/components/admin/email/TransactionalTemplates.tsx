@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card } from '../../ui/Card';
 import { Button } from '../../ui/Button';
+import { ToggleSwitch } from '../../ui/ToggleSwitch';
 import { supabase } from '../../../lib/supabase';
 import { getAdminAuthHeaders } from '../../../utils/adminAuth';
 import type { EmailTemplate, EmailSender } from '../EmailStudio';
@@ -332,24 +333,30 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
         <div className="space-y-3">
           {templates.map(t => (
-            <button
+            <div
               key={t.id}
               onClick={() => { setSelected(t); setDraft(t); }}
-              className={`w-full text-left rounded-lg border p-3 transition-colors ${selected?.id === t.id ? 'border-lime-500 bg-lime-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+              className={`w-full text-left rounded-lg border p-3 transition-colors cursor-pointer ${selected?.id === t.id ? 'border-lime-500 bg-lime-50' : 'border-gray-200 bg-white hover:border-gray-300'}`}
             >
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center justify-between gap-2">
                 <div className="font-semibold text-sm text-gray-900 truncate">{t.name}</div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${t.is_active === false ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <span className={`text-[11px] font-medium ${t.is_active === false ? 'text-gray-500' : 'text-green-700'}`}>
                     {t.is_active === false ? 'Paused' : 'Active'}
                   </span>
+                  <ToggleSwitch
+                    enabled={t.is_active !== false}
+                    onChange={() => togglePaused(t)}
+                    onLabel="Active"
+                    offLabel="Paused"
+                  />
                 </div>
               </div>
               <div className="text-[11px] text-gray-500 mt-1 truncate" title={t.subject}>{t.subject}</div>
               {selected?.id === t.id && lastSent && (
                 <div className="text-[11px] text-gray-500 mt-1">Last sent: {new Date(lastSent).toLocaleString()}</div>
               )}
-            </button>
+            </div>
           ))}
           {templates.length === 0 && (
             <div className="text-sm text-gray-500 p-3">No transactional templates configured.</div>
