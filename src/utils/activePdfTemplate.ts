@@ -20,6 +20,7 @@ export interface ActivePdfTemplate {
   layout: {
     density: 'comfortable' | 'compact' | 'ultra';
     columns: 1 | 2;
+    columnGap?: number;
   };
 }
 
@@ -90,6 +91,7 @@ export async function loadActivePdfTemplate(force = false): Promise<ActivePdfTem
       layout: {
         density: (layout.density as ActivePdfTemplate['layout']['density']) || DEFAULT_TEMPLATE.layout.density,
         columns: (layout.columns === 2 ? 2 : 1) as 1 | 2,
+        columnGap: typeof layout.columnGap === 'number' ? layout.columnGap : undefined,
       },
     };
     cached = { value, ts: Date.now() };

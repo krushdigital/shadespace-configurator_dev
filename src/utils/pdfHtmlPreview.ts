@@ -136,9 +136,6 @@ function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveDat
     const h = Number((block.props || {}).height) || 16;
     attrs.push(`data-spacer-height="${h}"`);
   }
-  if (block.type === 'resumeButton') {
-    attrs.push('data-force-break-after="1"');
-  }
   return `<div ${attrs.join(' ')}>${renderBlockHtml(block, cfg, live)}</div>`;
 }
 

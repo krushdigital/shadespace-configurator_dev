@@ -41,6 +41,7 @@ export type PdfDensity = 'comfortable' | 'compact' | 'ultra';
 export interface PdfLayoutOptions {
   density?: PdfDensity;
   columns?: 1 | 2;
+  columnGap?: number;
   baseFontPt?: number;
   rowGapMm?: number;
   sectionGapMm?: number;
@@ -92,6 +93,7 @@ function buildTemplateConfig(chrome: PdfTemplateChrome, layout: PdfLayoutOptions
     layout: {
       density: layout?.density || 'comfortable',
       columns: layout?.columns === 2 ? 2 : 1,
+      columnGap: layout?.columnGap,
     },
   };
 }
