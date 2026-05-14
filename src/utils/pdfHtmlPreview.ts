@@ -124,7 +124,21 @@ function densityForBlock(block: PdfBlock, cfg: PdfTemplateConfig): 'comfortable'
 
 function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveData | null): string {
   const d = densityForBlock(block, cfg);
-  return `<div class="block-wrap density-${d}">${renderBlockHtml(block, cfg, live)}</div>`;
+  const attrs: string[] = [
+    `class="block-wrap density-${d}"`,
+    `data-block-type="${escapeHtml(block.type)}"`,
+  ];
+  if (block.type === 'pageBreak') {
+    attrs.push('data-pagebreak="1"');
+  }
+  if (block.type === 'spacer') {
+    const h = Number((block.props || {}).height) || 16;
+    attrs.push(`data-spacer-height="${h}"`);
+  }
+  if (block.type === 'resumeButton') {
+    attrs.push('data-force-break-after="1"');
+  }
+  return `<div ${attrs.join(' ')}>${renderBlockHtml(block, cfg, live)}</div>`;
 }
 
 function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: PreviewLiveData | null): string {

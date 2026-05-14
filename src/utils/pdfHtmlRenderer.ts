@@ -78,9 +78,30 @@ export async function renderQuotePdfFromHtml(
 
     startNewPage();
 
-    for (const el of blockEls) {
-      if (el.dataset.pagebreak === '1') {
-        cursorMm = contentHeightMm;
+    const isPageBreakEl = (el: HTMLElement): boolean => {
+      if (el.dataset.pagebreak === '1') return true;
+      if (el.dataset.blockType === 'pageBreak') return true;
+      if (el.querySelector?.('[data-pagebreak="1"]')) return true;
+      return false;
+    };
+
+    for (let i = 0; i < blockEls.length; i++) {
+      const el = blockEls[i];
+
+      if (isPageBreakEl(el)) {
+        if (cursorMm > 0) cursorMm = contentHeightMm;
+        continue;
+      }
+
+      if (el.dataset.blockType === 'spacer') {
+        const heightPx = Number(el.dataset.spacerHeight) || 0;
+        const heightMm = heightPx / PX_PER_MM;
+        if (heightMm <= 0) continue;
+        if (cursorMm + heightMm > contentHeightMm + 0.01) {
+          cursorMm = contentHeightMm;
+        } else {
+          cursorMm += heightMm;
+        }
         continue;
       }
 
@@ -140,6 +161,10 @@ export async function renderQuotePdfFromHtml(
         'FAST',
       );
       cursorMm += blockHeightMm;
+
+      if (el.dataset.forceBreakAfter === '1') {
+        cursorMm = contentHeightMm;
+      }
     }
 
     const total = pdf.getNumberOfPages();
