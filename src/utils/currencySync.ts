@@ -165,14 +165,8 @@ export async function alignStorefrontToCurrency(
   const currentHost = getCurrentHost();
   const targetHost = target.preferred_domain;
 
-  // If the URL contains _ab=0&_fd=0, the user was explicitly sent to this domain
-  // (e.g., from an email link). Skip cross-domain redirect to avoid a loop with
-  // Shopify's geo-IP redirect sending them back here.
-  const currentParams = new URLSearchParams(window.location.search);
-  const arrivedViaDirectLink = currentParams.get('_ab') === '0' && currentParams.get('_fd') === '0';
-
   // Cross-domain redirect case
-  if (targetHost && !domainsEqual(currentHost, targetHost) && !arrivedViaDirectLink) {
+  if (targetHost && !domainsEqual(currentHost, targetHost)) {
     if (hasRedirectFailed(opts.quoteId)) {
       return { status: 'unsupported', quoteCurrency: quoteCur };
     }

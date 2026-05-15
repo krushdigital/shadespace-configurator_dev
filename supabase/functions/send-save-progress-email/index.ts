@@ -114,22 +114,6 @@ Deno.serve(async (req: Request) => {
           success: emailSent,
         });
 
-        if (!emailSent) {
-          try {
-            const reason = sendJson?.reason || sendJson?.error || `HTTP ${sendRes.status}`;
-            await supabase.from("email_send_failures").insert({
-              recipient_email: email,
-              quote_reference: quoteReference || "",
-              quote_id: resolvedQuoteId || null,
-              template_key: "configuration_saved",
-              failure_reason: typeof reason === "string" ? reason : JSON.stringify(reason),
-              edge_function: "send-save-progress-email",
-            });
-          } catch (e) {
-            console.error("Failed to log email_send_failure:", e);
-          }
-        }
-
         return new Response(
           JSON.stringify({
             success: true,
