@@ -747,48 +747,47 @@ export function ShadeConfigurator() {
       if (data.success) {
         const emailDomain = email.split('@')[1] || 'unknown';
 
-        if (data.emailSent !== false) {
-          analytics.emailSummaryWithShopify({
+        analytics.emailSummaryWithShopify({
+          email_domain: emailDomain,
+          includes_pdf: !!pdfBase64,
+          includes_canvas: !!canvasImageUrl,
+          total_price: calculations.totalPrice,
+          currency: config.currency,
+          shopify_customer_created: data.shopifyCustomerCreated || false,
+          shopify_customer_id: data.shopifyCustomerId,
+        });
+
+        analytics.configEmailWithPdfSent({
+          email_domain: emailDomain,
+          includes_pdf: !!pdfBase64,
+          includes_canvas: !!canvasImageUrl,
+          total_price: calculations.totalPrice,
+          currency: config.currency,
+          quote_reference: quoteReference || '',
+          shopify_customer_created: data.shopifyCustomerCreated || false,
+          shopify_customer_id: data.shopifyCustomerId,
+        });
+
+        const quoteParams = getQuoteFromUrl();
+        eventTrackers.emailSummary(
+          quoteReference || (quoteParams?.id || null),
+          email,
+          calculations.totalPrice,
+          config.currency,
+          true
+        );
+
+        if (data.shopifyCustomerCreated && data.shopifyCustomerId) {
+          analytics.shopifyCustomerCreated({
+            customer_id: data.shopifyCustomerId,
             email_domain: emailDomain,
-            includes_pdf: !!pdfBase64,
-            includes_canvas: !!canvasImageUrl,
-            total_price: calculations.totalPrice,
+            source: 'email_pdf_quote',
+            tags: ['quote_saved', 'email_pdf_quote_requested'],
+            total_quote_value: calculations.totalPrice,
             currency: config.currency,
-            shopify_customer_created: data.shopifyCustomerCreated || false,
-            shopify_customer_id: data.shopifyCustomerId,
           });
-
-          analytics.configEmailWithPdfSent({
-            email_domain: emailDomain,
-            includes_pdf: !!pdfBase64,
-            includes_canvas: !!canvasImageUrl,
-            total_price: calculations.totalPrice,
-            currency: config.currency,
-            quote_reference: quoteReference || '',
-            shopify_customer_created: data.shopifyCustomerCreated || false,
-            shopify_customer_id: data.shopifyCustomerId,
-          });
-
-          const quoteParams = getQuoteFromUrl();
-          eventTrackers.emailSummary(
-            quoteReference || (quoteParams?.id || null),
-            email,
-            calculations.totalPrice,
-            config.currency,
-            true
-          );
-
-          if (data.shopifyCustomerCreated && data.shopifyCustomerId) {
-            analytics.shopifyCustomerCreated({
-              customer_id: data.shopifyCustomerId,
-              email_domain: emailDomain,
-              source: 'email_pdf_quote',
-              tags: ['quote_saved', 'email_pdf_quote_requested'],
-              total_quote_value: calculations.totalPrice,
-              currency: config.currency,
-            });
-          }
         }
+
 
         return true;
       } else {

@@ -165,8 +165,8 @@ if (saveMethod === 'email' && email) {
           email: email,
           quoteReference: result.reference,
           quoteUrl: quoteUrl,
-          expiresAt: result.pricingLockedUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          pricingLockedUntil: result.pricingLockedUntil || null,
+          expiresAt: result.pricingLockedUntil,
+          pricingLockedUntil: result.pricingLockedUntil,
         }),
       }
     );

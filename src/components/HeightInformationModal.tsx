@@ -34,13 +34,6 @@ export function HeightInformationModal({
 
   useBodyScrollLock(isOpen);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
@@ -74,6 +67,12 @@ export function HeightInformationModal({
   };
 
   const allHeightsEntered = localHeights.slice(0, config.corners).every(h => h && h > 0);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleCancel(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overscroll-contain" onClick={handleCancel}>

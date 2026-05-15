@@ -13,26 +13,9 @@ const CONFIGURATOR_URL = Deno.env.get("CONFIGURATOR_URL") || `${BASE_URL}/pages/
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const CURRENCY_DOMAIN_MAP: Record<string, string> = {
-  AUD: "shadespace.com.au",
-  NZD: "shadespace.com.au",
-  USD: "shadespace.com",
-  CAD: "shadespace.com",
-  GBP: "shadespace.com",
-  EUR: "shadespace.com",
-};
-
-function buildResumeUrl(id?: string, token?: string, currency?: string): string | null {
+function buildResumeUrl(id?: string, token?: string): string | null {
   if (!id || !token) return null;
-  const domain = (currency && CURRENCY_DOMAIN_MAP[currency.toUpperCase()]) || new URL(BASE_URL).hostname;
-  const base = `https://${domain}/pages/shade-sail-configurator`;
-  const url = new URL(base);
-  url.searchParams.set("quote", id);
-  url.searchParams.set("token", token);
-  url.searchParams.set("_ab", "0");
-  url.searchParams.set("_fd", "0");
-  const fragment = `quote=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`;
-  return `${url.toString()}#${fragment}`;
+  return `${CONFIGURATOR_URL}?quote=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`;
 }
 
 function escapeHtml(s: string) {
@@ -148,10 +131,10 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
   const firstName = quote?.customer_first_name || (quote?.customer_email?.split("@")[0]) || "there";
   const lastName = quote?.customer_last_name || "";
   const customerName = [quote?.customer_first_name, lastName].filter(Boolean).join(" ") || firstName;
-  const currency = cfg?.currency || "";
-  const resumeUrl = buildResumeUrl(quote?.id, quote?.access_token, currency) || extra.resume_url || extra.quote_url || CONFIGURATOR_URL;
+  const resumeUrl = buildResumeUrl(quote?.id, quote?.access_token) || extra.resume_url || extra.quote_url || CONFIGURATOR_URL;
   const labels = ["Fabric & Colour", "Style", "Corners", "Measurement Options", "Dimensions", "Heights & Anchor Points", "Review"];
 
+  const currency = cfg?.currency || "";
   const totalPrice = calc?.totalPrice;
   const edgeType = cfg?.edgeType || cfg?.style || "";
   const fabricType = cfg?.fabricType || "";
@@ -278,7 +261,7 @@ Deno.serve(async (req: Request) => {
     if (quoteId) {
       const { data } = await supabase.from("saved_quotes").select("*").eq("id", quoteId).maybeSingle();
       quote = data;
-      if (quote?.is_excluded && !testMode && !template?.transactional) {
+      if (quote?.is_excluded && !testMode) {
         return new Response(JSON.stringify({ skipped: true, reason: "excluded" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (!quote?.resolved_diagram_url) {
