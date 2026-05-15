@@ -120,6 +120,13 @@ export function UnifiedSaveModal({
 
   useBodyScrollLock(isOpen);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const isFormValid = () => {
@@ -462,13 +469,6 @@ export function UnifiedSaveModal({
       day: 'numeric',
     });
   };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overscroll-contain" onClick={handleClose}>
