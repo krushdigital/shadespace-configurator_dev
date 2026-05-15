@@ -348,6 +348,21 @@ Deno.serve(async (req: Request) => {
       console.error("Failed to track config email event:", trackError);
     }
 
+    if (!emailSent) {
+      try {
+        await supabase.from("email_send_failures").insert({
+          recipient_email: email,
+          quote_reference: reference,
+          quote_id: resolvedQuoteId || null,
+          template_key: "pdf_quote_delivery",
+          failure_reason: errMessage || "unknown",
+          edge_function: "send-config-email",
+        });
+      } catch (e) {
+        console.error("Failed to log email_send_failure:", e);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
