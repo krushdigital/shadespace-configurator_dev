@@ -427,8 +427,10 @@ Deno.serve(async (req: Request) => {
       subject,
       html,
       text,
-      headers: { "List-Unsubscribe": `<${unsubUrl}>` },
     };
+    if (!template.transactional) {
+      resendPayload.headers = { "List-Unsubscribe": `<${unsubUrl}>` };
+    }
     if (resolvedAttachments.length > 0) {
       resendPayload.attachments = resolvedAttachments.map(({ filename, content }) => ({ filename, content }));
     }
