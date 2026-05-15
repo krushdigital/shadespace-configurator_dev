@@ -278,9 +278,6 @@ Deno.serve(async (req: Request) => {
     if (quoteId) {
       const { data } = await supabase.from("saved_quotes").select("*").eq("id", quoteId).maybeSingle();
       quote = data;
-      if (quote?.is_excluded && !testMode && !template?.transactional) {
-        return new Response(JSON.stringify({ skipped: true, reason: "excluded" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
       if (!quote?.resolved_diagram_url) {
         if (quote?.diagram_public_url) {
           quote.resolved_diagram_url = quote.diagram_public_url;

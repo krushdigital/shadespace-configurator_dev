@@ -61,7 +61,6 @@ Deno.serve(async (req: Request) => {
 
       if (a.trigger_type === "quote_saved" || a.trigger_type === "quote_reached_step") {
         let q = supabase.from("saved_quotes").select("*").not("customer_email", "is", null);
-        if (a.respect_exclusions) q = q.eq("is_excluded", false);
         if (cfg.step !== undefined) q = q.eq("current_step", cfg.step);
         if (cfg.status) q = q.eq("status", cfg.status);
         const cutoff = new Date(Date.now() - a.delay_minutes * 60000).toISOString();
@@ -79,7 +78,6 @@ Deno.serve(async (req: Request) => {
         const quoteIds = (events || []).map((e: any) => e.quote_id).filter(Boolean);
         if (quoteIds.length) {
           let q = supabase.from("saved_quotes").select("*").in("id", quoteIds);
-          if (a.respect_exclusions) q = q.eq("is_excluded", false);
           const { data } = await q;
           candidates = data || [];
         }
