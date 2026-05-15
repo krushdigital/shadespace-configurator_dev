@@ -37,6 +37,12 @@ export const EmailAnalytics: React.FC<Props> = ({ dateRange, timezone = 'UTC' })
   const [senders, setSenders] = useState<any[]>([]);
   const [preview, setPreview] = useState<QueueRow | null>(null);
   useBodyScrollLock(!!preview);
+  useEffect(() => {
+    if (!preview) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setPreview(null); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [preview]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -172,13 +178,17 @@ export const EmailAnalytics: React.FC<Props> = ({ dateRange, timezone = 'UTC' })
 
       {preview && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setPreview(null)}>
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto overscroll-contain p-5" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
               <h3 className="font-bold text-gray-900">{preview.subject_snapshot}</h3>
-              <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-700">x</button>
+              <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
-            <div className="text-xs text-gray-500 mb-3">To: {preview.recipient_email}</div>
-            <div dangerouslySetInnerHTML={{ __html: preview.html_snapshot || '' }} />
+            <div className="flex-1 overflow-y-auto px-5 pb-5">
+              <div className="text-xs text-gray-500 mb-3">To: {preview.recipient_email}</div>
+              <div dangerouslySetInnerHTML={{ __html: preview.html_snapshot || '' }} />
+            </div>
           </div>
         </div>
       )}

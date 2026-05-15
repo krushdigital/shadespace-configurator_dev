@@ -60,6 +60,14 @@ export function PriceSummaryDisplay({
     : [];
   const packImage = HARDWARE_PACK_IMAGES[config.corners];
 
+  const hardwareMode =
+    config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+  const hardwareOnlyDisplay = calculations.hardwareBreakdown?.hardwareOnlyLivePrice
+    ?? (calculations.hardwareBreakdown?.hardwareOnlyPriceNzd || 0);
+  const sailOnlyDisplay = hardwareMode !== 'none'
+    ? calculations.totalPrice - Math.round(hardwareOnlyDisplay)
+    : calculations.totalPrice;
+
   return (
     <div className={`bg-white border border-slate-200 rounded-xl shadow-lg p-6 ${
       isMobile ? 'lg:bg-white bg-gradient-to-br from-[#307C31]/5 to-[#BFF102]/5' : ''
@@ -117,6 +125,26 @@ export function PriceSummaryDisplay({
                 </a>
               </p>
             </div>
+            {calculations.totalPrice > 0 && (
+              <div className={`mt-4 pt-3 border-t space-y-1.5 ${
+                isMobile ? 'border-white/20' : 'border-slate-200'
+              }`}>
+                <div className="flex justify-between text-sm">
+                  <span className={isMobile ? 'text-white/70' : 'text-slate-600'}>Shade sail:</span>
+                  <span className={`font-semibold ${isMobile ? 'text-white' : 'text-slate-900'}`}>
+                    {formatCurrency(sailOnlyDisplay, config.currency)}
+                  </span>
+                </div>
+                {hardwareMode !== 'none' && hardwareOnlyDisplay > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className={isMobile ? 'text-white/70' : 'text-slate-600'}>Hardware:</span>
+                    <span className={`font-semibold ${isMobile ? 'text-white' : 'text-slate-900'}`}>
+                      {formatCurrency(Math.round(hardwareOnlyDisplay), config.currency)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="space-y-4 border-t border-slate-200 pt-4">

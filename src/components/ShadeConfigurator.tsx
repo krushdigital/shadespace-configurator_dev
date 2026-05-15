@@ -1329,22 +1329,26 @@ export function ShadeConfigurator() {
         metafieldProperties[key] = edge.node.value;
       });
 
-      metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Not Included';
       metafieldProperties['Fabric Material'] = orderData.selectedFabric?.label || '';
       metafieldProperties['Fabric Color'] = orderData.selectedColor?.name || '';
-      metafieldProperties['Fabric Certification Type'] = orderData.Fabric_Type || orderData.selectedFabric?.label || '';
       metafieldProperties['Edge Type'] = orderData.Edge_Type || 'Cabled Edge';
-      
-      if (orderData.Edge_Type === 'Webbing Reinforced') {
-        metafieldProperties['Webbing Edge Width'] = orderData.Webbing_Edge_Width || 'N/A';
-      } else {
-        metafieldProperties['Wire Thickness'] = orderData.Wire_Thickness || '0.16"';
+
+      if (orderData.Edge_Type !== 'Webbing Reinforced') {
+        metafieldProperties['Wire Thickness'] = orderData.Wire_Thickness || 'N/A';
       }
-      
+
       metafieldProperties['Corners'] = orderData.corners?.toString() || '4';
-      metafieldProperties['Area'] = orderData.Area || '0 in²';
-      metafieldProperties['Perimeter'] = orderData.Perimeter || '40\'';
-      metafieldProperties['Hardware Included'] = orderData.hardware_included || 'Included';
+      metafieldProperties['Area'] = orderData.Area || '0 m²';
+      metafieldProperties['Perimeter'] = orderData.Perimeter || '';
+
+      {
+        const mode = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+        if (mode === 'standard') {
+          metafieldProperties['Hardware Included'] = 'Included';
+        } else if (mode === 'none') {
+          metafieldProperties['Hardware Included'] = 'Not Included';
+        }
+      }
 
       Object.entries(cartEdgeMeasurements).forEach(([key, value]) => {
         metafieldProperties[`Edge ${key}`] = value;
@@ -1353,13 +1357,10 @@ export function ShadeConfigurator() {
         metafieldProperties[`Diagonal ${key}`] = value;
       });
       Object.entries(cartAnchorMeasurements).forEach(([key, value]) => {
-        metafieldProperties[`Anchor Height ${key}`] = value;
-      });
-      Object.entries(cartFixingHeights).forEach(([key, value]) => {
-        metafieldProperties[key] = value;
-      });
-      Object.entries(cartFixingTypes).forEach(([key, value]) => {
-        metafieldProperties[key] = value;
+        const cornerIndex = key.charCodeAt(0) - 65;
+        const fixingType = orderData.fixingTypes?.[cornerIndex];
+        const typeLabel = fixingType ? fixingType.charAt(0).toUpperCase() + fixingType.slice(1) : 'Not specified';
+        metafieldProperties[`Anchor Height ${key}`] = `${value} (${typeLabel})`;
       });
 
         // ============ CRITICAL FIX: Add PDF URL and Fabrication Type as line item properties ============
@@ -1371,9 +1372,6 @@ export function ShadeConfigurator() {
             metafieldProperties['_quote_pdf_url'] = pdfUrlString;
             metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteReference || 'custom'}.pdf`;
             metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
-
-            // Also add a customer-facing property
-            metafieldProperties['Technical Documentation'] = 'Included (PDF)';
 
             console.log('✅ Added PDF URL to line item properties:', pdfUrlString);
           } else {
@@ -1422,12 +1420,11 @@ export function ShadeConfigurator() {
       metafieldProperties['_fabrication_type'] = fabricationTypeValue;
       metafieldProperties['Fabrication Method'] = config.measurementOption === 'adjust'
         ? 'Custom dimensions provided by customer'
-        : 'Fabricated to fit customer\'s space';
+        : 'Manufactured to Fit my Space';
       console.log('✅ Added fabrication type:', fabricationTypeValue);
 
       if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http')) {
         metafieldProperties['_technical_drawing_url'] = technicalDrawingUrl;
-        metafieldProperties['Technical Drawing'] = 'Included';
         console.log('✅ Added technical drawing URL:', technicalDrawingUrl);
       }
 

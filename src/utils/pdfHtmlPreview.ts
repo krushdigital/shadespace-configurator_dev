@@ -34,6 +34,7 @@ export interface PdfTemplateConfig {
   layout?: {
     density: 'comfortable' | 'compact' | 'ultra';
     columns: 1 | 2;
+    columnGap?: number;
   };
 }
 
@@ -65,12 +66,15 @@ export function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'
   if (!mm || !isFinite(mm)) return 'Not provided';
   if (unit === 'imperial') {
     const inches = mm * 0.0393701;
+    let imperial: string;
     if (inches >= 12) {
       const feet = Math.floor(inches / 12);
       const rem = inches % 12;
-      return parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
+      imperial = parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
+    } else {
+      imperial = `${inches.toFixed(1)}"`;
     }
-    return `${inches.toFixed(1)}"`;
+    return `${imperial} (${Math.round(mm)}mm)`;
   }
   return `${Math.round(mm)}mm`;
 }
@@ -78,7 +82,8 @@ export function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'
 export function formatAreaPreview(mm2: number, unit: 'metric' | 'imperial'): string {
   if (unit === 'imperial') {
     const sqft = mm2 * (0.0393701 * 0.0393701) / 144;
-    return `${sqft.toFixed(1)} ft\u00b2`;
+    const m2 = mm2 / 1000000;
+    return `${sqft.toFixed(1)} ft\u00b2 (${m2.toFixed(2)} m\u00b2)`;
   }
   return `${(mm2 / 1000000).toFixed(2)} m\u00b2`;
 }
@@ -134,9 +139,6 @@ function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveDat
   if (block.type === 'spacer') {
     const h = Number((block.props || {}).height) || 16;
     attrs.push(`data-spacer-height="${h}"`);
-  }
-  if (block.type === 'resumeButton') {
-    attrs.push('data-force-break-after="1"');
   }
   return `<div ${attrs.join(' ')}>${renderBlockHtml(block, cfg, live)}</div>`;
 }
@@ -339,8 +341,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       const label = (p.label as string) || 'Open My Saved Quote';
       const url = live?.id && live?.access_token
         ? `https://shadespace.com/pages/shade-sail-configurator?quote=${live.id}&token=${encodeURIComponent(live.access_token)}`
-        : null;
-      return `<div style="margin:16px 0;text-align:center;padding:20px;border-radius:10px;background:${cfg.brand.primaryColor};color:#fff;">
+        : (live as Record<string, unknown> | null)?.resumeUrl as string | null ?? null;
+      return `<div data-link-url="${url ? escapeHtml(url) : ''}" style="margin:16px 0;text-align:center;padding:20px;border-radius:10px;background:${cfg.brand.primaryColor};color:#fff;">
         <div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
         <div style="font-size:12px;opacity:.85;margin-bottom:12px;">Pick up exactly where you left off and add this configuration to your cart.</div>
         <span style="display:inline-block;background:${cfg.brand.accentColor};color:${cfg.brand.primaryColor};padding:10px 24px;border-radius:6px;font-weight:700;font-size:13px;">${escapeHtml(label)}</span>
@@ -411,7 +413,7 @@ export function buildQuotePreviewHtml(
     .guarantee { margin-top:${basePreset.sectionMargin}px; padding:${Math.max(10, basePreset.rowPad * 2 + 6)}px; border-radius:12px; background:linear-gradient(135deg, #F3FFE3 0%, ${b.accentColor} 20%); border:2px solid ${b.accentDark}; color:${b.primaryColor}; font-size:${basePreset.row}px; }
     .footer { margin-top:24px; text-align:center; font-size:${basePreset.small}px; color:${b.mutedColor}; }
     hr { border:none; border-top:1px solid ${b.mutedColor}; margin:8px 0; opacity:0.4; }
-    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:${basePreset.twoColGap}px; align-items:start; margin-top:4px; }
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:${cfg.layout?.columnGap ?? basePreset.twoColGap}px; align-items:start; margin-top:4px; }
     .two-col > .col { min-width:0; overflow-wrap:anywhere; }
     .two-col h2 { margin-top:8px; }
     .block-wrap { display:block; }

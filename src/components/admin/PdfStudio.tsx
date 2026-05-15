@@ -79,6 +79,7 @@ function mergeConfig(input: Partial<PdfTemplateConfig> | null | undefined): PdfT
     layout: {
       density: (layoutInput.density as PdfDensity) || DEFAULT_CONFIG.layout!.density,
       columns: (layoutInput.columns === 2 ? 2 : 1) as 1 | 2,
+      columnGap: typeof layoutInput.columnGap === 'number' ? layoutInput.columnGap : undefined,
     },
   };
 }
@@ -299,6 +300,7 @@ export const PdfStudio: React.FC = () => {
           layout: {
             density: config.layout?.density,
             columns: config.layout?.columns,
+            columnGap: config.layout?.columnGap,
           },
           chrome: {
             brand: config.brand,
@@ -336,6 +338,7 @@ export const PdfStudio: React.FC = () => {
     previewMode,
     config.layout?.density,
     config.layout?.columns,
+    config.layout?.columnGap,
     liveData?.id,
     blocks,
     config.brand,
@@ -597,6 +600,20 @@ export const PdfStudio: React.FC = () => {
                 ))}
               </div>
               <p className="text-[11px] text-gray-500 mt-1">Two columns is applied to the Configuration Summary block to reduce vertical space.</p>
+              {(config.layout?.columns || 1) === 2 && (
+                <div className="mt-3">
+                  <label className="text-[11px] font-medium text-gray-600 block mb-1">Column gap (px)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    value={config.layout?.columnGap ?? 16}
+                    onChange={(e) => setConfig({ ...config, layout: { ...config.layout!, columnGap: Math.max(0, Math.min(60, parseInt(e.target.value) || 0)) } })}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-lime-400 focus:border-lime-400"
+                  />
+                  <p className="text-[11px] text-gray-400 mt-0.5">Space between the two columns in pixels.</p>
+                </div>
+              )}
             </Section>
             <Section title="Paper">
               <div className="flex gap-2">

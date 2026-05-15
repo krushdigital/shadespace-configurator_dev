@@ -93,6 +93,16 @@ export function DimensionsContent({
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
   const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
   const lastValidPointsRef = React.useRef(config.points);
+  const [activeEditField, setActiveEditField] = useState<string | null>(null);
+  const activeEditFieldRef = React.useRef<string | null>(null);
+  const pendingGeometryErrorRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    activeEditFieldRef.current = activeEditField;
+    if (activeEditField === null && pendingGeometryErrorRef.current) {
+      setGeometryWarnings({ general: pendingGeometryErrorRef.current });
+    }
+  }, [activeEditField]);
 
   const currencyInfo = getUserCurrencyInfo();
   const alternativeUnitName = config.unit ? getAlternativeUnitName(config.unit) : '';
@@ -132,6 +142,7 @@ export function DimensionsContent({
 
       // Clear geometry warnings immediately when user updates measurements
       setGeometryWarnings({});
+      pendingGeometryErrorRef.current = null;
 
       // Clear any existing errors/suggestions for this field while typing
       if (setValidationErrors && setTypoSuggestions) {
@@ -324,16 +335,19 @@ export function DimensionsContent({
 
         if (!validation.isValid) {
           // Geometry is invalid - preserve last valid shape and show warnings
-          console.log('Geometry validation failed - setting warning:', validation.errors[0]);
           const errorMessage = validation.errors[0] || 'Invalid measurements';
           const convertedError = convertErrorMessageUnits(errorMessage);
-          setGeometryWarnings({ general: convertedError });
+          pendingGeometryErrorRef.current = convertedError;
+          // Defer the visible warning until the user is no longer typing in any field
+          if (activeEditFieldRef.current === null) {
+            setGeometryWarnings({ general: convertedError });
+          }
           // Keep the last valid points - don't update
           return;
         }
 
         // Clear any previous geometry warnings
-        console.log('Geometry validation passed - clearing warnings');
+        pendingGeometryErrorRef.current = null;
         setGeometryWarnings({});
 
         // Attempt to reconstruct the polygon
@@ -653,8 +667,14 @@ export function DimensionsContent({
                            updateMeasurement(edgeKey, String(value));
                          }
                        }}
-                       onFocus={() => setHighlightedMeasurement(edgeKey)}
-                       onBlur={() => setHighlightedMeasurement(null)}
+                       onFocus={() => {
+                         setHighlightedMeasurement(edgeKey);
+                         setActiveEditField(edgeKey);
+                       }}
+                       onBlur={() => {
+                         setHighlightedMeasurement(null);
+                         setActiveEditField((curr) => (curr === edgeKey ? null : curr));
+                       }}
                        unit={config.unit}
                        className={`text-sm sm:text-base`}
                        isSuccess={isSuccess}
@@ -805,8 +825,14 @@ export function DimensionsContent({
                                   updateMeasurement(key, String(value));
                                 }
                               }}
-                              onFocus={() => setHighlightedMeasurement?.(key)}
-                              onBlur={() => setHighlightedMeasurement?.(null)}
+                              onFocus={() => {
+                                setHighlightedMeasurement?.(key);
+                                setActiveEditField(key);
+                              }}
+                              onBlur={() => {
+                                setHighlightedMeasurement?.(null);
+                                setActiveEditField((curr) => (curr === key ? null : curr));
+                              }}
                               unit={config.unit}
                               className={`text-sm sm:text-base`}
                               error={validationErrors[key]}

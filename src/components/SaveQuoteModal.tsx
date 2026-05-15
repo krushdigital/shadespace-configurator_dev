@@ -348,11 +348,24 @@ if (saveMethod === 'email' && email) {
     });
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [isOpen]);
+
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overscroll-contain">
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain">
-        <div className="p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overscroll-contain" onClick={handleClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-6 pt-5 pb-0 flex-shrink-0">
+          <div />
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" aria-label="Close">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-6 pb-2">
           {!savedQuote ? (
             <>
               <h3 className="text-2xl font-bold text-[#01312D] mb-2">
@@ -601,23 +614,25 @@ if (saveMethod === 'email' && email) {
                 )}
               </div>
 
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleClose}
-                className="w-full"
-              >
-                Done
-              </Button>
             </>
           )}
-
-          {!savedQuote && (
+        </div>
+        <div className="px-6 py-4 border-t border-gray-100 bg-white rounded-b-xl flex-shrink-0">
+          {savedQuote ? (
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleClose}
+              className="w-full"
+            >
+              Done
+            </Button>
+          ) : (
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClose}
-              className="w-full mt-4"
+              className="w-full"
             >
               Cancel
             </Button>

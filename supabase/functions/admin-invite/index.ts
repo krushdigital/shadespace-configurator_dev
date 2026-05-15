@@ -10,8 +10,8 @@ const corsHeaders = {
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
-const RESEND_FROM = Deno.env.get("RESEND_FROM_EMAIL") || "Shade Systems <hello@shadespace.com>";
-const APP_BASE = Deno.env.get("ADMIN_APP_BASE_URL") || Deno.env.get("EMAIL_APP_BASE_URL") || "https://shadespace.com/admin";
+const RESEND_FROM = Deno.env.get("RESEND_FROM_EMAIL") || "Shade Systems <sails@shadespace.com>";
+const APP_BASE = Deno.env.get("ADMIN_APP_BASE_URL") || "https://shadespace.com";
 
 function buildInviteHtml(opts: { inviterName: string; inviteeName: string; acceptUrl: string; role: string }) {
   const roleLabel = opts.role === "super_admin" ? "Super Admin" : "Admin";

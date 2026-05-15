@@ -66,6 +66,12 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
   const [recent, setRecent] = useState<RecentSend[]>([]);
   const [drawerSend, setDrawerSend] = useState<RecentSend | null>(null);
   useBodyScrollLock(!!drawerSend);
+  useEffect(() => {
+    if (!drawerSend) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setDrawerSend(null); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [drawerSend]);
 
   const [pdfTemplates, setPdfTemplates] = useState<PdfTemplateOption[]>([]);
   const [pauseAllBusy, setPauseAllBusy] = useState(false);
@@ -659,7 +665,9 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
                 <div className="text-sm font-semibold text-gray-900">{drawerSend.recipient_email}</div>
                 <div className="text-xs text-gray-500 mt-0.5">{new Date(drawerSend.sent_at || drawerSend.created_at).toLocaleString()}</div>
               </div>
-              <button onClick={() => setDrawerSend(null)} className="text-gray-500 hover:text-gray-700">&times;</button>
+              <button onClick={() => setDrawerSend(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
             <div className="p-4 space-y-3">
               <div className="text-xs text-gray-600">Subject: <strong>{drawerSend.subject_snapshot}</strong></div>

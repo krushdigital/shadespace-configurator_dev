@@ -18,6 +18,7 @@ import { HardwareCatalogManager } from '../components/admin/HardwareCatalogManag
 import { PdfStudio } from '../components/admin/PdfStudio';
 
 import type { AdminProfile } from '../hooks/useAdminProfile';
+import { useTabPermissions } from '../hooks/useTabPermissions';
 import { UserManagement } from '../components/admin/UserManagement';
 
 interface AdminDashboardProps {
@@ -38,6 +39,7 @@ const detectTimezone = (): string => {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profile }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const { isTabAllowed, permissions, refresh: refreshPermissions } = useTabPermissions();
   const [excludeInternal, setExcludeInternal] = useState(() => {
     try { return localStorage.getItem('admin_exclude_internal') === 'true'; } catch { return false; }
   });
@@ -53,7 +55,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
     try { localStorage.setItem('admin_exclude_internal', String(next)); } catch { /* noop */ }
   };
 
-  const tabs: { id: TabType; label: string }[] = [
+  const allTabs: { id: TabType; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'quotes', label: 'Saved Quotes' },
     { id: 'events', label: 'User Events' },
@@ -68,6 +70,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
     { id: 'team', label: 'User Management' },
     { id: 'exclusions', label: 'Exclusion Settings' },
   ];
+
+  const tabs = allTabs.filter(t => isTabAllowed(t.id, profile.role));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -199,7 +203,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
 
         {activeTab === 'pdf' && <PdfStudio />}
 
-        {activeTab === 'team' && <UserManagement currentProfile={profile} />}
+        {activeTab === 'team' && <UserManagement currentProfile={profile} tabPermissions={permissions} onPermissionsChange={refreshPermissions} />}
 
         {activeTab === 'exclusions' && <ExclusionManager />}
       </div>

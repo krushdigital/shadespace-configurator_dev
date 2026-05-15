@@ -66,6 +66,13 @@ export function HardwareSelectionModal({
 
   useBodyScrollLock(open);
 
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [open]);
+
   useLayoutEffect(() => {
     if (!hoverItem || !hoverAnchor) {
       setTooltipPos(null);

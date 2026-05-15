@@ -567,9 +567,11 @@ console.log('✌️result --->', result);
             'Not FR Certified' : selectedFabric?.label,
           Shade_Factor: selectedColor?.shadeFactor,
           Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
-          Wire_Thickness: config.unit === 'imperial' ?
-            calculations?.wireThickness !== undefined ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"` : 'N/A'
-            : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
+          Wire_Thickness: calculations?.wireThickness !== undefined
+            ? config.unit === 'imperial'
+              ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
+              : `${calculations.wireThickness}mm`
+            : 'N/A',
           Area: formatArea(calculations.area * 1000000, config.unit),
           Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
           createdAt: new Date().toISOString(),
@@ -922,6 +924,7 @@ console.log('✌️result --->', result);
           <div className="lg:col-span-4 space-y-4">
             {/* Hardware & Price Breakdown - Collapsible */}
             <AccordionItem
+              defaultOpen={!isMobile}
               trigger={
                 <span className="flex items-center gap-2 text-sm font-semibold">
                   <span>Hardware & Price Breakdown</span>
@@ -1107,6 +1110,7 @@ console.log('✌️result --->', result);
                 </AccordionItem>
               ) : (
                 <AccordionItem
+                  defaultOpen={true}
                   trigger={
                     <span className="flex items-center gap-2 text-sm font-semibold">
                       <span>Precise Measurements</span>
@@ -1204,6 +1208,7 @@ console.log('✌️result --->', result);
                   </AccordionItem>
                 ) : (
                   <AccordionItem
+                    defaultOpen={true}
                     trigger={
                       <span className="flex items-center gap-2 text-sm font-semibold">
                         <span>Anchor Point Heights</span>
