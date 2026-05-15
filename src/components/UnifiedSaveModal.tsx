@@ -120,6 +120,13 @@ export function UnifiedSaveModal({
 
   useBodyScrollLock(isOpen);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const isFormValid = () => {
@@ -201,8 +208,8 @@ export function UnifiedSaveModal({
                 quoteUrl,
                 quoteName: result.quoteName,
                 quoteId: result.id,
-                expiresAt: result.pricingLockedUntil,
-                pricingLockedUntil: result.pricingLockedUntil,
+                expiresAt: result.pricingLockedUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                pricingLockedUntil: result.pricingLockedUntil || null,
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
               }),
@@ -462,13 +469,6 @@ export function UnifiedSaveModal({
       day: 'numeric',
     });
   };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [isOpen]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overscroll-contain" onClick={handleClose}>

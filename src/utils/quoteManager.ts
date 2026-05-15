@@ -155,20 +155,39 @@ export async function updateQuoteStatus(
 }
 
 /**
- * Generate a shareable quote URL with access token
+ * Generate a shareable quote URL with access token.
+ * Includes _ab=0&_fd=0 to suppress Shopify geo-IP redirects and a hash
+ * fragment fallback so params survive any server-side redirect that strips query strings.
  */
 export function generateQuoteUrl(quoteId: string, accessToken: string): string {
   const baseUrl = window.location.origin;
-  return `${baseUrl}${window.location.pathname}?quote=${quoteId}&token=${encodeURIComponent(accessToken)}`;
+  const url = new URL(`${baseUrl}${window.location.pathname}`);
+  url.searchParams.set('quote', quoteId);
+  url.searchParams.set('token', accessToken);
+  url.searchParams.set('_ab', '0');
+  url.searchParams.set('_fd', '0');
+  const fragment = `quote=${encodeURIComponent(quoteId)}&token=${encodeURIComponent(accessToken)}`;
+  return `${url.toString()}#${fragment}`;
 }
 
 /**
- * Get quote ID and token from URL if present
+ * Get quote ID and token from URL if present.
+ * Checks query params first, then falls back to the hash fragment
+ * (which survives Shopify geo-IP redirects that strip query strings).
  */
 export function getQuoteFromUrl(): { id: string; token: string } | null {
   const urlParams = new URLSearchParams(window.location.search);
-  const id = urlParams.get('quote');
-  const token = urlParams.get('token');
+  let id = urlParams.get('quote');
+  let token = urlParams.get('token');
+
+  if (!id || !token) {
+    const hash = window.location.hash?.replace(/^#/, '');
+    if (hash) {
+      const hashParams = new URLSearchParams(hash);
+      id = hashParams.get('quote');
+      token = hashParams.get('token');
+    }
+  }
 
   if (!id || !token) {
     return null;
