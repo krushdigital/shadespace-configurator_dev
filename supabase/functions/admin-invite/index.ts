@@ -11,28 +11,28 @@ const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
 const RESEND_FROM = Deno.env.get("RESEND_FROM_EMAIL") || "Shade Systems <sails@shadespace.com>";
-const APP_BASE = Deno.env.get("ADMIN_APP_BASE_URL") || "https://shadespace.com";
+const ADMIN_URL = "https://shadespace.com/pages/shade-sail-configurator/?admin=true";
 
-function buildInviteHtml(opts: { inviterName: string; inviteeName: string; acceptUrl: string; role: string }) {
+function buildInviteHtml(opts: { inviterName: string; inviteeName: string; role: string }) {
   const roleLabel = opts.role === "super_admin" ? "Super Admin" : "Admin";
   return `<!doctype html><html><body style="margin:0;background:#f6f7f8;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#111">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px"><tr><td align="center">
     <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">
       <tr><td style="padding:28px 32px;background:#0f3d2e;color:#fff">
         <div style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">Shade Systems</div>
-        <div style="font-size:22px;font-weight:700;margin-top:4px">Admin Dashboard invitation</div>
+        <div style="font-size:22px;font-weight:700;margin-top:4px">Admin Dashboard Invitation</div>
       </td></tr>
       <tr><td style="padding:28px 32px;font-size:15px;line-height:1.55">
         <p>Hi${opts.inviteeName ? ` ${opts.inviteeName}` : ""},</p>
         <p><strong>${opts.inviterName}</strong> has invited you to join the Shade Systems Admin Dashboard as a <strong>${roleLabel}</strong>.</p>
-        <p>Click the button below to accept your invitation and sign in. You'll be able to sign in with Google once you accept.</p>
+        <p>Click the button below to sign in with your Google account. Your access will be activated automatically on first sign-in.</p>
         <p style="text-align:center;margin:28px 0">
-          <a href="${opts.acceptUrl}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Accept invitation</a>
+          <a href="${ADMIN_URL}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Sign in to Admin Dashboard</a>
         </p>
-        <p style="font-size:13px;color:#4b5563">Or copy this link into your browser:<br/><a href="${opts.acceptUrl}" style="color:#0f3d2e;word-break:break-all">${opts.acceptUrl}</a></p>
+        <p style="font-size:13px;color:#4b5563">Or go to:<br/><a href="${ADMIN_URL}" style="color:#0f3d2e;word-break:break-all">${ADMIN_URL}</a></p>
         <p style="font-size:12px;color:#6b7280;margin-top:24px">If you weren't expecting this invite, you can safely ignore it.</p>
       </td></tr>
-      <tr><td style="padding:16px 32px;background:#f9fafb;font-size:12px;color:#6b7280">Shade Systems - configurator.shadespace.com</td></tr>
+      <tr><td style="padding:16px 32px;background:#f9fafb;font-size:12px;color:#6b7280">Shade Systems - shadespace.com</td></tr>
     </table>
   </td></tr></table></body></html>`;
 }
@@ -71,43 +71,32 @@ Deno.serve(async (req: Request) => {
     }
 
     const emailLower = email.toLowerCase().trim();
-    const redirectTo = `${APP_BASE}/admin/callback`;
 
     const { data: existing } = await supabase.from("admin_users").select("id,status").ilike("email", emailLower).maybeSingle();
     if (existing && existing.status === "active") {
       return new Response(JSON.stringify({ error: "This admin is already active" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { data: inviteData, error: invErr } = await supabase.auth.admin.inviteUserByEmail(emailLower, {
-      data: { full_name, invited_by: caller.email, role },
-      redirectTo,
-    });
+    // Check if user already exists in Supabase Auth
+    const { data: userList } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = userList?.users?.find((u: any) => u.email?.toLowerCase() === emailLower);
 
-    let authUserId: string | null = inviteData?.user?.id ?? null;
-    let acceptUrl = redirectTo;
+    let authUserId: string | null = existingAuthUser?.id ?? null;
 
-    if (invErr && /already been registered|already exists/i.test(invErr.message)) {
-      const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
-        type: "magiclink",
+    if (!existingAuthUser) {
+      // Create the user in Supabase Auth without sending any email
+      const { data: newUser, error: createErr } = await supabase.auth.admin.createUser({
         email: emailLower,
-        options: { redirectTo },
+        email_confirm: true,
+        user_metadata: { full_name, invited_by: caller.email, role },
       });
-      if (linkErr) {
-        return new Response(JSON.stringify({ error: linkErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (createErr) {
+        return new Response(JSON.stringify({ error: createErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      acceptUrl = linkData.properties?.action_link || redirectTo;
-      authUserId = linkData.user?.id ?? null;
-    } else if (invErr) {
-      return new Response(JSON.stringify({ error: invErr.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    } else {
-      const { data: linkData } = await supabase.auth.admin.generateLink({
-        type: "invite",
-        email: emailLower,
-        options: { redirectTo },
-      });
-      if (linkData?.properties?.action_link) acceptUrl = linkData.properties.action_link;
+      authUserId = newUser.user?.id ?? null;
     }
 
+    // Upsert admin_users record
     const payload = {
       email: emailLower,
       full_name: full_name || "",
@@ -124,17 +113,20 @@ Deno.serve(async (req: Request) => {
       await supabase.from("admin_users").insert(payload);
     }
 
+    // Send branded invite email via Resend (no supabase.co URLs)
     const inviterName = caller.full_name || caller.email || "A Shade Systems super admin";
-    const html = buildInviteHtml({ inviterName, inviteeName: full_name || "", acceptUrl, role });
+    const html = buildInviteHtml({ inviterName, inviteeName: full_name || "", role });
     const text = `${inviterName} has invited you to join the Shade Systems Admin Dashboard as a ${role === "super_admin" ? "Super Admin" : "Admin"}.
 
-Accept the invitation:
-${acceptUrl}
+Sign in with your Google account here:
+${ADMIN_URL}
+
+Your access will be activated automatically on first sign-in.
 
 If you weren't expecting this invite, you can safely ignore it.`;
 
     try {
-      await sendViaResend(emailLower, `You're invited to the Shade Systems Admin (${role === "super_admin" ? "Super Admin" : "Admin"})`, html, text);
+      await sendViaResend(emailLower, `You're invited to the Shade Systems Admin Dashboard`, html, text);
     } catch (e) {
       await supabase.from("admin_audit_log").insert({
         actor_id: caller.id, actor_email: caller.email, action: "invite_email_failed",
