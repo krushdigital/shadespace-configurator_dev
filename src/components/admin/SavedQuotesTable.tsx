@@ -7,6 +7,7 @@ import { generatePdfFromBlocks, CustomerDetails } from '../../utils/pdfGenerator
 import { loadActivePdfTemplate } from '../../utils/activePdfTemplate';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { RegeneratePricesModal } from './RegeneratePricesModal';
 
 interface SavedQuotesTableProps {
   dateRange: { start: string; end: string };
@@ -46,7 +47,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [togglingExclusion, setTogglingExclusion] = useState(false);
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
   const [resendSuccess, setResendSuccess] = useState(false);
-  useBodyScrollLock(!!selectedQuote || !!quoteToDelete);
+  const [regenerateMode, setRegenerateMode] = useState<'single' | 'bulk' | null>(null);
+  const [regenerateQuote, setRegenerateQuote] = useState<Quote | null>(null);
+  useBodyScrollLock(!!selectedQuote || !!quoteToDelete || !!regenerateMode);
 
   useEffect(() => {
     const isOpen = !!selectedQuote || !!quoteToDelete;
@@ -326,6 +329,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               <option value="expired">Expired</option>
             </select>
           </div>
+          <Button onClick={() => setRegenerateMode('bulk')} size="sm" variant="outline" className="text-[#01312D] border-[#01312D]/30 hover:bg-[#01312D]/5">Regenerate Prices</Button>
           <Button onClick={exportToCSV} size="sm" variant="outline">Export CSV</Button>
         </div>
 
@@ -532,6 +536,13 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               >
                 {togglingExclusion ? 'Updating...' : selectedQuote.is_excluded ? 'Unmark Internal' : 'Mark as Internal'}
               </Button>
+              <Button
+                onClick={() => { setRegenerateQuote(selectedQuote); setRegenerateMode('single'); }}
+                variant="outline"
+                className="text-[#01312D] hover:bg-[#01312D]/5 border-[#01312D]/30"
+              >
+                Regenerate Price
+              </Button>
               <Button onClick={() => handleDownloadPDF(selectedQuote)} variant="outline" disabled={generatingPdf === selectedQuote.id}>
                 {generatingPdf === selectedQuote.id ? 'Generating PDF...' : 'Download PDF'}
               </Button>
@@ -606,6 +617,19 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
             </div>
           </div>
         </div>
+      )}
+
+      {regenerateMode && (
+        <RegeneratePricesModal
+          mode={regenerateMode}
+          quoteId={regenerateQuote?.id}
+          quoteReference={regenerateQuote?.quote_reference}
+          currentPrice={regenerateQuote?.calculations_data?.totalPrice}
+          currency={regenerateQuote?.config_data?.currency}
+          customerEmail={regenerateQuote?.customer_email}
+          onClose={() => { setRegenerateMode(null); setRegenerateQuote(null); }}
+          onComplete={() => fetchQuotes()}
+        />
       )}
     </>
   );
