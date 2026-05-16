@@ -935,7 +935,6 @@ console.log('✌️result --->', result);
                   )}
                 </span>
               }
-              defaultOpen={false}
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
                 <Card className="p-4 md:p-5">
@@ -1119,24 +1118,23 @@ console.log('✌️result --->', result);
                       </span>
                     </span>
                   }
-                  defaultOpen={false}
                 >
                   <Card className="p-4 mt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                       <div>
                         <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths</h6>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                        <div className="space-y-1 text-sm">
                           {Array.from({ length: config.corners }, (_, index) => {
                             const nextIndex = (index + 1) % config.corners;
                             const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
                             const measurement = config.measurements[edgeKey];
 
                             return (
-                              <div key={edgeKey} className="flex justify-between">
-                                <span className="text-slate-600">
+                              <div key={edgeKey} className="flex items-baseline gap-3">
+                                <span className="text-slate-600 whitespace-nowrap min-w-[100px]">
                                   Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:
                                 </span>
-                                <span className="font-medium text-slate-900">
+                                <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">
                                   {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
                                 </span>
                               </div>
@@ -1148,16 +1146,16 @@ console.log('✌️result --->', result);
                       {config.corners >= 4 && diagonalMeasurements.length > 0 && (
                         <div>
                           <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths</h6>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+                          <div className="space-y-1 text-sm">
                             {diagonalMeasurements.map((diagonal) => {
                               const measurement = config.measurements[diagonal.key];
 
                               return (
-                                <div key={diagonal.key} className="flex justify-between">
-                                  <span className="text-slate-600">
+                                <div key={diagonal.key} className="flex items-baseline gap-3">
+                                  <span className="text-slate-600 whitespace-nowrap min-w-[100px]">
                                     Diagonal {diagonal.key}:
                                   </span>
-                                  <span className="font-medium text-slate-900">
+                                  <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">
                                     {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
                                   </span>
                                 </div>
@@ -1217,18 +1215,17 @@ console.log('✌️result --->', result);
                         </span>
                       </span>
                     }
-                    defaultOpen={false}
                   >
                     <Card className="p-4 mt-2">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-sm">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-1.5 text-sm">
                         {config.fixingHeights.map((height, index) => {
                           const corner = String.fromCharCode(65 + index);
                           const type = config.fixingTypes?.[index] || 'post';
 
                           return (
-                            <div key={index} className="flex justify-between">
-                              <span className="text-slate-600">Anchor Point {corner}:</span>
-                              <span className="font-medium text-slate-900">
+                            <div key={index} className="flex items-baseline gap-3">
+                              <span className="text-slate-600 whitespace-nowrap min-w-[120px]">Anchor Point {corner}:</span>
+                              <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">
                                 {formatMeasurement(height, config.unit)} ({type})
                               </span>
                             </div>
