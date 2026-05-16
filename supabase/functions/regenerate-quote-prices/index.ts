@@ -14,6 +14,15 @@ function jsonResponse(data: unknown, status = 200) {
   });
 }
 
+function formatPrice(amount: number, currency: string): string {
+  const symbols: Record<string, string> = {
+    NZD: "NZ$", USD: "US$", AUD: "AU$", GBP: "\u00a3", EUR: "\u20ac",
+    CAD: "CA$", AED: "AED ", SGD: "SG$", ZAR: "R",
+  };
+  const sym = symbols[currency] || `${currency} `;
+  return `${sym}${amount.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
 interface ConfigData {
   corners: number;
   measurements: Record<string, number>;
@@ -490,11 +499,10 @@ Deno.serve(async (req: Request) => {
                 templateKey: "price_drop_notification",
                 toEmail: quote.customer_email,
                 quoteId: quote.id,
-                extraContext: {
-                  old_price: oldPrice,
-                  new_price: newPrice,
-                  savings: oldPrice - newPrice,
-                  currency,
+                contextExtras: {
+                  old_price_formatted: formatPrice(oldPrice, currency),
+                  new_price_formatted: formatPrice(newPrice, currency),
+                  savings_formatted: formatPrice(oldPrice - newPrice, currency),
                 },
               }),
             });
