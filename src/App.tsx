@@ -1,25 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import { ShadeConfigurator } from './components/ShadeConfigurator';
 import { Admin } from './pages/Admin';
+import { SetupPassword } from './pages/SetupPassword';
 import { installLocalizationFormInterceptor } from './utils/currencyDetection';
 import './index.css';
 
+type AppRoute = 'configurator' | 'admin' | 'setup-password';
+
 const App = () => {
   const [currency, setCurrency] = useState(null)
-  const [isAdminRoute, setIsAdminRoute] = useState(false);
-
-  console.log('currency: ', currency);
-  console.log('🚀 App component is rendering - this should appear in console');
-  console.log('🚀 testing');
-  console.log('🚀 another test log');
-  console.log('🚀 yet another log for testing 13/01/2026 11:22');
+  const [route, setRoute] = useState<AppRoute>('configurator');
 
   useEffect(() => {
     installLocalizationFormInterceptor();
-    // Check if current URL is the admin route
     const path = window.location.pathname;
-    if (path.includes('/admin') || window.location.search.includes('admin=true')) {
-      setIsAdminRoute(true);
+    const search = window.location.search;
+
+    if (search.includes('setup-password=true')) {
+      setRoute('setup-password');
+      return;
+    }
+
+    if (path.includes('/admin') || search.includes('admin=true')) {
+      setRoute('admin');
       return;
     }
 
@@ -36,8 +39,11 @@ const App = () => {
     }
   }, []);
 
-  // Render admin dashboard if admin route
-  if (isAdminRoute) {
+  if (route === 'setup-password') {
+    return <SetupPassword />;
+  }
+
+  if (route === 'admin') {
     return <Admin />;
   }
 

@@ -11,7 +11,7 @@ interface AdminUserRow {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'super_admin';
+  role: 'admin' | 'super_admin' | 'team_member';
   status: 'pending' | 'active' | 'disabled';
   auth_user_id: string | null;
   invited_by: string | null;
@@ -42,7 +42,7 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
   }, [showInvite]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'super_admin'>('admin');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'super_admin' | 'team_member'>('team_member');
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -75,7 +75,7 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
       } else {
         showMsg('success', `Invite sent to ${inviteEmail}`);
         setShowInvite(false);
-        setInviteEmail(''); setInviteName(''); setInviteRole('admin');
+        setInviteEmail(''); setInviteName(''); setInviteRole('team_member');
         load();
       }
     } catch (e) {
@@ -200,11 +200,16 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
               <div>
                 <label className="text-xs text-gray-500 block mb-1">Role</label>
                 <select value={inviteRole} onChange={e => setInviteRole(e.target.value as any)} className="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                  <option value="admin">Admin (view analytics, manage content)</option>
-                  <option value="super_admin">Super Admin (can invite and remove admins)</option>
+                  <option value="team_member">Team Member (limited tab access, email/password sign-in)</option>
+                  <option value="admin">Admin (view analytics, manage content, Google sign-in)</option>
+                  <option value="super_admin">Super Admin (full access, can invite and manage users)</option>
                 </select>
               </div>
-              <p className="text-xs text-gray-500">They will receive an email invitation. They can sign in with Google once accepted.</p>
+              <p className="text-xs text-gray-500">
+                {inviteRole === 'team_member'
+                  ? 'They will receive an email with a link to set their password.'
+                  : 'They will receive an email invitation. They can sign in with Google once accepted.'}
+              </p>
             </div>
             <div className="px-5 py-4 border-t border-gray-100 flex justify-end gap-2 flex-shrink-0">
               <Button variant="outline" onClick={() => setShowInvite(false)}>Cancel</Button>
@@ -224,11 +229,11 @@ const TabPermissionsPanel: React.FC<{
 }> = ({ permissions, currentProfile, onPermissionsChange }) => {
   const [saving, setSaving] = useState<string | null>(null);
 
-  const toggle = async (tabId: string, current: boolean) => {
-    setSaving(tabId);
+  const toggle = async (tabId: string, field: 'allowed_for_admin' | 'allowed_for_team_member', current: boolean) => {
+    setSaving(`${tabId}-${field}`);
     const { error } = await supabase
       .from('admin_tab_permissions')
-      .update({ allowed_for_admin: !current, updated_at: new Date().toISOString(), updated_by: currentProfile.id })
+      .update({ [field]: !current, updated_at: new Date().toISOString(), updated_by: currentProfile.id })
       .eq('tab_id', tabId);
     if (!error && onPermissionsChange) onPermissionsChange();
     setSaving(null);
@@ -236,21 +241,43 @@ const TabPermissionsPanel: React.FC<{
 
   return (
     <Card className="p-0 overflow-hidden">
-      <h2 className="font-semibold text-gray-900 p-4 border-b border-gray-200">Admin Tab Permissions</h2>
-      <p className="px-4 pt-2 pb-3 text-xs text-gray-500">Control which tabs regular Admins can access. Super Admins always have full access.</p>
-      <div className="divide-y divide-gray-100">
-        {permissions.map(p => (
-          <div key={p.tab_id} className="flex items-center justify-between px-4 py-3">
-            <span className="text-sm text-gray-800">{p.tab_label}</span>
-            <button
-              onClick={() => toggle(p.tab_id, p.allowed_for_admin)}
-              disabled={saving === p.tab_id}
-              className={`relative w-10 h-5 rounded-full transition-colors ${p.allowed_for_admin ? 'bg-green-500' : 'bg-gray-300'}`}
-            >
-              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${p.allowed_for_admin ? 'translate-x-5' : 'translate-x-0.5'}`} />
-            </button>
-          </div>
-        ))}
+      <h2 className="font-semibold text-gray-900 p-4 border-b border-gray-200">Tab Permissions</h2>
+      <p className="px-4 pt-2 pb-3 text-xs text-gray-500">Control which tabs Admins and Team Members can access. Super Admins always have full access.</p>
+      <div className="overflow-auto">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+            <tr>
+              <th className="text-left px-4 py-2">Tab</th>
+              <th className="text-center px-4 py-2">Admin</th>
+              <th className="text-center px-4 py-2">Team Member</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {permissions.map(p => (
+              <tr key={p.tab_id}>
+                <td className="px-4 py-3 text-gray-800">{p.tab_label}</td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() => toggle(p.tab_id, 'allowed_for_admin', p.allowed_for_admin)}
+                    disabled={saving === `${p.tab_id}-allowed_for_admin`}
+                    className={`relative w-10 h-5 rounded-full transition-colors ${p.allowed_for_admin ? 'bg-green-500' : 'bg-gray-300'}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${p.allowed_for_admin ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() => toggle(p.tab_id, 'allowed_for_team_member', p.allowed_for_team_member)}
+                    disabled={saving === `${p.tab_id}-allowed_for_team_member`}
+                    className={`relative w-10 h-5 rounded-full transition-colors ${p.allowed_for_team_member ? 'bg-green-500' : 'bg-gray-300'}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${p.allowed_for_team_member ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </Card>
   );
@@ -294,8 +321,12 @@ const UserTable: React.FC<UserTableProps> = ({ rows, isSuper, currentId, onRemov
               <td className="px-4 py-2 font-medium text-gray-900">{r.email}</td>
               <td className="px-4 py-2 text-gray-700">{r.full_name || '-'}</td>
               <td className="px-4 py-2">
-                <span className={`text-xs px-2 py-0.5 rounded ${r.role === 'super_admin' ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                  {r.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                <span className={`text-xs px-2 py-0.5 rounded ${
+                  r.role === 'super_admin' ? 'bg-blue-50 text-blue-700' :
+                  r.role === 'team_member' ? 'bg-green-50 text-green-700' :
+                  'bg-gray-100 text-gray-700'
+                }`}>
+                  {r.role === 'super_admin' ? 'Super Admin' : r.role === 'team_member' ? 'Team Member' : 'Admin'}
                 </span>
               </td>
               <td className="px-4 py-2 text-xs text-gray-600">{fmt(r.last_login_at)}</td>

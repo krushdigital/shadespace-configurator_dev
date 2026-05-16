@@ -44,6 +44,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
   const [togglingExclusion, setTogglingExclusion] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+  const [resendSuccess, setResendSuccess] = useState(false);
   useBodyScrollLock(!!selectedQuote || !!quoteToDelete);
 
   useEffect(() => {
@@ -215,6 +217,39 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       console.error('Failed to toggle exclusion:', error);
     } finally {
       setTogglingExclusion(false);
+    }
+  };
+
+  const handleResendEmail = async (quote: Quote) => {
+    if (!quote.customer_email) {
+      alert('No customer email on this quote.');
+      return;
+    }
+    setResendingEmail(quote.id);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          templateKey: 'pdf_quote_delivery',
+          toEmail: quote.customer_email,
+          quoteId: quote.id,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setResendSuccess(true);
+        setTimeout(() => setResendSuccess(false), 3000);
+      } else {
+        alert(`Failed to resend: ${data.error || res.statusText}`);
+      }
+    } catch (error) {
+      console.error('Resend email failed:', error);
+      alert('Failed to resend email. Check console for details.');
+    } finally {
+      setResendingEmail(null);
     }
   };
 
@@ -500,6 +535,14 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               <Button onClick={() => handleDownloadPDF(selectedQuote)} variant="outline" disabled={generatingPdf === selectedQuote.id}>
                 {generatingPdf === selectedQuote.id ? 'Generating PDF...' : 'Download PDF'}
               </Button>
+              <Button
+                onClick={() => handleResendEmail(selectedQuote)}
+                variant="outline"
+                disabled={resendingEmail === selectedQuote.id || !selectedQuote.customer_email}
+                className="text-blue-600 hover:bg-blue-50 border-blue-200"
+              >
+                {resendingEmail === selectedQuote.id ? 'Sending...' : 'Resend Email'}
+              </Button>
               <Button onClick={() => setQuoteToDelete(selectedQuote)} variant="outline" className="text-red-600 hover:bg-red-50 border-red-200">
                 Delete Quote
               </Button>
@@ -547,6 +590,19 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
               <p className="text-green-900 font-medium">Quote deleted successfully</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resendSuccess && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-lg">
+            <div className="flex items-center gap-3">
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-blue-900 font-medium">Email resent successfully</p>
             </div>
           </div>
         </div>

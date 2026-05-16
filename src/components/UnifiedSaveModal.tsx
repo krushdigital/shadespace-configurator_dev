@@ -340,64 +340,69 @@ export function UnifiedSaveModal({
         throw new Error('Failed to generate quote URL');
       }
 
-      if (onGeneratePDFWithDetails && onEmailPDFQuote) {
-        const pdfBase64 = await onGeneratePDFWithDetails(
+      if (onEmailPDFQuote) {
+        let pdfBase64: string | void = undefined;
+        if (onGeneratePDFWithDetails) {
+          try {
+            pdfBase64 = await onGeneratePDFWithDetails(
+              firstName.trim(),
+              lastName.trim(),
+              email.trim(),
+              finalQuoteName,
+              sanitizedReference,
+              quoteUrl
+            );
+          } catch (pdfErr) {
+            console.warn('PDF generation failed, sending email without attachment:', pdfErr);
+          }
+        }
+
+        const success = await onEmailPDFQuote(
           firstName.trim(),
           lastName.trim(),
           email.trim(),
           finalQuoteName,
           sanitizedReference,
-          quoteUrl
+          pdfBase64 || '',
+          quoteUrl,
+          result.id,
+          result.reference,
+          result.pricingLockedUntil,
         );
 
-        if (pdfBase64) {
-          const success = await onEmailPDFQuote(
-            firstName.trim(),
-            lastName.trim(),
-            email.trim(),
-            finalQuoteName,
-            sanitizedReference,
-            pdfBase64,
-            quoteUrl,
-            result.id,
-            result.reference,
-            result.pricingLockedUntil,
-          );
+        if (success) {
+          onCustomerDetailsCaptured?.({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: email.trim(),
+            quoteReference: savedRef,
+          });
 
-          if (success) {
-            onCustomerDetailsCaptured?.({
-              firstName: firstName.trim(),
-              lastName: lastName.trim(),
-              email: email.trim(),
-              quoteReference: savedRef,
-            });
+          setEmailSent(true);
+          setModalStep('success');
+          showToast(pdfBase64 ? 'PDF sent to your email!' : 'Quote email sent!', 'success');
 
-            setEmailSent(true);
-            setModalStep('success');
-            showToast('PDF sent to your email!', 'success');
-
-            analytics.quoteSaveSuccess({
-              quote_reference: savedRef,
-              quote_name: finalQuoteName,
-              has_custom_name: !!quoteName.trim(),
-              has_customer_reference: !!sanitizedReference,
-              save_method: 'email_pdf_quote',
-              email_domain: email.split('@')[1],
-              total_price: calculations.totalPrice,
-              currency: config.currency,
-              corners: config.corners,
-              fabric_type: config.fabricType,
-              edge_type: config.edgeType,
-              hardware_included: config.measurementOption === 'adjust',
-              area_sqm: calculations.area,
-              perimeter_m: calculations.perimeter,
-              modal_duration_seconds: (Date.now() - modalOpenTime) / 1000,
-              has_shopify_customer: !!result.shopifyCustomerId,
-              shopify_customer_id: result.shopifyCustomerId || null,
-            });
-          } else {
-            throw new Error('Failed to send email');
-          }
+          analytics.quoteSaveSuccess({
+            quote_reference: savedRef,
+            quote_name: finalQuoteName,
+            has_custom_name: !!quoteName.trim(),
+            has_customer_reference: !!sanitizedReference,
+            save_method: 'email_pdf_quote',
+            email_domain: email.split('@')[1],
+            total_price: calculations.totalPrice,
+            currency: config.currency,
+            corners: config.corners,
+            fabric_type: config.fabricType,
+            edge_type: config.edgeType,
+            hardware_included: config.measurementOption === 'adjust',
+            area_sqm: calculations.area,
+            perimeter_m: calculations.perimeter,
+            modal_duration_seconds: (Date.now() - modalOpenTime) / 1000,
+            has_shopify_customer: !!result.shopifyCustomerId,
+            shopify_customer_id: result.shopifyCustomerId || null,
+          });
+        } else {
+          throw new Error('Failed to send email');
         }
       }
     } catch (error: any) {

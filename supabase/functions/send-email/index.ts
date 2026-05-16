@@ -330,7 +330,7 @@ Deno.serve(async (req: Request) => {
     }).select().single();
     if (qErr) throw qErr;
 
-    const unsubUrl = `${BASE_URL}/email/unsubscribe?email=${encodeURIComponent(toEmail)}`;
+    const unsubUrl = template.transactional ? "" : `${BASE_URL}/email/unsubscribe?email=${encodeURIComponent(toEmail)}`;
     const ctx = buildContext(quote, sender, unsubUrl, contextExtras || {});
     const effectiveSubject = template.subject_locked ? template.subject : (overrideSubject || template.subject);
     const subject = renderTemplate(effectiveSubject, ctx);
@@ -427,8 +427,10 @@ Deno.serve(async (req: Request) => {
       subject,
       html,
       text,
-      headers: { "List-Unsubscribe": `<${unsubUrl}>` },
     };
+    if (!template.transactional) {
+      resendPayload.headers = { "List-Unsubscribe": `<${unsubUrl}>` };
+    }
     if (resolvedAttachments.length > 0) {
       resendPayload.attachments = resolvedAttachments.map(({ filename, content }) => ({ filename, content }));
     }
