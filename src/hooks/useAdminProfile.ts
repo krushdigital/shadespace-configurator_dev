@@ -5,7 +5,7 @@ export interface AdminProfile {
   id: string;
   email: string;
   full_name: string | null;
-  role: 'admin' | 'super_admin';
+  role: 'admin' | 'super_admin' | 'team_member';
   status: 'pending' | 'active' | 'disabled';
   auth_user_id: string | null;
 }

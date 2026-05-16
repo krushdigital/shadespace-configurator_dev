@@ -28,7 +28,7 @@ Deno.serve(async (req: Request) => {
 
     const { adminUserId, role, status } = await req.json();
     if (!adminUserId) return new Response(JSON.stringify({ error: "adminUserId required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    if (role && !["admin", "super_admin"].includes(role)) return new Response(JSON.stringify({ error: "invalid role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (role && !["admin", "super_admin", "team_member"].includes(role)) return new Response(JSON.stringify({ error: "invalid role" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (status && !["pending", "active", "disabled"].includes(status)) return new Response(JSON.stringify({ error: "invalid status" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     if (adminUserId === caller.id && role && role !== "super_admin") {
