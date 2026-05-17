@@ -6,6 +6,22 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+interface DesignEntry {
+  reference: string;
+  name: string;
+  customer_ref?: string;
+  resume_url: string;
+  price?: number;
+  currency?: string;
+  saved_at: string;
+  status: "in_progress" | "quote_ready";
+  current_step?: number;
+  total_steps?: number;
+  thumbnail_url?: string;
+  corners?: number;
+  fabric?: string;
+}
+
 interface ShopifyCustomerPayload {
   email: string;
   firstName?: string;
@@ -20,6 +36,70 @@ interface ShopifyCustomerPayload {
   quoteReference?: string;
   totalPrice?: number;
   currency?: string;
+  designEntry?: DesignEntry;
+}
+
+const MAX_SAVED_DESIGNS = 25;
+
+async function getExistingDesigns(
+  shopDomain: string,
+  apiVersion: string,
+  token: string,
+  customerId: number | string,
+): Promise<DesignEntry[]> {
+  const url = `https://${shopDomain}/admin/api/${apiVersion}/customers/${customerId}/metafields.json?namespace=custom&key=saved_designs`;
+  const res = await fetch(url, {
+    headers: {
+      "X-Shopify-Access-Token": token,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  const metafield = data.metafields?.[0];
+  if (!metafield?.value) return [];
+  try {
+    return JSON.parse(metafield.value) as DesignEntry[];
+  } catch {
+    return [];
+  }
+}
+
+async function upsertDesignsMetafield(
+  shopDomain: string,
+  apiVersion: string,
+  token: string,
+  customerId: number | string,
+  designs: DesignEntry[],
+): Promise<void> {
+  const url = `https://${shopDomain}/admin/api/${apiVersion}/customers/${customerId}/metafields.json`;
+  await fetch(url, {
+    method: "POST",
+    headers: {
+      "X-Shopify-Access-Token": token,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      metafield: {
+        namespace: "custom",
+        key: "saved_designs",
+        value: JSON.stringify(designs),
+        type: "json",
+      },
+    }),
+  });
+}
+
+function mergeDesignEntry(existing: DesignEntry[], entry: DesignEntry): DesignEntry[] {
+  const idx = existing.findIndex((d) => d.reference === entry.reference);
+  let updated: DesignEntry[];
+  if (idx >= 0) {
+    updated = [...existing];
+    updated[idx] = { ...updated[idx], ...entry, saved_at: entry.saved_at };
+  } else {
+    updated = [entry, ...existing];
+  }
+  return updated.slice(0, MAX_SAVED_DESIGNS);
 }
 
 Deno.serve(async (req: Request) => {
@@ -39,7 +119,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const payload: ShopifyCustomerPayload = await req.json();
-    const { email, tags, metafields, quoteReference, totalPrice, currency } = payload;
+    const { email, tags, metafields, quoteReference, totalPrice, currency, designEntry } = payload;
 
     if (!email) {
       return new Response(
@@ -48,7 +128,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Get Shopify credentials from environment
     const SHOPIFY_SHOP_DOMAIN = Deno.env.get("SHOPIFY_SHOP_DOMAIN");
     const SHOPIFY_ADMIN_API_TOKEN = Deno.env.get("SHOPIFY_ADMIN_API_TOKEN");
     const SHOPIFY_API_VERSION = "2025-01";
@@ -90,7 +169,7 @@ Deno.serve(async (req: Request) => {
 
       // Merge existing tags with new tags
       const existingTags = existingCustomer.tags ? existingCustomer.tags.split(", ") : [];
-      const allTags = Array.from(new Set([...existingTags, ...tags]));
+      const allTags = Array.from(new Set([...existingTags, ...tags, "has_saved_designs"]));
 
       const updateUrl = `https://${SHOPIFY_SHOP_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/customers/${customerId}.json`;
 
@@ -123,6 +202,21 @@ Deno.serve(async (req: Request) => {
 
       await updateResponse.json();
 
+      // Update saved_designs metafield with the new design entry
+      if (designEntry) {
+        try {
+          const existingDesigns = await getExistingDesigns(
+            SHOPIFY_SHOP_DOMAIN, SHOPIFY_API_VERSION, SHOPIFY_ADMIN_API_TOKEN, customerId
+          );
+          const updatedDesigns = mergeDesignEntry(existingDesigns, designEntry);
+          await upsertDesignsMetafield(
+            SHOPIFY_SHOP_DOMAIN, SHOPIFY_API_VERSION, SHOPIFY_ADMIN_API_TOKEN, customerId, updatedDesigns
+          );
+        } catch (metafieldErr) {
+          console.error("Failed to update saved_designs metafield:", metafieldErr);
+        }
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -142,7 +236,7 @@ Deno.serve(async (req: Request) => {
         email: email,
         first_name: payload.firstName || undefined,
         last_name: payload.lastName || undefined,
-        tags: [...tags, "account_created"].join(", "),
+        tags: [...tags, "account_created", "has_saved_designs"].join(", "),
         verified_email: true,
         email_marketing_consent: {
           state: "not_subscribed",
@@ -182,6 +276,16 @@ Deno.serve(async (req: Request) => {
           type: "date_time",
         }
       );
+    }
+
+    // Add saved_designs metafield for new customer
+    if (designEntry) {
+      customerMetafields.push({
+        namespace: "custom",
+        key: "saved_designs",
+        value: JSON.stringify([designEntry]),
+        type: "json",
+      });
     }
 
     if (customerMetafields.length > 0) {
