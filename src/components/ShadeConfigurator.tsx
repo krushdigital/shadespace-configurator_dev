@@ -1264,7 +1264,12 @@ export function ShadeConfigurator() {
             ? orderData.totalPrice
             : Number(orderData.totalPrice));
     const authoritativeCurrency = lockedQuote?.currency || orderData.currency || config.currency;
-    const authoritativeBaseNzd = lockedQuote?.baseNzd ?? null;
+    // Send the NZD-equivalent of the all-inclusive price (totalPrice / FX) so that
+    // if the Shopify app uses this as the NZD variant price, Shopify Markets will
+    // convert it back to the correct customer-facing amount.
+    const authoritativeBaseNzd = lockedQuote?.fxRate
+      ? authoritativeTotal / lockedQuote.fxRate
+      : null;
 
     const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
       method: 'POST',
