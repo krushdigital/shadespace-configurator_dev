@@ -754,6 +754,27 @@ export function UnifiedSaveModal({
                     </div>
                   </div>
                 )}
+
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <svg className="w-4 h-4 text-[#01312D] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        All your saved designs are stored in your ShadeSpace account. View them any time — just sign in with your email, no password needed.
+                      </p>
+                      <a
+                        href="https://shadespace.com.au/apps/shade_space/my-designs"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-[#307C31] font-medium hover:underline mt-1.5 inline-block"
+                      >
+                        View my saved designs
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </div>
 
             </>
