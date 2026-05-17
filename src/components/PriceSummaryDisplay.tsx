@@ -125,7 +125,7 @@ export function PriceSummaryDisplay({
                 </a>
               </p>
             </div>
-            {calculations.totalPrice > 0 && (
+            {calculations.totalPrice > 0 && hardwareMode === 'manual' && (
               <div className={`mt-4 pt-3 border-t space-y-1.5 ${
                 isMobile ? 'border-white/20' : 'border-slate-200'
               }`}>
@@ -135,7 +135,7 @@ export function PriceSummaryDisplay({
                     {formatCurrency(sailOnlyDisplay, config.currency)}
                   </span>
                 </div>
-                {hardwareMode !== 'none' && hardwareOnlyDisplay > 0 && (
+                {hardwareOnlyDisplay > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className={isMobile ? 'text-white/70' : 'text-slate-600'}>Hardware:</span>
                     <span className={`font-semibold ${isMobile ? 'text-white' : 'text-slate-900'}`}>
