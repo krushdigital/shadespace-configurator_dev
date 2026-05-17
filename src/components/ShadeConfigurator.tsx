@@ -114,6 +114,9 @@ export function ShadeConfigurator() {
   // State to track if user wants to navigate to heights section specifically
   const [navigateToHeights, setNavigateToHeights] = useState(false);
 
+  // Auto-add-to-cart when arriving from My Designs page with action param
+  const [pendingAutoAddToCart, setPendingAutoAddToCart] = useState(false);
+
   // State to track if user wants to navigate to diagonals section specifically
   const [navigateToDiagonals, setNavigateToDiagonals] = useState(false);
 
@@ -312,6 +315,12 @@ export function ShadeConfigurator() {
           currency: quote.config_data.currency,
         });
 
+        // Check if user arrived with action=add-to-cart from My Designs page
+        const urlAction = new URLSearchParams(window.location.search).get('action');
+        if (urlAction === 'add-to-cart' && quote.status === 'quote_ready') {
+          setPendingAutoAddToCart(true);
+        }
+
         const statusMessage = quote.status === 'quote_ready'
           ? `Quote ${quote.quote_reference} loaded successfully!`
           : `Configuration ${quote.quote_reference} loaded. Continue where you left off!`;
@@ -346,6 +355,15 @@ export function ShadeConfigurator() {
       prev.currency === shopifyCurrency ? prev : { ...prev, currency: shopifyCurrency }
     );
   }, [isLoadingQuote, quoteReference]);
+
+  useEffect(() => {
+    if (!pendingAutoAddToCart || isLoadingQuote || !quoteReference) return;
+    setPendingAutoAddToCart(false);
+    const timer = setTimeout(() => {
+      handleAddToCartFromConfigurator();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [pendingAutoAddToCart, isLoadingQuote, quoteReference]);
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -1251,8 +1269,10 @@ export function ShadeConfigurator() {
       selectedCurrency = ((window as any).Shopify.currency.active || '').toUpperCase();
     }
     const authoritativeCurrency = selectedCurrency || lockedQuote?.currency || orderData.currency || config.currency;
-    // Always provide NZD base price for non-NZD currencies
-    let authoritativeBaseNzd = lockedQuote?.baseNzd ?? null;
+    // Derive NZD base from totalPrice/fxRate so Shopify Markets converts back correctly
+    let authoritativeBaseNzd: number | null = lockedQuote?.fxRate
+      ? Math.round((authoritativeTotal / lockedQuote.fxRate) * 100) / 100
+      : null;
     if (!authoritativeBaseNzd && authoritativeCurrency !== 'NZD') {
       let fxRate = null;
       if (typeof window !== 'undefined' && (window as any)?.Shopify?.currency?.rate) {
@@ -1265,6 +1285,7 @@ export function ShadeConfigurator() {
         authoritativeBaseNzd = Math.round((authoritativeTotal / fxRate) * 100) / 100;
       }
     }
+
 
     const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
       method: 'POST',

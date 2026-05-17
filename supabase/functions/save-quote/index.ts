@@ -221,6 +221,36 @@ Deno.serve(async (req: Request) => {
 
       if (email) {
         try {
+          // Build resume URL server-side for the design entry metafield
+          const baseUrl = Deno.env.get('EMAIL_APP_BASE_URL') || 'https://shadespace.com';
+          const currencyDomainMap: Record<string, string> = {
+            AUD: 'shadespace.com.au', NZD: 'shadespace.com.au',
+            USD: 'shadespace.com', CAD: 'shadespace.com',
+            GBP: 'shadespace.com', EUR: 'shadespace.com',
+          };
+          const quoteCurrencyUpper = (config.currency || 'NZD').toUpperCase();
+          const domain = currencyDomainMap[quoteCurrencyUpper] || new URL(baseUrl).hostname;
+          const resumeUrl = `https://${domain}/pages/shade-sail-configurator?quote=${quote.id}&token=${accessToken}&_ab=0&_fd=0#quote=${encodeURIComponent(quote.id)}&token=${encodeURIComponent(accessToken)}`;
+
+          // Resolve fabric label for design entry
+          const fabricLabel = await fetchFabricLabel(supabase, config?.fabricType);
+
+          const designEntry = {
+            reference: quoteReference,
+            name: finalQuoteName,
+            customer_ref: finalCustomerReference || undefined,
+            resume_url: resumeUrl,
+            price: quoteStatus === 'quote_ready' && lockedTotal ? lockedTotal : undefined,
+            currency: quoteStatus === 'quote_ready' && quoteCurrency ? quoteCurrency : undefined,
+            saved_at: new Date().toISOString(),
+            status: quoteStatus as 'in_progress' | 'quote_ready',
+            current_step: currentStep ?? undefined,
+            total_steps: totalSteps ?? 7,
+            thumbnail_url: (typeof canvasImageUrl === 'string' && canvasImageUrl.startsWith('http')) ? canvasImageUrl : undefined,
+            corners: config?.corners || undefined,
+            fabric: fabricLabel !== 'Custom' ? fabricLabel : undefined,
+          };
+
           const shopifyResponse = await fetch(
             `${supabaseUrl}/functions/v1/add-shopify-customer`,
             {
@@ -237,6 +267,7 @@ Deno.serve(async (req: Request) => {
                 quoteReference: quoteReference,
                 totalPrice: calculations.totalPrice,
                 currency: config.currency,
+                designEntry,
               }),
             }
           );

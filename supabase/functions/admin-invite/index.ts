@@ -11,8 +11,8 @@ const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
 const RESEND_FROM = Deno.env.get("RESEND_FROM_EMAIL") || "Shade Systems <sails@shadespace.com>";
-const ADMIN_URL = "https://shadespace.com/pages/shade-sail-configurator/?admin=true";
-const SETUP_URL = "https://shadespace.com/pages/shade-sail-configurator/?setup-password=true";
+const ADMIN_URL = "https://shadespace.com.au/pages/shade-sail-configurator/?admin=true";
+const SETUP_URL = "https://shadespace.com.au/pages/shade-sail-configurator/?setup-password=true";
 
 function buildAdminInviteHtml(opts: { inviterName: string; inviteeName: string; role: string }) {
   const roleLabel = opts.role === "super_admin" ? "Super Admin" : "Admin";
