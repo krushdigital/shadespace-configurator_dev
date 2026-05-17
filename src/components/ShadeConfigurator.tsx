@@ -1286,7 +1286,6 @@ export function ShadeConfigurator() {
       }
     }
 
-
     const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
       method: 'POST',
       body: JSON.stringify({
