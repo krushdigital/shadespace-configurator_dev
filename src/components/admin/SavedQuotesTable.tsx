@@ -396,8 +396,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       </Card>
 
       {selectedQuote && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain" onClick={() => setSelectedQuote(null)}>
-          <Card className="max-w-3xl w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedQuote(null)}>
+          <Card className="max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start p-8 pb-4 flex-shrink-0">
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{selectedQuote.quote_name}</h2>
@@ -564,8 +564,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       )}
 
       {quoteToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain" onClick={() => setQuoteToDelete(null)}>
-          <Card className="max-w-md w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setQuoteToDelete(null)}>
+          <Card className="max-w-md w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start p-6 pb-0 flex-shrink-0">
               <h2 className="text-xl font-bold text-gray-900">Confirm Delete</h2>
               <button onClick={() => setQuoteToDelete(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">

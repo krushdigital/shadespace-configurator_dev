@@ -41,7 +41,6 @@ function applyLock() {
   body.style.left = '0';
   body.style.right = '0';
   body.style.width = '100%';
-  body.style.touchAction = 'none';
   if (scrollbarWidth > 0) {
     body.style.paddingRight = `${scrollbarWidth}px`;
   }

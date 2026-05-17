@@ -76,7 +76,7 @@ export function HeightInformationModal({
   const allHeightsEntered = localHeights.slice(0, config.corners).every(h => h && h > 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overscroll-contain" onClick={handleCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={handleCancel}>
       <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto overscroll-contain bg-white rounded-lg shadow-2xl" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b border-slate-200 p-4 sm:p-6">

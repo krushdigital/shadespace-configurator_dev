@@ -125,7 +125,7 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] flex items-stretch md:items-center justify-center bg-black/70 md:p-5 overscroll-contain"
+      className="fixed inset-0 z-[10000] flex items-stretch md:items-center justify-center bg-black/70 md:p-5"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="relative w-full max-w-[1100px] h-[100dvh] md:h-auto md:max-h-[92vh] overflow-hidden md:rounded-xl bg-white shadow-2xl flex flex-col">

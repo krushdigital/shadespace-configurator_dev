@@ -180,8 +180,8 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
       )}
 
       {showInvite && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setShowInvite(false)}>
-          <Card className="max-w-md w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(false)}>
+          <Card className="max-w-md w-full max-h-[90vh] flex flex-col" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 pb-3">
               <h3 className="text-lg font-bold">Invite a new admin</h3>
               <button onClick={() => setShowInvite(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">
