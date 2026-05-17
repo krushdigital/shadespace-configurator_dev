@@ -1269,8 +1269,10 @@ export function ShadeConfigurator() {
       selectedCurrency = ((window as any).Shopify.currency.active || '').toUpperCase();
     }
     const authoritativeCurrency = selectedCurrency || lockedQuote?.currency || orderData.currency || config.currency;
-    // Always provide NZD base price for non-NZD currencies
-    let authoritativeBaseNzd = lockedQuote?.baseNzd ?? null;
+    // Derive NZD base from totalPrice/fxRate so Shopify Markets converts back correctly
+    let authoritativeBaseNzd: number | null = lockedQuote?.fxRate
+      ? Math.round((authoritativeTotal / lockedQuote.fxRate) * 100) / 100
+      : null;
     if (!authoritativeBaseNzd && authoritativeCurrency !== 'NZD') {
       let fxRate = null;
       if (typeof window !== 'undefined' && (window as any)?.Shopify?.currency?.rate) {
@@ -1283,13 +1285,6 @@ export function ShadeConfigurator() {
         authoritativeBaseNzd = Math.round((authoritativeTotal / fxRate) * 100) / 100;
       }
     }
-    const authoritativeCurrency = lockedQuote?.currency || orderData.currency || config.currency;
-    // Send the NZD-equivalent of the all-inclusive price (totalPrice / FX) so that
-    // if the Shopify app uses this as the NZD variant price, Shopify Markets will
-    // convert it back to the correct customer-facing amount.
-    const authoritativeBaseNzd = lockedQuote?.fxRate
-      ? authoritativeTotal / lockedQuote.fxRate
-      : null;
 
     const response = await fetch('/apps/shade_space/api/v1/public/product/create', {
       method: 'POST',
