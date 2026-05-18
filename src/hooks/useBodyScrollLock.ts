@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 let lockCount = 0;
 let savedScrollY = 0;
@@ -66,7 +66,7 @@ function releaseLock() {
 }
 
 export function useBodyScrollLock(isOpen: boolean) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen) return;
     lockCount += 1;
     if (lockCount === 1) {
