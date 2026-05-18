@@ -2,66 +2,31 @@ import { useLayoutEffect } from 'react';
 
 let lockCount = 0;
 let savedScrollY = 0;
-let savedStyles: {
-  bodyOverflow: string;
-  bodyPosition: string;
-  bodyTop: string;
-  bodyLeft: string;
-  bodyRight: string;
-  bodyWidth: string;
-  bodyPaddingRight: string;
-  bodyTouchAction: string;
-  htmlOverflow: string;
-} | null = null;
 
 function applyLock() {
   if (typeof document === 'undefined') return;
-  const body = document.body;
   const html = document.documentElement;
+  const body = document.body;
 
   savedScrollY = window.scrollY || window.pageYOffset || 0;
   const scrollbarWidth = window.innerWidth - html.clientWidth;
 
-  savedStyles = {
-    bodyOverflow: body.style.overflow,
-    bodyPosition: body.style.position,
-    bodyTop: body.style.top,
-    bodyLeft: body.style.left,
-    bodyRight: body.style.right,
-    bodyWidth: body.style.width,
-    bodyPaddingRight: body.style.paddingRight,
-    bodyTouchAction: body.style.touchAction,
-    htmlOverflow: html.style.overflow,
-  };
-
-  html.style.overflow = 'hidden';
-  body.style.overflow = 'hidden';
-  body.style.position = 'fixed';
-  body.style.top = `-${savedScrollY}px`;
-  body.style.left = '0';
-  body.style.right = '0';
-  body.style.width = '100%';
-  if (scrollbarWidth > 0) {
-    body.style.paddingRight = `${scrollbarWidth}px`;
-  }
+  body.style.setProperty('--scroll-lock-top', `-${savedScrollY}px`);
+  body.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
+  html.classList.add('scroll-locked');
+  body.classList.add('scroll-locked');
 }
 
 function releaseLock() {
-  if (typeof document === 'undefined' || !savedStyles) return;
-  const body = document.body;
+  if (typeof document === 'undefined') return;
   const html = document.documentElement;
+  const body = document.body;
 
-  body.style.overflow = savedStyles.bodyOverflow;
-  body.style.position = savedStyles.bodyPosition;
-  body.style.top = savedStyles.bodyTop;
-  body.style.left = savedStyles.bodyLeft;
-  body.style.right = savedStyles.bodyRight;
-  body.style.width = savedStyles.bodyWidth;
-  body.style.paddingRight = savedStyles.bodyPaddingRight;
-  body.style.touchAction = savedStyles.bodyTouchAction;
-  html.style.overflow = savedStyles.htmlOverflow;
+  html.classList.remove('scroll-locked');
+  body.classList.remove('scroll-locked');
+  body.style.removeProperty('--scroll-lock-top');
+  body.style.removeProperty('--scrollbar-width');
 
-  savedStyles = null;
   window.scrollTo(0, savedScrollY);
 }
 

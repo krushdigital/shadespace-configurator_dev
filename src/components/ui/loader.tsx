@@ -1,5 +1,5 @@
-// components/LoadingOverlay.tsx
 import React, { useState, useEffect } from 'react';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 
 interface LoadingOverlayProps {
     isVisible: boolean;
@@ -14,16 +14,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
 }) => {
     const [displayText, setDisplayText] = useState('');
 
-    // Lock body scroll while overlay is visible
-    useEffect(() => {
-        if (!isVisible) return;
-        document.body.style.height = "100vh";
-        document.body.style.overflowY = "hidden";
-        return () => {
-            document.body.style.height = "";
-            document.body.style.overflowY = "";
-        };
-    }, [isVisible]);
+    useBodyScrollLock(isVisible);
 
     // Typing effect for current step
     useEffect(() => {
@@ -48,7 +39,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
     if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#01312D]/95 backdrop-blur-sm" style={{ height: "100vh" }} >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#01312D]/95 backdrop-blur-sm">
             <div className="bg-[#FCFFF7] rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-[#BFF102]">
                 {/* Logo */}
                 <div className="flex justify-center mb-6">
