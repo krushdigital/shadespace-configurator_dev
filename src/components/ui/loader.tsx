@@ -14,17 +14,20 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
 }) => {
     const [displayText, setDisplayText] = useState('');
 
+    // Lock body scroll while overlay is visible
+    useEffect(() => {
+        if (!isVisible) return;
+        document.body.style.height = "100vh";
+        document.body.style.overflowY = "hidden";
+        return () => {
+            document.body.style.height = "";
+            document.body.style.overflowY = "";
+        };
+    }, [isVisible]);
+
     // Typing effect for current step
     useEffect(() => {
         if (!isVisible) return;
-
-        if (isVisible) {
-            document.body.style.height = "100vh"
-            document.body.style.overflowY = "hidden"
-        } else {
-            document.body.style.height = "auto"
-            document.body.style.overflowY = "auto"
-        }
 
         let currentIndex = 0;
         const text = currentStep;

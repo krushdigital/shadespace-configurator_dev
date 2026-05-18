@@ -69,7 +69,6 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
   const [compareId, setCompareId] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ViewKey>('lifestyle');
   const [showPicker, setShowPicker] = useState(false);
-  const savedScrollRef = useRef(0);
 
   useEffect(() => {
     if (open && initialFabricId) {
@@ -80,23 +79,6 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
       setActiveView('lifestyle');
     }
   }, [open, initialFabricId]);
-
-  // iOS-safe body scroll lock
-  useEffect(() => {
-    if (!open) return;
-    savedScrollRef.current = window.scrollY || 0;
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${savedScrollRef.current}px`;
-    document.body.style.width = '100%';
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.width = '';
-      document.body.style.overflow = '';
-      window.scrollTo(0, savedScrollRef.current);
-    };
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
