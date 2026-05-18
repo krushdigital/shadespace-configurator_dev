@@ -1437,11 +1437,11 @@ export function ShadeConfigurator() {
         metafieldProperties['Quote Total'] = `${authoritativeCurrency} ${authoritativeTotal}`;
       }
 
-      const fabricationTypeValue = config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit';
+      const fabricationTypeValue = config.measurementOption === 'adjust' ? 'fabricated_to_fit' : 'dimensions_provided';
       metafieldProperties['_fabrication_type'] = fabricationTypeValue;
       metafieldProperties['Fabrication Method'] = config.measurementOption === 'adjust'
-        ? 'Custom dimensions provided by customer'
-        : 'Manufactured to Fit my Space';
+        ? 'Manufactured to fit my space'
+        : 'Custom dimensions provided by customer';
       console.log('✅ Added fabrication type:', fabricationTypeValue);
 
       if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http')) {

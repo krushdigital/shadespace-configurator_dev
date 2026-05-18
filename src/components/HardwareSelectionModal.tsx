@@ -158,11 +158,8 @@ export function HardwareSelectionModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-3 sm:p-6 overscroll-contain"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
       onClick={onClose}
-      onWheel={e => e.stopPropagation()}
-      onTouchMove={e => e.stopPropagation()}
-      style={{ touchAction: 'none' }}
     >
       <div
         className="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"

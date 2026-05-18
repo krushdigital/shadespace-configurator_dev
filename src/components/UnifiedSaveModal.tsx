@@ -476,8 +476,8 @@ export function UnifiedSaveModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overscroll-contain" onClick={handleClose}>
-      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={handleClose}>
+      <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-6 pb-0">
           <div />
           <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors" aria-label="Close">
@@ -799,9 +799,15 @@ export function UnifiedSaveModal({
                 className="w-full"
                 disabled={isSubmitting || !isFormValid()}
               >
-                {isSubmitting
-                  ? (isEmailMode ? 'Saving & Sending...' : 'Saving...')
-                  : (isEmailMode ? 'Save & Email' : 'Save Progress')}
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    {isEmailMode ? 'Saving & Sending...' : 'Saving...'}
+                  </span>
+                ) : (isEmailMode ? 'Save & Email' : 'Save Progress')}
               </Button>
               <Button
                 variant="ghost"

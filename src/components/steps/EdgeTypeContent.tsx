@@ -234,7 +234,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
 
       {enlargedImage && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fadeIn_0.15s_ease-out] overscroll-contain"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fadeIn_0.15s_ease-out]"
           onClick={() => setEnlargedImage(null)}
           role="dialog"
           aria-modal="true"

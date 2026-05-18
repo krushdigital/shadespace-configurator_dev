@@ -159,11 +159,11 @@ export const RegeneratePricesModal: React.FC<RegeneratePricesModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overscroll-contain"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       onClick={onClose}
     >
       <Card
-        className="max-w-2xl w-full max-h-[90vh] flex flex-col overscroll-contain"
+        className="max-w-2xl w-full max-h-[90vh] flex flex-col"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         <div className="flex justify-between items-start p-6 pb-4 flex-shrink-0 border-b border-gray-200">

@@ -177,8 +177,8 @@ export const EmailAnalytics: React.FC<Props> = ({ dateRange, timezone = 'UTC' })
       </Card>
 
       {preview && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overscroll-contain" onClick={() => setPreview(null)}>
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
               <h3 className="font-bold text-gray-900">{preview.subject_snapshot}</h3>
               <button onClick={() => setPreview(null)} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100" aria-label="Close">
