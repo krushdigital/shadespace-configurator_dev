@@ -54,10 +54,12 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        inlineDynamicImports: true,
-        manualChunks: undefined,
+        inlineDynamicImports: false,
+        manualChunks: {
+          three: ['three', '@react-three/fiber', '@react-three/drei'],
+        },
         entryFileNames: "bundle.js",
-        chunkFileNames: "bundle.js",
+        chunkFileNames: "[name]-[hash].js",
         assetFileNames: "bundle.[ext]",
       },
     },
