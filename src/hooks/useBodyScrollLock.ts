@@ -3,29 +3,29 @@ import { useLayoutEffect } from 'react';
 let lockCount = 0;
 let savedScrollY = 0;
 
+function getScrollbarWidth(): number {
+  return window.innerWidth - document.documentElement.clientWidth;
+}
+
 function applyLock() {
   if (typeof document === 'undefined') return;
   const html = document.documentElement;
-  const body = document.body;
 
   savedScrollY = window.scrollY || window.pageYOffset || 0;
-  const scrollbarWidth = window.innerWidth - html.clientWidth;
+  const scrollbarWidth = getScrollbarWidth();
 
-  body.style.setProperty('--scroll-lock-top', `-${savedScrollY}px`);
-  body.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
-  html.classList.add('scroll-locked');
-  body.classList.add('scroll-locked');
+  if (scrollbarWidth > 0) {
+    html.style.paddingRight = `${scrollbarWidth}px`;
+  }
+  html.style.overflow = 'hidden';
 }
 
 function releaseLock() {
   if (typeof document === 'undefined') return;
   const html = document.documentElement;
-  const body = document.body;
 
-  html.classList.remove('scroll-locked');
-  body.classList.remove('scroll-locked');
-  body.style.removeProperty('--scroll-lock-top');
-  body.style.removeProperty('--scrollbar-width');
+  html.style.overflow = '';
+  html.style.paddingRight = '';
 
   window.scrollTo(0, savedScrollY);
 }
@@ -44,4 +44,9 @@ export function useBodyScrollLock(isOpen: boolean) {
       }
     };
   }, [isOpen]);
+}
+
+export function forceReleaseLock() {
+  lockCount = 0;
+  releaseLock();
 }

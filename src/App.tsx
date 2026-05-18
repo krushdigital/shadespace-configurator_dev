@@ -3,6 +3,7 @@ import { ShadeConfigurator } from './components/ShadeConfigurator';
 import { Admin } from './pages/Admin';
 import { SetupPassword } from './pages/SetupPassword';
 import { installLocalizationFormInterceptor } from './utils/currencyDetection';
+import { forceReleaseLock } from './hooks/useBodyScrollLock';
 import './index.css';
 
 type AppRoute = 'configurator' | 'admin' | 'setup-password';
@@ -10,6 +11,21 @@ type AppRoute = 'configurator' | 'admin' | 'setup-password';
 const App = () => {
   const [currency, setCurrency] = useState(null)
   const [route, setRoute] = useState<AppRoute>('configurator');
+
+  // Safety net: periodically check if scroll got stuck locked with no modal open
+  useEffect(() => {
+    const check = () => {
+      const html = document.documentElement;
+      if (html.style.overflow === 'hidden') {
+        const hasOpenModal = document.querySelector('.fixed.inset-0, [role="dialog"]');
+        if (!hasOpenModal) {
+          forceReleaseLock();
+        }
+      }
+    };
+    const id = setInterval(check, 2000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     installLocalizationFormInterceptor();
