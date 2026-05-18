@@ -17,8 +17,8 @@
     "@headlessui/react": "^2.2.9",
     "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.2.1",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
+    "@react-three/drei": "^9.108.4",
+    "@react-three/fiber": "^8.17.10",
     "@remix-run/dev": "^2.16.1",
     "@remix-run/fs-routes": "^2.16.1",
     "@remix-run/node": "^2.16.1",
@@ -31,7 +31,7 @@
     "@shopify/shopify-app-session-storage-prisma": "^6.0.0",
     "@supabase/supabase-js": "^2.99.2",
     "@types/node": "^24.2.1",
-    "@types/three": "^0.184.1",
+    "@types/three": "^0.168.0",
     "currency-converter-lt": "^2.0.1",
     "dotenv": "^17.2.2",
     "html2canvas": "^1.4.1",
@@ -45,7 +45,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-toastify": "^11.0.5",
-    "three": "^0.184.0",
+    "three": "^0.168.0",
     "vite-tsconfig-paths": "^5.0.1"
   },
   "devDependencies": {
