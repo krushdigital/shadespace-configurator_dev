@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import { X, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Check, GitCompare } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { useLenisPrevent } from '../hooks/useLenisPrevent';
 import { Fabric, FabricSpec } from '../types';
 
 type ViewKey = 'lifestyle' | 'swatch' | 'macro';
@@ -90,6 +91,7 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
   }, [open, onClose]);
 
   useBodyScrollLock(open);
+  const lenisRef = useLenisPrevent<HTMLDivElement>(open);
 
   if (!open) return null;
 
@@ -107,10 +109,11 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
 
   return createPortal(
     <div
+      data-lenis-prevent
       className="fixed inset-0 z-[10000] flex items-stretch md:items-center justify-center bg-black/70 md:p-5"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full max-w-[1100px] h-[100dvh] md:h-auto md:max-h-[92vh] overflow-hidden md:rounded-xl bg-white shadow-2xl flex flex-col">
+      <div ref={lenisRef} className="relative w-full max-w-[1100px] h-[100dvh] md:h-auto md:max-h-[92vh] overflow-hidden md:rounded-xl bg-white shadow-2xl flex flex-col">
         <button
           onClick={onClose}
           aria-label="Close"

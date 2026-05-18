@@ -143,6 +143,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
       </button>
       {open && content && !isMobile && createPortal(
         <div
+          data-lenis-prevent
           style={{ position: 'fixed', left: coords.x, top: coords.y, zIndex: 80 }}
           onMouseEnter={handleOpen}
           onMouseLeave={handleClose}
@@ -152,7 +153,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
         document.body,
       )}
       {open && content && isMobile && createPortal(
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/50 p-0" onClick={handleClose}>
+        <div data-lenis-prevent className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/50 p-0" onClick={handleClose}>
           <div className="w-full" onClick={e => e.stopPropagation()}>
             <div className="rounded-t-2xl bg-white p-4 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain">
               {content}

@@ -8,6 +8,7 @@ import type { HardwareItem, HardwareCategory, HardwarePack } from '../hooks/useH
 import { groupItemsByCategory, useHardwareSearch, getLiveHardwarePrice } from '../hooks/useHardwareCatalog';
 import { getPricingForCurrency, PricingSetting } from '../hooks/usePricingSettings';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { useLenisPrevent } from '../hooks/useLenisPrevent';
 
 interface HardwareSelectionModalProps {
   open: boolean;
@@ -65,6 +66,7 @@ export function HardwareSelectionModal({
   }, [open, initialSelection, items]);
 
   useBodyScrollLock(open);
+  const lenisRef = useLenisPrevent<HTMLDivElement>(open);
 
   useEffect(() => {
     if (!open) return;
@@ -158,6 +160,7 @@ export function HardwareSelectionModal({
 
   return createPortal(
     <div
+      data-lenis-prevent
       className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
       onClick={onClose}
     >
@@ -197,7 +200,7 @@ export function HardwareSelectionModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-3" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
+        <div ref={lenisRef} className="flex-1 overflow-y-auto overscroll-contain px-5 pb-3" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
           {grouped.length === 0 && (
             <div className="py-12 text-center text-sm text-slate-500">No hardware matches your search.</div>
           )}
@@ -289,6 +292,7 @@ export function HardwareSelectionModal({
 
         {hoverItem && tooltipPos && typeof document !== 'undefined' && createPortal(
           <div
+            data-lenis-prevent
             ref={tooltipRef}
             role="tooltip"
             className="pointer-events-none fixed z-[90] hidden w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl lg:block"
@@ -319,6 +323,7 @@ export function HardwareSelectionModal({
 
         {detailItem && typeof document !== 'undefined' && createPortal(
           <div
+            data-lenis-prevent
             className="fixed inset-0 z-[85] flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 overscroll-contain"
             onClick={() => setDetailItem(null)}
             onWheel={e => e.stopPropagation()}

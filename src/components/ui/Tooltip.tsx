@@ -199,6 +199,7 @@ export function Tooltip({ content, children, className = '', onOpen, fullWidth =
 
   const tooltipElement = isVisible ? createPortal(
     <div
+      data-lenis-prevent
       className={`fixed bg-white border border-slate-300 rounded-lg shadow-2xl ${className}`}
       style={{
         left: `${position.x}px`,

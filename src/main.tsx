@@ -13,6 +13,7 @@ preloadCurrencyMap();
 const container = document.getElementById("SHADE_SPACE");
 
 if (container) {
+  container.setAttribute('data-lenis-prevent', '');
   createRoot(container).render(
    <StrictMode>
       <ToastProvider>
