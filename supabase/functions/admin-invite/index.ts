@@ -16,22 +16,22 @@ const SETUP_URL = "https://shadespace.com.au/pages/shade-sail-configurator/?setu
 
 function buildAdminInviteHtml(opts: { inviterName: string; inviteeName: string; role: string }) {
   const roleLabel = opts.role === "super_admin" ? "Super Admin" : "Admin";
-  return `<!doctype html><html><body style="margin:0;background:#f6f7f8;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#111">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px"><tr><td align="center">
-    <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">
+  return `<!doctype html><html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelPerInch>96</o:PixelPerInch></o:OfficeDocumentSettings></xml><![endif]--><!--[if mso]><style type="text/css">body,table,td{font-family:Helvetica,Arial,sans-serif !important;}</style><![endif]--></head><body style="margin:0;background:#f6f7f8;font-family:Helvetica,Arial,sans-serif;color:#111">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f8;padding:32px 16px"><tr><td align="center">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #e5e7eb">
       <tr><td style="padding:28px 32px;background:#0f3d2e;color:#fff">
-        <div style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">Shade Systems</div>
-        <div style="font-size:22px;font-weight:700;margin-top:4px">Admin Dashboard Invitation</div>
+        <p style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 4px 0;color:#ffffff;opacity:.8">SHADE SYSTEMS</p>
+        <p style="font-size:22px;font-weight:700;margin:0;color:#ffffff">Admin Dashboard Invitation</p>
       </td></tr>
-      <tr><td style="padding:28px 32px;font-size:15px;line-height:1.55">
-        <p>Hi${opts.inviteeName ? ` ${opts.inviteeName}` : ""},</p>
-        <p><strong>${opts.inviterName}</strong> has invited you to join the Shade Systems Admin Dashboard as a <strong>${roleLabel}</strong>.</p>
-        <p>Click the button below to sign in with your Google account. Your access will be activated automatically on first sign-in.</p>
+      <tr><td style="padding:28px 32px;font-size:15px;line-height:23px;mso-line-height-rule:exactly;">
+        <p style="margin:0 0 16px 0;">Hi${opts.inviteeName ? ` ${opts.inviteeName}` : ""},</p>
+        <p style="margin:0 0 16px 0;"><strong>${opts.inviterName}</strong> has invited you to join the Shade Systems Admin Dashboard as a <strong>${roleLabel}</strong>.</p>
+        <p style="margin:0 0 16px 0;">Click the button below to sign in with your Google account. Your access will be activated automatically on first sign-in.</p>
         <p style="text-align:center;margin:28px 0">
-          <a href="${ADMIN_URL}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Sign in to Admin Dashboard</a>
+          <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${ADMIN_URL}" style="height:42px;v-text-anchor:middle;width:250px;" arcsize="19%" strokecolor="#0f3d2e" fillcolor="#0f3d2e"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;">Sign in to Admin Dashboard</center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="${ADMIN_URL}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Sign in to Admin Dashboard</a><!--<![endif]-->
         </p>
-        <p style="font-size:13px;color:#4b5563">Or go to:<br/><a href="${ADMIN_URL}" style="color:#0f3d2e;word-break:break-all">${ADMIN_URL}</a></p>
-        <p style="font-size:12px;color:#6b7280;margin-top:24px">If you weren't expecting this invite, you can safely ignore it.</p>
+        <p style="font-size:13px;color:#4b5563;margin:0 0 16px 0;">Or go to:<br/><a href="${ADMIN_URL}" style="color:#0f3d2e;word-break:break-all">${ADMIN_URL}</a></p>
+        <p style="font-size:12px;color:#6b7280;margin:24px 0 0 0;">If you weren't expecting this invite, you can safely ignore it.</p>
       </td></tr>
       <tr><td style="padding:16px 32px;background:#f9fafb;font-size:12px;color:#6b7280">Shade Systems - shadespace.com</td></tr>
     </table>
@@ -39,22 +39,22 @@ function buildAdminInviteHtml(opts: { inviterName: string; inviteeName: string; 
 }
 
 function buildTeamMemberInviteHtml(opts: { inviterName: string; inviteeName: string; setupUrl: string }) {
-  return `<!doctype html><html><body style="margin:0;background:#f6f7f8;font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#111">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px"><tr><td align="center">
-    <table width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb">
+  return `<!doctype html><html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelPerInch>96</o:PixelPerInch></o:OfficeDocumentSettings></xml><![endif]--><!--[if mso]><style type="text/css">body,table,td{font-family:Helvetica,Arial,sans-serif !important;}</style><![endif]--></head><body style="margin:0;background:#f6f7f8;font-family:Helvetica,Arial,sans-serif;color:#111">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f8;padding:32px 16px"><tr><td align="center">
+    <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#fff;border:1px solid #e5e7eb">
       <tr><td style="padding:28px 32px;background:#0f3d2e;color:#fff">
-        <div style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">Shade Systems</div>
-        <div style="font-size:22px;font-weight:700;margin-top:4px">You're invited to the team</div>
+        <p style="font-size:14px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 4px 0;color:#ffffff;opacity:.8">SHADE SYSTEMS</p>
+        <p style="font-size:22px;font-weight:700;margin:0;color:#ffffff">You're invited to the team</p>
       </td></tr>
-      <tr><td style="padding:28px 32px;font-size:15px;line-height:1.55">
-        <p>Hi${opts.inviteeName ? ` ${opts.inviteeName}` : ""},</p>
-        <p><strong>${opts.inviterName}</strong> has invited you to join the Shade Systems team dashboard.</p>
-        <p>Click the button below to set up your password and get started.</p>
+      <tr><td style="padding:28px 32px;font-size:15px;line-height:23px;mso-line-height-rule:exactly;">
+        <p style="margin:0 0 16px 0;">Hi${opts.inviteeName ? ` ${opts.inviteeName}` : ""},</p>
+        <p style="margin:0 0 16px 0;"><strong>${opts.inviterName}</strong> has invited you to join the Shade Systems team dashboard.</p>
+        <p style="margin:0 0 16px 0;">Click the button below to set up your password and get started.</p>
         <p style="text-align:center;margin:28px 0">
-          <a href="${opts.setupUrl}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Set up your password</a>
+          <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.setupUrl}" style="height:42px;v-text-anchor:middle;width:230px;" arcsize="19%" strokecolor="#0f3d2e" fillcolor="#0f3d2e"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;">Set up your password</center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="${opts.setupUrl}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Set up your password</a><!--<![endif]-->
         </p>
-        <p style="font-size:13px;color:#4b5563">Or copy this link into your browser:<br/><a href="${opts.setupUrl}" style="color:#0f3d2e;word-break:break-all">${opts.setupUrl}</a></p>
-        <p style="font-size:12px;color:#6b7280;margin-top:24px">This link expires in 72 hours. If you weren't expecting this invite, you can safely ignore it.</p>
+        <p style="font-size:13px;color:#4b5563;margin:0 0 16px 0;">Or copy this link into your browser:<br/><a href="${opts.setupUrl}" style="color:#0f3d2e;word-break:break-all">${opts.setupUrl}</a></p>
+        <p style="font-size:12px;color:#6b7280;margin:24px 0 0 0;">This link expires in 72 hours. If you weren't expecting this invite, you can safely ignore it.</p>
       </td></tr>
       <tr><td style="padding:16px 32px;background:#f9fafb;font-size:12px;color:#6b7280">Shade Systems - shadespace.com</td></tr>
     </table>

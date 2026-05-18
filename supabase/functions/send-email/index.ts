@@ -129,7 +129,7 @@ function rowsHtml(title: string, source: Record<string, any> | undefined, labelF
     const display = typeof value === "string" ? value : (value as any)?.formatted ?? String(value);
     rows += `<tr><td style="color:#307C31;padding:6px 0;font-weight:bold;font-size:14px;">${labelFn(key)}</td><td style="color:#01312D;font-weight:600;padding:6px 0;text-align:right;font-size:14px;">${display}</td></tr>`;
   }
-  return `<div style="padding:0 30px 20px 30px;"><h3 style="color:#01312D;margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #BFF102;padding-bottom:6px;">${title}</h3><table width="100%" cellpadding="0" cellspacing="0">${rows}</table></div>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:0 30px 20px 30px;"><h3 style="color:#01312D;margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #BFF102;padding-bottom:6px;">${title}</h3><table width="100%" cellpadding="0" cellspacing="0">${rows}</table></td></tr></table>`;
 }
 
 function measurementRowsOnly(source: Record<string, any> | undefined, labelFn: (k: string) => string): string {
