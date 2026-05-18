@@ -188,7 +188,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
         <div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>
         <div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>
         <div class="row"><span class="muted">Total Area</span><span class="val">${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)}</span></div>
-        <div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${cfgData?.edgeType === 'webbing' ? 'Webbing Reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled Edge' : 'Webbing Reinforced'}</span></div>`;
+        <div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${cfgData?.edgeType === 'webbing' ? 'Webbing Reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled Edge' : 'Webbing Reinforced'}</span></div>
+        <div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>`;
     case 'measurements': {
       if (cfgData && cfgData.measurements) {
         const edges: string[] = [];

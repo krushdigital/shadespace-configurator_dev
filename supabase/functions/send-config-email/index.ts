@@ -285,6 +285,7 @@ Deno.serve(async (req: Request) => {
               edge_type: Edge_Type || "",
               wire_or_webbing: formatWireValue(Wire_Thickness || Webbing_Edge_Width),
               wire_or_webbing_label: Wire_Thickness ? "Wire Thickness" : Webbing_Edge_Width ? "Webbing Width" : "",
+              thread_type: "Sewn with SolarFix\u00AE PTFE thread",
               corners: corners || "",
               area: formatArea(Area),
               perimeter: formatLinear(Perimeter),

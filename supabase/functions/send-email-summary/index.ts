@@ -183,6 +183,10 @@ function generateEmailHTML(data: any): string {
           </tr>
           ` : ''}
           <tr>
+            <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Thread:</td>
+            <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">Sewn with SolarFix\u00AE PTFE thread</td>
+          </tr>
+          <tr>
             <td style="color: #64748B; padding: 8px 0; border-bottom: 1px solid #E2E8F0;">Number of Corners:</td>
             <td style="color: #01312D; font-weight: 600; padding: 8px 0; text-align: right; border-bottom: 1px solid #E2E8F0;">${corners}</td>
           </tr>

@@ -203,6 +203,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                       .map((benefit, index) => (
                                         <li key={index}>• {benefit}</li>
                                     ))}
+                                    <li>• Sewn with SolarFix® PTFE thread</li>
                                   </ul>
                                 </div>
 

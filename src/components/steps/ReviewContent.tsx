@@ -567,6 +567,7 @@ console.log('✌️result --->', result);
             'Not FR Certified' : selectedFabric?.label,
           Shade_Factor: selectedColor?.shadeFactor,
           Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
+          Thread: 'Sewn with SolarFix\u00AE PTFE thread',
           Wire_Thickness: calculations?.wireThickness !== undefined
             ? config.unit === 'imperial'
               ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
@@ -665,6 +666,10 @@ console.log('✌️result --->', result);
                       </span>
                     </div>
                     <div className="flex justify-between">
+                      <span className="text-slate-600">Thread:</span>
+                      <span className="font-medium text-slate-900">SolarFix® PTFE</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-slate-600">Corners:</span>
                       <span className="font-medium text-slate-900">{config.corners}</span>
                     </div>
@@ -759,6 +764,10 @@ console.log('✌️result --->', result);
                     </span>
                   </div>
                 )}
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Thread:</span>
+                  <span className="font-medium text-slate-900">Sewn with SolarFix® PTFE thread</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Corners:</span>
                   <span className="font-medium text-slate-900">{config.corners}</span>
