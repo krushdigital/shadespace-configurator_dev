@@ -2,6 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Scoped preflight reset: only applies inside our app container and portaled modals.
+ * We disable Tailwind's global preflight to avoid interfering with the host page
+ * (e.g. Shopify theme scroll management).
+ */
+#SHADE_SPACE *,
+#SHADE_SPACE *::before,
+#SHADE_SPACE *::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+
+#SHADE_SPACE {
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+}
+
+#SHADE_SPACE img,
+#SHADE_SPACE svg,
+#SHADE_SPACE video,
+#SHADE_SPACE canvas,
+#SHADE_SPACE audio,
+#SHADE_SPACE iframe,
+#SHADE_SPACE embed,
+#SHADE_SPACE object {
+  display: block;
+  vertical-align: middle;
+}
+
+#SHADE_SPACE img,
+#SHADE_SPACE video {
+  max-width: 100%;
+  height: auto;
+}
+
+#SHADE_SPACE button,
+#SHADE_SPACE input,
+#SHADE_SPACE optgroup,
+#SHADE_SPACE select,
+#SHADE_SPACE textarea {
+  font-family: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  font-size: 100%;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+#SHADE_SPACE button,
+#SHADE_SPACE [role="button"] {
+  cursor: pointer;
+}
+
+#SHADE_SPACE a {
+  color: inherit;
+  text-decoration: inherit;
+}
+
+#SHADE_SPACE h1,
+#SHADE_SPACE h2,
+#SHADE_SPACE h3,
+#SHADE_SPACE h4,
+#SHADE_SPACE h5,
+#SHADE_SPACE h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+#SHADE_SPACE ol,
+#SHADE_SPACE ul,
+#SHADE_SPACE menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#SHADE_SPACE p {
+  margin: 0;
+}
+
+/* Portaled modals (rendered to document.body via createPortal) need the reset too.
+   Target fixed overlays with high z-index which are always our app's portaled content. */
+body > .fixed *,
+body > .fixed *::before,
+body > .fixed *::after,
+body > .fixed,
+body > .fixed::before,
+body > .fixed::after {
+  box-sizing: border-box;
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+
 /* Account for fixed website header when scrolling */
 html {
   scroll-padding-top: 100px;
