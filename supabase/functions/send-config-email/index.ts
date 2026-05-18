@@ -306,9 +306,6 @@ Deno.serve(async (req: Request) => {
               product_name: (Fabric_Type && fabricColor && corners)
                 ? `Custom ${Fabric_Type} Shade Sail - ${fabricColor} - ${corners} Corner`
                 : "Custom Shade Sail",
-              edge_measurements_html: buildRows("Precise Measurements", backendEdgeMeasurements || edgeMeasurements, (k) => `${k.charAt(0)} \u2192 ${k.charAt(1)}`),
-              diagonal_measurements_html: buildRows("Diagonal Measurements", backendDiagonalMeasurements || diagonalMeasurementsObj, (k) => `Diagonal ${k.charAt(0)} \u2192 ${k.charAt(1)}`),
-              anchor_measurements_html: buildRows("Anchor Point Heights", backendAnchorMeasurements || anchorPointMeasurements, (k) => `Corner ${k}`),
               corner_hardware_html: buildHardwareRows(cornerHardware, hardwareBreakdown),
             },
           }),
@@ -389,15 +386,6 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-function buildRows(title: string, source: Record<string, any> | undefined, labelFn: (k: string) => string): string {
-  if (!source || Object.keys(source).length === 0) return "";
-  let rows = "";
-  for (const [key, value] of Object.entries(source)) {
-    const display = typeof value === "string" ? value : (value as any)?.formatted ?? String(value);
-    rows += `<tr><td style="color:#307C31;padding:6px 0;font-weight:bold;font-size:14px;">${labelFn(key)}</td><td style="color:#01312D;font-weight:600;padding:6px 0;text-align:right;font-size:14px;">${display}</td></tr>`;
-  }
-  return `<div style="padding:0 30px 20px 30px;"><h3 style="color:#01312D;margin:0 0 12px 0;font-size:16px;border-bottom:2px solid #BFF102;padding-bottom:6px;">${title}</h3><table width="100%" cellpadding="0" cellspacing="0">${rows}</table></div>`;
-}
 
 function formatArea(value: unknown): string {
   if (value == null || value === "") return "";
