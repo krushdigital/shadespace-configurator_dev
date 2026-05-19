@@ -2505,19 +2505,21 @@ export function ShadeConfigurator() {
                     )}
                   </div>
                 ) : (
-                  <Suspense fallback={
-                    <div className="flex items-center justify-center h-[420px] bg-slate-50 rounded-lg border border-slate-200">
-                      <div className="text-center">
-                        <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
-                        <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                  <div className="h-[calc(100vh-12rem)]">
+                    <Suspense fallback={
+                      <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
+                        <div className="text-center">
+                          <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
+                          <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                        </div>
                       </div>
-                    </div>
-                  }>
-                    <ShadeSail3DViewer
-                      config={config}
-                      highlightedMeasurement={highlightedMeasurement}
-                    />
-                  </Suspense>
+                    }>
+                      <ShadeSail3DViewer
+                        config={config}
+                        highlightedMeasurement={highlightedMeasurement}
+                      />
+                    </Suspense>
+                  </div>
                 )}
               </div>
             );

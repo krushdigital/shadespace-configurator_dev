@@ -305,7 +305,7 @@ function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
 
 export default function ShadeSail3DViewer({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
   return (
-    <div className="w-full h-full min-h-[400px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
+    <div className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
       <Canvas
         camera={{ position: [6, 5, 6], fov: 45, near: 0.1, far: 100 }}
         shadows
