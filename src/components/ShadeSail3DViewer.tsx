@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { ConfiguratorState, Point } from '../types';
@@ -43,10 +43,17 @@ function svgPointsTo3D(
   const centerX = (minX + maxX) / 2;
   const centerY = (minY + maxY) / 2;
 
+  const triHeights = [2200, 3000, 3600];
+
   return svgPoints.map((p, i) => {
     const x = (p.x - centerX) * scale;
     const z = (p.y - centerY) * scale;
-    const heightMm = (heights[i] && heights[i] > 0) ? heights[i] : DEFAULT_HEIGHT_MM;
+    let heightMm: number;
+    if (corners === 3) {
+      heightMm = triHeights[i] || triHeights[0];
+    } else {
+      heightMm = (heights[i] && heights[i] > 0) ? heights[i] : DEFAULT_HEIGHT_MM;
+    }
     const y = (heightMm / 1000);
     return new THREE.Vector3(x, y, z);
   });
@@ -230,6 +237,50 @@ function GridLines() {
   return <gridHelper args={[20, 20, '#d0d0d0', '#e0e0e0']} position={[0, 0.001, 0]} />;
 }
 
+function CameraFramer({ corners3D, centroid }: { corners3D: THREE.Vector3[]; centroid: THREE.Vector3 }) {
+  const { camera, size } = useThree();
+  const hasFramed = useRef(false);
+  const prevCornersKey = useRef('');
+
+  useEffect(() => {
+    if (corners3D.length < 3) return;
+
+    const key = corners3D.map(v => `${v.x.toFixed(2)},${v.y.toFixed(2)},${v.z.toFixed(2)}`).join('|');
+    if (key === prevCornersKey.current && hasFramed.current) return;
+    prevCornersKey.current = key;
+    hasFramed.current = true;
+
+    const box = new THREE.Box3();
+    for (const p of corners3D) {
+      box.expandByPoint(p);
+      box.expandByPoint(new THREE.Vector3(p.x, 0, p.z));
+    }
+
+    const sphere = new THREE.Sphere();
+    box.getBoundingSphere(sphere);
+
+    const fov = (camera as THREE.PerspectiveCamera).fov * (Math.PI / 180);
+    const aspect = size.width / size.height;
+    const hFov = 2 * Math.atan(Math.tan(fov / 2) * aspect);
+    const effectiveFov = Math.min(fov, hFov);
+    const distance = (sphere.radius * 1.3) / Math.tan(effectiveFov / 2);
+
+    const target = new THREE.Vector3(centroid.x, centroid.y * 0.5, centroid.z);
+    const angle = Math.PI / 5;
+    const azimuth = Math.PI / 4;
+
+    camera.position.set(
+      target.x + distance * Math.cos(angle) * Math.sin(azimuth),
+      target.y + distance * Math.sin(angle),
+      target.z + distance * Math.cos(angle) * Math.cos(azimuth)
+    );
+    camera.lookAt(target);
+    camera.updateProjectionMatrix();
+  }, [corners3D, centroid, camera, size]);
+
+  return null;
+}
+
 function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
   const controlsRef = useRef<any>(null);
 
@@ -288,14 +339,16 @@ function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
         <CornerLabel key={i} position={pos} label={getCornerLabel(i)} />
       ))}
 
+      <CameraFramer corners3D={corners3D} centroid={centroid} />
+
       <OrbitControls
         ref={controlsRef}
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
         maxPolarAngle={Math.PI / 2 - 0.05}
-        minDistance={3}
-        maxDistance={20}
+        minDistance={2}
+        maxDistance={30}
         target={[centroid.x, centroid.y * 0.5, centroid.z]}
       />
       <Environment preset="city" />
@@ -307,7 +360,7 @@ export default function ShadeSail3DViewer({ config, highlightedMeasurement }: Sh
   return (
     <div className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
       <Canvas
-        camera={{ position: [6, 5, 6], fov: 45, near: 0.1, far: 100 }}
+        camera={{ fov: 45, near: 0.1, far: 100 }}
         shadows
         gl={{ antialias: true, alpha: false }}
       >
