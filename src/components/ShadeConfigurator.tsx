@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { PriceSummaryDisplay } from './PriceSummaryDisplay';
@@ -37,6 +37,9 @@ import { analytics } from '../utils/analytics';
 import { eventTrackers } from '../utils/eventTracker';
 import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
+import { Box, Layers } from 'lucide-react';
+
+const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -65,6 +68,7 @@ const INITIAL_STATE: ConfiguratorState = {
 export function ShadeConfigurator() {
   const [config, setConfig] = useState<ConfiguratorState>(INITIAL_STATE);
   const [openStep, setOpenStep] = useState<number>(0);
+  const [desktopViewMode, setDesktopViewMode] = useState<'plan' | '3d'>('plan');
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
@@ -2444,35 +2448,77 @@ export function ShadeConfigurator() {
 
             return (
               <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
-                <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                  Interactive Measurement Guide
-                </h4>
-
-                <div>
-                  <ShapeCanvas
-                    config={config}
-                    updateConfig={updateConfig}
-                    readonly={false}
-                    snapToGrid={true}
-                    highlightedMeasurement={highlightedMeasurement}
-                    highlightedCorner={highlightedCorner}
-                    isMobile={isMobile}
-                    measurementOption={config.measurementOption}
-                    unit={config.unit}
-                  />
-
-                  {config.corners >= 4 && (
-                    <div className="mt-3">
-                      <ShapeModeToggle
-                        isAutoMode={!config.hasManuallyAdjustedShape}
-                        onToggle={(isAuto) => handleToggleMode(isAuto)}
-                        corners={config.corners}
-                        hasEnoughDiagonals={desktopHasEnoughDiagonals}
-                        shapeAccuracy={desktopShapeAccuracy.accuracy}
-                      />
-                    </div>
-                  )}
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-slate-900">
+                    Interactive Measurement Guide
+                  </h4>
+                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setDesktopViewMode('plan')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        desktopViewMode === 'plan'
+                          ? 'bg-white shadow-sm text-slate-900'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      <Layers className="w-4 h-4" />
+                      Plan
+                    </button>
+                    <button
+                      onClick={() => setDesktopViewMode('3d')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        desktopViewMode === '3d'
+                          ? 'bg-white shadow-sm text-slate-900'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      <Box className="w-4 h-4" />
+                      3D
+                    </button>
+                  </div>
                 </div>
+
+                {desktopViewMode === 'plan' ? (
+                  <div>
+                    <ShapeCanvas
+                      config={config}
+                      updateConfig={updateConfig}
+                      readonly={false}
+                      snapToGrid={true}
+                      highlightedMeasurement={highlightedMeasurement}
+                      highlightedCorner={highlightedCorner}
+                      isMobile={isMobile}
+                      measurementOption={config.measurementOption}
+                      unit={config.unit}
+                    />
+
+                    {config.corners >= 4 && (
+                      <div className="mt-3">
+                        <ShapeModeToggle
+                          isAutoMode={!config.hasManuallyAdjustedShape}
+                          onToggle={(isAuto) => handleToggleMode(isAuto)}
+                          corners={config.corners}
+                          hasEnoughDiagonals={desktopHasEnoughDiagonals}
+                          shapeAccuracy={desktopShapeAccuracy.accuracy}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-[420px] bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="text-center">
+                        <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
+                        <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                      </div>
+                    </div>
+                  }>
+                    <ShadeSail3DViewer
+                      config={config}
+                      highlightedMeasurement={highlightedMeasurement}
+                    />
+                  </Suspense>
+                )}
               </div>
             );
           })()}

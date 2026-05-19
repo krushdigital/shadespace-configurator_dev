@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
@@ -9,7 +9,7 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { toast } from 'react-toastify';
@@ -21,7 +21,6 @@ import {
 import { analytics } from '../../utils/analytics';
 import { getUserCurrencyInfo } from '../../utils/currencyFormatter';
 
-const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
 
 interface DimensionsContentProps {
   config: ConfiguratorState;
@@ -91,7 +90,6 @@ export function DimensionsContent({
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
   const [showHeightsSection, setShowHeightsSection] = useState(false);
-  const [desktopViewMode, setDesktopViewMode] = useState<'plan' | '3d'>('plan');
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
   const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});
@@ -545,89 +543,6 @@ export function DimensionsContent({
         );
       })()}
 
-      {/* Desktop Visualization Panel */}
-      {!isMobile && (
-        <div className="hidden md:block mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-lg font-semibold text-slate-900">
-              Interactive Measurement Guide
-            </h4>
-            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-              <button
-                onClick={() => setDesktopViewMode('plan')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                  desktopViewMode === 'plan'
-                    ? 'bg-white shadow-sm text-slate-900'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Layers className="w-4 h-4" />
-                Plan
-              </button>
-              <button
-                onClick={() => setDesktopViewMode('3d')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                  desktopViewMode === '3d'
-                    ? 'bg-white shadow-sm text-slate-900'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Box className="w-4 h-4" />
-                3D
-              </button>
-            </div>
-          </div>
-
-          <div className="relative" style={{ minHeight: '420px' }}>
-            {desktopViewMode === 'plan' ? (
-              <div>
-                <ShapeCanvas
-                  config={config}
-                  updateConfig={updateConfig}
-                  readonly={false}
-                  snapToGrid={true}
-                  highlightedMeasurement={highlightedMeasurement}
-                  isMobile={false}
-                  measurementOption={config.measurementOption}
-                  unit={config.unit}
-                />
-                {config.corners >= 4 && (() => {
-                  const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
-                  const desktopDiagonalKeys = getDiagonalKeysForCorners(config.corners);
-                  const desktopMinDiagonals = config.corners - 3;
-                  const desktopProvidedDiagonals = desktopDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
-                  const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals;
-                  return (
-                    <div className="mt-2">
-                      <ShapeModeToggle
-                        isAutoMode={!config.hasManuallyAdjustedShape}
-                        onToggle={(isAuto) => handleToggleMode(isAuto)}
-                        corners={config.corners}
-                        hasEnoughDiagonals={desktopHasEnoughDiagonals}
-                        shapeAccuracy={desktopShapeAccuracy.accuracy}
-                      />
-                    </div>
-                  );
-                })()}
-              </div>
-            ) : (
-              <Suspense fallback={
-                <div className="flex items-center justify-center h-[420px] bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
-                    <p className="text-sm text-slate-500">Loading 3D viewer...</p>
-                  </div>
-                </div>
-              }>
-                <ShadeSail3DViewer
-                  config={config}
-                  highlightedMeasurement={highlightedMeasurement}
-                />
-              </Suspense>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Perimeter Too Large Warning */}
       {validationErrors.perimeterTooLarge && (
