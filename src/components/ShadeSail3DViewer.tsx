@@ -196,8 +196,7 @@ function SailDRing({ position, direction }: { position: THREE.Vector3; direction
   );
 }
 
-function CornerHardware({ poleTop, sailCorner, fixingPointSurface }: { poleTop: THREE.Vector3; sailCorner: THREE.Vector3; fixingPointSurface: THREE.Vector3 }) {
-  const totalDist = fixingPointSurface.distanceTo(sailCorner);
+function CornerHardware({ sailCorner, fixingPointSurface }: { poleTop: THREE.Vector3; sailCorner: THREE.Vector3; fixingPointSurface: THREE.Vector3 }) {
   const dir = useMemo(() => new THREE.Vector3().subVectors(sailCorner, fixingPointSurface).normalize(), [fixingPointSurface, sailCorner]);
   const quat = useMemo(() => {
     const q = new THREE.Quaternion();
@@ -205,63 +204,88 @@ function CornerHardware({ poleTop, sailCorner, fixingPointSurface }: { poleTop: 
     return q;
   }, [dir]);
 
-  const at = (t: number) => fixingPointSurface.clone().add(dir.clone().multiplyScalar(totalDist * t));
+  const rodRadius = 0.006;
+  const barrelRadius = 0.014;
+  const barrelLength = 0.09;
+  const rodLength = 0.05;
+  const shackleRadius = 0.014;
+  const shackleWire = 0.004;
+  const snapHookRadius = 0.016;
+  const snapHookWire = 0.004;
 
-  const rodRadius = 0.008;
-  const barrelRadius = 0.016;
-  const shackleRadius = 0.012;
+  // Sequential placement: each piece starts where the previous ended
+  let cursor = 0.02; // small gap from eye bolt ring
+
+  // Shackle connecting eye bolt to turnbuckle
+  const shackle1Pos = fixingPointSurface.clone().add(dir.clone().multiplyScalar(cursor + shackleRadius));
+  cursor += shackleRadius * 2 + 0.005;
+
+  // Left threaded rod
+  const rod1Pos = fixingPointSurface.clone().add(dir.clone().multiplyScalar(cursor + rodLength / 2));
+  cursor += rodLength;
+
+  // Barrel (center body)
+  const barrelPos = fixingPointSurface.clone().add(dir.clone().multiplyScalar(cursor + barrelLength / 2));
+  cursor += barrelLength;
+
+  // Right threaded rod
+  const rod2Pos = fixingPointSurface.clone().add(dir.clone().multiplyScalar(cursor + rodLength / 2));
+  cursor += rodLength;
+
+  // Snap hook / shackle at sail end
+  const shackle2Pos = fixingPointSurface.clone().add(dir.clone().multiplyScalar(cursor + snapHookRadius));
+  cursor += snapHookRadius * 2;
+
+  const metalMat = { color: "#b8b8b8", roughness: 0.25, metalness: 0.92 };
+  const rodMat = { color: "#b0b0b0", roughness: 0.3, metalness: 0.88 };
 
   return (
     <group>
-      {/* Shackle at eye bolt */}
-      <mesh position={at(0.05)} quaternion={quat}>
-        <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
-        <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
+      {/* Shackle at eye bolt end */}
+      <mesh position={shackle1Pos} quaternion={quat}>
+        <torusGeometry args={[shackleRadius, shackleWire, 8, 12, Math.PI]} />
+        <meshStandardMaterial {...metalMat} />
       </mesh>
-      <mesh position={at(0.05)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
-        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
+      <mesh position={shackle1Pos} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[shackleWire, shackleWire, shackleRadius * 2, 8]} />
+        <meshStandardMaterial {...metalMat} />
       </mesh>
 
-      {/* Turnbuckle left rod */}
-      <mesh position={at(0.18)} quaternion={quat}>
-        <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
-        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
+      {/* Left threaded rod */}
+      <mesh position={rod1Pos} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius, rodRadius, rodLength, 8]} />
+        <meshStandardMaterial {...rodMat} />
       </mesh>
-      {/* Turnbuckle center barrel */}
-      <mesh position={at(0.38)} quaternion={quat}>
-        <cylinderGeometry args={[barrelRadius, barrelRadius, totalDist * 0.18, 12]} />
-        <meshStandardMaterial color="#a8a8a8" roughness={0.3} metalness={0.9} />
+
+      {/* Turnbuckle barrel */}
+      <mesh position={barrelPos} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius, barrelRadius, barrelLength, 12]} />
+        <meshStandardMaterial color="#a8a8a8" roughness={0.25} metalness={0.9} />
       </mesh>
       {/* Barrel end caps */}
-      <mesh position={at(0.47)} quaternion={quat}>
-        <cylinderGeometry args={[barrelRadius * 1.2, barrelRadius, 0.01, 12]} />
-        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
+      <mesh position={barrelPos.clone().add(dir.clone().multiplyScalar(barrelLength / 2))} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius * 1.15, barrelRadius, 0.008, 12]} />
+        <meshStandardMaterial {...metalMat} />
       </mesh>
-      <mesh position={at(0.29)} quaternion={quat}>
-        <cylinderGeometry args={[barrelRadius, barrelRadius * 1.2, 0.01, 12]} />
-        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
-      </mesh>
-      {/* Turnbuckle right rod */}
-      <mesh position={at(0.58)} quaternion={quat}>
-        <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
-        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
+      <mesh position={barrelPos.clone().add(dir.clone().multiplyScalar(-barrelLength / 2))} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius, barrelRadius * 1.15, 0.008, 12]} />
+        <meshStandardMaterial {...metalMat} />
       </mesh>
 
-      {/* Shackle at sail end */}
-      <mesh position={at(0.72)} quaternion={quat}>
-        <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
-        <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
-      </mesh>
-      <mesh position={at(0.72)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
-        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
+      {/* Right threaded rod */}
+      <mesh position={rod2Pos} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius, rodRadius, rodLength, 8]} />
+        <meshStandardMaterial {...rodMat} />
       </mesh>
 
-      {/* Connecting rod to D-ring */}
-      <mesh position={at(0.82)} quaternion={quat}>
-        <cylinderGeometry args={[rodRadius * 0.8, rodRadius * 0.8, totalDist * 0.1, 8]} />
-        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
+      {/* Snap hook at sail end */}
+      <mesh position={shackle2Pos} quaternion={quat}>
+        <torusGeometry args={[snapHookRadius, snapHookWire, 8, 14, Math.PI]} />
+        <meshStandardMaterial {...metalMat} />
+      </mesh>
+      <mesh position={shackle2Pos} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[snapHookWire, snapHookWire, snapHookRadius * 2, 8]} />
+        <meshStandardMaterial {...metalMat} />
       </mesh>
     </group>
   );
@@ -582,19 +606,28 @@ function buildMeasurementPath(
   measurementOption: 'adjust' | 'exact',
   fixingPointPositions: THREE.Vector3[],
   sailAttachPoints: THREE.Vector3[],
-  _centroid: THREE.Vector3
+  centroid: THREE.Vector3
 ): THREE.Vector3[] | null {
   const pair = parseMeasurementKey(key);
   if (!pair) return null;
   const [a, b] = pair;
 
   const isExact = measurementOption === 'exact';
-  const positions = isExact ? sailAttachPoints : fixingPointPositions;
 
-  if (a >= positions.length || b >= positions.length) return null;
+  if (isExact) {
+    if (a >= sailAttachPoints.length || b >= sailAttachPoints.length) return null;
+    return [sailAttachPoints[a], sailAttachPoints[b]];
+  }
 
-  const start = positions[a];
-  const end = positions[b];
+  if (a >= fixingPointPositions.length || b >= fixingPointPositions.length) return null;
+
+  const eyeBoltOffset = POLE_RADIUS * 0.6 + 0.018;
+  const startFp = fixingPointPositions[a];
+  const endFp = fixingPointPositions[b];
+  const dirA = new THREE.Vector3().subVectors(centroid, startFp).normalize();
+  const dirB = new THREE.Vector3().subVectors(centroid, endFp).normalize();
+  const start = startFp.clone().add(dirA.multiplyScalar(eyeBoltOffset));
+  const end = endFp.clone().add(dirB.multiplyScalar(eyeBoltOffset));
 
   return [start, end];
 }
@@ -863,11 +896,11 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
   const fixingPointPositions = useMemo(() => poleData.map(d => d.fixingPointSurface), [poleData]);
 
   const sailAttachPoints = useMemo(() => {
-    return poleTopPositions.map((poleTop) => {
-      const toCenter = new THREE.Vector3().subVectors(centroid, poleTop).normalize();
-      return poleTop.clone().add(toCenter.multiplyScalar(HARDWARE_LENGTH));
+    return fixingPointPositions.map((fp) => {
+      const toCenter = new THREE.Vector3().subVectors(centroid, fp).normalize();
+      return fp.clone().add(toCenter.multiplyScalar(HARDWARE_LENGTH));
     });
-  }, [poleTopPositions, centroid]);
+  }, [fixingPointPositions, centroid]);
 
   const initialTarget = useMemo(() => {
     if (corners3D.length < 3) return new THREE.Vector3(0, 1, 0);
