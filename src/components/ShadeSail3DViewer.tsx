@@ -102,6 +102,7 @@ function Pole({ base, top, centroid }: { base: THREE.Vector3; top: THREE.Vector3
 }
 
 function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailCorner: THREE.Vector3 }) {
+  const totalDist = poleTop.distanceTo(sailCorner);
   const dir = useMemo(() => new THREE.Vector3().subVectors(sailCorner, poleTop).normalize(), [poleTop, sailCorner]);
   const quat = useMemo(() => {
     const q = new THREE.Quaternion();
@@ -109,14 +110,7 @@ function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailC
     return q;
   }, [dir]);
 
-  const totalDist = poleTop.distanceTo(sailCorner);
-  const hwLen = Math.min(HARDWARE_LENGTH, totalDist * 0.8);
-
-  // Positions along the hardware chain (from pole outward)
-  const eyeBoltPos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.05)), [poleTop, dir, hwLen]);
-  const shackle1Pos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.15)), [poleTop, dir, hwLen]);
-  const turnbucklePos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.5)), [poleTop, dir, hwLen]);
-  const shackle2Pos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.85)), [poleTop, dir, hwLen]);
+  const at = (t: number) => poleTop.clone().add(dir.clone().multiplyScalar(totalDist * t));
 
   const rodRadius = 0.008;
   const barrelRadius = 0.016;
@@ -125,59 +119,64 @@ function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailC
   return (
     <group>
       {/* Eye bolt at pole top */}
-      <mesh position={eyeBoltPos} quaternion={quat}>
+      <mesh position={at(0.03)} quaternion={quat}>
         <torusGeometry args={[0.015, 0.004, 8, 12]} />
         <meshStandardMaterial color="#c0c0c0" roughness={0.3} metalness={0.9} />
       </mesh>
 
-      {/* Shackle 1 (U-shape approximated as torus) */}
-      <mesh position={shackle1Pos} quaternion={quat}>
+      {/* Shackle 1 */}
+      <mesh position={at(0.1)} quaternion={quat}>
         <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
         <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
       </mesh>
-      {/* Shackle pin */}
-      <mesh position={shackle1Pos} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={at(0.1)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
 
-      {/* Turnbuckle - left rod */}
-      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(-hwLen * 0.15))} quaternion={quat}>
-        <cylinderGeometry args={[rodRadius, rodRadius, hwLen * 0.2, 8]} />
+      {/* Turnbuckle left rod */}
+      <mesh position={at(0.22)} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
-      {/* Turnbuckle - center barrel */}
-      <mesh position={turnbucklePos} quaternion={quat}>
-        <cylinderGeometry args={[barrelRadius, barrelRadius, hwLen * 0.18, 12]} />
+      {/* Turnbuckle center barrel */}
+      <mesh position={at(0.4)} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius, barrelRadius, totalDist * 0.16, 12]} />
         <meshStandardMaterial color="#a8a8a8" roughness={0.3} metalness={0.9} />
       </mesh>
-      {/* Turnbuckle barrel end caps */}
-      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(hwLen * 0.09))} quaternion={quat}>
+      {/* Barrel end caps */}
+      <mesh position={at(0.48)} quaternion={quat}>
         <cylinderGeometry args={[barrelRadius * 1.2, barrelRadius, 0.01, 12]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(-hwLen * 0.09))} quaternion={quat}>
+      <mesh position={at(0.32)} quaternion={quat}>
         <cylinderGeometry args={[barrelRadius, barrelRadius * 1.2, 0.01, 12]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-      {/* Turnbuckle - right rod */}
-      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(hwLen * 0.15))} quaternion={quat}>
-        <cylinderGeometry args={[rodRadius, rodRadius, hwLen * 0.2, 8]} />
+      {/* Turnbuckle right rod */}
+      <mesh position={at(0.6)} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
 
       {/* Shackle 2 at sail end */}
-      <mesh position={shackle2Pos} quaternion={quat}>
+      <mesh position={at(0.75)} quaternion={quat}>
         <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
         <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={shackle2Pos} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={at(0.75)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
 
+      {/* Connecting rod from shackle2 to D-ring */}
+      <mesh position={at(0.85)} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius * 0.8, rodRadius * 0.8, totalDist * 0.12, 8]} />
+        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
+      </mesh>
+
       {/* D-ring at sail corner */}
-      <mesh position={sailCorner} quaternion={quat}>
+      <mesh position={at(0.95)} quaternion={quat}>
         <torusGeometry args={[0.018, 0.005, 8, 12]} />
         <meshStandardMaterial color="#909090" roughness={0.3} metalness={0.9} />
       </mesh>
