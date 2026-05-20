@@ -10,6 +10,7 @@ interface ShadeSail3DViewerProps {
   config: ConfiguratorState;
   highlightedMeasurement?: string | null;
   highlightedCorner?: number | null;
+  activeSection?: 'dimensions' | 'heights' | 'review' | null;
 }
 
 const DEFAULT_HEIGHT_MM = 2400;
@@ -861,7 +862,44 @@ function CameraFramer({ corners3D, centroid }: { corners3D: THREE.Vector3[]; cen
   return null;
 }
 
-function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3DViewerProps) {
+function HeightIndicators({ corners3D, highlightedCorner }: { corners3D: THREE.Vector3[]; highlightedCorner?: number | null }) {
+  return (
+    <group>
+      {corners3D.map((top, i) => {
+        const isHighlighted = highlightedCorner === i;
+        const base = new THREE.Vector3(top.x, 0, top.z);
+        const height = top.y;
+        if (height <= 0) return null;
+
+        const mid = new THREE.Vector3(top.x, height / 2, top.z);
+        const color = isHighlighted ? '#e03030' : '#2563eb';
+        const opacity = isHighlighted ? 1.0 : 0.6;
+        const radius = isHighlighted ? 0.012 : 0.008;
+
+        return (
+          <group key={`height-${i}`}>
+            <mesh position={mid} renderOrder={998}>
+              <cylinderGeometry args={[radius, radius, height, 8]} />
+              <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} depthTest={false} />
+            </mesh>
+            {/* Bottom marker */}
+            <mesh position={base} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.02, 0.04, 16]} />
+              <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} depthTest={false} />
+            </mesh>
+            {/* Top marker at fixing point height */}
+            <mesh position={top} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.02, 0.04, 16]} />
+              <meshBasicMaterial color={color} transparent opacity={opacity} depthWrite={false} depthTest={false} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+function Scene({ config, highlightedMeasurement, highlightedCorner, activeSection }: ShadeSail3DViewerProps) {
   const controlsRef = useRef<any>(null);
 
   const svgPoints = useMemo(() => {
@@ -952,23 +990,34 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
       <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
       <EdgeCables corners3D={sailAttachPoints} />
 
-      <CompletedDimensionLines
-        measurements={config.measurements}
-        highlightedMeasurement={highlightedMeasurement}
-        measurementOption={config.measurementOption as 'adjust' | 'exact'}
-        fixingPointPositions={fixingPointPositions}
-        sailAttachPoints={sailAttachPoints}
-        centroid={centroid}
-        cornerCount={config.corners}
-      />
+      {(activeSection === 'dimensions' || activeSection === 'review' || !activeSection) && (
+        <CompletedDimensionLines
+          measurements={config.measurements}
+          highlightedMeasurement={activeSection === 'dimensions' || activeSection === 'review' ? highlightedMeasurement : null}
+          measurementOption={config.measurementOption as 'adjust' | 'exact'}
+          fixingPointPositions={fixingPointPositions}
+          sailAttachPoints={sailAttachPoints}
+          centroid={centroid}
+          cornerCount={config.corners}
+        />
+      )}
 
-      <DimensionHighlight
-        highlightedMeasurement={highlightedMeasurement}
-        measurementOption={config.measurementOption as 'adjust' | 'exact'}
-        fixingPointPositions={fixingPointPositions}
-        sailAttachPoints={sailAttachPoints}
-        centroid={centroid}
-      />
+      {(activeSection === 'dimensions' || activeSection === 'review') && highlightedMeasurement && (
+        <DimensionHighlight
+          highlightedMeasurement={highlightedMeasurement}
+          measurementOption={config.measurementOption as 'adjust' | 'exact'}
+          fixingPointPositions={fixingPointPositions}
+          sailAttachPoints={sailAttachPoints}
+          centroid={centroid}
+        />
+      )}
+
+      {activeSection === 'heights' && (
+        <HeightIndicators
+          corners3D={corners3D}
+          highlightedCorner={highlightedCorner}
+        />
+      )}
 
       {poleTopPositions.map((pos, i) => (
         <CornerLabel
@@ -996,7 +1045,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
   );
 }
 
-export default function ShadeSail3DViewer({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3DViewerProps) {
+export default function ShadeSail3DViewer({ config, highlightedMeasurement, highlightedCorner, activeSection }: ShadeSail3DViewerProps) {
   return (
     <div className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
       <Canvas
@@ -1004,7 +1053,7 @@ export default function ShadeSail3DViewer({ config, highlightedMeasurement, high
         shadows
         gl={{ antialias: true, alpha: false }}
       >
-        <Scene config={config} highlightedMeasurement={highlightedMeasurement} highlightedCorner={highlightedCorner} />
+        <Scene config={config} highlightedMeasurement={highlightedMeasurement} highlightedCorner={highlightedCorner} activeSection={activeSection} />
       </Canvas>
     </div>
   );

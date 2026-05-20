@@ -53,6 +53,7 @@ interface DimensionsContentProps {
   setNavigateToHeights?: (value: boolean) => void;
   navigateToDiagonals?: boolean;
   setNavigateToDiagonals?: (value: boolean) => void;
+  onHeightsSectionChange?: (isOpen: boolean) => void;
 }
 
 export function DimensionsContent({
@@ -85,11 +86,16 @@ export function DimensionsContent({
   navigateToHeights = false,
   setNavigateToHeights = () => {},
   navigateToDiagonals = false,
-  setNavigateToDiagonals = () => {}
+  setNavigateToDiagonals = () => {},
+  onHeightsSectionChange
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
-  const [showHeightsSection, setShowHeightsSection] = useState(false);
+  const [showHeightsSection, setShowHeightsSectionInternal] = useState(false);
+  const setShowHeightsSection = (value: boolean) => {
+    setShowHeightsSectionInternal(value);
+    onHeightsSectionChange?.(value);
+  };
   const heightsSectionRef = React.useRef<HTMLDivElement>(null);
   const diagonalsSectionRef = React.useRef<HTMLDivElement>(null);
   const [geometryWarnings, setGeometryWarnings] = useState<{[key: string]: string}>({});

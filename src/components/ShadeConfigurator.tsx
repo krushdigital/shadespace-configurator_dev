@@ -118,6 +118,9 @@ export function ShadeConfigurator() {
   // State to track if user wants to navigate to heights section specifically
   const [navigateToHeights, setNavigateToHeights] = useState(false);
 
+  // Track whether heights sub-section is open (for 3D viewer section awareness)
+  const [isHeightsSectionOpen, setIsHeightsSectionOpen] = useState(false);
+
   // Auto-add-to-cart when arriving from My Designs page with action param
   const [pendingAutoAddToCart, setPendingAutoAddToCart] = useState(false);
 
@@ -2431,6 +2434,7 @@ export function ShadeConfigurator() {
                     setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
                     navigateToDiagonals={index === 4 ? navigateToDiagonals : undefined}
                     setNavigateToDiagonals={index === 4 ? setNavigateToDiagonals : undefined}
+                    onHeightsSectionChange={index === 4 ? setIsHeightsSectionOpen : undefined}
                     pricingSettingsMap={activePricingMap}
                   />
                 </AccordionStep>
@@ -2479,7 +2483,7 @@ export function ShadeConfigurator() {
                 </div>
 
                 {desktopViewMode === 'plan' ? (
-                  <div>
+                  <div className="relative">
                     <ShapeCanvas
                       config={config}
                       updateConfig={updateConfig}
@@ -2491,6 +2495,13 @@ export function ShadeConfigurator() {
                       measurementOption={config.measurementOption}
                       unit={config.unit}
                     />
+                    <button
+                      onClick={() => setDesktopViewMode('3d')}
+                      className="absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-lg hover:bg-slate-700 transition-all hover:scale-105"
+                    >
+                      <Box className="w-4 h-4" />
+                      View in 3D
+                    </button>
 
                     {config.corners >= 4 && (
                       <div className="mt-3">
@@ -2518,6 +2529,7 @@ export function ShadeConfigurator() {
                         config={config}
                         highlightedMeasurement={highlightedMeasurement}
                         highlightedCorner={highlightedCorner}
+                        activeSection={isHeightsSectionOpen ? 'heights' : 'dimensions'}
                       />
                     </Suspense>
                   </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef, useRef, useMemo } from 'react';
+import React, { useState, useEffect, forwardRef, useRef, useMemo, lazy, Suspense } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -14,6 +14,9 @@ import { ConfigurationChecklist, ConfigurationChecklistRef } from '../Configurat
 import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
 import { StandardPackPreview } from '../StandardPackPreview';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
+import { Box, Layers } from 'lucide-react';
+
+const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
 
 interface ReviewContentProps {
   config: ConfiguratorState;
@@ -64,6 +67,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   pricingSettingsMap,
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
+  const [reviewViewMode, setReviewViewMode] = useState<'plan' | '3d'>('plan');
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
   const [buttonShake, setButtonShake] = useState(false);
   const checklistRef = useRef<ConfigurationChecklistRef>(null);
@@ -907,24 +911,74 @@ console.log('✌️result --->', result);
           <div className="lg:col-span-2 lg:sticky lg:top-8 lg:self-start space-y-6">
             {/* Shade Sail Preview */}
             <div ref={ref} className="shade-canvas-container">
-              <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                Shade Sail Preview
-              </h4>
-              <InteractiveMeasurementCanvas
-                ref={canvasRef}
-                config={config}
-                updateConfig={updateConfig}
-                highlightedMeasurement={highlightedMeasurement}
-                onMeasurementHover={setHighlightedMeasurement}
-                compact={false}
-                readonly={false}
-                isMobile={isMobile}
-                plainBackground={true}
-              />
-              <div className="mt-2 text-xs text-slate-500">
-                Visual reference only<br />
-                Corner labels show edge positions
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-slate-900">
+                  Shade Sail Preview
+                </h4>
+                {!isMobile && (
+                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setReviewViewMode('plan')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        reviewViewMode === 'plan'
+                          ? 'bg-white shadow-sm text-slate-900'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      <Layers className="w-4 h-4" />
+                      Plan
+                    </button>
+                    <button
+                      onClick={() => setReviewViewMode('3d')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                        reviewViewMode === '3d'
+                          ? 'bg-white shadow-sm text-slate-900'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      <Box className="w-4 h-4" />
+                      3D
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {reviewViewMode === 'plan' ? (
+                <>
+                  <InteractiveMeasurementCanvas
+                    ref={canvasRef}
+                    config={config}
+                    updateConfig={updateConfig}
+                    highlightedMeasurement={highlightedMeasurement}
+                    onMeasurementHover={setHighlightedMeasurement}
+                    compact={false}
+                    readonly={false}
+                    isMobile={isMobile}
+                    plainBackground={true}
+                  />
+                  <div className="mt-2 text-xs text-slate-500">
+                    Visual reference only<br />
+                    Corner labels show edge positions
+                  </div>
+                </>
+              ) : (
+                <div className="h-[500px]">
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="text-center">
+                        <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
+                        <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                      </div>
+                    </div>
+                  }>
+                    <ShadeSail3DViewer
+                      config={config}
+                      highlightedMeasurement={highlightedMeasurement}
+                      activeSection="review"
+                    />
+                  </Suspense>
+                </div>
+              )}
             </div>
 
           </div>
