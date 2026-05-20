@@ -13,9 +13,10 @@ interface ShadeSail3DViewerProps {
 
 const DEFAULT_HEIGHT_MM = 2400;
 const POLE_LEAN_DEG = 5;
-const POLE_RADIUS = 0.02;
+const POLE_RADIUS = 0.055;
 const MESH_SUBDIVISIONS = 40;
 const SAG_FACTOR = 0.04;
+const HARDWARE_LENGTH = 0.35;
 
 function getCornerLabel(index: number): string {
   return String.fromCharCode(65 + index);
@@ -83,12 +84,102 @@ function Pole({ base, top, centroid }: { base: THREE.Vector3; top: THREE.Vector3
   return (
     <group>
       <mesh position={mid} quaternion={quat}>
-        <cylinderGeometry args={[POLE_RADIUS, POLE_RADIUS * 1.2, length, 8]} />
-        <meshStandardMaterial color="#3a3a3a" roughness={0.4} metalness={0.6} />
+        <cylinderGeometry args={[POLE_RADIUS, POLE_RADIUS * 1.1, length, 16]} />
+        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
-      <mesh position={leanedTop}>
-        <sphereGeometry args={[POLE_RADIUS * 2.5, 12, 12]} />
-        <meshStandardMaterial color="#555" roughness={0.3} metalness={0.7} />
+      {/* Pole cap */}
+      <mesh position={leanedTop} quaternion={quat}>
+        <cylinderGeometry args={[POLE_RADIUS * 1.1, POLE_RADIUS * 1.1, POLE_RADIUS * 0.5, 16]} />
+        <meshStandardMaterial color="#999" roughness={0.3} metalness={0.9} />
+      </mesh>
+      {/* Base plate */}
+      <mesh position={base} rotation={[-Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[POLE_RADIUS * 2, POLE_RADIUS * 2, 0.02, 16]} />
+        <meshStandardMaterial color="#888" roughness={0.4} metalness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailCorner: THREE.Vector3 }) {
+  const dir = useMemo(() => new THREE.Vector3().subVectors(sailCorner, poleTop).normalize(), [poleTop, sailCorner]);
+  const quat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    return q;
+  }, [dir]);
+
+  const totalDist = poleTop.distanceTo(sailCorner);
+  const hwLen = Math.min(HARDWARE_LENGTH, totalDist * 0.8);
+
+  // Positions along the hardware chain (from pole outward)
+  const eyeBoltPos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.05)), [poleTop, dir, hwLen]);
+  const shackle1Pos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.15)), [poleTop, dir, hwLen]);
+  const turnbucklePos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.5)), [poleTop, dir, hwLen]);
+  const shackle2Pos = useMemo(() => poleTop.clone().add(dir.clone().multiplyScalar(hwLen * 0.85)), [poleTop, dir, hwLen]);
+
+  const rodRadius = 0.008;
+  const barrelRadius = 0.016;
+  const shackleRadius = 0.012;
+
+  return (
+    <group>
+      {/* Eye bolt at pole top */}
+      <mesh position={eyeBoltPos} quaternion={quat}>
+        <torusGeometry args={[0.015, 0.004, 8, 12]} />
+        <meshStandardMaterial color="#c0c0c0" roughness={0.3} metalness={0.9} />
+      </mesh>
+
+      {/* Shackle 1 (U-shape approximated as torus) */}
+      <mesh position={shackle1Pos} quaternion={quat}>
+        <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
+        <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
+      </mesh>
+      {/* Shackle pin */}
+      <mesh position={shackle1Pos} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
+        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
+      </mesh>
+
+      {/* Turnbuckle - left rod */}
+      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(-hwLen * 0.15))} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius, rodRadius, hwLen * 0.2, 8]} />
+        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
+      </mesh>
+      {/* Turnbuckle - center barrel */}
+      <mesh position={turnbucklePos} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius, barrelRadius, hwLen * 0.18, 12]} />
+        <meshStandardMaterial color="#a8a8a8" roughness={0.3} metalness={0.9} />
+      </mesh>
+      {/* Turnbuckle barrel end caps */}
+      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(hwLen * 0.09))} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius * 1.2, barrelRadius, 0.01, 12]} />
+        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
+      </mesh>
+      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(-hwLen * 0.09))} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius, barrelRadius * 1.2, 0.01, 12]} />
+        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
+      </mesh>
+      {/* Turnbuckle - right rod */}
+      <mesh position={turnbucklePos.clone().add(dir.clone().multiplyScalar(hwLen * 0.15))} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius, rodRadius, hwLen * 0.2, 8]} />
+        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
+      </mesh>
+
+      {/* Shackle 2 at sail end */}
+      <mesh position={shackle2Pos} quaternion={quat}>
+        <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
+        <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
+      </mesh>
+      <mesh position={shackle2Pos} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
+        <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
+      </mesh>
+
+      {/* D-ring at sail corner */}
+      <mesh position={sailCorner} quaternion={quat}>
+        <torusGeometry args={[0.018, 0.005, 8, 12]} />
+        <meshStandardMaterial color="#909090" roughness={0.3} metalness={0.9} />
       </mesh>
     </group>
   );
@@ -410,6 +501,13 @@ function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
     });
   }, [corners3D, centroid]);
 
+  const sailAttachPoints = useMemo(() => {
+    return poleTopPositions.map((poleTop) => {
+      const toCenter = new THREE.Vector3().subVectors(centroid, poleTop).normalize();
+      return poleTop.clone().add(toCenter.multiplyScalar(HARDWARE_LENGTH));
+    });
+  }, [poleTopPositions, centroid]);
+
   if (corners3D.length < 3) {
     return (
       <Html center>
@@ -434,8 +532,12 @@ function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
         return <Pole key={i} base={base} top={top} centroid={centroid} />;
       })}
 
-      <FabricMesh corners3D={poleTopPositions} color={fabricColor} />
-      <EdgeCables corners3D={poleTopPositions} />
+      {poleTopPositions.map((poleTop, i) => (
+        <CornerHardware key={`hw-${i}`} poleTop={poleTop} sailCorner={sailAttachPoints[i]} />
+      ))}
+
+      <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
+      <EdgeCables corners3D={sailAttachPoints} />
 
       {poleTopPositions.map((pos, i) => (
         <CornerLabel key={i} position={pos} label={getCornerLabel(i)} />
