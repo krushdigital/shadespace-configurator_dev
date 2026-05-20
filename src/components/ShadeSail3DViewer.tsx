@@ -20,6 +20,8 @@ const SAG_FACTOR = 0.04;
 const HARDWARE_LENGTH = 0.35;
 const EDGE_TENSION_INWARD = 0.035;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
+const FIXING_POINT_OFFSET = 0.2;
+const ANGLE_CUT_DEG = 12;
 
 function getCornerLabel(index: number): string {
   return String.fromCharCode(65 + index);
@@ -70,11 +72,22 @@ function computeCentroid(points: THREE.Vector3[]): THREE.Vector3 {
   return c;
 }
 
-function Pole({ base, top, centroid, highlighted }: { base: THREE.Vector3; top: THREE.Vector3; centroid: THREE.Vector3; highlighted?: boolean }) {
+function computePoleGeometry(top: THREE.Vector3, centroid: THREE.Vector3) {
+  const base = new THREE.Vector3(top.x, 0, top.z);
   const leanRad = (POLE_LEAN_DEG * Math.PI) / 180;
-
   const outDir = new THREE.Vector3(top.x - centroid.x, 0, top.z - centroid.z).normalize();
   const leanedTop = top.clone().add(outDir.multiplyScalar(Math.tan(leanRad) * (top.y - base.y)));
+
+  const poleDir = new THREE.Vector3().subVectors(leanedTop, base).normalize();
+  const fixingPoint = leanedTop.clone().sub(poleDir.clone().multiplyScalar(FIXING_POINT_OFFSET));
+  const inwardDir = new THREE.Vector3(centroid.x - leanedTop.x, 0, centroid.z - leanedTop.z).normalize();
+  const fixingPointSurface = fixingPoint.clone().add(inwardDir.multiplyScalar(POLE_RADIUS));
+
+  return { base, leanedTop, poleDir, fixingPoint, fixingPointSurface, inwardDir };
+}
+
+function Pole({ base, top, centroid, highlighted }: { base: THREE.Vector3; top: THREE.Vector3; centroid: THREE.Vector3; highlighted?: boolean }) {
+  const { leanedTop, poleDir } = computePoleGeometry(top, centroid);
 
   const mid = new THREE.Vector3().lerpVectors(base, leanedTop, 0.5);
   const dir = new THREE.Vector3().subVectors(leanedTop, base);
@@ -84,8 +97,13 @@ function Pole({ base, top, centroid, highlighted }: { base: THREE.Vector3; top: 
   const quat = new THREE.Quaternion();
   quat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
 
+  const inwardDir = new THREE.Vector3(centroid.x - leanedTop.x, 0, centroid.z - leanedTop.z).normalize();
+  const angleAxis = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), inwardDir).normalize();
+  const cutQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), poleDir);
+  const tiltQuat = new THREE.Quaternion().setFromAxisAngle(angleAxis, (ANGLE_CUT_DEG * Math.PI) / 180);
+  const capQuat = tiltQuat.clone().multiply(cutQuat);
+
   const poleColor = highlighted ? '#e03030' : '#b0b0b0';
-  const capColor = highlighted ? '#cc2020' : '#999';
 
   return (
     <group>
@@ -93,10 +111,12 @@ function Pole({ base, top, centroid, highlighted }: { base: THREE.Vector3; top: 
         <cylinderGeometry args={[POLE_RADIUS, POLE_RADIUS * 1.1, length, 16]} />
         <meshStandardMaterial color={poleColor} roughness={0.35} metalness={0.85} />
       </mesh>
-      <mesh position={leanedTop} quaternion={quat}>
-        <cylinderGeometry args={[POLE_RADIUS * 1.1, POLE_RADIUS * 1.1, POLE_RADIUS * 0.5, 16]} />
-        <meshStandardMaterial color={capColor} roughness={0.3} metalness={0.9} />
+      {/* Angled cap at top */}
+      <mesh position={leanedTop} quaternion={capQuat}>
+        <cylinderGeometry args={[POLE_RADIUS * 1.05, POLE_RADIUS * 1.05, 0.005, 16]} />
+        <meshStandardMaterial color="#444" roughness={0.3} metalness={0.9} />
       </mesh>
+      {/* Base plate */}
       <mesh position={base} rotation={[-Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[POLE_RADIUS * 2, POLE_RADIUS * 2, 0.02, 16]} />
         <meshStandardMaterial color={highlighted ? '#c02020' : '#888'} roughness={0.4} metalness={0.8} />
@@ -105,16 +125,87 @@ function Pole({ base, top, centroid, highlighted }: { base: THREE.Vector3; top: 
   );
 }
 
-function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailCorner: THREE.Vector3 }) {
-  const totalDist = poleTop.distanceTo(sailCorner);
-  const dir = useMemo(() => new THREE.Vector3().subVectors(sailCorner, poleTop).normalize(), [poleTop, sailCorner]);
+function EyeBolt({ position, direction, poleDir }: { position: THREE.Vector3; direction: THREE.Vector3; poleDir: THREE.Vector3 }) {
+  const ringRadius = 0.018;
+  const wireRadius = 0.005;
+  const stubLength = POLE_RADIUS * 0.6;
+
+  const stubEnd = position.clone().add(direction.clone().multiplyScalar(stubLength));
+
+  const stubMid = new THREE.Vector3().lerpVectors(position, stubEnd, 0.5);
+  const stubQuat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    return q;
+  }, [direction]);
+
+  const ringQuat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 0, 1);
+    q.setFromUnitVectors(up, direction);
+    return q;
+  }, [direction]);
+
+  return (
+    <group>
+      {/* Stub rod from pole surface */}
+      <mesh position={stubMid} quaternion={stubQuat}>
+        <cylinderGeometry args={[wireRadius * 1.2, wireRadius * 1.2, stubLength, 8]} />
+        <meshStandardMaterial color="#c0c0c0" roughness={0.3} metalness={0.9} />
+      </mesh>
+      {/* Eye ring */}
+      <mesh position={stubEnd} quaternion={ringQuat}>
+        <torusGeometry args={[ringRadius, wireRadius, 12, 16]} />
+        <meshStandardMaterial color="#b8b8b8" roughness={0.25} metalness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function SailDRing({ position, direction }: { position: THREE.Vector3; direction: THREE.Vector3 }) {
+  const ringRadius = 0.022;
+  const wireRadius = 0.005;
+
+  const ringQuat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+    return q;
+  }, [direction]);
+
+  const barQuat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    const perp = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
+    if (perp.length() < 0.1) perp.set(1, 0, 0);
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), perp);
+    return q;
+  }, [direction]);
+
+  return (
+    <group>
+      {/* Half-circle ring */}
+      <mesh position={position} quaternion={ringQuat}>
+        <torusGeometry args={[ringRadius, wireRadius, 10, 12, Math.PI]} />
+        <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.95} />
+      </mesh>
+      {/* Straight bar across D */}
+      <mesh position={position} quaternion={barQuat}>
+        <cylinderGeometry args={[wireRadius, wireRadius, ringRadius * 2, 8]} />
+        <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function CornerHardware({ poleTop, sailCorner, fixingPointSurface }: { poleTop: THREE.Vector3; sailCorner: THREE.Vector3; fixingPointSurface: THREE.Vector3 }) {
+  const totalDist = fixingPointSurface.distanceTo(sailCorner);
+  const dir = useMemo(() => new THREE.Vector3().subVectors(sailCorner, fixingPointSurface).normalize(), [fixingPointSurface, sailCorner]);
   const quat = useMemo(() => {
     const q = new THREE.Quaternion();
     q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
     return q;
   }, [dir]);
 
-  const at = (t: number) => poleTop.clone().add(dir.clone().multiplyScalar(totalDist * t));
+  const at = (t: number) => fixingPointSurface.clone().add(dir.clone().multiplyScalar(totalDist * t));
 
   const rodRadius = 0.008;
   const barrelRadius = 0.016;
@@ -122,62 +213,64 @@ function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailC
 
   return (
     <group>
-      <mesh position={at(0.03)} quaternion={quat}>
-        <torusGeometry args={[0.015, 0.004, 8, 12]} />
-        <meshStandardMaterial color="#c0c0c0" roughness={0.3} metalness={0.9} />
-      </mesh>
-      <mesh position={at(0.1)} quaternion={quat}>
+      {/* Shackle at eye bolt */}
+      <mesh position={at(0.05)} quaternion={quat}>
         <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
         <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={at(0.1)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={at(0.05)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={at(0.22)} quaternion={quat}>
+
+      {/* Turnbuckle left rod */}
+      <mesh position={at(0.18)} quaternion={quat}>
         <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
-      <mesh position={at(0.4)} quaternion={quat}>
-        <cylinderGeometry args={[barrelRadius, barrelRadius, totalDist * 0.16, 12]} />
+      {/* Turnbuckle center barrel */}
+      <mesh position={at(0.38)} quaternion={quat}>
+        <cylinderGeometry args={[barrelRadius, barrelRadius, totalDist * 0.18, 12]} />
         <meshStandardMaterial color="#a8a8a8" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={at(0.48)} quaternion={quat}>
+      {/* Barrel end caps */}
+      <mesh position={at(0.47)} quaternion={quat}>
         <cylinderGeometry args={[barrelRadius * 1.2, barrelRadius, 0.01, 12]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={at(0.32)} quaternion={quat}>
+      <mesh position={at(0.29)} quaternion={quat}>
         <cylinderGeometry args={[barrelRadius, barrelRadius * 1.2, 0.01, 12]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={at(0.6)} quaternion={quat}>
+      {/* Turnbuckle right rod */}
+      <mesh position={at(0.58)} quaternion={quat}>
         <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
-      <mesh position={at(0.75)} quaternion={quat}>
+
+      {/* Shackle at sail end */}
+      <mesh position={at(0.72)} quaternion={quat}>
         <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
         <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={at(0.75)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={at(0.72)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-      <mesh position={at(0.85)} quaternion={quat}>
-        <cylinderGeometry args={[rodRadius * 0.8, rodRadius * 0.8, totalDist * 0.12, 8]} />
+
+      {/* Connecting rod to D-ring */}
+      <mesh position={at(0.82)} quaternion={quat}>
+        <cylinderGeometry args={[rodRadius * 0.8, rodRadius * 0.8, totalDist * 0.1, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
-      </mesh>
-      <mesh position={at(0.95)} quaternion={quat}>
-        <torusGeometry args={[0.018, 0.005, 8, 12]} />
-        <meshStandardMaterial color="#909090" roughness={0.3} metalness={0.9} />
       </mesh>
     </group>
   );
 }
 
-function CornerLabel({ position, label }: { position: THREE.Vector3; label: string }) {
+function CornerLabel({ position, label, heightCompleted }: { position: THREE.Vector3; label: string; heightCompleted: boolean }) {
   return (
-    <Html position={[position.x, position.y + 0.25, position.z]} center distanceFactor={8}>
-      <div className="bg-slate-800 text-white text-xs font-bold px-1.5 py-0.5 rounded-full shadow-md select-none pointer-events-none">
+    <Html position={[position.x, position.y + 0.3, position.z]} center distanceFactor={7}>
+      <div className={`${heightCompleted ? 'bg-green-600' : 'bg-slate-800'} text-white text-sm font-bold px-2.5 py-1 rounded-full shadow-md select-none pointer-events-none min-w-[28px] text-center transition-colors duration-300`}>
         {label}
       </div>
     </Html>
@@ -364,7 +457,6 @@ function buildFabricGeometry(
     return geometry;
   }
 
-  // General polygon: radial grid
   const vertices: number[] = [];
   const indices: number[] = [];
   const segsPerEdge = Math.ceil(res / n);
@@ -488,31 +580,21 @@ function parseMeasurementKey(key: string): [number, number] | null {
 function buildMeasurementPath(
   key: string,
   measurementOption: 'adjust' | 'exact',
-  poleTopPositions: THREE.Vector3[],
+  fixingPointPositions: THREE.Vector3[],
   sailAttachPoints: THREE.Vector3[],
-  centroid: THREE.Vector3
+  _centroid: THREE.Vector3
 ): THREE.Vector3[] | null {
   const pair = parseMeasurementKey(key);
   if (!pair) return null;
   const [a, b] = pair;
 
   const isExact = measurementOption === 'exact';
-  const positions = isExact ? sailAttachPoints : poleTopPositions;
+  const positions = isExact ? sailAttachPoints : fixingPointPositions;
 
   if (a >= positions.length || b >= positions.length) return null;
 
   const start = positions[a];
   const end = positions[b];
-
-  const isAdjacent = Math.abs(a - b) === 1 || Math.abs(a - b) === positions.length - 1;
-
-  if (isExact && isAdjacent) {
-    const pts: THREE.Vector3[] = [];
-    for (let t = 0; t <= 1; t += 0.04) {
-      pts.push(computeEdgeCurvePoint(start, end, centroid, t));
-    }
-    return pts;
-  }
 
   return [start, end];
 }
@@ -550,6 +632,7 @@ function PulsingTubeLine({ points, color, radius, opacity, pulsing }: {
         transparent
         opacity={opacity}
         depthWrite={false}
+        depthTest={false}
       />
     </mesh>
   );
@@ -614,6 +697,7 @@ function DashedTubeLine({ points, color, radius, opacity, pulsing }: {
             transparent
             opacity={opacity}
             depthWrite={false}
+            depthTest={false}
           />
         </mesh>
       ))}
@@ -624,20 +708,20 @@ function DashedTubeLine({ points, color, radius, opacity, pulsing }: {
 function DimensionHighlight({
   highlightedMeasurement,
   measurementOption,
-  poleTopPositions,
+  fixingPointPositions,
   sailAttachPoints,
   centroid,
 }: {
   highlightedMeasurement: string | null | undefined;
   measurementOption: 'adjust' | 'exact';
-  poleTopPositions: THREE.Vector3[];
+  fixingPointPositions: THREE.Vector3[];
   sailAttachPoints: THREE.Vector3[];
   centroid: THREE.Vector3;
 }) {
   const points = useMemo(() => {
     if (!highlightedMeasurement) return null;
-    return buildMeasurementPath(highlightedMeasurement, measurementOption, poleTopPositions, sailAttachPoints, centroid);
-  }, [highlightedMeasurement, measurementOption, poleTopPositions, sailAttachPoints, centroid]);
+    return buildMeasurementPath(highlightedMeasurement, measurementOption, fixingPointPositions, sailAttachPoints, centroid);
+  }, [highlightedMeasurement, measurementOption, fixingPointPositions, sailAttachPoints, centroid]);
 
   if (!points) return null;
 
@@ -656,7 +740,7 @@ function CompletedDimensionLines({
   measurements,
   highlightedMeasurement,
   measurementOption,
-  poleTopPositions,
+  fixingPointPositions,
   sailAttachPoints,
   centroid,
   cornerCount,
@@ -664,7 +748,7 @@ function CompletedDimensionLines({
   measurements: { [key: string]: number };
   highlightedMeasurement: string | null | undefined;
   measurementOption: 'adjust' | 'exact';
-  poleTopPositions: THREE.Vector3[];
+  fixingPointPositions: THREE.Vector3[];
   sailAttachPoints: THREE.Vector3[];
   centroid: THREE.Vector3;
   cornerCount: number;
@@ -678,11 +762,11 @@ function CompletedDimensionLines({
       const pair = parseMeasurementKey(key);
       if (!pair) continue;
       if (pair[0] >= cornerCount || pair[1] >= cornerCount) continue;
-      const points = buildMeasurementPath(key, measurementOption, poleTopPositions, sailAttachPoints, centroid);
+      const points = buildMeasurementPath(key, measurementOption, fixingPointPositions, sailAttachPoints, centroid);
       if (points) result.push({ key, points });
     }
     return result;
-  }, [measurements, highlightedMeasurement, measurementOption, poleTopPositions, sailAttachPoints, centroid, cornerCount]);
+  }, [measurements, highlightedMeasurement, measurementOption, fixingPointPositions, sailAttachPoints, centroid, cornerCount]);
 
   return (
     <group>
@@ -771,13 +855,12 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
   const centroid = useMemo(() => computeCentroid(corners3D), [corners3D]);
   const fabricColor = useMemo(() => getFabricHexColor(config.fabricColor), [config.fabricColor]);
 
-  const poleTopPositions = useMemo(() => {
-    const leanRad = (POLE_LEAN_DEG * Math.PI) / 180;
-    return corners3D.map((top) => {
-      const outDir = new THREE.Vector3(top.x - centroid.x, 0, top.z - centroid.z).normalize();
-      return top.clone().add(outDir.multiplyScalar(Math.tan(leanRad) * top.y));
-    });
+  const poleData = useMemo(() => {
+    return corners3D.map((top) => computePoleGeometry(top, centroid));
   }, [corners3D, centroid]);
+
+  const poleTopPositions = useMemo(() => poleData.map(d => d.leanedTop), [poleData]);
+  const fixingPointPositions = useMemo(() => poleData.map(d => d.fixingPointSurface), [poleData]);
 
   const sailAttachPoints = useMemo(() => {
     return poleTopPositions.map((poleTop) => {
@@ -815,9 +898,31 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
         return <Pole key={i} base={base} top={top} centroid={centroid} highlighted={highlightedCorner === i} />;
       })}
 
-      {poleTopPositions.map((poleTop, i) => (
-        <CornerHardware key={`hw-${i}`} poleTop={poleTop} sailCorner={sailAttachPoints[i]} />
+      {/* Eye bolts on poles at fixing points */}
+      {poleData.map((data, i) => (
+        <EyeBolt
+          key={`eye-${i}`}
+          position={data.fixingPointSurface}
+          direction={data.inwardDir}
+          poleDir={data.poleDir}
+        />
       ))}
+
+      {/* Hardware chain between eye bolt and D-ring */}
+      {poleData.map((data, i) => (
+        <CornerHardware
+          key={`hw-${i}`}
+          poleTop={data.leanedTop}
+          sailCorner={sailAttachPoints[i]}
+          fixingPointSurface={data.fixingPointSurface}
+        />
+      ))}
+
+      {/* D-rings at sail corners */}
+      {sailAttachPoints.map((sailPt, i) => {
+        const outDir = new THREE.Vector3().subVectors(poleTopPositions[i], sailPt).normalize();
+        return <SailDRing key={`dring-${i}`} position={sailPt} direction={outDir} />;
+      })}
 
       <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
       <EdgeCables corners3D={sailAttachPoints} />
@@ -826,7 +931,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
         measurements={config.measurements}
         highlightedMeasurement={highlightedMeasurement}
         measurementOption={config.measurementOption as 'adjust' | 'exact'}
-        poleTopPositions={poleTopPositions}
+        fixingPointPositions={fixingPointPositions}
         sailAttachPoints={sailAttachPoints}
         centroid={centroid}
         cornerCount={config.corners}
@@ -835,13 +940,18 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
       <DimensionHighlight
         highlightedMeasurement={highlightedMeasurement}
         measurementOption={config.measurementOption as 'adjust' | 'exact'}
-        poleTopPositions={poleTopPositions}
+        fixingPointPositions={fixingPointPositions}
         sailAttachPoints={sailAttachPoints}
         centroid={centroid}
       />
 
       {poleTopPositions.map((pos, i) => (
-        <CornerLabel key={i} position={pos} label={getCornerLabel(i)} />
+        <CornerLabel
+          key={i}
+          position={pos}
+          label={getCornerLabel(i)}
+          heightCompleted={!!(config.fixingHeights && config.fixingHeights[i] && config.fixingHeights[i] > 0)}
+        />
       ))}
 
       <CameraFramer corners3D={corners3D} centroid={centroid} />
