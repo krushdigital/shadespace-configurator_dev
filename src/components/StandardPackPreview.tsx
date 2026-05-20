@@ -4,13 +4,17 @@ import { Package, X } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import type { HardwareItem, HardwarePack } from '../hooks/useHardwareCatalog';
 
+function stripHardwareSize(name: string): string {
+  return name.replace(/\s+SS\s+316-\d+mm$/i, '').replace(/\s+-\s*\d+mm$/i, '');
+}
+
 export const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
   3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
   4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
   5: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/5_Corner_Sails.jpg?v=1724717405',
   6: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-  7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-  8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
+  7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/7_Corner_Hardware_kit_3.png?v=1779146929',
+  8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/8_Corner_Hardware_kit_2.png?v=1779138488',
 };
 
 interface StandardPackPreviewApi {
@@ -102,7 +106,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
               ) : (
                 <div className="h-6 w-6 rounded bg-slate-100 flex-shrink-0" />
               )}
-              <span className="flex-1 min-w-0 truncate text-slate-800">{item.name}</span>
+              <span className="flex-1 min-w-0 truncate text-slate-800">{stripHardwareSize(item.name)}</span>
               <span className="flex-shrink-0 font-semibold text-slate-600">x {qty}</span>
             </li>
           ))}

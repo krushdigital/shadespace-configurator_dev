@@ -685,7 +685,7 @@ console.log('✌️result --->', result);
                       <span className="text-slate-600">Weight:</span>
                       <span className="font-medium text-slate-900">
                         {config.unit === 'imperial'
-                          ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb`
+                          ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
                           : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`
                         }
                       </span>
@@ -747,7 +747,7 @@ console.log('✌️result --->', result);
                     <span className="text-slate-600">Webbing Width:</span>
                     <span className="font-medium text-slate-900">
                       {config.unit === 'imperial'
-                        ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}"`
+                        ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}" (${calculations.webbingWidth}mm)`
                         : `${calculations.webbingWidth}mm`
                       }
                     </span>
@@ -758,7 +758,7 @@ console.log('✌️result --->', result);
                     <span className="text-slate-600">Wire Thickness:</span>
                     <span className="font-medium text-slate-900">
                       {config.unit === 'imperial'
-                        ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"`
+                        ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
                         : `${calculations.wireThickness}mm`
                       }
                     </span>
@@ -790,7 +790,7 @@ console.log('✌️result --->', result);
                   <span className="text-slate-600">Total Weight:</span>
                   <span className="font-medium text-slate-900">
                     {config.unit === 'imperial'
-                      ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb`
+                      ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
                       : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`
                     }
                   </span>

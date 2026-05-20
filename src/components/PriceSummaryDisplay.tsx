@@ -7,14 +7,17 @@ import { FABRICS as FALLBACK_FABRICS } from '../data/fabrics';
 import { formatCurrency } from '../utils/currencyFormatter';
 import { useHardwareCatalog, getDefaultPack } from '../hooks/useHardwareCatalog';
 
-// Hardware pack image mapping
+function stripHardwareSize(name: string): string {
+  return name.replace(/\s+SS\s+316-\d+mm$/i, '').replace(/\s+-\s*\d+mm$/i, '');
+}
+
 const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
   3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
   4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
   5: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/5_Corner_Sails.jpg?v=1724717405',
   6: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-  7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-  8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
+  7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/7_Corner_Hardware_kit_3.png?v=1779146929',
+  8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/8_Corner_Hardware_kit_2.png?v=1779138488',
 };
 
 interface PriceSummaryDisplayProps {
@@ -220,7 +223,7 @@ export function PriceSummaryDisplay({
                           {item.image_url && (
                             <img src={item.image_url} alt="" className="h-7 w-7 rounded object-cover flex-shrink-0 bg-white border border-slate-200" />
                           )}
-                          <span className="flex-1 min-w-0 truncate text-slate-800">{item.name}</span>
+                          <span className="flex-1 min-w-0 truncate text-slate-800">{stripHardwareSize(item.name)}</span>
                           <span className="flex-shrink-0 font-semibold text-slate-600">x {qty}</span>
                         </li>
                       ))}
