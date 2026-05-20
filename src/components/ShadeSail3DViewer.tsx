@@ -18,6 +18,8 @@ const POLE_RADIUS = 0.055;
 const MESH_SUBDIVISIONS = 40;
 const SAG_FACTOR = 0.04;
 const HARDWARE_LENGTH = 0.35;
+const EDGE_TENSION_INWARD = 0.035;
+const HIGHLIGHT_TUBE_RADIUS = 0.025;
 
 function getCornerLabel(index: number): string {
   return String.fromCharCode(65 + index);
@@ -120,13 +122,10 @@ function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailC
 
   return (
     <group>
-      {/* Eye bolt at pole top */}
       <mesh position={at(0.03)} quaternion={quat}>
         <torusGeometry args={[0.015, 0.004, 8, 12]} />
         <meshStandardMaterial color="#c0c0c0" roughness={0.3} metalness={0.9} />
       </mesh>
-
-      {/* Shackle 1 */}
       <mesh position={at(0.1)} quaternion={quat}>
         <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
         <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
@@ -135,18 +134,14 @@ function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailC
         <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-
-      {/* Turnbuckle left rod */}
       <mesh position={at(0.22)} quaternion={quat}>
         <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
-      {/* Turnbuckle center barrel */}
       <mesh position={at(0.4)} quaternion={quat}>
         <cylinderGeometry args={[barrelRadius, barrelRadius, totalDist * 0.16, 12]} />
         <meshStandardMaterial color="#a8a8a8" roughness={0.3} metalness={0.9} />
       </mesh>
-      {/* Barrel end caps */}
       <mesh position={at(0.48)} quaternion={quat}>
         <cylinderGeometry args={[barrelRadius * 1.2, barrelRadius, 0.01, 12]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
@@ -155,13 +150,10 @@ function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailC
         <cylinderGeometry args={[barrelRadius, barrelRadius * 1.2, 0.01, 12]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-      {/* Turnbuckle right rod */}
       <mesh position={at(0.6)} quaternion={quat}>
         <cylinderGeometry args={[rodRadius, rodRadius, totalDist * 0.14, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
-
-      {/* Shackle 2 at sail end */}
       <mesh position={at(0.75)} quaternion={quat}>
         <torusGeometry args={[shackleRadius, 0.004, 8, 12, Math.PI]} />
         <meshStandardMaterial color="#b8b8b8" roughness={0.3} metalness={0.9} />
@@ -170,14 +162,10 @@ function CornerHardware({ poleTop, sailCorner }: { poleTop: THREE.Vector3; sailC
         <cylinderGeometry args={[0.004, 0.004, shackleRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.3} metalness={0.9} />
       </mesh>
-
-      {/* Connecting rod from shackle2 to D-ring */}
       <mesh position={at(0.85)} quaternion={quat}>
         <cylinderGeometry args={[rodRadius * 0.8, rodRadius * 0.8, totalDist * 0.12, 8]} />
         <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
       </mesh>
-
-      {/* D-ring at sail corner */}
       <mesh position={at(0.95)} quaternion={quat}>
         <torusGeometry args={[0.018, 0.005, 8, 12]} />
         <meshStandardMaterial color="#909090" roughness={0.3} metalness={0.9} />
@@ -230,6 +218,21 @@ function barycentricPoint(
   return new THREE.Vector3().lerpVectors(centroid, edgePoint, t);
 }
 
+function computeEdgeCurvePoint(
+  start: THREE.Vector3,
+  end: THREE.Vector3,
+  centroid: THREE.Vector3,
+  t: number
+): THREE.Vector3 {
+  const pt = new THREE.Vector3().lerpVectors(start, end, t);
+  const edgeLen = start.distanceTo(end);
+  const toCentroid = new THREE.Vector3().subVectors(centroid, pt).normalize();
+  const inwardAmount = EDGE_TENSION_INWARD * edgeLen * Math.sin(Math.PI * t);
+  pt.add(toCentroid.multiplyScalar(inwardAmount));
+  pt.y -= SAG_FACTOR * 0.3 * edgeLen * 0.1 * Math.sin(Math.PI * t);
+  return pt;
+}
+
 function buildFabricGeometry(
   corners3D: THREE.Vector3[],
   subdivisions: number,
@@ -245,7 +248,6 @@ function buildFabricGeometry(
     const vertices: number[] = [];
     const indices: number[] = [];
     const rows = res;
-    const tensionCurve = 0.03;
 
     for (let i = 0; i <= rows; i++) {
       const cols = rows - i;
@@ -253,14 +255,30 @@ function buildFabricGeometry(
         const u = j / rows;
         const v = i / rows;
         const w = 1 - u - v;
-        const pt = barycentricPoint(corners3D, u, v);
-        const distFromEdge = Math.min(u, v, w) * 3;
+
+        const minBary = Math.min(u, v, w);
+        const distFromEdge = minBary * 3;
+
+        let pt: THREE.Vector3;
+        if (distFromEdge < 0.15) {
+          let edgeIdx: number, nextIdx: number, edgeT: number;
+          if (w <= u && w <= v) {
+            edgeIdx = 1; nextIdx = 2; edgeT = v / (u + v || 1);
+          } else if (u <= v && u <= w) {
+            edgeIdx = 0; nextIdx = 2; edgeT = v / (v + w || 1);
+          } else {
+            edgeIdx = 0; nextIdx = 1; edgeT = u / (u + w || 1);
+          }
+          const edgePt = computeEdgeCurvePoint(corners3D[edgeIdx], corners3D[nextIdx], centroid, edgeT);
+          const interiorPt = barycentricPoint(corners3D, u, v);
+          const blend = distFromEdge / 0.15;
+          pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
+        } else {
+          pt = barycentricPoint(corners3D, u, v);
+        }
+
         const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
         pt.y -= sag * centroid.y * 0.4;
-        const edgeProximity = 1 - distFromEdge;
-        const curvePull = tensionCurve * edgeProximity * edgeProximity * (1 - edgeProximity);
-        pt.x += (centroid.x - pt.x) * curvePull;
-        pt.z += (centroid.z - pt.z) * curvePull;
         vertices.push(pt.x, pt.y, pt.z);
       }
     }
@@ -288,22 +306,42 @@ function buildFabricGeometry(
   if (n === 4) {
     const vertices: number[] = [];
     const indices: number[] = [];
-    const tensionCurve = 0.03;
 
     for (let i = 0; i <= res; i++) {
       const v = i / res;
       for (let j = 0; j <= res; j++) {
         const u = j / res;
-        const pt = barycentricPoint(corners3D, u, v);
+
         const distU = Math.min(u, 1 - u);
         const distV = Math.min(v, 1 - v);
         const distFromEdge = Math.min(distU, distV) * 2;
+
+        let pt: THREE.Vector3;
+        if (distFromEdge < 0.15) {
+          let edgeStart: THREE.Vector3, edgeEnd: THREE.Vector3, edgeT: number;
+          if (distV < distU) {
+            if (v < 0.5) {
+              edgeStart = corners3D[0]; edgeEnd = corners3D[1]; edgeT = u;
+            } else {
+              edgeStart = corners3D[3]; edgeEnd = corners3D[2]; edgeT = u;
+            }
+          } else {
+            if (u < 0.5) {
+              edgeStart = corners3D[0]; edgeEnd = corners3D[3]; edgeT = v;
+            } else {
+              edgeStart = corners3D[1]; edgeEnd = corners3D[2]; edgeT = v;
+            }
+          }
+          const edgePt = computeEdgeCurvePoint(edgeStart, edgeEnd, centroid, edgeT);
+          const interiorPt = barycentricPoint(corners3D, u, v);
+          const blend = distFromEdge / 0.15;
+          pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
+        } else {
+          pt = barycentricPoint(corners3D, u, v);
+        }
+
         const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
         pt.y -= sag * centroid.y * 0.4;
-        const edgeProximity = 1 - distFromEdge;
-        const curvePull = tensionCurve * edgeProximity * edgeProximity * (1 - edgeProximity);
-        pt.x += (centroid.x - pt.x) * curvePull;
-        pt.z += (centroid.z - pt.z) * curvePull;
         vertices.push(pt.x, pt.y, pt.z);
       }
     }
@@ -326,7 +364,7 @@ function buildFabricGeometry(
     return geometry;
   }
 
-  // General polygon: radial grid with shared vertices at spokes
+  // General polygon: radial grid
   const vertices: number[] = [];
   const indices: number[] = [];
   const segsPerEdge = Math.ceil(res / n);
@@ -341,7 +379,15 @@ function buildFabricGeometry(
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
-        const edgePoint = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
+        let edgePoint: THREE.Vector3;
+        if (smoothT > 0.85) {
+          edgePoint = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
+          const straightPt = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
+          const blend = (smoothT - 0.85) / 0.15;
+          edgePoint = new THREE.Vector3().lerpVectors(straightPt, edgePoint, blend);
+        } else {
+          edgePoint = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
+        }
         const point = new THREE.Vector3().lerpVectors(centroid, edgePoint, smoothT);
         const distFromEdge = 1 - smoothT;
         const sag = sagFactor * (1 - distFromEdge) * distFromEdge;
@@ -407,12 +453,11 @@ function EdgeCables({ corners3D }: { corners3D: THREE.Vector3[] }) {
       const next = (i + 1) % n;
       const start = corners3D[i];
       const end = corners3D[next];
-      const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
-      const edgeLen = start.distanceTo(end);
-      const toCentroid = new THREE.Vector3().subVectors(centroid, mid).normalize();
-      mid.add(toCentroid.multiplyScalar(edgeLen * 0.03));
-      mid.y -= SAG_FACTOR * 0.3 * edgeLen * 0.1;
-      result.push(new THREE.CatmullRomCurve3([start, mid, end], false, 'catmullrom', 0.5));
+      const pts: THREE.Vector3[] = [];
+      for (let t = 0; t <= 1; t += 0.05) {
+        pts.push(computeEdgeCurvePoint(start, end, centroid, t));
+      }
+      result.push(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5));
     }
     return result;
   }, [corners3D, n, centroid]);
@@ -440,71 +485,218 @@ function parseMeasurementKey(key: string): [number, number] | null {
   return [a, b];
 }
 
+function buildMeasurementPath(
+  key: string,
+  measurementOption: 'adjust' | 'exact',
+  poleTopPositions: THREE.Vector3[],
+  sailAttachPoints: THREE.Vector3[],
+  centroid: THREE.Vector3
+): THREE.Vector3[] | null {
+  const pair = parseMeasurementKey(key);
+  if (!pair) return null;
+  const [a, b] = pair;
+
+  const isExact = measurementOption === 'exact';
+  const positions = isExact ? sailAttachPoints : poleTopPositions;
+
+  if (a >= positions.length || b >= positions.length) return null;
+
+  const start = positions[a];
+  const end = positions[b];
+
+  const isAdjacent = Math.abs(a - b) === 1 || Math.abs(a - b) === positions.length - 1;
+
+  if (isExact && isAdjacent) {
+    const pts: THREE.Vector3[] = [];
+    for (let t = 0; t <= 1; t += 0.04) {
+      pts.push(computeEdgeCurvePoint(start, end, centroid, t));
+    }
+    return pts;
+  }
+
+  return [start, end];
+}
+
+function PulsingTubeLine({ points, color, radius, opacity, pulsing }: {
+  points: THREE.Vector3[];
+  color: string;
+  radius: number;
+  opacity: number;
+  pulsing: boolean;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  const geometry = useMemo(() => {
+    if (points.length < 2) return null;
+    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+    return new THREE.TubeGeometry(curve, 32, radius, 8, false);
+  }, [points, radius]);
+
+  useFrame(({ clock }) => {
+    if (pulsing && materialRef.current) {
+      const pulse = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * 4);
+      materialRef.current.opacity = 0.5 + pulse * 0.5;
+    }
+  });
+
+  if (!geometry) return null;
+
+  return (
+    <mesh ref={meshRef} geometry={geometry}>
+      <meshBasicMaterial
+        ref={materialRef}
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+function DashedTubeLine({ points, color, radius, opacity, pulsing }: {
+  points: THREE.Vector3[];
+  color: string;
+  radius: number;
+  opacity: number;
+  pulsing: boolean;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const materialsRef = useRef<THREE.MeshBasicMaterial[]>([]);
+
+  const segments = useMemo(() => {
+    if (points.length < 2) return [];
+    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+    const totalLength = curve.getLength();
+    const dashLen = 0.15;
+    const gapLen = 0.1;
+    const cycleLen = dashLen + gapLen;
+    const numCycles = Math.floor(totalLength / cycleLen);
+    const result: THREE.TubeGeometry[] = [];
+
+    for (let i = 0; i < numCycles; i++) {
+      const startT = (i * cycleLen) / totalLength;
+      const endT = (i * cycleLen + dashLen) / totalLength;
+      const segPts: THREE.Vector3[] = [];
+      const steps = 6;
+      for (let s = 0; s <= steps; s++) {
+        const t = startT + (endT - startT) * (s / steps);
+        segPts.push(curve.getPointAt(Math.min(t, 1)));
+      }
+      const segCurve = new THREE.CatmullRomCurve3(segPts, false, 'catmullrom', 0.5);
+      result.push(new THREE.TubeGeometry(segCurve, 4, radius, 6, false));
+    }
+    return result;
+  }, [points, radius]);
+
+  useFrame(({ clock }) => {
+    if (pulsing && materialsRef.current.length > 0) {
+      const pulse = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * 4);
+      const op = 0.6 + pulse * 0.4;
+      for (const mat of materialsRef.current) {
+        mat.opacity = op;
+      }
+    }
+  });
+
+  if (segments.length === 0) return null;
+
+  materialsRef.current = [];
+
+  return (
+    <group ref={groupRef}>
+      {segments.map((geom, i) => (
+        <mesh key={i} geometry={geom}>
+          <meshBasicMaterial
+            ref={(ref) => { if (ref) materialsRef.current.push(ref); }}
+            color={color}
+            transparent
+            opacity={opacity}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function DimensionHighlight({
   highlightedMeasurement,
   measurementOption,
   poleTopPositions,
   sailAttachPoints,
-  corners3D,
   centroid,
 }: {
   highlightedMeasurement: string | null | undefined;
   measurementOption: 'adjust' | 'exact';
   poleTopPositions: THREE.Vector3[];
   sailAttachPoints: THREE.Vector3[];
-  corners3D: THREE.Vector3[];
   centroid: THREE.Vector3;
 }) {
-  const lineGeometry = useMemo(() => {
+  const points = useMemo(() => {
     if (!highlightedMeasurement) return null;
-    const pair = parseMeasurementKey(highlightedMeasurement);
-    if (!pair) return null;
-    const [a, b] = pair;
-
-    const isExact = measurementOption === 'exact';
-    const positions = isExact ? sailAttachPoints : poleTopPositions;
-
-    if (a >= positions.length || b >= positions.length) return null;
-
-    const start = positions[a];
-    const end = positions[b];
-
-    const isAdjacent = Math.abs(a - b) === 1 || Math.abs(a - b) === positions.length - 1;
-
-    if (isExact && isAdjacent) {
-      const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
-      const toCentroid = new THREE.Vector3().subVectors(centroid, mid).normalize();
-      const edgeLen = start.distanceTo(end);
-      mid.add(toCentroid.multiplyScalar(edgeLen * 0.03));
-      mid.y -= SAG_FACTOR * 0.3 * edgeLen * 0.1;
-      const curve = new THREE.CatmullRomCurve3([start, mid, end], false, 'catmullrom', 0.5);
-      const pts = curve.getPoints(32);
-      const geom = new THREE.BufferGeometry().setFromPoints(pts);
-      geom.computeBoundingSphere();
-      return geom;
-    }
-
-    const geom = new THREE.BufferGeometry().setFromPoints([start, end]);
-    geom.computeBoundingSphere();
-    return geom;
+    return buildMeasurementPath(highlightedMeasurement, measurementOption, poleTopPositions, sailAttachPoints, centroid);
   }, [highlightedMeasurement, measurementOption, poleTopPositions, sailAttachPoints, centroid]);
 
-  const dashedMaterial = useMemo(() => {
-    const mat = new THREE.LineDashedMaterial({
-      color: 0xe02020,
-      dashSize: 0.12,
-      gapSize: 0.08,
-      linewidth: 2,
-    });
-    return mat;
-  }, []);
-
-  if (!lineGeometry) return null;
+  if (!points) return null;
 
   return (
-    <line geometry={lineGeometry} material={dashedMaterial} onUpdate={(self: any) => {
-      self.computeLineDistances();
-    }} />
+    <DashedTubeLine
+      points={points}
+      color="#e02020"
+      radius={HIGHLIGHT_TUBE_RADIUS}
+      opacity={0.9}
+      pulsing={true}
+    />
+  );
+}
+
+function CompletedDimensionLines({
+  measurements,
+  highlightedMeasurement,
+  measurementOption,
+  poleTopPositions,
+  sailAttachPoints,
+  centroid,
+  cornerCount,
+}: {
+  measurements: { [key: string]: number };
+  highlightedMeasurement: string | null | undefined;
+  measurementOption: 'adjust' | 'exact';
+  poleTopPositions: THREE.Vector3[];
+  sailAttachPoints: THREE.Vector3[];
+  centroid: THREE.Vector3;
+  cornerCount: number;
+}) {
+  const completedPaths = useMemo(() => {
+    const result: { key: string; points: THREE.Vector3[] }[] = [];
+    for (const [key, value] of Object.entries(measurements)) {
+      if (!value || value <= 0) continue;
+      if (key === highlightedMeasurement) continue;
+      if (key.length !== 2) continue;
+      const pair = parseMeasurementKey(key);
+      if (!pair) continue;
+      if (pair[0] >= cornerCount || pair[1] >= cornerCount) continue;
+      const points = buildMeasurementPath(key, measurementOption, poleTopPositions, sailAttachPoints, centroid);
+      if (points) result.push({ key, points });
+    }
+    return result;
+  }, [measurements, highlightedMeasurement, measurementOption, poleTopPositions, sailAttachPoints, centroid, cornerCount]);
+
+  return (
+    <group>
+      {completedPaths.map(({ key, points }) => (
+        <PulsingTubeLine
+          key={key}
+          points={points}
+          color="#22c55e"
+          radius={HIGHLIGHT_TUBE_RADIUS * 0.8}
+          opacity={0.5}
+          pulsing={false}
+        />
+      ))}
+    </group>
   );
 }
 
@@ -524,14 +716,9 @@ function GridLines() {
 function CameraFramer({ corners3D, centroid }: { corners3D: THREE.Vector3[]; centroid: THREE.Vector3 }) {
   const { camera, size } = useThree();
   const hasFramed = useRef(false);
-  const prevCornersKey = useRef('');
 
   useEffect(() => {
-    if (corners3D.length < 3) return;
-
-    const key = corners3D.map(v => `${v.x.toFixed(2)},${v.y.toFixed(2)},${v.z.toFixed(2)}`).join('|');
-    if (key === prevCornersKey.current && hasFramed.current) return;
-    prevCornersKey.current = key;
+    if (corners3D.length < 3 || hasFramed.current) return;
     hasFramed.current = true;
 
     const box = new THREE.Box3();
@@ -599,6 +786,11 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
     });
   }, [poleTopPositions, centroid]);
 
+  const initialTarget = useMemo(() => {
+    if (corners3D.length < 3) return new THREE.Vector3(0, 1, 0);
+    return new THREE.Vector3(centroid.x, centroid.y * 0.5, centroid.z);
+  }, [corners3D.length >= 3 ? centroid.x : 0, corners3D.length >= 3 ? centroid.y : 0, corners3D.length >= 3 ? centroid.z : 0]);
+
   if (corners3D.length < 3) {
     return (
       <Html center>
@@ -630,12 +822,21 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
       <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
       <EdgeCables corners3D={sailAttachPoints} />
 
+      <CompletedDimensionLines
+        measurements={config.measurements}
+        highlightedMeasurement={highlightedMeasurement}
+        measurementOption={config.measurementOption as 'adjust' | 'exact'}
+        poleTopPositions={poleTopPositions}
+        sailAttachPoints={sailAttachPoints}
+        centroid={centroid}
+        cornerCount={config.corners}
+      />
+
       <DimensionHighlight
         highlightedMeasurement={highlightedMeasurement}
         measurementOption={config.measurementOption as 'adjust' | 'exact'}
         poleTopPositions={poleTopPositions}
         sailAttachPoints={sailAttachPoints}
-        corners3D={corners3D}
         centroid={centroid}
       />
 
@@ -653,7 +854,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3
         maxPolarAngle={Math.PI / 2 - 0.05}
         minDistance={2}
         maxDistance={30}
-        target={[centroid.x, centroid.y * 0.5, centroid.z]}
+        target={initialTarget}
       />
       <Environment preset="city" />
     </>
