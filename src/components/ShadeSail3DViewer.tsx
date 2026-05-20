@@ -160,29 +160,41 @@ function SailDRing({ position, direction }: { position: THREE.Vector3; direction
   const ringRadius = 0.022;
   const wireRadius = 0.005;
 
-  const ringQuat = useMemo(() => {
+  const groupQuat = useMemo(() => {
+    // The half-torus is created in XY plane, arc bulges in +Y direction.
+    // We want the arc to bulge outward along `direction` (toward the fixing point).
+    // So align the local Y axis with `direction`.
     const q = new THREE.Quaternion();
-    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
     return q;
   }, [direction]);
 
   const barQuat = useMemo(() => {
+    // Bar spans the flat side of the D (perpendicular to direction, in the plane of the ring).
+    // After the group rotation, the bar should lie along the local X axis (which is now perpendicular to direction).
     const q = new THREE.Quaternion();
-    const perp = new THREE.Vector3().crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
-    if (perp.length() < 0.1) perp.set(1, 0, 0);
-    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), perp);
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    // Bar aligned along local X: rotate 90 deg around direction
+    const barLocal = new THREE.Quaternion();
+    barLocal.setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
+    q.multiply(barLocal);
     return q;
   }, [direction]);
 
+  // Offset the ring slightly toward the sail (away from direction) so the bar sits at the sail edge
+  const ringOffset = useMemo(() => {
+    return position.clone();
+  }, [position]);
+
   return (
     <group>
-      {/* Half-circle ring */}
-      <mesh position={position} quaternion={ringQuat}>
+      {/* Half-circle ring - curved part faces toward fixing point */}
+      <mesh position={ringOffset} quaternion={groupQuat}>
         <torusGeometry args={[ringRadius, wireRadius, 10, 12, Math.PI]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.95} />
       </mesh>
-      {/* Straight bar across D */}
-      <mesh position={position} quaternion={barQuat}>
+      {/* Straight bar across D - flat side flush with sail */}
+      <mesh position={ringOffset} quaternion={barQuat}>
         <cylinderGeometry args={[wireRadius, wireRadius, ringRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.95} />
       </mesh>
@@ -1014,7 +1026,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
 
       {activeSection === 'heights' && (
         <HeightIndicators
-          corners3D={corners3D}
+          corners3D={fixingPointPositions}
           highlightedCorner={highlightedCorner}
         />
       )}
