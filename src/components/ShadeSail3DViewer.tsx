@@ -9,6 +9,7 @@ import { reconstructPolygonFromMeasurements, hasRequiredMeasurements } from '../
 interface ShadeSail3DViewerProps {
   config: ConfiguratorState;
   highlightedMeasurement?: string | null;
+  highlightedCorner?: number | null;
 }
 
 const DEFAULT_HEIGHT_MM = 2400;
@@ -67,7 +68,7 @@ function computeCentroid(points: THREE.Vector3[]): THREE.Vector3 {
   return c;
 }
 
-function Pole({ base, top, centroid }: { base: THREE.Vector3; top: THREE.Vector3; centroid: THREE.Vector3 }) {
+function Pole({ base, top, centroid, highlighted }: { base: THREE.Vector3; top: THREE.Vector3; centroid: THREE.Vector3; highlighted?: boolean }) {
   const leanRad = (POLE_LEAN_DEG * Math.PI) / 180;
 
   const outDir = new THREE.Vector3(top.x - centroid.x, 0, top.z - centroid.z).normalize();
@@ -81,21 +82,22 @@ function Pole({ base, top, centroid }: { base: THREE.Vector3; top: THREE.Vector3
   const quat = new THREE.Quaternion();
   quat.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
 
+  const poleColor = highlighted ? '#e03030' : '#b0b0b0';
+  const capColor = highlighted ? '#cc2020' : '#999';
+
   return (
     <group>
       <mesh position={mid} quaternion={quat}>
         <cylinderGeometry args={[POLE_RADIUS, POLE_RADIUS * 1.1, length, 16]} />
-        <meshStandardMaterial color="#b0b0b0" roughness={0.35} metalness={0.85} />
+        <meshStandardMaterial color={poleColor} roughness={0.35} metalness={0.85} />
       </mesh>
-      {/* Pole cap */}
       <mesh position={leanedTop} quaternion={quat}>
         <cylinderGeometry args={[POLE_RADIUS * 1.1, POLE_RADIUS * 1.1, POLE_RADIUS * 0.5, 16]} />
-        <meshStandardMaterial color="#999" roughness={0.3} metalness={0.9} />
+        <meshStandardMaterial color={capColor} roughness={0.3} metalness={0.9} />
       </mesh>
-      {/* Base plate */}
       <mesh position={base} rotation={[-Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[POLE_RADIUS * 2, POLE_RADIUS * 2, 0.02, 16]} />
-        <meshStandardMaterial color="#888" roughness={0.4} metalness={0.8} />
+        <meshStandardMaterial color={highlighted ? '#c02020' : '#888'} roughness={0.4} metalness={0.8} />
       </mesh>
     </group>
   );
@@ -243,6 +245,7 @@ function buildFabricGeometry(
     const vertices: number[] = [];
     const indices: number[] = [];
     const rows = res;
+    const tensionCurve = 0.03;
 
     for (let i = 0; i <= rows; i++) {
       const cols = rows - i;
@@ -254,6 +257,10 @@ function buildFabricGeometry(
         const distFromEdge = Math.min(u, v, w) * 3;
         const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
         pt.y -= sag * centroid.y * 0.4;
+        const edgeProximity = 1 - distFromEdge;
+        const curvePull = tensionCurve * edgeProximity * edgeProximity * (1 - edgeProximity);
+        pt.x += (centroid.x - pt.x) * curvePull;
+        pt.z += (centroid.z - pt.z) * curvePull;
         vertices.push(pt.x, pt.y, pt.z);
       }
     }
@@ -281,6 +288,7 @@ function buildFabricGeometry(
   if (n === 4) {
     const vertices: number[] = [];
     const indices: number[] = [];
+    const tensionCurve = 0.03;
 
     for (let i = 0; i <= res; i++) {
       const v = i / res;
@@ -292,6 +300,10 @@ function buildFabricGeometry(
         const distFromEdge = Math.min(distU, distV) * 2;
         const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
         pt.y -= sag * centroid.y * 0.4;
+        const edgeProximity = 1 - distFromEdge;
+        const curvePull = tensionCurve * edgeProximity * edgeProximity * (1 - edgeProximity);
+        pt.x += (centroid.x - pt.x) * curvePull;
+        pt.z += (centroid.z - pt.z) * curvePull;
         vertices.push(pt.x, pt.y, pt.z);
       }
     }
@@ -388,6 +400,7 @@ function FabricMesh({ corners3D, color }: { corners3D: THREE.Vector3[]; color: s
 
 function EdgeCables({ corners3D }: { corners3D: THREE.Vector3[] }) {
   const n = corners3D.length;
+  const centroid = useMemo(() => computeCentroid(corners3D), [corners3D]);
   const curves = useMemo(() => {
     const result: THREE.CatmullRomCurve3[] = [];
     for (let i = 0; i < n; i++) {
@@ -395,16 +408,19 @@ function EdgeCables({ corners3D }: { corners3D: THREE.Vector3[] }) {
       const start = corners3D[i];
       const end = corners3D[next];
       const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
-      mid.y -= SAG_FACTOR * 0.3 * start.distanceTo(end) * 0.1;
+      const edgeLen = start.distanceTo(end);
+      const toCentroid = new THREE.Vector3().subVectors(centroid, mid).normalize();
+      mid.add(toCentroid.multiplyScalar(edgeLen * 0.03));
+      mid.y -= SAG_FACTOR * 0.3 * edgeLen * 0.1;
       result.push(new THREE.CatmullRomCurve3([start, mid, end], false, 'catmullrom', 0.5));
     }
     return result;
-  }, [corners3D, n]);
+  }, [corners3D, n, centroid]);
 
   return (
     <group>
       {curves.map((curve, i) => {
-        const points = curve.getPoints(20);
+        const points = curve.getPoints(24);
         const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
         return (
           <line key={i} geometry={lineGeom}>
@@ -413,6 +429,82 @@ function EdgeCables({ corners3D }: { corners3D: THREE.Vector3[] }) {
         );
       })}
     </group>
+  );
+}
+
+function parseMeasurementKey(key: string): [number, number] | null {
+  if (!key || key.length < 2) return null;
+  const a = key.charCodeAt(0) - 65;
+  const b = key.charCodeAt(1) - 65;
+  if (a < 0 || b < 0 || a > 25 || b > 25) return null;
+  return [a, b];
+}
+
+function DimensionHighlight({
+  highlightedMeasurement,
+  measurementOption,
+  poleTopPositions,
+  sailAttachPoints,
+  corners3D,
+  centroid,
+}: {
+  highlightedMeasurement: string | null | undefined;
+  measurementOption: 'adjust' | 'exact';
+  poleTopPositions: THREE.Vector3[];
+  sailAttachPoints: THREE.Vector3[];
+  corners3D: THREE.Vector3[];
+  centroid: THREE.Vector3;
+}) {
+  const lineGeometry = useMemo(() => {
+    if (!highlightedMeasurement) return null;
+    const pair = parseMeasurementKey(highlightedMeasurement);
+    if (!pair) return null;
+    const [a, b] = pair;
+
+    const isExact = measurementOption === 'exact';
+    const positions = isExact ? sailAttachPoints : poleTopPositions;
+
+    if (a >= positions.length || b >= positions.length) return null;
+
+    const start = positions[a];
+    const end = positions[b];
+
+    const isAdjacent = Math.abs(a - b) === 1 || Math.abs(a - b) === positions.length - 1;
+
+    if (isExact && isAdjacent) {
+      const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
+      const toCentroid = new THREE.Vector3().subVectors(centroid, mid).normalize();
+      const edgeLen = start.distanceTo(end);
+      mid.add(toCentroid.multiplyScalar(edgeLen * 0.03));
+      mid.y -= SAG_FACTOR * 0.3 * edgeLen * 0.1;
+      const curve = new THREE.CatmullRomCurve3([start, mid, end], false, 'catmullrom', 0.5);
+      const pts = curve.getPoints(32);
+      const geom = new THREE.BufferGeometry().setFromPoints(pts);
+      geom.computeBoundingSphere();
+      return geom;
+    }
+
+    const geom = new THREE.BufferGeometry().setFromPoints([start, end]);
+    geom.computeBoundingSphere();
+    return geom;
+  }, [highlightedMeasurement, measurementOption, poleTopPositions, sailAttachPoints, centroid]);
+
+  const dashedMaterial = useMemo(() => {
+    const mat = new THREE.LineDashedMaterial({
+      color: 0xe02020,
+      dashSize: 0.12,
+      gapSize: 0.08,
+      linewidth: 2,
+    });
+    return mat;
+  }, []);
+
+  if (!lineGeometry) return null;
+
+  return (
+    <line geometry={lineGeometry} material={dashedMaterial} onUpdate={(self: any) => {
+      self.computeLineDistances();
+    }} />
   );
 }
 
@@ -473,7 +565,7 @@ function CameraFramer({ corners3D, centroid }: { corners3D: THREE.Vector3[]; cen
   return null;
 }
 
-function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
+function Scene({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3DViewerProps) {
   const controlsRef = useRef<any>(null);
 
   const svgPoints = useMemo(() => {
@@ -528,7 +620,7 @@ function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
 
       {corners3D.map((top, i) => {
         const base = new THREE.Vector3(top.x, 0, top.z);
-        return <Pole key={i} base={base} top={top} centroid={centroid} />;
+        return <Pole key={i} base={base} top={top} centroid={centroid} highlighted={highlightedCorner === i} />;
       })}
 
       {poleTopPositions.map((poleTop, i) => (
@@ -537,6 +629,15 @@ function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
 
       <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
       <EdgeCables corners3D={sailAttachPoints} />
+
+      <DimensionHighlight
+        highlightedMeasurement={highlightedMeasurement}
+        measurementOption={config.measurementOption as 'adjust' | 'exact'}
+        poleTopPositions={poleTopPositions}
+        sailAttachPoints={sailAttachPoints}
+        corners3D={corners3D}
+        centroid={centroid}
+      />
 
       {poleTopPositions.map((pos, i) => (
         <CornerLabel key={i} position={pos} label={getCornerLabel(i)} />
@@ -559,7 +660,7 @@ function Scene({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
   );
 }
 
-export default function ShadeSail3DViewer({ config, highlightedMeasurement }: ShadeSail3DViewerProps) {
+export default function ShadeSail3DViewer({ config, highlightedMeasurement, highlightedCorner }: ShadeSail3DViewerProps) {
   return (
     <div className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
       <Canvas
@@ -567,7 +668,7 @@ export default function ShadeSail3DViewer({ config, highlightedMeasurement }: Sh
         shadows
         gl={{ antialias: true, alpha: false }}
       >
-        <Scene config={config} highlightedMeasurement={highlightedMeasurement} />
+        <Scene config={config} highlightedMeasurement={highlightedMeasurement} highlightedCorner={highlightedCorner} />
       </Canvas>
     </div>
   );

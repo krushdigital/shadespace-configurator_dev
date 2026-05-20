@@ -2517,6 +2517,7 @@ export function ShadeConfigurator() {
                       <ShadeSail3DViewer
                         config={config}
                         highlightedMeasurement={highlightedMeasurement}
+                        highlightedCorner={highlightedCorner}
                       />
                     </Suspense>
                   </div>
