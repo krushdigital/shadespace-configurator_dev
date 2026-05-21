@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -11,6 +11,7 @@ interface ShadeSail3DViewerProps {
   highlightedMeasurement?: string | null;
   highlightedCorner?: number | null;
   activeSection?: 'dimensions' | 'heights' | 'hardware' | 'review' | null;
+  onPerformanceWarning?: () => void;
 }
 
 const DEFAULT_HEIGHT_MM = 2400;
@@ -153,6 +154,32 @@ function EyeBolt({ position, direction, poleDir }: { position: THREE.Vector3; di
         <meshStandardMaterial color="#b8b8b8" roughness={0.25} metalness={0.95} />
       </mesh>
     </group>
+  );
+}
+
+function EyeBoltHighlightRing({ position, direction }: { position: THREE.Vector3; direction: THREE.Vector3 }) {
+  const ringRef = useRef<THREE.Mesh>(null);
+  const stubLength = POLE_RADIUS * 0.6;
+  const ringCenter = position.clone().add(direction.clone().multiplyScalar(stubLength));
+
+  const ringQuat = useMemo(() => {
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+    return q;
+  }, [direction]);
+
+  useFrame(({ clock }) => {
+    if (ringRef.current) {
+      const mat = ringRef.current.material as THREE.MeshStandardMaterial;
+      mat.emissiveIntensity = 0.6 + Math.sin(clock.getElapsedTime() * 4) * 0.4;
+    }
+  });
+
+  return (
+    <mesh ref={ringRef} position={ringCenter} quaternion={ringQuat}>
+      <torusGeometry args={[0.06, 0.008, 16, 32]} />
+      <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={0.8} transparent opacity={0.9} roughness={0.3} metalness={0.6} />
+    </mesh>
   );
 }
 
@@ -989,6 +1016,14 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
         />
       ))}
 
+      {/* Highlight ring on eye bolt when corner is selected in hardware step */}
+      {activeSection === 'hardware' && highlightedCorner != null && poleData[highlightedCorner] && (
+        <EyeBoltHighlightRing
+          position={poleData[highlightedCorner].fixingPointSurface}
+          direction={poleData[highlightedCorner].inwardDir}
+        />
+      )}
+
       {/* Hardware chain between eye bolt and D-ring */}
       {poleData.map((data, i) => (
         <CornerHardware
@@ -1064,16 +1099,63 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
   );
 }
 
-export default function ShadeSail3DViewer({ config, highlightedMeasurement, highlightedCorner, activeSection }: ShadeSail3DViewerProps) {
-  return (
-    <div className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
-      <Canvas
-        camera={{ fov: 45, near: 0.1, far: 100 }}
-        shadows
-        gl={{ antialias: true, alpha: false }}
-      >
-        <Scene config={config} highlightedMeasurement={highlightedMeasurement} highlightedCorner={highlightedCorner} activeSection={activeSection} />
-      </Canvas>
-    </div>
-  );
+function FpsMonitor({ onPerformanceWarning }: { onPerformanceWarning?: () => void }) {
+  const frameTimesRef = useRef<number[]>([]);
+  const lowFpsStartRef = useRef<number | null>(null);
+  const warnedRef = useRef(false);
+
+  useFrame(() => {
+    if (!onPerformanceWarning || warnedRef.current) return;
+    const now = performance.now();
+    const frames = frameTimesRef.current;
+    frames.push(now);
+    // Keep last 3 seconds of frame timestamps
+    while (frames.length > 0 && now - frames[0] > 3000) frames.shift();
+    if (frames.length < 10) return;
+    const fps = (frames.length / ((now - frames[0]) / 1000));
+    if (fps < 15) {
+      if (!lowFpsStartRef.current) lowFpsStartRef.current = now;
+      else if (now - lowFpsStartRef.current > 3000) {
+        warnedRef.current = true;
+        onPerformanceWarning();
+      }
+    } else {
+      lowFpsStartRef.current = null;
+    }
+  });
+
+  return null;
 }
+
+export interface ShadeSail3DViewerRef {
+  capture3DScreenshot: () => Promise<string | null>;
+}
+
+const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProps>(
+  ({ config, highlightedMeasurement, highlightedCorner, activeSection, onPerformanceWarning }, ref) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useImperativeHandle(ref, () => ({
+      capture3DScreenshot: async () => {
+        const canvas = containerRef.current?.querySelector('canvas');
+        if (!canvas) return null;
+        return canvas.toDataURL('image/png');
+      },
+    }));
+
+    return (
+      <div ref={containerRef} className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
+        <Canvas
+          camera={{ fov: 45, near: 0.1, far: 100 }}
+          shadows
+          gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
+        >
+          <Scene config={config} highlightedMeasurement={highlightedMeasurement} highlightedCorner={highlightedCorner} activeSection={activeSection} />
+          {onPerformanceWarning && <FpsMonitor onPerformanceWarning={onPerformanceWarning} />}
+        </Canvas>
+      </div>
+    );
+  }
+);
+
+export default ShadeSail3DViewer;

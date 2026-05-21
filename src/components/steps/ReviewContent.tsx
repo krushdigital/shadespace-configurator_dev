@@ -42,6 +42,9 @@ interface ReviewContentProps {
   quoteReference?: string | null;
   onSaveQuote?: () => void;
   pricingSettingsMap?: Record<string, PricingSetting>;
+  viewMode?: 'plan' | '3d';
+  onViewModeChange?: (mode: 'plan' | '3d') => void;
+  device3DTier?: 'high' | 'low' | 'none';
 }
 
 export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
@@ -65,9 +68,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   setShowLoadingOverlay,
   onSaveQuote,
   pricingSettingsMap,
+  viewMode: externalViewMode,
+  onViewModeChange,
+  device3DTier = 'none',
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
-  const [reviewViewMode, setReviewViewMode] = useState<'plan' | '3d'>('plan');
+  const [internalViewMode, setInternalViewMode] = useState<'plan' | '3d'>('plan');
+  const reviewViewMode = externalViewMode ?? internalViewMode;
+  const setReviewViewMode = onViewModeChange ?? setInternalViewMode;
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
   const [buttonShake, setButtonShake] = useState(false);
   const checklistRef = useRef<ConfigurationChecklistRef>(null);
@@ -915,28 +923,28 @@ console.log('✌️result --->', result);
                 <h4 className="text-lg font-semibold text-slate-900">
                   Shade Sail Preview
                 </h4>
-                {!isMobile && (
+                {(!isMobile || device3DTier !== 'none') && (
                   <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                     <button
                       onClick={() => setReviewViewMode('plan')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                         reviewViewMode === 'plan'
                           ? 'bg-white shadow-sm text-slate-900'
                           : 'text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      <Layers className="w-4 h-4" />
+                      <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       Plan
                     </button>
                     <button
                       onClick={() => setReviewViewMode('3d')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
                         reviewViewMode === '3d'
                           ? 'bg-white shadow-sm text-slate-900'
                           : 'text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      <Box className="w-4 h-4" />
+                      <Box className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       3D
                     </button>
                   </div>

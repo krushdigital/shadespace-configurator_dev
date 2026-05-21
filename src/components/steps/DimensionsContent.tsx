@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
@@ -9,10 +9,12 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { toast } from 'react-toastify';
+
+const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
 import {
   getAlternativeUnit,
   getAlternativeUnitName,
@@ -54,6 +56,9 @@ interface DimensionsContentProps {
   navigateToDiagonals?: boolean;
   setNavigateToDiagonals?: (value: boolean) => void;
   onHeightsSectionChange?: (isOpen: boolean) => void;
+  device3DTier?: 'high' | 'low' | 'none';
+  mobileViewMode?: 'plan' | '3d';
+  onMobileViewModeChange?: (mode: 'plan' | '3d') => void;
 }
 
 export function DimensionsContent({
@@ -87,7 +92,10 @@ export function DimensionsContent({
   setNavigateToHeights = () => {},
   navigateToDiagonals = false,
   setNavigateToDiagonals = () => {},
-  onHeightsSectionChange
+  onHeightsSectionChange,
+  device3DTier = 'none',
+  mobileViewMode = 'plan',
+  onMobileViewModeChange,
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
@@ -514,36 +522,96 @@ export function DimensionsContent({
         const mobileMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
         const mobileProvidedDiagonals = mobileDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
         const mobileHasEnoughDiagonals = mobileProvidedDiagonals >= mobileMinDiagonals && mobileMinDiagonals > 0;
+        const show3DToggle = device3DTier !== 'none';
 
         return (
           <div className="mb-4 sm:mb-6">
-            <h4 className="text-lg font-semibold text-slate-900 mb-4">
-              Interactive Measurement Guide
-            </h4>
-
-            <div className="overflow-hidden rounded-lg">
-              <ShapeCanvas
-                config={config}
-                updateConfig={updateConfig}
-                readonly={false}
-                snapToGrid={true}
-                highlightedMeasurement={highlightedMeasurement}
-                isMobile={isMobile}
-                measurementOption={config.measurementOption}
-                unit={config.unit}
-              />
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-semibold text-slate-900">
+                Interactive Measurement Guide
+              </h4>
+              {show3DToggle && (
+                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                  <button
+                    onClick={() => onMobileViewModeChange?.('plan')}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                      mobileViewMode === 'plan'
+                        ? 'bg-white shadow-sm text-slate-900'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    Plan
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (device3DTier === 'low' && mobileViewMode !== '3d') {
+                        toast.info('3D view may be slower on this device', { autoClose: 3000 });
+                      }
+                      onMobileViewModeChange?.('3d');
+                    }}
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                      mobileViewMode === '3d'
+                        ? 'bg-white shadow-sm text-slate-900'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <Box className="w-3.5 h-3.5" />
+                    {device3DTier === 'low' ? 'Try 3D' : '3D'}
+                  </button>
+                </div>
+              )}
             </div>
 
-            {config.corners >= 4 && (
-              <div className="mt-2">
-                <ShapeModeToggle
-                  isAutoMode={!config.hasManuallyAdjustedShape}
-                  onToggle={(isAuto) => handleToggleMode(isAuto)}
-                  corners={config.corners}
-                  hasEnoughDiagonals={mobileHasEnoughDiagonals}
-                  shapeAccuracy={mobileShapeAccuracy.accuracy}
-                />
+            {mobileViewMode === '3d' ? (
+              <div className="h-[350px] sm:h-[450px] overflow-hidden rounded-lg">
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="text-center">
+                      <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
+                      <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                    </div>
+                  </div>
+                }>
+                  <ShadeSail3DViewer
+                    config={config}
+                    highlightedMeasurement={highlightedMeasurement}
+                    activeSection="dimensions"
+                    onPerformanceWarning={() => {
+                      toast.warn('3D view is running slowly. Switch to Plan view for better performance.', {
+                        autoClose: 5000,
+                      });
+                    }}
+                  />
+                </Suspense>
               </div>
+            ) : (
+              <>
+                <div className="overflow-hidden rounded-lg">
+                  <ShapeCanvas
+                    config={config}
+                    updateConfig={updateConfig}
+                    readonly={false}
+                    snapToGrid={true}
+                    highlightedMeasurement={highlightedMeasurement}
+                    isMobile={isMobile}
+                    measurementOption={config.measurementOption}
+                    unit={config.unit}
+                  />
+                </div>
+
+                {config.corners >= 4 && (
+                  <div className="mt-2">
+                    <ShapeModeToggle
+                      isAutoMode={!config.hasManuallyAdjustedShape}
+                      onToggle={(isAuto) => handleToggleMode(isAuto)}
+                      corners={config.corners}
+                      hasEnoughDiagonals={mobileHasEnoughDiagonals}
+                      shapeAccuracy={mobileShapeAccuracy.accuracy}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </div>
         );

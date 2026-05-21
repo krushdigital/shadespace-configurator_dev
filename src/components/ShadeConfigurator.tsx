@@ -38,6 +38,7 @@ import { eventTrackers } from '../utils/eventTracker';
 import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
 import { Box, Layers } from 'lucide-react';
+import { canRender3D, Device3DTier } from '../utils/canRender3D';
 
 const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
 
@@ -73,6 +74,8 @@ export function ShadeConfigurator() {
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 1024);
+  const [device3DTier, setDevice3DTier] = useState<Device3DTier>(() => canRender3D());
+  const [mobileViewMode, setMobileViewMode] = useState<'plan' | '3d'>('plan');
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
   const { showToast } = useToast();
@@ -132,6 +135,8 @@ export function ShadeConfigurator() {
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
+  // 3D viewer ref for screenshot capture
+  const viewer3DRef = useRef<{ capture3DScreenshot: () => Promise<string | null> }>(null);
 
   const { settingsMap: pricingSettingsMap } = usePricingSettings();
   const { data: basePricingData } = useBasePricing();
@@ -163,6 +168,7 @@ export function ShadeConfigurator() {
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth < 1024);
+      setDevice3DTier(canRender3D());
     };
 
     // Initial check
@@ -399,6 +405,12 @@ export function ShadeConfigurator() {
     try {
       const svgElement = canvasRef.current?.getSVGElement?.();
 
+      let threeDImageDataUrl: string | undefined;
+      try {
+        const screenshot = await viewer3DRef.current?.capture3DScreenshot();
+        if (screenshot) threeDImageDataUrl = screenshot;
+      } catch { /* 3D capture is optional */ }
+
       const customerDetails: CustomerDetails = {
         firstName,
         lastName,
@@ -414,6 +426,7 @@ export function ShadeConfigurator() {
         chrome: template.chrome,
         customer: customerDetails,
         svgElement,
+        threeDImageDataUrl,
         isEmailSummary: true,
       });
 
@@ -588,6 +601,7 @@ export function ShadeConfigurator() {
       // Get the SVG element and upload preview
       const svgElement = canvasRef.current?.getSVGElement();
       let canvasImageUrl = null;
+      let canvasImage3DUrl = null;
 
       if (svgElement) {
         try {
@@ -602,6 +616,17 @@ export function ShadeConfigurator() {
           console.error('Error processing canvas image:', error);
         }
       }
+
+      // Capture 3D screenshot
+      try {
+        const screenshot3D = await viewer3DRef.current?.capture3DScreenshot();
+        if (screenshot3D) {
+          const blob3D = await fetch(screenshot3D).then(r => r.blob());
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const filename3D = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
+          canvasImage3DUrl = await uploadImageToShopify(blob3D, filename3D);
+        }
+      } catch { /* 3D capture is optional */ }
 
       const selectedFabricLocal = FABRICS.find(f => f.id === config.fabricType);
       const selectedColor = selectedFabricLocal?.colors.find(c => c.name === config.fabricColor);
@@ -716,6 +741,7 @@ export function ShadeConfigurator() {
         Area: formatArea(calculations.area * 1000000, config.unit),
         Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
         canvasImage: canvasImageUrl,
+        canvasImage3D: canvasImage3DUrl,
         createdAt: new Date().toISOString(),
         backendEdgeMeasurements: backendEdgeMeasurementsEmail,
         backendDiagonalMeasurements: backendDiagonalMeasurementsEmail,
@@ -2430,11 +2456,16 @@ export function ShadeConfigurator() {
                     setShowLoadingOverlay={setShowLoadingOverlay}
                     onSaveQuote={handleSaveQuote}
                     quoteReference={quoteReference}
+                    viewMode={index === 6 ? desktopViewMode : undefined}
+                    onViewModeChange={index === 6 ? setDesktopViewMode : undefined}
                     navigateToHeights={index === 4 ? navigateToHeights : undefined}
                     setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
                     navigateToDiagonals={index === 4 ? navigateToDiagonals : undefined}
                     setNavigateToDiagonals={index === 4 ? setNavigateToDiagonals : undefined}
                     onHeightsSectionChange={index === 4 ? setIsHeightsSectionOpen : undefined}
+                    device3DTier={device3DTier}
+                    mobileViewMode={mobileViewMode}
+                    onMobileViewModeChange={setMobileViewMode}
                     pricingSettingsMap={activePricingMap}
                   />
                 </AccordionStep>
@@ -2451,7 +2482,7 @@ export function ShadeConfigurator() {
             const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals && desktopMinDiagonals > 0;
 
             return (
-              <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
+              <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-24 lg:self-start z-10 max-h-[calc(100vh-7rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-slate-900">
                     {openStep === 5 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
@@ -2490,7 +2521,7 @@ export function ShadeConfigurator() {
 
                 {desktopViewMode === 'plan' ? (
                   openStep === 4 ? (
-                    <div className="relative">
+                    <div>
                       <ShapeCanvas
                         config={config}
                         updateConfig={updateConfig}
@@ -2502,16 +2533,8 @@ export function ShadeConfigurator() {
                         measurementOption={config.measurementOption}
                         unit={config.unit}
                       />
-                      <button
-                        onClick={() => setDesktopViewMode('3d')}
-                        className="absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-lg hover:bg-slate-700 transition-all hover:scale-105"
-                      >
-                        <Box className="w-4 h-4" />
-                        View in 3D
-                      </button>
-
-                      {config.corners >= 4 && (
-                        <div className="mt-3">
+                      <div className="mt-3 flex items-center justify-between">
+                        {config.corners >= 4 ? (
                           <ShapeModeToggle
                             isAutoMode={!config.hasManuallyAdjustedShape}
                             onToggle={(isAuto) => handleToggleMode(isAuto)}
@@ -2519,8 +2542,15 @@ export function ShadeConfigurator() {
                             hasEnoughDiagonals={desktopHasEnoughDiagonals}
                             shapeAccuracy={desktopShapeAccuracy.accuracy}
                           />
-                        </div>
-                      )}
+                        ) : <div />}
+                        <button
+                          onClick={() => setDesktopViewMode('3d')}
+                          className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-lg hover:bg-slate-700 transition-all hover:scale-105"
+                        >
+                          <Box className="w-4 h-4" />
+                          View in 3D
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <ShapeCanvas
@@ -2546,6 +2576,7 @@ export function ShadeConfigurator() {
                       </div>
                     }>
                       <ShadeSail3DViewer
+                        ref={viewer3DRef}
                         config={config}
                         highlightedMeasurement={highlightedMeasurement}
                         highlightedCorner={highlightedCorner}

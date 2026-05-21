@@ -53,6 +53,7 @@ export interface BlockPdfOptions {
   chrome?: PdfTemplateChrome;
   customer?: CustomerDetails;
   svgElement?: SVGElement;
+  threeDImageDataUrl?: string;
   returnBlob?: boolean;
   isEmailSummary?: boolean;
 }
@@ -103,6 +104,7 @@ function buildLiveData(
   calculations: ShadeCalculations,
   customer: CustomerDetails | undefined,
   diagramDataUrl: string | undefined,
+  threeDImageDataUrl?: string,
 ): PreviewLiveData {
   const fullName = [customer?.firstName, customer?.lastName].filter(Boolean).join(' ').trim();
   return {
@@ -115,6 +117,7 @@ function buildLiveData(
     customer_reference: customer?.customerReference || null,
     access_token: null,
     diagram_public_url: diagramDataUrl || null,
+    diagram_3d_url: threeDImageDataUrl || null,
     created_at: new Date().toISOString(),
     config_data: config,
     calculations_data: calculations,
@@ -153,7 +156,7 @@ export async function generatePdfFromBlocks(
     }
   }
 
-  const live = buildLiveData(config, calculations, options.customer, diagramDataUrl);
+  const live = buildLiveData(config, calculations, options.customer, diagramDataUrl, options.threeDImageDataUrl);
   const html = buildQuotePreviewHtml(cfg, blocks, live, { pageMode: true });
 
   return renderQuotePdfFromHtml(html, {

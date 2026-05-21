@@ -48,6 +48,7 @@ export interface PreviewLiveData {
   customer_reference?: string | null;
   access_token?: string | null;
   diagram_public_url?: string | null;
+  diagram_3d_url?: string | null;
   created_at?: string | null;
   config_data?: ConfiguratorState | null;
   calculations_data?: ShadeCalculations | null;
@@ -325,6 +326,20 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
     }
     case 'diagramImage': {
       const mw = Number(p.maxWidth) || 520;
+      if (live?.diagram_public_url && live?.diagram_3d_url) {
+        const halfW = Math.floor(mw / 2) - 8;
+        return `<h2>${escapeHtml(title)}</h2>
+          <div style="display:flex;gap:16px;justify-content:center;align-items:flex-start;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;max-width:${halfW}px;text-align:center;">
+              <img src="${escapeHtml(live.diagram_public_url)}" alt="Plan view" style="width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:8px;background:#fff;" />
+              <div style="font-size:11px;color:${cfg.brand.mutedColor};margin-top:6px;">Plan View</div>
+            </div>
+            <div style="flex:1;min-width:200px;max-width:${halfW}px;text-align:center;">
+              <img src="${escapeHtml(live.diagram_3d_url)}" alt="3D view" style="width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:8px;background:#fff;" />
+              <div style="font-size:11px;color:${cfg.brand.mutedColor};margin-top:6px;">3D View</div>
+            </div>
+          </div>`;
+      }
       if (live?.diagram_public_url) {
         return `<h2>${escapeHtml(title)}</h2>
           <div style="text-align:center;"><img src="${escapeHtml(live.diagram_public_url)}" alt="Shade sail diagram" style="max-width:${mw}px;width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:10px;background:#fff;" /></div>`;
