@@ -1018,7 +1018,7 @@ console.log('✌️result --->', result);
                                 <img src={it.image_url} alt={it.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-slate-900 truncate">{it.name}</div>
+                                <div className="text-sm font-medium text-slate-900 truncate">{it.name.replace(/-\d+mm$/, '')}</div>
                               </div>
                               <div className="text-xs font-semibold text-slate-600 flex-shrink-0">× {p.qty}</div>
                             </div>
