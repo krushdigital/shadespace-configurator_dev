@@ -296,11 +296,17 @@ function CornerHardware({ sailCorner, fixingPointSurface }: { poleTop: THREE.Vec
   );
 }
 
-function CornerLabel({ position, label, heightCompleted }: { position: THREE.Vector3; label: string; heightCompleted: boolean }) {
+function CornerLabel({ position, label, heightCompleted, highlighted }: { position: THREE.Vector3; label: string; heightCompleted: boolean; highlighted?: boolean }) {
+  const bg = highlighted ? 'bg-red-600' : heightCompleted ? 'bg-green-600' : 'bg-slate-800';
   return (
     <Html position={[position.x, position.y + 0.3, position.z]} center distanceFactor={7}>
-      <div className={`${heightCompleted ? 'bg-green-600' : 'bg-slate-800'} text-white text-sm font-bold px-2.5 py-1 rounded-full shadow-md select-none pointer-events-none min-w-[28px] text-center transition-colors duration-300`}>
-        {label}
+      <div className="relative flex items-center justify-center">
+        {highlighted && (
+          <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60 animate-ping" />
+        )}
+        <div className={`relative ${bg} text-white text-sm font-bold px-2.5 py-1 rounded-full shadow-md select-none pointer-events-none min-w-[28px] text-center transition-colors duration-300`}>
+          {label}
+        </div>
       </div>
     </Html>
   );
@@ -1031,32 +1037,13 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
         />
       )}
 
-      {activeSection === 'hardware' && highlightedCorner != null && highlightedCorner < poleData.length && (() => {
-        const pd = poleData[highlightedCorner];
-        const ringQuat = new THREE.Quaternion().setFromUnitVectors(
-          new THREE.Vector3(0, 0, 1),
-          pd.inwardDir
-        );
-        return (
-          <group>
-            <mesh position={pd.fixingPointSurface} quaternion={ringQuat}>
-              <torusGeometry args={[0.045, 0.006, 16, 32]} />
-              <meshBasicMaterial color="#f59e0b" transparent opacity={0.9} depthWrite={false} depthTest={false} />
-            </mesh>
-            <mesh position={pd.fixingPointSurface} quaternion={ringQuat}>
-              <torusGeometry args={[0.06, 0.004, 16, 32]} />
-              <meshBasicMaterial color="#f59e0b" transparent opacity={0.4} depthWrite={false} depthTest={false} />
-            </mesh>
-          </group>
-        );
-      })()}
-
       {poleTopPositions.map((pos, i) => (
         <CornerLabel
           key={i}
           position={pos}
           label={getCornerLabel(i)}
           heightCompleted={!!(config.fixingHeights && config.fixingHeights[i] && config.fixingHeights[i] > 0)}
+          highlighted={activeSection === 'hardware' && highlightedCorner === i}
         />
       ))}
 

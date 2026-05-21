@@ -2443,7 +2443,7 @@ export function ShadeConfigurator() {
           </div>
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {openStep === 4 && !isMobile && (() => {
+          {(openStep === 4 || openStep === 5) && !isMobile && (() => {
             const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
             const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
             const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
@@ -2454,7 +2454,7 @@ export function ShadeConfigurator() {
               <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-slate-900">
-                    Interactive Measurement Guide
+                    {openStep === 5 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
                   </h4>
                   <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                     <button
@@ -2482,12 +2482,51 @@ export function ShadeConfigurator() {
                   </div>
                 </div>
 
+                {openStep === 5 && desktopViewMode === 'plan' && (
+                  <p className="text-sm text-slate-600 mb-3">
+                    Hover over a corner below to preview which corner on the sail you are configuring.
+                  </p>
+                )}
+
                 {desktopViewMode === 'plan' ? (
-                  <div className="relative">
+                  openStep === 4 ? (
+                    <div className="relative">
+                      <ShapeCanvas
+                        config={config}
+                        updateConfig={updateConfig}
+                        readonly={false}
+                        snapToGrid={true}
+                        highlightedMeasurement={highlightedMeasurement}
+                        highlightedCorner={highlightedCorner}
+                        isMobile={isMobile}
+                        measurementOption={config.measurementOption}
+                        unit={config.unit}
+                      />
+                      <button
+                        onClick={() => setDesktopViewMode('3d')}
+                        className="absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-lg hover:bg-slate-700 transition-all hover:scale-105"
+                      >
+                        <Box className="w-4 h-4" />
+                        View in 3D
+                      </button>
+
+                      {config.corners >= 4 && (
+                        <div className="mt-3">
+                          <ShapeModeToggle
+                            isAutoMode={!config.hasManuallyAdjustedShape}
+                            onToggle={(isAuto) => handleToggleMode(isAuto)}
+                            corners={config.corners}
+                            hasEnoughDiagonals={desktopHasEnoughDiagonals}
+                            shapeAccuracy={desktopShapeAccuracy.accuracy}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <ShapeCanvas
                       config={config}
                       updateConfig={updateConfig}
-                      readonly={false}
+                      readonly={true}
                       snapToGrid={true}
                       highlightedMeasurement={highlightedMeasurement}
                       highlightedCorner={highlightedCorner}
@@ -2495,26 +2534,7 @@ export function ShadeConfigurator() {
                       measurementOption={config.measurementOption}
                       unit={config.unit}
                     />
-                    <button
-                      onClick={() => setDesktopViewMode('3d')}
-                      className="absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-lg hover:bg-slate-700 transition-all hover:scale-105"
-                    >
-                      <Box className="w-4 h-4" />
-                      View in 3D
-                    </button>
-
-                    {config.corners >= 4 && (
-                      <div className="mt-3">
-                        <ShapeModeToggle
-                          isAutoMode={!config.hasManuallyAdjustedShape}
-                          onToggle={(isAuto) => handleToggleMode(isAuto)}
-                          corners={config.corners}
-                          hasEnoughDiagonals={desktopHasEnoughDiagonals}
-                          shapeAccuracy={desktopShapeAccuracy.accuracy}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  )
                 ) : (
                   <div className="h-[calc(100vh-12rem)]">
                     <Suspense fallback={
@@ -2529,7 +2549,7 @@ export function ShadeConfigurator() {
                         config={config}
                         highlightedMeasurement={highlightedMeasurement}
                         highlightedCorner={highlightedCorner}
-                        activeSection={isHeightsSectionOpen ? 'heights' : 'dimensions'}
+                        activeSection={openStep === 5 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
                       />
                     </Suspense>
                   </div>
@@ -2537,75 +2557,6 @@ export function ShadeConfigurator() {
               </div>
             );
           })()}
-
-          {/* Sticky Diagram for Hardware Step - Desktop Only */}
-          {openStep === 5 && !isMobile && (
-            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-lg font-semibold text-slate-900">
-                  Sail Diagram
-                </h4>
-                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setDesktopViewMode('plan')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      desktopViewMode === 'plan'
-                        ? 'bg-white shadow-sm text-slate-900'
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    <Layers className="w-4 h-4" />
-                    Plan
-                  </button>
-                  <button
-                    onClick={() => setDesktopViewMode('3d')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                      desktopViewMode === '3d'
-                        ? 'bg-white shadow-sm text-slate-900'
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    <Box className="w-4 h-4" />
-                    3D
-                  </button>
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 mb-3">
-                Hover over a corner below to preview which corner on the sail you are configuring.
-              </p>
-              {desktopViewMode === 'plan' ? (
-                <ShapeCanvas
-                  config={config}
-                  updateConfig={updateConfig}
-                  readonly={true}
-                  snapToGrid={true}
-                  highlightedMeasurement={highlightedMeasurement}
-                  highlightedCorner={highlightedCorner}
-                  isMobile={isMobile}
-                  measurementOption={config.measurementOption}
-                  unit={config.unit}
-                />
-              ) : (
-                <div className="h-[calc(100vh-14rem)]">
-                  <Suspense fallback={
-                    <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
-                      <div className="text-center">
-                        <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
-                        <p className="text-sm text-slate-500">Loading 3D viewer...</p>
-                      </div>
-                    </div>
-                  }>
-                    <ShadeSail3DViewer
-                      config={config}
-                      highlightedMeasurement={highlightedMeasurement}
-                      highlightedCorner={highlightedCorner}
-                      activeSection="hardware"
-                    />
-                  </Suspense>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
           {(openStep === 6) && (
