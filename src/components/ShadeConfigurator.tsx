@@ -2541,23 +2541,69 @@ export function ShadeConfigurator() {
           {/* Sticky Diagram for Hardware Step - Desktop Only */}
           {openStep === 5 && !isMobile && (
             <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <h4 className="text-lg font-semibold text-slate-900 mb-4">
-                Sail Diagram
-              </h4>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-lg font-semibold text-slate-900">
+                  Sail Diagram
+                </h4>
+                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setDesktopViewMode('plan')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      desktopViewMode === 'plan'
+                        ? 'bg-white shadow-sm text-slate-900'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <Layers className="w-4 h-4" />
+                    Plan
+                  </button>
+                  <button
+                    onClick={() => setDesktopViewMode('3d')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      desktopViewMode === '3d'
+                        ? 'bg-white shadow-sm text-slate-900'
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <Box className="w-4 h-4" />
+                    3D
+                  </button>
+                </div>
+              </div>
               <p className="text-sm text-slate-600 mb-3">
                 Hover over a corner below to preview which corner on the sail you are configuring.
               </p>
-              <ShapeCanvas
-                config={config}
-                updateConfig={updateConfig}
-                readonly={true}
-                snapToGrid={true}
-                highlightedMeasurement={highlightedMeasurement}
-                highlightedCorner={highlightedCorner}
-                isMobile={isMobile}
-                measurementOption={config.measurementOption}
-                unit={config.unit}
-              />
+              {desktopViewMode === 'plan' ? (
+                <ShapeCanvas
+                  config={config}
+                  updateConfig={updateConfig}
+                  readonly={true}
+                  snapToGrid={true}
+                  highlightedMeasurement={highlightedMeasurement}
+                  highlightedCorner={highlightedCorner}
+                  isMobile={isMobile}
+                  measurementOption={config.measurementOption}
+                  unit={config.unit}
+                />
+              ) : (
+                <div className="h-[calc(100vh-14rem)]">
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
+                      <div className="text-center">
+                        <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
+                        <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                      </div>
+                    </div>
+                  }>
+                    <ShadeSail3DViewer
+                      config={config}
+                      highlightedMeasurement={highlightedMeasurement}
+                      highlightedCorner={highlightedCorner}
+                      activeSection="hardware"
+                    />
+                  </Suspense>
+                </div>
+              )}
             </div>
           )}
 

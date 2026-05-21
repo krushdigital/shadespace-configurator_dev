@@ -10,7 +10,7 @@ interface ShadeSail3DViewerProps {
   config: ConfiguratorState;
   highlightedMeasurement?: string | null;
   highlightedCorner?: number | null;
-  activeSection?: 'dimensions' | 'heights' | 'review' | null;
+  activeSection?: 'dimensions' | 'heights' | 'hardware' | 'review' | null;
 }
 
 const DEFAULT_HEIGHT_MM = 2400;
@@ -1030,6 +1030,26 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
           highlightedCorner={highlightedCorner}
         />
       )}
+
+      {activeSection === 'hardware' && highlightedCorner != null && highlightedCorner < poleData.length && (() => {
+        const pd = poleData[highlightedCorner];
+        const ringQuat = new THREE.Quaternion().setFromUnitVectors(
+          new THREE.Vector3(0, 0, 1),
+          pd.inwardDir
+        );
+        return (
+          <group>
+            <mesh position={pd.fixingPointSurface} quaternion={ringQuat}>
+              <torusGeometry args={[0.045, 0.006, 16, 32]} />
+              <meshBasicMaterial color="#f59e0b" transparent opacity={0.9} depthWrite={false} depthTest={false} />
+            </mesh>
+            <mesh position={pd.fixingPointSurface} quaternion={ringQuat}>
+              <torusGeometry args={[0.06, 0.004, 16, 32]} />
+              <meshBasicMaterial color="#f59e0b" transparent opacity={0.4} depthWrite={false} depthTest={false} />
+            </mesh>
+          </group>
+        );
+      })()}
 
       {poleTopPositions.map((pos, i) => (
         <CornerLabel
