@@ -2533,8 +2533,8 @@ export function ShadeConfigurator() {
                         measurementOption={config.measurementOption}
                         unit={config.unit}
                       />
-                      <div className="mt-3 flex items-center justify-between">
-                        {config.corners >= 4 ? (
+                      {config.corners >= 4 && (
+                        <div className="mt-3">
                           <ShapeModeToggle
                             isAutoMode={!config.hasManuallyAdjustedShape}
                             onToggle={(isAuto) => handleToggleMode(isAuto)}
@@ -2542,15 +2542,8 @@ export function ShadeConfigurator() {
                             hasEnoughDiagonals={desktopHasEnoughDiagonals}
                             shapeAccuracy={desktopShapeAccuracy.accuracy}
                           />
-                        ) : <div />}
-                        <button
-                          onClick={() => setDesktopViewMode('3d')}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-lg hover:bg-slate-700 transition-all hover:scale-105"
-                        >
-                          <Box className="w-4 h-4" />
-                          View in 3D
-                        </button>
-                      </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <ShapeCanvas
