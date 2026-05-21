@@ -674,7 +674,9 @@ function PulsingTubeLine({ points, color, radius, opacity, pulsing }: {
 
   const geometry = useMemo(() => {
     if (points.length < 2) return null;
-    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+    const curve = points.length === 2
+      ? new THREE.LineCurve3(points[0], points[1])
+      : new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
     return new THREE.TubeGeometry(curve, 32, radius, 8, false);
   }, [points, radius]);
 
@@ -713,7 +715,9 @@ function DashedTubeLine({ points, color, radius, opacity, pulsing }: {
 
   const segments = useMemo(() => {
     if (points.length < 2) return [];
-    const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+    const curve = points.length === 2
+      ? new THREE.LineCurve3(points[0], points[1])
+      : new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
     const totalLength = curve.getLength();
     const dashLen = 0.15;
     const gapLen = 0.1;
