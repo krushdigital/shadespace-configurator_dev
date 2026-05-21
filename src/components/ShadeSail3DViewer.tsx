@@ -1040,7 +1040,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
           measurements={config.measurements}
           highlightedMeasurement={activeSection === 'dimensions' || activeSection === 'review' ? highlightedMeasurement : null}
           measurementOption={config.measurementOption as 'adjust' | 'exact'}
-          fixingPointPositions={fixingPointPositions}
+          fixingPointPositions={poleTopPositions}
           sailAttachPoints={sailAttachPoints}
           centroid={centroid}
           cornerCount={config.corners}
@@ -1051,7 +1051,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
         <DimensionHighlight
           highlightedMeasurement={highlightedMeasurement}
           measurementOption={config.measurementOption as 'adjust' | 'exact'}
-          fixingPointPositions={fixingPointPositions}
+          fixingPointPositions={poleTopPositions}
           sailAttachPoints={sailAttachPoints}
           centroid={centroid}
         />
