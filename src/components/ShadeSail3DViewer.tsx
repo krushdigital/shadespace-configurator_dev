@@ -722,19 +722,19 @@ function DashedTubeLine({ points, color, radius, opacity, pulsing }: {
     const dashLen = 0.15;
     const gapLen = 0.1;
     const cycleLen = dashLen + gapLen;
-    const numCycles = Math.floor(totalLength / cycleLen);
+    const numDashes = Math.ceil(totalLength / cycleLen);
+    const offset = (totalLength - (numDashes * dashLen + (numDashes - 1) * gapLen)) / 2;
     const result: THREE.TubeGeometry[] = [];
 
-    for (let i = 0; i < numCycles; i++) {
-      const startT = (i * cycleLen) / totalLength;
-      const endT = (i * cycleLen + dashLen) / totalLength;
-      const segPts: THREE.Vector3[] = [];
-      const steps = 6;
-      for (let s = 0; s <= steps; s++) {
-        const t = startT + (endT - startT) * (s / steps);
-        segPts.push(curve.getPointAt(Math.min(t, 1)));
-      }
-      const segCurve = new THREE.CatmullRomCurve3(segPts, false, 'catmullrom', 0.5);
+    for (let i = 0; i < numDashes; i++) {
+      const startDist = offset + i * cycleLen;
+      const endDist = Math.min(startDist + dashLen, totalLength);
+      if (startDist >= totalLength) break;
+      const startT = startDist / totalLength;
+      const endT = endDist / totalLength;
+      const segStart = curve.getPointAt(startT);
+      const segEnd = curve.getPointAt(endT);
+      const segCurve = new THREE.LineCurve3(segStart, segEnd);
       result.push(new THREE.TubeGeometry(segCurve, 4, radius, 6, false));
     }
     return result;
