@@ -659,15 +659,7 @@ function buildMeasurementPath(
 
   if (a >= fixingPointPositions.length || b >= fixingPointPositions.length) return null;
 
-  const eyeBoltOffset = POLE_RADIUS * 0.6 + 0.018;
-  const startFp = fixingPointPositions[a];
-  const endFp = fixingPointPositions[b];
-  const dirA = new THREE.Vector3().subVectors(centroid, startFp).normalize();
-  const dirB = new THREE.Vector3().subVectors(centroid, endFp).normalize();
-  const start = startFp.clone().add(dirA.multiplyScalar(eyeBoltOffset));
-  const end = endFp.clone().add(dirB.multiplyScalar(eyeBoltOffset));
-
-  return [start, end];
+  return [fixingPointPositions[a], fixingPointPositions[b]];
 }
 
 function PulsingTubeLine({ points, color, radius, opacity, pulsing }: {
