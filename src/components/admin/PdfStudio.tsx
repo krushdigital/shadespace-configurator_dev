@@ -25,6 +25,7 @@ interface LiveQuoteRow {
   customer_reference: string | null;
   access_token: string;
   diagram_public_url: string | null;
+  diagram_3d_public_url: string | null;
   created_at: string;
   config_data: ConfiguratorState;
   calculations_data: ShadeCalculations;
@@ -123,7 +124,7 @@ export const PdfStudio: React.FC = () => {
     setLoadingQuotes(true);
     const { data, error } = await supabase
       .from('saved_quotes')
-      .select('id, quote_reference, quote_name, customer_first_name, customer_last_name, customer_email, customer_reference, access_token, diagram_public_url, created_at, config_data, calculations_data')
+      .select('id, quote_reference, quote_name, customer_first_name, customer_last_name, customer_email, customer_reference, access_token, diagram_public_url, diagram_3d_public_url, created_at, config_data, calculations_data')
       .order('created_at', { ascending: false })
       .limit(25);
     setLoadingQuotes(false);
@@ -280,9 +281,15 @@ export const PdfStudio: React.FC = () => {
   };
 
   const selected = useMemo(() => blocks.find((b) => b.id === selectedBlockId) || null, [blocks, selectedBlockId]);
-  const liveData = dataSource === 'live' ? selectedQuote : null;
+  const liveData: PreviewLiveData | null = useMemo(() => {
+    if (dataSource !== 'live' || !selectedQuote) return null;
+    return {
+      ...selectedQuote,
+      diagram_3d_url: selectedQuote.diagram_3d_public_url,
+    };
+  }, [dataSource, selectedQuote]);
   const previewHtml = useMemo(
-    () => buildQuotePreviewHtml(config, blocks, liveData as PreviewLiveData | null),
+    () => buildQuotePreviewHtml(config, blocks, liveData),
     [config, blocks, liveData],
   );
 
@@ -447,6 +454,7 @@ export const PdfStudio: React.FC = () => {
               Previewing with <strong className="text-gray-700">{selectedQuote.quote_reference || selectedQuote.id.slice(0, 8)}</strong>
               {selectedQuote.config_data?.currency ? ` \u2014 ${selectedQuote.config_data.currency}` : ''}
               {selectedQuote.diagram_public_url ? ' \u2022 diagram available' : ' \u2022 no diagram'}
+              {selectedQuote.diagram_3d_public_url ? ' \u2022 3D available' : ' \u2022 no 3D'}
             </div>
           )}
         </div>
@@ -705,6 +713,7 @@ export const PdfStudio: React.FC = () => {
                 block={selected}
                 onProp={(k, v) => updateBlockProp(selected.id, k, v)}
                 onToggle={(v) => updateBlock(selected.id, { visible: v })}
+                liveData={liveData}
               />
             )}
           </Card>
@@ -718,7 +727,8 @@ const BlockPropsEditor: React.FC<{
   block: PdfBlock;
   onProp: (k: string, v: unknown) => void;
   onToggle: (v: boolean) => void;
-}> = ({ block, onProp, onToggle }) => {
+  liveData?: PreviewLiveData | null;
+}> = ({ block, onProp, onToggle, liveData }) => {
   const props = block.props || {};
   return (
     <div className="space-y-3">
@@ -785,6 +795,33 @@ const BlockPropsEditor: React.FC<{
             onChange={(e) => onProp('maxWidth', Number(e.target.value) || 520)}
             className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
           />
+        </div>
+      )}
+
+      {block.type === 'diagram3D' && (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Max width (px)</label>
+            <input
+              type="number"
+              value={Number(props.maxWidth ?? 520)}
+              onChange={(e) => onProp('maxWidth', Number(e.target.value) || 520)}
+              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+            />
+          </div>
+          {liveData?.diagram_3d_url ? (
+            <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded p-2">
+              3D render available for this quote.
+            </div>
+          ) : liveData && !liveData.diagram_3d_url ? (
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+              No 3D render stored for this quote. Use the configurator to regenerate, or the 3D screenshot will be captured on next save.
+            </div>
+          ) : (
+            <div className="text-xs text-gray-500 italic">
+              Select a live quote to see 3D render status.
+            </div>
+          )}
         </div>
       )}
 

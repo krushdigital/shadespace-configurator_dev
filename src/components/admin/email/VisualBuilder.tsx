@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-type BlockType = 'heading' | 'text' | 'button' | 'image' | 'divider' | 'spacer';
+type BlockType = 'heading' | 'text' | 'button' | 'image' | 'divider' | 'spacer' | 'sailDiagram' | 'sail3D';
 
 interface Block {
   id: string;
@@ -30,6 +30,10 @@ function blocksToHtml(blocks: Block[], design: { bg: string; textColor: string; 
         return `<hr style="border:none;border-top:1px solid #e5e7eb;margin:16px 0;"/>`;
       case 'spacer':
         return `<div style="height:24px;"></div>`;
+      case 'sailDiagram':
+        return `<div style="text-align:center;margin:12px 0;"><img src="{{diagram_image_url}}" alt="Shade sail diagram" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;padding:8px;background:#fff;"/></div>`;
+      case 'sail3D':
+        return `<div style="text-align:center;margin:12px 0;"><img src="{{sail_3d_image_url}}" alt="3D shade sail render" style="max-width:100%;border-radius:8px;border:1px solid #E2E8F0;padding:8px;background:#fff;"/></div>`;
       default:
         return '';
     }
@@ -65,6 +69,8 @@ export const VisualBuilder: React.FC<{ html: string; onHtmlChange: (html: string
       image: { url: 'https://images.pexels.com/photos/259774/pexels-photo-259774.jpeg', align: 'center' },
       divider: {},
       spacer: {},
+      sailDiagram: { align: 'center' },
+      sail3D: { align: 'center' },
     };
     setBlocks([...blocks, { id: uid(), type, ...defaults[type] }]);
   };
@@ -116,6 +122,8 @@ export const VisualBuilder: React.FC<{ html: string; onHtmlChange: (html: string
               {b.type === 'image' && b.url && <img src={b.url} className="max-w-full rounded" alt="" />}
               {b.type === 'divider' && <hr className="border-gray-300" />}
               {b.type === 'spacer' && <div className="h-6 border border-dashed border-gray-300 rounded" />}
+              {b.type === 'sailDiagram' && <div className="text-center py-3 border border-dashed border-gray-300 rounded text-xs text-gray-500">Shade Sail Diagram<br/><span className="text-[10px] text-gray-400">{"{{diagram_image_url}}"}</span></div>}
+              {b.type === 'sail3D' && <div className="text-center py-3 border border-dashed border-gray-300 rounded text-xs text-gray-500">3D Shade Sail Render<br/><span className="text-[10px] text-gray-400">{"{{sail_3d_image_url}}"}</span></div>}
             </div>
           ))}
         </div>
@@ -123,13 +131,22 @@ export const VisualBuilder: React.FC<{ html: string; onHtmlChange: (html: string
         <div className="mt-4 border-2 border-dashed border-gray-300 rounded-lg p-4">
           <div className="text-xs text-center text-gray-400 mb-3">Add a block</div>
           <div className="grid grid-cols-3 gap-2">
-            {(['heading', 'text', 'button', 'image', 'divider', 'spacer'] as BlockType[]).map(t => (
+            {([
+              ['heading', 'Heading'],
+              ['text', 'Text'],
+              ['button', 'Button'],
+              ['image', 'Image'],
+              ['divider', 'Divider'],
+              ['spacer', 'Spacer'],
+              ['sailDiagram', 'Sail Diagram'],
+              ['sail3D', '3D Render'],
+            ] as [BlockType, string][]).map(([t, label]) => (
               <button
                 key={t}
                 onClick={() => addBlock(t)}
-                className="border border-gray-200 rounded-lg py-3 text-xs font-medium text-gray-700 hover:bg-white hover:border-gray-300 capitalize"
+                className="border border-gray-200 rounded-lg py-3 text-xs font-medium text-gray-700 hover:bg-white hover:border-gray-300"
               >
-                {t}
+                {label}
               </button>
             ))}
           </div>
@@ -169,6 +186,16 @@ export const VisualBuilder: React.FC<{ html: string; onHtmlChange: (html: string
                   <option value="center">Center</option>
                   <option value="right">Right</option>
                 </select>
+              </div>
+            )}
+            {sel.type === 'sailDiagram' && (
+              <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-2">
+                Renders the plan-view diagram captured when the quote was saved. Uses the <code className="bg-gray-200 px-1 rounded">{"{{diagram_image_url}}"}</code> shortcode.
+              </div>
+            )}
+            {sel.type === 'sail3D' && (
+              <div className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-2">
+                Renders the 3D shade sail image captured at quote time. Uses the <code className="bg-gray-200 px-1 rounded">{"{{sail_3d_image_url}}"}</code> shortcode.
               </div>
             )}
           </div>

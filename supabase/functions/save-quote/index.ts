@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
 
     if (req.method === 'POST') {
       // Save a new quote
-      const { config, calculations, email, quoteName, customerReference, currentStep, totalSteps, pricingSnapshot, firstName, lastName, canvasImageUrl } = await req.json();
+      const { config, calculations, email, quoteName, customerReference, currentStep, totalSteps, pricingSnapshot, firstName, lastName, canvasImageUrl, canvasImage3DUrl } = await req.json();
 
       if (!config || !calculations) {
         return new Response(
@@ -207,6 +207,7 @@ Deno.serve(async (req: Request) => {
           customer_country: geo?.country || null,
           customer_country_code: geo?.countryCode || null,
           diagram_public_url: typeof canvasImageUrl === "string" && canvasImageUrl.startsWith("http") ? canvasImageUrl : null,
+          diagram_3d_public_url: typeof canvasImage3DUrl === "string" && canvasImage3DUrl.startsWith("http") ? canvasImage3DUrl : null,
         })
         .select()
         .single();

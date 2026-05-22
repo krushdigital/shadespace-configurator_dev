@@ -204,6 +204,8 @@ function buildContext(quote: any, sender: any, unsubUrl: string, extra: Record<s
     perimeter: typeof perimeter === "number" ? `${perimeter}mm` : (perimeter || ""),
     warranty_years: warrantyYears,
     canvas_image: extra.canvas_image || quote?.diagram_url || quote?.resolved_diagram_url || "",
+    diagram_image_url: quote?.resolved_diagram_url || quote?.diagram_public_url || "",
+    sail_3d_image_url: quote?.diagram_3d_public_url || "",
     ...extra,
     resume_url: resumeUrl,
     quote_url: resumeUrl,

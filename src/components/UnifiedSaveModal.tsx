@@ -51,6 +51,7 @@ interface UnifiedSaveModalProps {
   onSaveComplete?: () => void;
   onCustomerDetailsCaptured?: (details: { firstName: string; lastName: string; email: string; quoteReference?: string }) => void;
   getCanvasImageUrl?: () => Promise<string | null>;
+  getCanvasImage3DUrl?: () => Promise<string | null>;
 }
 
 export function UnifiedSaveModal({
@@ -67,6 +68,7 @@ export function UnifiedSaveModal({
   onSaveComplete,
   onCustomerDetailsCaptured,
   getCanvasImageUrl,
+  getCanvasImage3DUrl,
 }: UnifiedSaveModalProps) {
   const isEmailMode = shouldShowEmailOption;
   const [modalStep, setModalStep] = useState<ModalStep>('form');
@@ -153,6 +155,15 @@ export function UnifiedSaveModal({
         }
       }
 
+      let capturedCanvas3DUrl: string | null = null;
+      if (getCanvasImage3DUrl) {
+        try {
+          capturedCanvas3DUrl = await getCanvasImage3DUrl();
+        } catch (err) {
+          console.warn('3D capture failed, continuing without 3D render:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -164,7 +175,8 @@ export function UnifiedSaveModal({
         pricingSnapshot,
         firstName.trim(),
         lastName.trim(),
-        capturedCanvasUrl
+        capturedCanvasUrl,
+        capturedCanvas3DUrl
       );
 
       console.log('Save quote result:', result);
@@ -299,6 +311,15 @@ export function UnifiedSaveModal({
         }
       }
 
+      let capturedCanvas3DUrl: string | null = null;
+      if (getCanvasImage3DUrl) {
+        try {
+          capturedCanvas3DUrl = await getCanvasImage3DUrl();
+        } catch (err) {
+          console.warn('3D capture failed, continuing without 3D render:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -310,7 +331,8 @@ export function UnifiedSaveModal({
         pricingSnapshot,
         firstName.trim(),
         lastName.trim(),
-        capturedCanvasUrl
+        capturedCanvasUrl,
+        capturedCanvas3DUrl
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);

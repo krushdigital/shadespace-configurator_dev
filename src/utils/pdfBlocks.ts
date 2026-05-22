@@ -9,6 +9,7 @@ export type BlockType =
   | 'quoteMeta'
   | 'stepSelections'
   | 'diagramImage'
+  | 'diagram3D'
   | 'billOfMaterials'
   | 'resumeButton'
   | 'customText'
@@ -48,6 +49,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   quoteMeta: 'Quote Details (Customer + Reference)',
   stepSelections: 'Configurator Step Selections',
   diagramImage: 'Shade Sail Diagram',
+  diagram3D: '3D Shade Sail Render',
   billOfMaterials: 'Itemised Bill of Materials',
   resumeButton: 'Resume Quote Button',
   customText: 'Custom Text',
@@ -69,6 +71,7 @@ export const DYNAMIC_TYPES: BlockType[] = [
   'quoteMeta',
   'stepSelections',
   'diagramImage',
+  'diagram3D',
   'billOfMaterials',
   'resumeButton',
 ];
@@ -105,6 +108,8 @@ export function makeDefaultProps(type: BlockType): Record<string, unknown> {
       return {};
     case 'diagramImage':
       return { ...base, title: 'Shade Sail Diagram', maxWidth: 520 };
+    case 'diagram3D':
+      return { ...base, title: '3D Shade Sail Render', maxWidth: 520 };
     case 'resumeButton':
       return { ...base, title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' };
     default:

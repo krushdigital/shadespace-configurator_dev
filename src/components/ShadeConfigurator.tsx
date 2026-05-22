@@ -2635,6 +2635,19 @@ export function ShadeConfigurator() {
             return null;
           }
         }}
+        getCanvasImage3DUrl={async () => {
+          try {
+            const screenshot = await viewer3DRef.current?.capture3DScreenshot();
+            if (!screenshot) return null;
+            const blob = await fetch(screenshot).then(r => r.blob());
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
+            return await uploadImageToShopify(blob, filename);
+          } catch (err) {
+            console.warn('Failed to capture 3D for saved quote:', err);
+            return null;
+          }
+        }}
       />
     </>
   );

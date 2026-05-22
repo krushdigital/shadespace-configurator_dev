@@ -27,6 +27,7 @@ interface SaveQuoteModalProps {
   currentStep?: number;
   totalSteps?: number;
   getCanvasImageUrl?: () => Promise<string | null>;
+  getCanvasImage3DUrl?: () => Promise<string | null>;
 }
 
 
@@ -38,6 +39,7 @@ export function SaveQuoteModal({
   currentStep,
   totalSteps = 7,
   getCanvasImageUrl,
+  getCanvasImage3DUrl,
 }: SaveQuoteModalProps) {
   const [email, setEmail] = useState('');
   const [quoteName, setQuoteName] = useState('');
@@ -103,6 +105,15 @@ export function SaveQuoteModal({
         }
       }
 
+      let capturedCanvas3DUrl: string | null = null;
+      if (getCanvasImage3DUrl) {
+        try {
+          capturedCanvas3DUrl = await getCanvasImage3DUrl();
+        } catch (err) {
+          console.warn('3D capture failed, continuing without 3D render:', err);
+        }
+      }
+
       const result = await saveQuote(
         config,
         calculations,
@@ -114,7 +125,8 @@ export function SaveQuoteModal({
         undefined,
         undefined,
         undefined,
-        capturedCanvasUrl
+        capturedCanvasUrl,
+        capturedCanvas3DUrl
       );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);

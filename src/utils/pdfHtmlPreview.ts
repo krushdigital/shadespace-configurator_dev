@@ -347,6 +347,15 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       return `<h2>${escapeHtml(title)}</h2>
         <div style="text-align:center;padding:16px;border:1px dashed ${cfg.brand.mutedColor};border-radius:8px;color:${cfg.brand.mutedColor};font-size:12px;max-width:${mw}px;margin:0 auto;">Shade sail diagram appears here. The PDF will use the live diagram captured when the quote was created.</div>`;
     }
+    case 'diagram3D': {
+      const mw3d = Number(p.maxWidth) || 520;
+      if (live?.diagram_3d_url) {
+        return `<h2>${escapeHtml(title)}</h2>
+          <div style="text-align:center;"><img src="${escapeHtml(live.diagram_3d_url)}" alt="3D shade sail render" style="max-width:${mw3d}px;width:100%;border:1px solid #E2E8F0;border-radius:8px;padding:10px;background:#fff;" /></div>`;
+      }
+      return `<h2>${escapeHtml(title)}</h2>
+        <div style="text-align:center;padding:16px;border:1px dashed ${cfg.brand.mutedColor};border-radius:8px;color:${cfg.brand.mutedColor};font-size:12px;max-width:${mw3d}px;margin:0 auto;">3D shade sail render appears here. The PDF will use the 3D screenshot captured when the quote was created.</div>`;
+    }
     case 'billOfMaterials':
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">${escapeHtml(fabricLabel)} - ${escapeHtml(fabricColor)} (${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)})</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
