@@ -795,7 +795,8 @@ function EdgeCables({ corners3D }: { corners3D: THREE.Vector3[] }) {
       const start = corners3D[i];
       const end = corners3D[next];
       const pts: THREE.Vector3[] = [];
-      for (let t = 0; t <= 1; t += 0.05) pts.push(computeEdgeCurvePoint(start, end, centroid, t));
+      const steps = 20;
+      for (let s = 0; s <= steps; s++) pts.push(computeEdgeCurvePoint(start, end, centroid, s / steps));
       result.push(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5));
     }
     return result;
