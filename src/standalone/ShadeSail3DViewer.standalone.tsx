@@ -641,14 +641,14 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
         const minBary = Math.min(u, v, w);
         const distFromEdge = minBary * 3;
         let pt: THREE.Vector3;
-        if (distFromEdge < 0.15) {
+        if (distFromEdge < 0.10) {
           let edgeIdx: number, nextIdx: number, edgeT: number;
           if (w <= u && w <= v) { edgeIdx = 1; nextIdx = 2; edgeT = v / (u + v || 1); }
           else if (u <= v && u <= w) { edgeIdx = 0; nextIdx = 2; edgeT = v / (v + w || 1); }
           else { edgeIdx = 0; nextIdx = 1; edgeT = u / (u + w || 1); }
           const edgePt = computeEdgeCurvePoint(corners3D[edgeIdx], corners3D[nextIdx], centroid, edgeT);
           const interiorPt = barycentricPoint(corners3D, u, v);
-          const blend = distFromEdge / 0.15;
+          const blend = distFromEdge / 0.10;
           pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
         } else {
           pt = barycentricPoint(corners3D, u, v);
@@ -686,7 +686,7 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
         const distV = Math.min(v, 1 - v);
         const distFromEdge = Math.min(distU, distV) * 2;
         let pt: THREE.Vector3;
-        if (distFromEdge < 0.15) {
+        if (distFromEdge < 0.10) {
           let edgeStart: THREE.Vector3, edgeEnd: THREE.Vector3, edgeT: number;
           if (distV < distU) {
             if (v < 0.5) { edgeStart = corners3D[0]; edgeEnd = corners3D[1]; edgeT = u; }
@@ -697,7 +697,7 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
           }
           const edgePt = computeEdgeCurvePoint(edgeStart, edgeEnd, centroid, edgeT);
           const interiorPt = barycentricPoint(corners3D, u, v);
-          const blend = distFromEdge / 0.15;
+          const blend = distFromEdge / 0.10;
           pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
         } else {
           pt = barycentricPoint(corners3D, u, v);
@@ -785,34 +785,37 @@ function FabricMesh({ corners3D, color }: { corners3D: THREE.Vector3[]; color: s
   );
 }
 
-function EdgeCables({ corners3D }: { corners3D: THREE.Vector3[] }) {
+function EdgeCables({ corners3D, color }: { corners3D: THREE.Vector3[]; color: string }) {
   const n = corners3D.length;
   const centroid = useMemo(() => computeCentroid(corners3D), [corners3D]);
-  const curves = useMemo(() => {
-    const result: THREE.CatmullRomCurve3[] = [];
+  const tubes = useMemo(() => {
+    const result: THREE.TubeGeometry[] = [];
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       const start = corners3D[i];
       const end = corners3D[next];
       const pts: THREE.Vector3[] = [];
-      const steps = 20;
+      const steps = 32;
       for (let s = 0; s <= steps; s++) pts.push(computeEdgeCurvePoint(start, end, centroid, s / steps));
-      result.push(new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5));
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.3);
+      result.push(new THREE.TubeGeometry(curve, 48, 0.014, 8, false));
     }
     return result;
   }, [corners3D, n, centroid]);
 
+  const darkenedColor = useMemo(() => {
+    const c = new THREE.Color(color);
+    c.multiplyScalar(0.55);
+    return c;
+  }, [color]);
+
   return (
     <group>
-      {curves.map((curve, i) => {
-        const points = curve.getPoints(24);
-        const lineGeom = new THREE.BufferGeometry().setFromPoints(points);
-        return (
-          <line key={i} geometry={lineGeom}>
-            <lineBasicMaterial color="#222" linewidth={2} />
-          </line>
-        );
-      })}
+      {tubes.map((geom, i) => (
+        <mesh key={i} geometry={geom}>
+          <meshStandardMaterial color={darkenedColor} roughness={0.7} metalness={0.1} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -1166,7 +1169,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
       })}
 
       <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
-      <EdgeCables corners3D={sailAttachPoints} />
+      <EdgeCables corners3D={sailAttachPoints} color={fabricColor} />
 
       {(activeSection === 'dimensions' || activeSection === 'review' || !activeSection) && (
         <CompletedDimensionLines
