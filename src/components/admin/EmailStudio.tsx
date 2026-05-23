@@ -10,7 +10,7 @@ import { SendersManager } from './email/SendersManager';
 import { TransactionalTemplates } from './email/TransactionalTemplates';
 import { ToggleSwitch } from '../ui/ToggleSwitch';
 
-type SubTab = 'transactional' | 'templates' | 'automations' | 'senders' | 'analytics';
+type SubTab = 'transactional' | 'templates' | 'automations' | 'senders' | 'suppressed' | 'analytics';
 
 interface EmailStudioProps {
   dateRange: { start: string; end: string };
@@ -64,6 +64,9 @@ export interface EmailAutomation {
   template_id: string | null;
   sender_id: string | null;
   max_sends_per_quote: number;
+  max_sends_per_email: number | null;
+  cooldown_days: number | null;
+  suppress_if_purchased: boolean;
   respect_exclusions: boolean;
 }
 
@@ -174,7 +177,7 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
       )}
 
       <div className="flex gap-1 border-b border-gray-200">
-        {(['transactional', 'templates', 'automations', 'senders', 'analytics'] as SubTab[]).map(s => (
+        {(['transactional', 'templates', 'automations', 'senders', 'suppressed', 'analytics'] as SubTab[]).map(s => (
           <button
             key={s}
             onClick={() => setSub(s)}
@@ -231,6 +234,8 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
 
       {!loading && sub === 'senders' && <SendersManager senders={senders} onRefresh={refresh} />}
 
+      {!loading && sub === 'suppressed' && <SuppressedCustomers />}
+
       {!loading && sub === 'analytics' && <EmailAnalytics dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
     </div>
   );
@@ -271,6 +276,105 @@ const TemplatesList: React.FC<{ templates: EmailTemplate[]; onEdit: (t: EmailTem
     </div>
   </Card>
 );
+
+const SuppressedCustomers: React.FC = () => {
+  const [rows, setRows] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [addEmail, setAddEmail] = useState('');
+  const [syncing, setSyncing] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase.from('email_suppressed_customers').select('*').order('suppressed_at', { ascending: false }).limit(200);
+    setRows(data || []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleAdd = async () => {
+    const email = addEmail.trim().toLowerCase();
+    if (!email) return;
+    await supabase.from('email_suppressed_customers').upsert({ email, reason: 'manual' }, { onConflict: 'email' });
+    setAddEmail('');
+    load();
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!confirm('Remove suppression? This customer may start receiving automation emails again.')) return;
+    await supabase.from('email_suppressed_customers').delete().eq('id', id);
+    load();
+  };
+
+  const triggerSync = async () => {
+    setSyncing(true);
+    try {
+      const headers = await getAdminAuthHeaders();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-shopify-orders`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const json = await res.json();
+      alert(`Sync complete: ${json.orders_fetched || 0} orders fetched, ${json.emails_suppressed || 0} emails suppressed`);
+      load();
+    } catch (e) {
+      alert(`Sync failed: ${e instanceof Error ? e.message : e}`);
+    }
+    setSyncing(false);
+  };
+
+  return (
+    <Card className="p-0 overflow-hidden">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div>
+          <h2 className="font-semibold text-gray-900">Suppressed Customers</h2>
+          <p className="text-xs text-gray-500 mt-0.5">Customers who placed a Shopify order will not receive marketing automations</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={triggerSync} disabled={syncing}>
+            {syncing ? 'Syncing...' : 'Sync Shopify Orders'}
+          </Button>
+        </div>
+      </div>
+      <div className="p-4 border-b border-gray-100 flex items-center gap-2">
+        <input
+          type="email"
+          value={addEmail}
+          onChange={e => setAddEmail(e.target.value)}
+          placeholder="Manually suppress an email..."
+          className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm"
+          onKeyDown={e => e.key === 'Enter' && handleAdd()}
+        />
+        <Button size="sm" onClick={handleAdd}>Add</Button>
+      </div>
+      {loading ? (
+        <div className="p-6 text-center text-sm text-gray-500">Loading...</div>
+      ) : rows.length === 0 ? (
+        <div className="p-6 text-center text-sm text-gray-500">No suppressed customers yet. Run a sync to pull from Shopify order history.</div>
+      ) : (
+        <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto">
+          {rows.map(r => (
+            <div key={r.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+              <div>
+                <div className="text-sm font-medium text-gray-900">{r.email}</div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {r.reason === 'manual' ? 'Manually suppressed' : `Order placed`}
+                  {r.first_order_at && ` on ${new Date(r.first_order_at).toLocaleDateString()}`}
+                  {r.order_id && ` (Order #${r.order_id})`}
+                </div>
+              </div>
+              <button onClick={() => handleRemove(r.id)} className="text-xs text-red-600 hover:underline">Remove</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="p-3 border-t border-gray-100 bg-gray-50 text-xs text-gray-500">
+        {rows.length} suppressed {rows.length === 1 ? 'customer' : 'customers'} total
+      </div>
+    </Card>
+  );
+};
 
 const AutomationsList: React.FC<{ automations: EmailAutomation[]; templates: EmailTemplate[]; senders: EmailSender[]; onEdit: (a: EmailAutomation) => void; onCreate: () => void; onRefresh: () => void }> = ({ automations, templates, senders, onEdit, onCreate, onRefresh }) => {
   const summary = (a: EmailAutomation) => {

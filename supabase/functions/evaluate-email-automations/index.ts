@@ -41,8 +41,13 @@ Deno.serve(async (req: Request) => {
     let enqueued = 0;
     const report: any[] = [];
 
+    // Load unsubscribes
     const { data: unsubRows } = await supabase.from("email_unsubscribes").select("email");
     const unsubSet = new Set((unsubRows || []).map((r: any) => String(r.email).toLowerCase()));
+
+    // Load suppressed customers (those who have placed Shopify orders)
+    const { data: suppressedRows } = await supabase.from("email_suppressed_customers").select("email");
+    const suppressedSet = new Set((suppressedRows || []).map((r: any) => String(r.email).toLowerCase()));
 
     for (const a of automations) {
       if (a.template_id) {
@@ -77,7 +82,7 @@ Deno.serve(async (req: Request) => {
           .gte("created_at", start).lte("created_at", end);
         const quoteIds = (events || []).map((e: any) => e.quote_id).filter(Boolean);
         if (quoteIds.length) {
-          let q = supabase.from("saved_quotes").select("*").in("id", quoteIds);
+          const q = supabase.from("saved_quotes").select("*").in("id", quoteIds);
           const { data } = await q;
           candidates = data || [];
         }
@@ -86,14 +91,44 @@ Deno.serve(async (req: Request) => {
       for (const row of candidates) {
         if ((conds || []).some((c: any) => !conditionPasses(row, c))) continue;
         if (!row.customer_email) continue;
-        if (unsubSet.has(String(row.customer_email).toLowerCase())) continue;
+
+        const emailLower = String(row.customer_email).toLowerCase();
+
+        // Check unsubscribe
+        if (unsubSet.has(emailLower)) continue;
+
+        // Check marketing opt-in
         if (row.marketing_opt_in === false) continue;
 
-        const { count } = await supabase.from("email_queue")
+        // Check order suppression (per-automation toggle)
+        if (a.suppress_if_purchased !== false && suppressedSet.has(emailLower)) continue;
+
+        // Check per-quote send limit (existing behavior)
+        const { count: perQuoteCount } = await supabase.from("email_queue")
           .select("id", { count: "exact", head: true })
           .eq("automation_id", a.id)
           .eq("quote_id", row.id);
-        if ((count || 0) >= a.max_sends_per_quote) continue;
+        if ((perQuoteCount || 0) >= a.max_sends_per_quote) continue;
+
+        // Check per-email send limit (across all quotes for this automation)
+        if (a.max_sends_per_email != null) {
+          const { count: perEmailCount } = await supabase.from("email_queue")
+            .select("id", { count: "exact", head: true })
+            .eq("automation_id", a.id)
+            .eq("recipient_email", emailLower);
+          if ((perEmailCount || 0) >= a.max_sends_per_email) continue;
+        }
+
+        // Check cooldown: skip if any automation email was sent to this address within cooldown_days
+        if (a.cooldown_days != null && a.cooldown_days > 0) {
+          const cooldownCutoff = new Date(Date.now() - a.cooldown_days * 24 * 60 * 60 * 1000).toISOString();
+          const { count: recentCount } = await supabase.from("email_queue")
+            .select("id", { count: "exact", head: true })
+            .eq("recipient_email", emailLower)
+            .in("status", ["sent", "pending", "sending"])
+            .gte("scheduled_at", cooldownCutoff);
+          if ((recentCount || 0) > 0) continue;
+        }
 
         if (dryRun) { report.push({ automation: a.name, quote: row.quote_reference, email: row.customer_email }); continue; }
 
@@ -102,7 +137,7 @@ Deno.serve(async (req: Request) => {
           template_id: a.template_id,
           sender_id: a.sender_id,
           quote_id: row.id,
-          recipient_email: row.customer_email,
+          recipient_email: emailLower,
           status: "pending",
           scheduled_at: new Date().toISOString(),
         });

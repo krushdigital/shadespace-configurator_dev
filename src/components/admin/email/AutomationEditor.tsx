@@ -52,6 +52,9 @@ export const AutomationEditor: React.FC<{ automation: EmailAutomation; templates
       template_id: draft.template_id,
       sender_id: draft.sender_id,
       max_sends_per_quote: draft.max_sends_per_quote,
+      max_sends_per_email: draft.max_sends_per_email,
+      cooldown_days: draft.cooldown_days,
+      suppress_if_purchased: draft.suppress_if_purchased,
       respect_exclusions: draft.respect_exclusions,
       ...auditPatch,
     }).eq('id', draft.id);
@@ -270,6 +273,39 @@ export const AutomationEditor: React.FC<{ automation: EmailAutomation; templates
                 onChange={e => setDraft({ ...draft, max_sends_per_quote: Number(e.target.value) })}
                 className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
               />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Max sends per email (across all quotes)</label>
+              <input
+                type="number"
+                value={draft.max_sends_per_email ?? ''}
+                onChange={e => setDraft({ ...draft, max_sends_per_email: e.target.value ? Number(e.target.value) : null })}
+                placeholder="No limit"
+                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-0.5">Caps total sends to a unique email regardless of how many configs they save</p>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Cooldown (days)</label>
+              <input
+                type="number"
+                value={draft.cooldown_days ?? ''}
+                onChange={e => setDraft({ ...draft, cooldown_days: e.target.value ? Number(e.target.value) : null })}
+                placeholder="No cooldown"
+                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-0.5">Skip if any automation email was sent to this address within N days</p>
+            </div>
+            <div className="md:col-span-2">
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={draft.suppress_if_purchased !== false}
+                  onChange={e => setDraft({ ...draft, suppress_if_purchased: e.target.checked })}
+                />
+                Suppress if customer has placed a Shopify order
+              </label>
+              <p className="text-[10px] text-gray-400 ml-6">Customers who have purchased will not receive this automation</p>
             </div>
             <div className="md:col-span-2">
               <label className="flex items-center gap-2 text-sm">
