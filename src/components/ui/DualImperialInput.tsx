@@ -239,8 +239,8 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
 
       <div className="relative">
         {displayMode === 'feet-inches' ? (
-          <div className="flex items-start gap-1 sm:gap-2">
-            <div className="flex-1 flex items-center gap-1 sm:gap-2">
+          <div className="flex items-stretch gap-1 sm:gap-2">
+            <div className="flex-1 flex items-stretch gap-1 sm:gap-2">
               <div className="flex-1 relative">
                 <Input
                   type="text"
@@ -251,7 +251,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   placeholder=""
-                  className={`${className} ${isSuccess ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'}`}
+                  className={`${className} h-full ${isSuccess ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'}`}
                   isSuccess={isSuccess}
                   error={error}
                   errorKey={errorKey}
@@ -271,7 +271,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                   onFocus={onFocus}
                   onBlur={onBlur}
                   placeholder=""
-                  className={`${className} ${(isSuccess && !inchesError && !error) ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'} ${error ? '!border-red-500 !bg-red-50 focus:!ring-red-500 focus:!border-red-500' : ''}`}
+                  className={`${className} h-full ${(isSuccess && !inchesError && !error) ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'} ${error ? '!border-red-500 !bg-red-50 focus:!ring-red-500 focus:!border-red-500' : ''}`}
                   isSuccess={isSuccess && !inchesError && !error}
                   error={inchesError}
                 />
@@ -286,7 +286,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 type="button"
                 onClick={toggleDisplayMode}
                 aria-label="Switch to inches only"
-                className="mt-1 shrink-0 inline-flex items-center justify-center w-11 h-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
+                className="shrink-0 inline-flex items-center justify-center w-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
                 title="Switch to inches only"
               >
                 <ArrowRightLeft className="w-4 h-4" />
@@ -294,7 +294,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
             )}
           </div>
         ) : (
-          <div className="flex items-start gap-1 sm:gap-2">
+          <div className="flex items-stretch gap-1 sm:gap-2">
             <div className="flex-1 relative">
               <Input
                 type="text"
@@ -305,7 +305,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 onFocus={onFocus}
                 onBlur={onBlur}
                 placeholder=""
-                className={`${className} ${isSuccess ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'}`}
+                className={`${className} h-full ${isSuccess ? 'pr-10 sm:pr-16' : 'pr-7 sm:pr-12'}`}
                 isSuccess={isSuccess}
                 error={error}
                 errorKey={errorKey}
@@ -320,7 +320,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 type="button"
                 onClick={toggleDisplayMode}
                 aria-label="Switch to feet and inches"
-                className="mt-1 shrink-0 inline-flex items-center justify-center w-11 h-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
+                className="shrink-0 inline-flex items-center justify-center w-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
                 title="Switch to feet and inches"
               >
                 <ArrowRightLeft className="w-4 h-4" />

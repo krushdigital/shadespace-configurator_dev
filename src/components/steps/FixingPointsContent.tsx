@@ -173,172 +173,169 @@ export function FixingPointsContent({
                 </h5>
               </div>
 
-              {/* Responsive Grid Layout - Two columns for height and attachment type */}
-              <div className="grid grid-cols-2 gap-2 md:gap-4">
-                {/* Height Input */}
-                <div>
-                  <div className="flex items-center gap-1 mb-0.5">
-                    <span className="text-xs font-medium text-[#01312D]">
-                      <span className="hidden md:inline">Height from Ground or Datum Level</span>
-                      <span className="md:hidden">Height</span>
-                    </span>
-                    <Tooltip
-                      content={
-                        <div>
-                          <p className="text-sm text-[#01312D] font-medium mb-2">
-                            What is Datum Level?
-                          </p>
-                          <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
-                            Datum level is a reference point for measuring heights consistently across your installation. It's typically ground level, but can be any horizontal reference point (like a deck or patio level) that you use for all measurements.
-                          </p>
-                          <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
-                            <p className="text-sm text-[#01312D] font-medium mb-2">
-                              Need help measuring correctly?
-                            </p>
-                            <p className="text-sm text-[#01312D]/80 mb-2">
-                              Watch our video and follow step-by-step instructions for accurate shade sail measurements.
-                            </p>
-                            <a 
-                              href="https://shadespace.com/blogs/how-to/how-to-measure-a-shade-sail" 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-sm font-semibold text-[#307C31] hover:text-[#01312D] underline"
-                            >
-                              View Measuring Guide →
-                            </a>
-                          </div>
-                        </div>
-                      }
-                    >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                        ?
-                      </span>
-                    </Tooltip>
-                  </div>
-                  <div className="relative">
-                    {(() => {
-                      const currentHeight = config.fixingHeights[index];
-                      const hasValidValue = currentHeight !== undefined && currentHeight !== null && currentHeight > 0;
-                      const hasError = validationErrors[`height_${index}`];
-                      const isSuccess = hasValidValue && !hasError;
-
-                      return (
-                    <DualImperialInput
-                     value={hasValidValue ? convertMmToUnit(currentHeight, config.unit) : 0}
-                      onChange={(value) => {
-                        if (value === 0) {
-                          const newHeights = [...config.fixingHeights];
-                          newHeights[index] = undefined;
-                          updateConfig({ fixingHeights: newHeights });
-
-                          if (setValidationErrors && setTypoSuggestions) {
-                            const newErrors = { ...validationErrors };
-                            const newSuggestions = { ...typoSuggestions };
-                            delete newErrors[`height_${index}`];
-                            delete newSuggestions[`height_${index}`];
-                            setValidationErrors(newErrors);
-                            setTypoSuggestions(newSuggestions);
-                          }
-                        } else {
-                          updateFixingHeight(index, value);
-                        }
-                      }}
-                      unit={config.unit}
-                      className="flex-1 py-2"
-                      isSuccess={isSuccess}
-                     error={validationErrors[`height_${index}`]}
-                     errorKey={`height_${index}`}
-                     secondaryValue={hasValidValue ? formatSecondaryUnit(currentHeight, config.unit) : ''}
-                     showConversion={true}
-                     allowFormatSwitch={true}
-                    />
-                      );
-                    })()}
-                  </div>
-                  
-                  {/* Typo Warning */}
-                  {typoSuggestions[`height_${index}`] && (
-                    <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <div className="flex flex-col gap-2">
-                        <p className="text-sm text-amber-800 w-full">
-                          <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[`height_${index}`], config.unit, true)}?
+              {/* Height Input */}
+              <div>
+                <div className="flex items-center gap-1 mb-0.5">
+                  <span className="text-xs font-medium text-[#01312D]">
+                    <span className="hidden md:inline">Height from Ground or Datum Level</span>
+                    <span className="md:hidden">Height from Ground</span>
+                  </span>
+                  <Tooltip
+                    content={
+                      <div>
+                        <p className="text-sm text-[#01312D] font-medium mb-2">
+                          What is Datum Level?
                         </p>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => applyTypoCorrection(index)}
-                            className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
+                        <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
+                          Datum level is a reference point for measuring heights consistently across your installation. It's typically ground level, but can be any horizontal reference point (like a deck or patio level) that you use for all measurements.
+                        </p>
+                        <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
+                          <p className="text-sm text-[#01312D] font-medium mb-2">
+                            Need help measuring correctly?
+                          </p>
+                          <p className="text-sm text-[#01312D]/80 mb-2">
+                            Watch our video and follow step-by-step instructions for accurate shade sail measurements.
+                          </p>
+                          <a
+                            href="https://shadespace.com/blogs/how-to/how-to-measure-a-shade-sail"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-semibold text-[#307C31] hover:text-[#01312D] underline"
                           >
-                            Correct
-                          </button>
-                          <button
-                            onClick={() => dismissTypoSuggestion?.(`height_${index}`)}
-                            className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
-                          >
-                            Dismiss
-                          </button>
+                            View Measuring Guide →
+                          </a>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    }
+                  >
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                      ?
+                    </span>
+                  </Tooltip>
+                </div>
+                <div className="relative">
+                  {(() => {
+                    const currentHeight = config.fixingHeights[index];
+                    const hasValidValue = currentHeight !== undefined && currentHeight !== null && currentHeight > 0;
+                    const hasError = validationErrors[`height_${index}`];
+                    const isSuccess = hasValidValue && !hasError;
+
+                    return (
+                  <DualImperialInput
+                   value={hasValidValue ? convertMmToUnit(currentHeight, config.unit) : 0}
+                    onChange={(value) => {
+                      if (value === 0) {
+                        const newHeights = [...config.fixingHeights];
+                        newHeights[index] = undefined;
+                        updateConfig({ fixingHeights: newHeights });
+
+                        if (setValidationErrors && setTypoSuggestions) {
+                          const newErrors = { ...validationErrors };
+                          const newSuggestions = { ...typoSuggestions };
+                          delete newErrors[`height_${index}`];
+                          delete newSuggestions[`height_${index}`];
+                          setValidationErrors(newErrors);
+                          setTypoSuggestions(newSuggestions);
+                        }
+                      } else {
+                        updateFixingHeight(index, value);
+                      }
+                    }}
+                    unit={config.unit}
+                    className="flex-1 py-2"
+                    isSuccess={isSuccess}
+                   error={validationErrors[`height_${index}`]}
+                   errorKey={`height_${index}`}
+                   secondaryValue={hasValidValue ? formatSecondaryUnit(currentHeight, config.unit) : ''}
+                   showConversion={true}
+                   allowFormatSwitch={true}
+                  />
+                    );
+                  })()}
                 </div>
 
-                {/* Attachment Type */}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-[#01312D]">
-                      Attachment Type
-                    </span>
-                    <Tooltip
-                      content={
-                        <div>
-                         <img 
-                           src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/ATTACHMENT_TYPE.jpg?v=1755923793" 
-                           alt="Post vs Building attachment example"
-                           className="w-full h-auto object-cover rounded-lg mb-3"
-                         />
-                          <p className="text-sm text-[#01312D] font-medium mb-1">
-                            Attachment Type
-                          </p>
-                          <p className="text-sm text-[#01312D]/70">
-                            Post: Freestanding pole installation. Building: Attached to wall, roof, or existing structure.
-                          </p>
-                        </div>
-                      }
-                    >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
-                        ?
-                      </span>
-                    </Tooltip>
+                {/* Typo Warning */}
+                {typoSuggestions[`height_${index}`] && (
+                  <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm text-amber-800 w-full">
+                        <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[`height_${index}`], config.unit, true)}?
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => applyTypoCorrection(index)}
+                          className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
+                        >
+                          Correct
+                        </button>
+                        <button
+                          onClick={() => dismissTypoSuggestion?.(`height_${index}`)}
+                          className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div
-                    className="flex gap-1 w-full"
-                    {...(validationErrors[`type_${index}`] ? { 'data-error': `type_${index}` } : {})}
+                )}
+              </div>
+
+              {/* Attachment Type - Post and Building side by side */}
+              <div>
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-xs font-medium text-[#01312D]">
+                    Attachment Type
+                  </span>
+                  <Tooltip
+                    content={
+                      <div>
+                       <img
+                         src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/ATTACHMENT_TYPE.jpg?v=1755923793"
+                         alt="Post vs Building attachment example"
+                         className="w-full h-auto object-cover rounded-lg mb-3"
+                       />
+                        <p className="text-sm text-[#01312D] font-medium mb-1">
+                          Attachment Type
+                        </p>
+                        <p className="text-sm text-[#01312D]/70">
+                          Post: Freestanding pole installation. Building: Attached to wall, roof, or existing structure.
+                        </p>
+                      </div>
+                    }
                   >
-                    <button
-                      onClick={() => updateFixingType(index, 'post')}
-                      className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
-                        config.fixingTypes?.[index] === 'post'
-                          ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
-                          : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
-                          ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
-                          : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
-                      }`}
-                    >
-                      Post
-                    </button>
-                    <button
-                      onClick={() => updateFixingType(index, 'building')}
-                      className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
-                        config.fixingTypes?.[index] === 'building'
-                          ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
-                          : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
-                          ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
-                          : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
-                      }`}
-                    >
-                      Building
-                    </button>
-                  </div>
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                      ?
+                    </span>
+                  </Tooltip>
+                </div>
+                <div
+                  className="flex gap-2 w-full"
+                  {...(validationErrors[`type_${index}`] ? { 'data-error': `type_${index}` } : {})}
+                >
+                  <button
+                    onClick={() => updateFixingType(index, 'post')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                      config.fixingTypes?.[index] === 'post'
+                        ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                        : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
+                        ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
+                        : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                    }`}
+                  >
+                    Post
+                  </button>
+                  <button
+                    onClick={() => updateFixingType(index, 'building')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                      config.fixingTypes?.[index] === 'building'
+                        ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                        : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
+                        ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
+                        : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                    }`}
+                  >
+                    Building
+                  </button>
                 </div>
               </div>
             </div>
