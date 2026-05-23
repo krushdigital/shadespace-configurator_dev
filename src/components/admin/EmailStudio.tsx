@@ -329,7 +329,7 @@ const SuppressedCustomers: React.FC = () => {
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div>
           <h2 className="font-semibold text-gray-900">Suppressed Customers</h2>
-          <p className="text-xs text-gray-500 mt-0.5">Customers who placed a Shopify order will not receive marketing automations</p>
+          <p className="text-xs text-gray-500 mt-0.5">Customers who placed a Shopify order will not receive marketing automations for that specific design</p>
         </div>
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={triggerSync} disabled={syncing}>
@@ -362,6 +362,8 @@ const SuppressedCustomers: React.FC = () => {
                   {r.reason === 'manual' ? 'Manually suppressed' : `Order placed`}
                   {r.first_order_at && ` on ${new Date(r.first_order_at).toLocaleDateString()}`}
                   {r.order_id && ` (Order #${r.order_id})`}
+                  {r.quote_reference && <span className="ml-1 font-mono text-blue-600">Quote {r.quote_reference}</span>}
+                  {!r.quote_reference && r.reason !== 'manual' && <span className="ml-1 text-amber-600">(all designs)</span>}
                 </div>
               </div>
               <button onClick={() => handleRemove(r.id)} className="text-xs text-red-600 hover:underline">Remove</button>

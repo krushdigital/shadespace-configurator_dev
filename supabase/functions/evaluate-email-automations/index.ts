@@ -45,9 +45,15 @@ Deno.serve(async (req: Request) => {
     const { data: unsubRows } = await supabase.from("email_unsubscribes").select("email");
     const unsubSet = new Set((unsubRows || []).map((r: any) => String(r.email).toLowerCase()));
 
-    // Load suppressed customers (those who have placed Shopify orders)
-    const { data: suppressedRows } = await supabase.from("email_suppressed_customers").select("email");
-    const suppressedSet = new Set((suppressedRows || []).map((r: any) => String(r.email).toLowerCase()));
+    // Load suppressed customers with their linked quote IDs
+    const { data: suppressedRows } = await supabase.from("email_suppressed_customers").select("email, quote_id");
+    // Build a map: email -> Set of suppressed quote_ids (null means blanket suppression)
+    const suppressionMap = new Map<string, Set<string | null>>();
+    for (const r of suppressedRows || []) {
+      const e = String(r.email).toLowerCase();
+      if (!suppressionMap.has(e)) suppressionMap.set(e, new Set());
+      suppressionMap.get(e)!.add(r.quote_id);
+    }
 
     for (const a of automations) {
       if (a.template_id) {
@@ -100,8 +106,12 @@ Deno.serve(async (req: Request) => {
         // Check marketing opt-in
         if (row.marketing_opt_in === false) continue;
 
-        // Check order suppression (per-automation toggle)
-        if (a.suppress_if_purchased !== false && suppressedSet.has(emailLower)) continue;
+        // Check order suppression (per-quote granular)
+        if (a.suppress_if_purchased !== false && suppressionMap.has(emailLower)) {
+          const suppressedQuotes = suppressionMap.get(emailLower)!;
+          // null in the set means blanket suppression (no quote ref found on order)
+          if (suppressedQuotes.has(null) || suppressedQuotes.has(row.id)) continue;
+        }
 
         // Check per-quote send limit (existing behavior)
         const { count: perQuoteCount } = await supabase.from("email_queue")
