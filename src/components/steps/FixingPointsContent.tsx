@@ -309,12 +309,12 @@ export function FixingPointsContent({
                   </Tooltip>
                 </div>
                 <div
-                  className="flex gap-2 w-full"
+                  className="grid grid-cols-2 gap-2"
                   {...(validationErrors[`type_${index}`] ? { 'data-error': `type_${index}` } : {})}
                 >
                   <button
                     onClick={() => updateFixingType(index, 'post')}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                       config.fixingTypes?.[index] === 'post'
                         ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
                         : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
@@ -326,7 +326,7 @@ export function FixingPointsContent({
                   </button>
                   <button
                     onClick={() => updateFixingType(index, 'building')}
-                    className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
+                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                       config.fixingTypes?.[index] === 'building'
                         ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
                         : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
