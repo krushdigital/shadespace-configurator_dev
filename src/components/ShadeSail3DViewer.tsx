@@ -327,12 +327,12 @@ function CornerHardware({ sailCorner, fixingPointSurface }: { poleTop: THREE.Vec
 function CornerLabel({ position, label, heightCompleted, highlighted }: { position: THREE.Vector3; label: string; heightCompleted: boolean; highlighted?: boolean }) {
   const bg = highlighted ? 'bg-red-600' : heightCompleted ? 'bg-green-600' : 'bg-slate-800';
   return (
-    <Html position={[position.x, position.y + 0.3, position.z]} center distanceFactor={7}>
+    <Html position={[position.x, position.y + 0.3, position.z]} center distanceFactor={5}>
       <div className="relative flex items-center justify-center">
         {highlighted && (
           <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60 animate-ping" />
         )}
-        <div className={`relative ${bg} text-white text-sm font-bold px-2.5 py-1 rounded-full shadow-md select-none pointer-events-none min-w-[28px] text-center transition-colors duration-300`}>
+        <div className={`relative ${bg} text-white text-base font-bold px-3 py-1.5 rounded-full shadow-md select-none pointer-events-none min-w-[32px] text-center transition-colors duration-300`}>
           {label}
         </div>
       </div>
@@ -807,15 +807,15 @@ function DimensionOverlay({
         <DashedTubeLine
           key={`line-${key}`}
           points={points}
-          color="#ffffff"
-          radius={HIGHLIGHT_TUBE_RADIUS * 0.6}
-          opacity={0.55}
+          color="#22c55e"
+          radius={HIGHLIGHT_TUBE_RADIUS * 0.35}
+          opacity={0.5}
           pulsing={false}
         />
       ))}
       {labels.map(({ key, position, text }) => (
-        <Html key={key} position={[position.x, position.y, position.z]} center distanceFactor={7}>
-          <div className="bg-slate-800/90 text-white text-xs font-semibold px-2 py-0.5 rounded shadow-md select-none pointer-events-none whitespace-nowrap">
+        <Html key={key} position={[position.x, position.y, position.z]} center distanceFactor={5}>
+          <div className="bg-slate-800/90 text-white text-sm font-semibold px-2.5 py-1 rounded shadow-md select-none pointer-events-none whitespace-nowrap">
             {text}
           </div>
         </Html>
