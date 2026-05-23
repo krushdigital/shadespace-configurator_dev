@@ -756,10 +756,12 @@ function DimensionOverlay({
   sailAttachPoints: THREE.Vector3[];
   centroid: THREE.Vector3;
 }) {
-  const labels = useMemo(() => {
-    const result: { key: string; position: THREE.Vector3; text: string }[] = [];
+  const { labels, lines } = useMemo(() => {
+    const labelResult: { key: string; position: THREE.Vector3; text: string }[] = [];
+    const lineResult: { key: string; points: THREE.Vector3[] }[] = [];
     const unit = config.unit || 'metric';
     const n = config.corners;
+    const measurementOption = config.measurementOption as 'adjust' | 'exact';
 
     for (const [key, value] of Object.entries(config.measurements)) {
       if (!value || value <= 0) continue;
@@ -778,7 +780,10 @@ function DimensionOverlay({
       }
       midpoint.y += 0.15;
 
-      result.push({ key, position: midpoint, text: formatDimensionLabel(value, unit) });
+      labelResult.push({ key, position: midpoint, text: formatDimensionLabel(value, unit) });
+
+      const path = buildMeasurementPath(key, measurementOption, fixingPointPositions, sailAttachPoints, centroid);
+      if (path) lineResult.push({ key, points: path });
     }
 
     if (config.fixingHeights) {
@@ -789,15 +794,25 @@ function DimensionOverlay({
           ? new THREE.Vector3(fixingPointPositions[i].x, fixingPointPositions[i].y * 0.5, fixingPointPositions[i].z)
           : null;
         if (!pos) continue;
-        result.push({ key: `h${i}`, position: pos, text: formatDimensionLabel(h, unit) });
+        labelResult.push({ key: `h${i}`, position: pos, text: formatDimensionLabel(h, unit) });
       }
     }
 
-    return result;
-  }, [config.measurements, config.fixingHeights, config.corners, config.unit, fixingPointPositions, sailAttachPoints, centroid]);
+    return { labels: labelResult, lines: lineResult };
+  }, [config.measurements, config.fixingHeights, config.corners, config.unit, config.measurementOption, fixingPointPositions, sailAttachPoints, centroid]);
 
   return (
     <group>
+      {lines.map(({ key, points }) => (
+        <DashedTubeLine
+          key={`line-${key}`}
+          points={points}
+          color="#ffffff"
+          radius={HIGHLIGHT_TUBE_RADIUS * 0.6}
+          opacity={0.55}
+          pulsing={false}
+        />
+      ))}
       {labels.map(({ key, position, text }) => (
         <Html key={key} position={[position.x, position.y, position.z]} center distanceFactor={7}>
           <div className="bg-slate-800/90 text-white text-xs font-semibold px-2 py-0.5 rounded shadow-md select-none pointer-events-none whitespace-nowrap">
