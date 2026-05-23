@@ -22,7 +22,7 @@
  *   />
  */
 
-import React, { useMemo, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -306,11 +306,12 @@ export function canRender3D(): Device3DTier {
 const DEFAULT_HEIGHT_MM = 2400;
 const POLE_LEAN_DEG = 5;
 const POLE_RADIUS = 0.055;
-const MESH_SUBDIVISIONS = 40;
+const MESH_SUBDIVISIONS = 48;
 const SAG_FACTOR = 0.04;
 const HARDWARE_LENGTH = 0.35;
-const EDGE_TENSION_INWARD = 0.035;
+const EDGE_TENSION_INWARD = 0.04;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
+const EDGE_BLEND_ZONE = 0.25;
 const FIXING_POINT_OFFSET = 0.2;
 
 // ─── HELPER FUNCTIONS ───────────────────────────────────────────────────────
@@ -622,11 +623,17 @@ function computeEdgeCurvePoint(start: THREE.Vector3, end: THREE.Vector3, centroi
   return pt;
 }
 
+function smoothstep(t: number): number {
+  const c = Math.max(0, Math.min(1, t));
+  return c * c * (3 - 2 * c);
+}
+
 function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, sagFactor: number): THREE.BufferGeometry | null {
   const n = corners3D.length;
   if (n < 3) return null;
   const centroid = computeCentroid(corners3D);
   const res = subdivisions;
+  const blendZone = EDGE_BLEND_ZONE;
 
   if (n === 3) {
     const vertices: number[] = [];
@@ -641,14 +648,14 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
         const minBary = Math.min(u, v, w);
         const distFromEdge = minBary * 3;
         let pt: THREE.Vector3;
-        if (distFromEdge < 0.10) {
+        if (distFromEdge < blendZone) {
           let edgeIdx: number, nextIdx: number, edgeT: number;
           if (w <= u && w <= v) { edgeIdx = 1; nextIdx = 2; edgeT = v / (u + v || 1); }
           else if (u <= v && u <= w) { edgeIdx = 0; nextIdx = 2; edgeT = v / (v + w || 1); }
           else { edgeIdx = 0; nextIdx = 1; edgeT = u / (u + w || 1); }
           const edgePt = computeEdgeCurvePoint(corners3D[edgeIdx], corners3D[nextIdx], centroid, edgeT);
           const interiorPt = barycentricPoint(corners3D, u, v);
-          const blend = distFromEdge / 0.10;
+          const blend = smoothstep(distFromEdge / blendZone);
           pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
         } else {
           pt = barycentricPoint(corners3D, u, v);
@@ -686,7 +693,7 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
         const distV = Math.min(v, 1 - v);
         const distFromEdge = Math.min(distU, distV) * 2;
         let pt: THREE.Vector3;
-        if (distFromEdge < 0.10) {
+        if (distFromEdge < blendZone) {
           let edgeStart: THREE.Vector3, edgeEnd: THREE.Vector3, edgeT: number;
           if (distV < distU) {
             if (v < 0.5) { edgeStart = corners3D[0]; edgeEnd = corners3D[1]; edgeT = u; }
@@ -697,7 +704,7 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
           }
           const edgePt = computeEdgeCurvePoint(edgeStart, edgeEnd, centroid, edgeT);
           const interiorPt = barycentricPoint(corners3D, u, v);
-          const blend = distFromEdge / 0.10;
+          const blend = smoothstep(distFromEdge / blendZone);
           pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
         } else {
           pt = barycentricPoint(corners3D, u, v);
@@ -737,15 +744,10 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
-        let edgePoint: THREE.Vector3;
-        if (smoothT > 0.85) {
-          edgePoint = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
-          const straightPt = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
-          const blend = (smoothT - 0.85) / 0.15;
-          edgePoint = new THREE.Vector3().lerpVectors(straightPt, edgePoint, blend);
-        } else {
-          edgePoint = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
-        }
+        const curvedPt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
+        const straightPt = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
+        const edgeBlend = smoothstep(smoothT);
+        const edgePoint = new THREE.Vector3().lerpVectors(straightPt, curvedPt, edgeBlend);
         const point = new THREE.Vector3().lerpVectors(centroid, edgePoint, smoothT);
         const distFromEdge = 1 - smoothT;
         const sag = sagFactor * (1 - distFromEdge) * distFromEdge;
@@ -774,51 +776,17 @@ function buildFabricGeometry(corners3D: THREE.Vector3[], subdivisions: number, s
   return geometry;
 }
 
-function FabricMesh({ corners3D, color }: { corners3D: THREE.Vector3[]; color: string }) {
+function FabricMesh({ corners3D, color, onClick, onPointerMissed }: { corners3D: THREE.Vector3[]; color: string; onClick?: () => void; onPointerMissed?: () => void }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const geometry = useMemo(() => buildFabricGeometry(corners3D, MESH_SUBDIVISIONS, SAG_FACTOR), [corners3D]);
   if (!geometry) return null;
   return (
-    <mesh ref={meshRef} geometry={geometry}>
+    <mesh ref={meshRef} geometry={geometry} onClick={onClick} onPointerMissed={onPointerMissed}>
       <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.85} metalness={0} transparent opacity={0.92} flatShading={false} />
     </mesh>
   );
 }
 
-function EdgeCables({ corners3D, color }: { corners3D: THREE.Vector3[]; color: string }) {
-  const n = corners3D.length;
-  const centroid = useMemo(() => computeCentroid(corners3D), [corners3D]);
-  const tubes = useMemo(() => {
-    const result: THREE.TubeGeometry[] = [];
-    for (let i = 0; i < n; i++) {
-      const next = (i + 1) % n;
-      const start = corners3D[i];
-      const end = corners3D[next];
-      const pts: THREE.Vector3[] = [];
-      const steps = 32;
-      for (let s = 0; s <= steps; s++) pts.push(computeEdgeCurvePoint(start, end, centroid, s / steps));
-      const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.3);
-      result.push(new THREE.TubeGeometry(curve, 48, 0.012, 8, false));
-    }
-    return result;
-  }, [corners3D, n, centroid]);
-
-  const darkenedColor = useMemo(() => {
-    const c = new THREE.Color(color);
-    c.multiplyScalar(0.55);
-    return c;
-  }, [color]);
-
-  return (
-    <group>
-      {tubes.map((geom, i) => (
-        <mesh key={i} geometry={geom}>
-          <meshStandardMaterial color={darkenedColor} roughness={0.7} metalness={0.1} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
 
 // ─── MEASUREMENT / DIMENSION HIGHLIGHTING ───────────────────────────────────
 
@@ -845,34 +813,6 @@ function buildMeasurementPath(
   }
   if (a >= fixingPointPositions.length || b >= fixingPointPositions.length) return null;
   return [fixingPointPositions[a], fixingPointPositions[b]];
-}
-
-function PulsingTubeLine({ points, color, radius, opacity, pulsing }: {
-  points: THREE.Vector3[]; color: string; radius: number; opacity: number; pulsing: boolean;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const materialRef = useRef<THREE.MeshBasicMaterial>(null);
-  const geometry = useMemo(() => {
-    if (points.length < 2) return null;
-    const curve = points.length === 2
-      ? new THREE.LineCurve3(points[0], points[1])
-      : new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
-    return new THREE.TubeGeometry(curve, 32, radius, 8, false);
-  }, [points, radius]);
-
-  useFrame(({ clock }) => {
-    if (pulsing && materialRef.current) {
-      const pulse = 0.5 + 0.5 * Math.sin(clock.getElapsedTime() * 4);
-      materialRef.current.opacity = 0.5 + pulse * 0.5;
-    }
-  });
-
-  if (!geometry) return null;
-  return (
-    <mesh ref={meshRef} geometry={geometry} renderOrder={999}>
-      <meshBasicMaterial ref={materialRef} color={color} transparent opacity={opacity} depthWrite={false} depthTest={false} />
-    </mesh>
-  );
 }
 
 function DashedTubeLine({ points, color, radius, opacity, pulsing }: {
@@ -946,35 +886,78 @@ function DimensionHighlight({ highlightedMeasurement, measurementOption, fixingP
   return <DashedTubeLine points={points} color="#e02020" radius={HIGHLIGHT_TUBE_RADIUS} opacity={0.9} pulsing={true} />;
 }
 
-function CompletedDimensionLines({ measurements, highlightedMeasurement, measurementOption, fixingPointPositions, sailAttachPoints, cornerCount }: {
-  measurements: { [key: string]: number };
-  highlightedMeasurement: string | null | undefined;
-  measurementOption: 'adjust' | 'exact';
+function formatDimensionLabel(mm: number, unit: 'metric' | 'imperial'): string {
+  if (unit === 'imperial') {
+    const inches = mm * 0.0393701;
+    if (inches >= 12) {
+      const feet = Math.floor(inches / 12);
+      const remaining = inches % 12;
+      return parseFloat(remaining.toFixed(1)) > 0 ? `${feet}'${remaining.toFixed(1)}"` : `${feet}'`;
+    }
+    return `${inches.toFixed(1)}"`;
+  }
+  return `${Math.round(mm)}mm`;
+}
+
+function DimensionOverlay({
+  config,
+  fixingPointPositions,
+  sailAttachPoints,
+  centroid,
+}: {
+  config: Shade3DConfig;
   fixingPointPositions: THREE.Vector3[];
   sailAttachPoints: THREE.Vector3[];
-  cornerCount: number;
+  centroid: THREE.Vector3;
 }) {
-  const completedPaths = useMemo(() => {
-    const result: { key: string; points: THREE.Vector3[] }[] = [];
-    for (const [key, value] of Object.entries(measurements)) {
+  const labels = useMemo(() => {
+    const result: { key: string; position: THREE.Vector3; text: string }[] = [];
+    const unit = (config as any).unit || 'metric';
+    const n = config.corners;
+
+    for (const [key, value] of Object.entries(config.measurements)) {
       if (!value || value <= 0) continue;
-      if (key === highlightedMeasurement) continue;
       if (key.length !== 2) continue;
       const pair = parseMeasurementKey(key);
       if (!pair) continue;
-      if (pair[0] >= cornerCount || pair[1] >= cornerCount) continue;
-      const isAdjacentEdge = Math.abs(pair[0] - pair[1]) === 1 || (pair[0] === 0 && pair[1] === cornerCount - 1) || (pair[1] === 0 && pair[0] === cornerCount - 1);
-      if (isAdjacentEdge) continue;
-      const points = buildMeasurementPath(key, measurementOption, fixingPointPositions, sailAttachPoints);
-      if (points) result.push({ key, points });
+      if (pair[0] >= n || pair[1] >= n) continue;
+
+      const isAdjacentEdge = Math.abs(pair[0] - pair[1]) === 1 || (pair[0] === 0 && pair[1] === n - 1) || (pair[1] === 0 && pair[0] === n - 1);
+
+      let midpoint: THREE.Vector3;
+      if (isAdjacentEdge) {
+        midpoint = computeEdgeCurvePoint(sailAttachPoints[pair[0]], sailAttachPoints[pair[1]], centroid, 0.5);
+      } else {
+        midpoint = new THREE.Vector3().lerpVectors(fixingPointPositions[pair[0]], fixingPointPositions[pair[1]], 0.5);
+      }
+      midpoint.y += 0.15;
+
+      result.push({ key, position: midpoint, text: formatDimensionLabel(value, unit) });
     }
+
+    if (config.fixingHeights) {
+      for (let i = 0; i < n; i++) {
+        const h = config.fixingHeights[i];
+        if (!h || h <= 0) continue;
+        const pos = fixingPointPositions[i]
+          ? new THREE.Vector3(fixingPointPositions[i].x, fixingPointPositions[i].y * 0.5, fixingPointPositions[i].z)
+          : null;
+        if (!pos) continue;
+        result.push({ key: `h${i}`, position: pos, text: formatDimensionLabel(h, unit) });
+      }
+    }
+
     return result;
-  }, [measurements, highlightedMeasurement, measurementOption, fixingPointPositions, sailAttachPoints, cornerCount]);
+  }, [config.measurements, config.fixingHeights, config.corners, (config as any).unit, fixingPointPositions, sailAttachPoints, centroid]);
 
   return (
     <group>
-      {completedPaths.map(({ key, points }) => (
-        <PulsingTubeLine key={key} points={points} color="#22c55e" radius={HIGHLIGHT_TUBE_RADIUS * 0.8} opacity={0.5} pulsing={false} />
+      {labels.map(({ key, position, text }) => (
+        <Html key={key} position={[position.x, position.y, position.z]} center distanceFactor={7}>
+          <div className="bg-slate-800/90 text-white text-xs font-semibold px-2 py-0.5 rounded shadow-md select-none pointer-events-none whitespace-nowrap">
+            {text}
+          </div>
+        </Html>
       ))}
     </group>
   );
@@ -1093,6 +1076,7 @@ function FpsMonitor({ onPerformanceWarning }: { onPerformanceWarning?: () => voi
 
 function Scene({ config, highlightedMeasurement, highlightedCorner, activeSection }: ShadeSail3DViewerProps) {
   const controlsRef = useRef<any>(null);
+  const [showOverlays, setShowOverlays] = useState(true);
 
   const svgPoints = useMemo(() => {
     if (hasRequiredMeasurements(config.measurements, config.corners)) {
@@ -1170,21 +1154,18 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
         return <SailDRing key={`dring-${i}`} position={sailPt} direction={outDir} />;
       })}
 
-      <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
-      <EdgeCables corners3D={sailAttachPoints} color={fabricColor} />
+      <FabricMesh corners3D={sailAttachPoints} color={fabricColor} onClick={() => setShowOverlays(true)} onPointerMissed={() => setShowOverlays(false)} />
 
-      {(activeSection === 'dimensions' || activeSection === 'review') && (
-        <CompletedDimensionLines
-          measurements={config.measurements}
-          highlightedMeasurement={activeSection === 'dimensions' || activeSection === 'review' ? highlightedMeasurement : null}
-          measurementOption={config.measurementOption as 'adjust' | 'exact'}
+      {showOverlays && (
+        <DimensionOverlay
+          config={config}
           fixingPointPositions={fixingPointPositions}
           sailAttachPoints={sailAttachPoints}
-          cornerCount={config.corners}
+          centroid={centroid}
         />
       )}
 
-      {(activeSection === 'dimensions' || activeSection === 'review') && highlightedMeasurement && (
+      {showOverlays && highlightedMeasurement && (
         <DimensionHighlight
           highlightedMeasurement={highlightedMeasurement}
           measurementOption={config.measurementOption as 'adjust' | 'exact'}
