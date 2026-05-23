@@ -798,7 +798,7 @@ function EdgeCables({ corners3D, color }: { corners3D: THREE.Vector3[]; color: s
       const steps = 32;
       for (let s = 0; s <= steps; s++) pts.push(computeEdgeCurvePoint(start, end, centroid, s / steps));
       const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.3);
-      result.push(new THREE.TubeGeometry(curve, 48, 0.014, 8, false));
+      result.push(new THREE.TubeGeometry(curve, 48, 0.012, 8, false));
     }
     return result;
   }, [corners3D, n, centroid]);
@@ -963,6 +963,8 @@ function CompletedDimensionLines({ measurements, highlightedMeasurement, measure
       const pair = parseMeasurementKey(key);
       if (!pair) continue;
       if (pair[0] >= cornerCount || pair[1] >= cornerCount) continue;
+      const isAdjacentEdge = Math.abs(pair[0] - pair[1]) === 1 || (pair[0] === 0 && pair[1] === cornerCount - 1) || (pair[1] === 0 && pair[0] === cornerCount - 1);
+      if (isAdjacentEdge) continue;
       const points = buildMeasurementPath(key, measurementOption, fixingPointPositions, sailAttachPoints);
       if (points) result.push({ key, points });
     }
@@ -1171,7 +1173,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
       <FabricMesh corners3D={sailAttachPoints} color={fabricColor} />
       <EdgeCables corners3D={sailAttachPoints} color={fabricColor} />
 
-      {(activeSection === 'dimensions' || activeSection === 'review' || !activeSection) && (
+      {(activeSection === 'dimensions' || activeSection === 'review') && (
         <CompletedDimensionLines
           measurements={config.measurements}
           highlightedMeasurement={activeSection === 'dimensions' || activeSection === 'review' ? highlightedMeasurement : null}
