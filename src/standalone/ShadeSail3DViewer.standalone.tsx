@@ -568,7 +568,7 @@ function CornerHardware({ sailCorner, fixingPointSurface }: { sailCorner: THREE.
 function CornerLabel({ position, label, heightCompleted, highlighted }: { position: THREE.Vector3; label: string; heightCompleted: boolean; highlighted?: boolean }) {
   const bg = highlighted ? 'bg-red-600' : heightCompleted ? 'bg-green-600' : 'bg-slate-800';
   return (
-    <Html position={[position.x, position.y + 0.3, position.z]} center distanceFactor={5}>
+    <Html position={[position.x, position.y + 0.3, position.z]} center distanceFactor={5} zIndexRange={[1, 0]}>
       <div className="relative flex items-center justify-center">
         {highlighted && (
           <span className="absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-60 animate-ping" />

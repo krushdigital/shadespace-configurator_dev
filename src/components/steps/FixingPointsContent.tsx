@@ -164,22 +164,23 @@ export function FixingPointsContent({
 
       <div className="space-y-2">
         {Array.from({ length: config.corners }, (_, index) => (
-          <Card key={index} className="p-3 border-l-4 border-l-[#01312D] relative">
-            <div className="space-y-1">
+          <Card key={index} className="p-2 md:p-3 border-l-4 border-l-[#01312D] relative">
+            <div className="space-y-0.5">
               {/* Header with Corner Label */}
               <div className="flex items-center justify-between">
                 <h5 className="font-semibold text-[#01312D] text-sm">
-                  Anchor Point {getCornerLabel(index)} Configuration
+                  Anchor Point {getCornerLabel(index)}
                 </h5>
               </div>
-              
+
               {/* Responsive Grid Layout - Two columns for height and attachment type */}
-              <div className="grid grid-cols-1 gap-3 md:gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-2 gap-2 md:gap-4">
                 {/* Height Input */}
                 <div>
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-1 mb-0.5">
                     <span className="text-xs font-medium text-[#01312D]">
-                      Height from Ground or Datum Level
+                      <span className="hidden md:inline">Height from Ground or Datum Level</span>
+                      <span className="md:hidden">Height</span>
                     </span>
                     <Tooltip
                       content={
@@ -309,8 +310,7 @@ export function FixingPointsContent({
                       </span>
                     </Tooltip>
                   </div>
-                  <div className="flex gap-1">
-                  <div 
+                  <div
                     className="flex gap-1 w-full"
                     {...(validationErrors[`type_${index}`] ? { 'data-error': `type_${index}` } : {})}
                   >
@@ -338,7 +338,6 @@ export function FixingPointsContent({
                     >
                       Building
                     </button>
-                  </div>
                   </div>
                 </div>
               </div>
