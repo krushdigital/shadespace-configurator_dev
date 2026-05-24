@@ -1417,19 +1417,22 @@ export function ShadeConfigurator() {
         metafieldProperties[`Anchor Height ${key}`] = `${value} (${typeLabel})`;
       });
 
-        // ============ CRITICAL FIX: Add PDF URL and Fabrication Type as line item properties ============
-        // Add PDF URL as a line item property if available
-        if (pdfUrl) {
-          // Ensure it's a valid URL string
+        // ============ PDF URL: Use dynamic serve-order-pdf endpoint ============
+        // This generates the PDF on-demand with the latest customer details from the Shopify order
+        const quoteRef = quoteReference || (metafieldProperties['_locked_quote_reference'] as string) || null;
+        if (quoteRef) {
+          const dynamicPdfUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-order-pdf?ref=${encodeURIComponent(quoteRef)}`;
+          metafieldProperties['_quote_pdf_url'] = dynamicPdfUrl;
+          metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteRef}.pdf`;
+          metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
+          console.log('✅ Added dynamic PDF URL to line item properties:', dynamicPdfUrl);
+        } else if (pdfUrl) {
           const pdfUrlString = String(pdfUrl).trim();
           if (pdfUrlString.startsWith('http')) {
             metafieldProperties['_quote_pdf_url'] = pdfUrlString;
             metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteReference || 'custom'}.pdf`;
             metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
-
-            console.log('✅ Added PDF URL to line item properties:', pdfUrlString);
-          } else {
-            console.log('❌ PDF URL is not a valid HTTP URL:', pdfUrlString);
+            console.log('✅ Added static PDF URL to line item properties:', pdfUrlString);
           }
         } else {
           console.log('❌ No PDF URL available to add to line item');

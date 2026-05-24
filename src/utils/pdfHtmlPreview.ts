@@ -288,9 +288,9 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       return `<div class="callout"><div style="font-size:12px;opacity:.85;">${escapeHtml(title)}</div><div class="price">${formatCurrencyPreview(total, currency)}</div></div>`;
     case 'quoteMeta': {
       const fullName = [live?.customer_first_name, live?.customer_last_name].filter(Boolean).join(' ').trim();
-      const name = fullName || 'Jane Smith';
-      const email = live?.customer_email || 'jane@example.com';
-      const ref = live?.quote_reference || 'SQ-2026-00123';
+      const name = fullName || 'See Shopify Order';
+      const email = live?.customer_email || 'See Shopify Order';
+      const ref = live?.quote_reference || 'Pending';
       const date = live?.created_at
         ? new Date(live.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
