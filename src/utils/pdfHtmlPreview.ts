@@ -277,10 +277,18 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
           <div style="padding-left:12px;font-size:11px;color:${cfg.brand.mutedColor};">No hardware selected</div>
         </div>`;
     }
-    case 'priceBreakdown':
-      return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
-        <div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`;
+    case 'priceBreakdown': {
+      const hb = calc?.hardwareBreakdown;
+      const hwLive = hb?.liveCurrency === currency && hb?.hardwareOnlyLivePrice != null ? hb.hardwareOnlyLivePrice : 0;
+      const sailAmount = hwLive > 0 ? total - hwLive : total;
+      const rows: string[] = [];
+      rows.push(`<div class="row"><span class="muted">Shade sail (fabric + edge)</span><span class="val">${formatCurrencyPreview(sailAmount, currency)}</span></div>`);
+      if (hwLive > 0) {
+        rows.push(`<div class="row"><span class="muted">Hardware</span><span class="val">${formatCurrencyPreview(hwLive, currency)}</span></div>`);
+      }
+      rows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
+    }
     case 'guarantee':
       return `<div class="guarantee"><div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
         <div style="font-size:12px;">15-year Fabric &amp; Workmanship Warranty &middot; Weather-resistant materials &middot; Free worldwide shipping</div></div>`;

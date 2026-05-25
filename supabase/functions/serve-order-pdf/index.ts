@@ -255,10 +255,18 @@ function renderBlock(block: PdfBlock, cfg: TemplateConfig, quote: QuoteData): st
       return `<h2>${escapeHtml(title)}</h2><div class="row"><span class="muted">Hardware details not available</span></div>`;
     }
 
-    case "priceBreakdown":
-      return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrency(total - 70, currency)}</span></div>
-        <div class="row"><span class="val">Total</span><span class="val">${formatCurrency(total, currency)}</span></div>`;
+    case "priceBreakdown": {
+      const hb = calc?.hardwareBreakdown;
+      const hwLive = hb?.liveCurrency === currency && hb?.hardwareOnlyLivePrice != null ? hb.hardwareOnlyLivePrice : 0;
+      const sailAmount = hwLive > 0 ? total - hwLive : total;
+      const priceRows: string[] = [];
+      priceRows.push(`<div class="row"><span class="muted">Shade sail (fabric + edge)</span><span class="val">${formatCurrency(sailAmount, currency)}</span></div>`);
+      if (hwLive > 0) {
+        priceRows.push(`<div class="row"><span class="muted">Hardware</span><span class="val">${formatCurrency(hwLive, currency)}</span></div>`);
+      }
+      priceRows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrency(total, currency)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${priceRows.join("")}`;
+    }
 
     case "guarantee":
       return `<div class="guarantee"><div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
