@@ -279,14 +279,17 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
     }
     case 'priceBreakdown': {
       const hb = calc?.hardwareBreakdown;
-      const hwLive = hb?.liveCurrency === currency && hb?.hardwareOnlyLivePrice != null ? hb.hardwareOnlyLivePrice : 0;
-      const sailAmount = hwLive > 0 ? total - hwLive : total;
+      const isManualHardware = hb?.mode === 'manual' && hb?.liveCurrency === currency && hb?.hardwareOnlyLivePrice != null && hb.hardwareOnlyLivePrice > 0;
       const rows: string[] = [];
-      rows.push(`<div class="row"><span class="muted">Shade sail (fabric + edge)</span><span class="val">${formatCurrencyPreview(sailAmount, currency)}</span></div>`);
-      if (hwLive > 0) {
+      if (isManualHardware) {
+        const hwLive = hb!.hardwareOnlyLivePrice!;
+        rows.push(`<div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total - hwLive, currency)}</span></div>`);
         rows.push(`<div class="row"><span class="muted">Hardware</span><span class="val">${formatCurrencyPreview(hwLive, currency)}</span></div>`);
+        rows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
+      } else {
+        rows.push(`<div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
+        rows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
       }
-      rows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
       return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
     }
     case 'guarantee':

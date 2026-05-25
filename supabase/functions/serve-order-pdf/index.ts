@@ -257,14 +257,17 @@ function renderBlock(block: PdfBlock, cfg: TemplateConfig, quote: QuoteData): st
 
     case "priceBreakdown": {
       const hb = calc?.hardwareBreakdown;
-      const hwLive = hb?.liveCurrency === currency && hb?.hardwareOnlyLivePrice != null ? hb.hardwareOnlyLivePrice : 0;
-      const sailAmount = hwLive > 0 ? total - hwLive : total;
+      const isManualHardware = hb?.mode === "manual" && hb?.liveCurrency === currency && hb?.hardwareOnlyLivePrice != null && hb.hardwareOnlyLivePrice > 0;
       const priceRows: string[] = [];
-      priceRows.push(`<div class="row"><span class="muted">Shade sail (fabric + edge)</span><span class="val">${formatCurrency(sailAmount, currency)}</span></div>`);
-      if (hwLive > 0) {
+      if (isManualHardware) {
+        const hwLive = hb!.hardwareOnlyLivePrice!;
+        priceRows.push(`<div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrency(total - hwLive, currency)}</span></div>`);
         priceRows.push(`<div class="row"><span class="muted">Hardware</span><span class="val">${formatCurrency(hwLive, currency)}</span></div>`);
+        priceRows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrency(total, currency)}</span></div>`);
+      } else {
+        priceRows.push(`<div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrency(total, currency)}</span></div>`);
+        priceRows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrency(total, currency)}</span></div>`);
       }
-      priceRows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrency(total, currency)}</span></div>`);
       return `<h2>${escapeHtml(title)}</h2>${priceRows.join("")}`;
     }
 
