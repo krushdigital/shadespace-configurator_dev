@@ -112,6 +112,10 @@ export function ShadeConfigurator() {
     lockedAt: string | null;
   } | null>(null);
 
+  const [ipDetectedCurrency, setIpDetectedCurrency] = useState<string | null>(null);
+  const [showCurrencyMismatchModal, setShowCurrencyMismatchModal] = useState(false);
+  const pendingOrderDataRef = useRef<any>(null);
+
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
 
@@ -195,6 +199,21 @@ export function ShadeConfigurator() {
       }
     };
   }, [loading]);
+
+  // Detect the visitor's currency from their IP so we can warn if it differs from
+  // the active Shopify storefront currency (the arbitrage vector).
+  useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+    if (!supabaseUrl) return;
+    fetch(`${supabaseUrl}/functions/v1/detect-currency`, { method: 'GET' })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.currency) {
+          setIpDetectedCurrency((data.currency as string).toUpperCase());
+        }
+      })
+      .catch(() => { /* non-blocking — mismatch check is best-effort */ });
+  }, []);
 
   // Default fabric selection for desktop only, mobile has no preselection
   useEffect(() => {
@@ -1296,15 +1315,22 @@ export function ShadeConfigurator() {
         : (typeof orderData.totalPrice === 'number'
             ? orderData.totalPrice
             : Number(orderData.totalPrice));
-    // Always use the selected Shopify currency if available, otherwise fallback
     let selectedCurrency = null;
     if (typeof window !== 'undefined' && (window as any)?.Shopify?.currency?.active) {
       selectedCurrency = ((window as any).Shopify.currency.active || '').toUpperCase();
     }
-    const authoritativeCurrency = selectedCurrency || lockedQuote?.currency || orderData.currency || config.currency;
-    // Derive NZD base from totalPrice/fxRate so Shopify Markets converts back correctly
+    // For locked quotes the quote's own currency is always authoritative, regardless of
+    // what the Shopify storefront currently reports. Putting it first prevents two bugs:
+    // (a) _locked_currency / Quote Total metadata being labelled with the wrong currency,
+    // (b) the authoritativeBaseNzd fallback branch (checks !== 'NZD') being silently
+    //     short-circuited when a drifted storefront makes authoritativeCurrency = 'NZD'.
+    const authoritativeCurrency = lockedQuote?.currency || selectedCurrency || orderData.currency || config.currency;
+    // Derive NZD base from the LOCKED amount and LOCKED fxRate when a locked quote is
+    // present. Using authoritativeTotal as the numerator would be wrong in the edge case
+    // where config.currency drifted — lockedQuote.total is always in lockedQuote.currency.
+    const lockedAmountForBase = lockedQuote?.total && lockedQuote.total > 0 ? lockedQuote.total : authoritativeTotal;
     let authoritativeBaseNzd: number | null = lockedQuote?.fxRate
-      ? Math.round((authoritativeTotal / lockedQuote.fxRate) * 100) / 100
+      ? Math.round((lockedAmountForBase / lockedQuote.fxRate) * 100) / 100
       : null;
     if (!authoritativeBaseNzd && authoritativeCurrency !== 'NZD') {
       let fxRate = null;
@@ -1814,6 +1840,28 @@ export function ShadeConfigurator() {
         currency: orderData.currency,
         type: typeof orderData.totalPrice
       });
+
+      // Warn if the visitor's IP-detected currency differs from the active storefront
+      // currency — this is the primary arbitrage vector (e.g. US visitor on AUD store).
+      const _ackKey = 'shadespace_currency_mismatch_ack';
+      const _storefrontCurrency = (
+        typeof window !== 'undefined' && (window as any)?.Shopify?.currency?.active || ''
+      ).toUpperCase();
+      if (
+        ipDetectedCurrency &&
+        _storefrontCurrency &&
+        ipDetectedCurrency !== _storefrontCurrency &&
+        !sessionStorage.getItem(_ackKey)
+      ) {
+        console.warn(
+          `[ShadeSpace] Currency mismatch: IP suggests ${ipDetectedCurrency}, storefront is ${_storefrontCurrency}. Prompting confirmation.`
+        );
+        pendingOrderDataRef.current = orderData;
+        setShowLoadingOverlay(false);
+        setLoading(false);
+        setShowCurrencyMismatchModal(true);
+        return;
+      }
 
       // Call the main add to cart function
       setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
@@ -2649,6 +2697,75 @@ export function ShadeConfigurator() {
           }
         }}
       />
+
+      {/* Currency mismatch confirmation modal — styled to match LoadingOverlay */}
+      {showCurrencyMismatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#01312D]/95 backdrop-blur-sm">
+          <div className="relative bg-[#FCFFF7] rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-[#BFF102]">
+            {/* Decorative dots matching LoadingOverlay */}
+            <div className="absolute -top-2 -right-2 w-4 h-4 bg-[#BFF102] rounded-full animate-ping">&nbsp;</div>
+            <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-[#83CC20] rounded-full animate-ping animation-delay-200">&nbsp;</div>
+
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <img
+                src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Logo-horizontal-color_3x_7f0e1208-fee2-4f72-89c4-68fa5445efdf.png?v=1723661805"
+                alt="ShadeSpace Logo"
+                className="h-16 w-auto"
+              />
+            </div>
+
+            <h3 className="text-[#01312D] font-bold text-lg text-center mb-3">
+              Confirm Your Currency
+            </h3>
+            <p className="text-[#01312D]/70 text-sm leading-relaxed text-center mb-6">
+              Your location suggests{' '}
+              <span className="font-semibold text-[#01312D]">{ipDetectedCurrency}</span>{' '}
+              pricing, but your store is currently showing{' '}
+              <span className="font-semibold text-[#01312D]">
+                {(typeof window !== 'undefined' && (window as any)?.Shopify?.currency?.active || '').toUpperCase()}
+              </span>{' '}
+              prices. Shipping costs and taxes are calculated based on your storefront
+              currency — please confirm you want to continue with the current pricing.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                fullWidth
+                onClick={() => {
+                  sessionStorage.setItem('shadespace_currency_mismatch_ack', '1');
+                  setShowCurrencyMismatchModal(false);
+                  const pending = pendingOrderDataRef.current;
+                  pendingOrderDataRef.current = null;
+                  if (pending) {
+                    setLoading(true);
+                    setShowLoadingOverlay(true);
+                    setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
+                    handleAddToCart(pending).catch((err: unknown) => {
+                      console.error('handleAddToCart after mismatch ack failed:', err);
+                      showToast('Failed to add item to cart. Please try again.', 'error');
+                      setShowLoadingOverlay(false);
+                      setLoading(false);
+                    });
+                  }
+                }}
+              >
+                Continue anyway
+              </Button>
+              <Button
+                variant="outline"
+                fullWidth
+                onClick={() => {
+                  setShowCurrencyMismatchModal(false);
+                  pendingOrderDataRef.current = null;
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
