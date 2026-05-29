@@ -338,7 +338,9 @@ Deno.serve(async (req: Request) => {
     const subject = renderTemplate(effectiveSubject, ctx);
     const transformedBodyForSend = applyTemplateTransforms(template.html_body, template, sender);
     let html = renderTemplate(transformedBodyForSend, ctx);
-    html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
+    if (!template.transactional) {
+      html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
+    }
     const text = renderTemplate(template.text_body, ctx);
 
     const resolvedAttachments: Array<{ filename: string; content: string; type?: string }> = [];
@@ -430,7 +432,12 @@ Deno.serve(async (req: Request) => {
       html,
       text,
     };
-    if (!template.transactional) {
+    if (template.transactional) {
+      resendPayload.headers = {
+        "X-Entity-Ref-ID": queueRow.id,
+        "Precedence": "transactional",
+      };
+    } else {
       resendPayload.headers = { "List-Unsubscribe": `<${unsubUrl}>` };
     }
     if (resolvedAttachments.length > 0) {

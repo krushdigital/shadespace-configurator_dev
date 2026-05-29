@@ -277,10 +277,21 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
           <div style="padding-left:12px;font-size:11px;color:${cfg.brand.mutedColor};">No hardware selected</div>
         </div>`;
     }
-    case 'priceBreakdown':
-      return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
-        <div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`;
+    case 'priceBreakdown': {
+      const hb = calc?.hardwareBreakdown;
+      const isManualHardware = hb?.mode === 'manual' && hb?.liveCurrency === currency && hb?.hardwareOnlyLivePrice != null && hb.hardwareOnlyLivePrice > 0;
+      const rows: string[] = [];
+      if (isManualHardware) {
+        const hwLive = hb!.hardwareOnlyLivePrice!;
+        rows.push(`<div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total - hwLive, currency)}</span></div>`);
+        rows.push(`<div class="row"><span class="muted">Hardware</span><span class="val">${formatCurrencyPreview(hwLive, currency)}</span></div>`);
+        rows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
+      } else {
+        rows.push(`<div class="row"><span class="muted">Shade sail</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
+        rows.push(`<div class="row"><span class="val">Total</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`);
+      }
+      return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
+    }
     case 'guarantee':
       return `<div class="guarantee"><div style="font-weight:700;margin-bottom:6px;">${escapeHtml(title)}</div>
         <div style="font-size:12px;">15-year Fabric &amp; Workmanship Warranty &middot; Weather-resistant materials &middot; Free worldwide shipping</div></div>`;
@@ -288,9 +299,9 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       return `<div class="callout"><div style="font-size:12px;opacity:.85;">${escapeHtml(title)}</div><div class="price">${formatCurrencyPreview(total, currency)}</div></div>`;
     case 'quoteMeta': {
       const fullName = [live?.customer_first_name, live?.customer_last_name].filter(Boolean).join(' ').trim();
-      const name = fullName || 'Jane Smith';
-      const email = live?.customer_email || 'jane@example.com';
-      const ref = live?.quote_reference || 'SQ-2026-00123';
+      const name = fullName || 'See Shopify Order';
+      const email = live?.customer_email || 'See Shopify Order';
+      const ref = live?.quote_reference || 'Pending';
       const date = live?.created_at
         ? new Date(live.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
         : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });

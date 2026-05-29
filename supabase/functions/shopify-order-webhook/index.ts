@@ -119,6 +119,25 @@ Deno.serve(async (req: Request) => {
           );
 
         if (quote?.id) {
+          // Populate customer details from Shopify order into the saved quote
+          const orderFirstName = order.shipping_address?.first_name
+            || order.customer?.first_name || "";
+          const orderLastName = order.shipping_address?.last_name
+            || order.customer?.last_name || "";
+
+          if (orderFirstName || orderLastName || email) {
+            const updateFields: Record<string, unknown> = {};
+            if (orderFirstName) updateFields.customer_first_name = orderFirstName;
+            if (orderLastName) updateFields.customer_last_name = orderLastName;
+            if (email) updateFields.customer_email = email;
+
+            await supabase
+              .from("saved_quotes")
+              .update(updateFields)
+              .eq("id", quote.id)
+              .or("customer_first_name.is.null,customer_first_name.eq.");
+          }
+
           const { count } = await supabase
             .from("email_queue")
             .select("id", { count: "exact", head: true })
