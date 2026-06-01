@@ -608,7 +608,7 @@ console.log('✌️result --->', result);
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           <p className="text-sm text-[#01312D]">
-            Your quote is ready! You can now <strong>save and receive a detailed PDF quote</strong> via email with your specifications, pricing, and a link to resume anytime.
+            Your quote is ready! You can now <button type="button" onClick={onSaveQuote} className="font-bold underline text-[#307C31] hover:text-[#1a5c44] transition-colors cursor-pointer">save and receive a detailed PDF quote</button> via email with your specifications, pricing, and a link to resume anytime.
           </p>
         </div>
       )}
@@ -648,7 +648,7 @@ console.log('✌️result --->', result);
                 trigger={
                   <span className="text-sm font-medium">Configuration Details</span>
                 }
-                defaultOpen={false}
+                defaultOpen={true}
               >
                 <Card className="p-3 mt-2">
                   <div className="space-y-1.5 text-xs">
