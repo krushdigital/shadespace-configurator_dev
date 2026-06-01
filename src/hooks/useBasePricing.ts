@@ -1,27 +1,27 @@
 import { useState, useEffect } from 'react';
 
-export interface FabricType {
+interface FabricType {
   id: string;
   label: string;
   display_order: number;
   is_active: boolean;
 }
 
-export interface FabricPricingRow {
+interface FabricPricingRow {
   id: string;
   edge_type: 'webbing' | 'cabled';
   perimeter: number;
   prices: Record<string, number>;
 }
 
-export interface CostRow {
+interface CostRow {
   id: string;
   edge_type: 'webbing' | 'cabled';
   corners: number;
   cost_nzd: number;
 }
 
-export interface EdgeFeatureRow {
+interface EdgeFeatureRow {
   id: string;
   edge_type: 'webbing' | 'cabled';
   feature_name: string;
@@ -186,7 +186,7 @@ export function getEdgeFeatureFromDB(
   return row?.feature_value ?? 0;
 }
 
-export function clearBasePricingCache() {
+function clearBasePricingCache() {
   cachedData = null;
   cacheTimestamp = null;
 }

@@ -198,7 +198,7 @@ export function getQuoteFromUrl(): { id: string; token: string } | null {
   return { id, token };
 }
 
-export function formatExpirationDate(expiresAt: string): string {
+function formatExpirationDate(expiresAt: string): string {
   const date = new Date(expiresAt);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -207,7 +207,7 @@ export function formatExpirationDate(expiresAt: string): string {
   });
 }
 
-export function formatPricingLockDate(pricingLockedUntil: string): string {
+function formatPricingLockDate(pricingLockedUntil: string): string {
   const date = new Date(pricingLockedUntil);
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
@@ -216,7 +216,7 @@ export function formatPricingLockDate(pricingLockedUntil: string): string {
   });
 }
 
-export function isPricingLocked(pricingLockedUntil: string): boolean {
+function isPricingLocked(pricingLockedUntil: string): boolean {
   return new Date(pricingLockedUntil) > new Date();
 }
 

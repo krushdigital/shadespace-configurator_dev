@@ -1,6 +1,6 @@
 const TOKEN_STORAGE_KEY = 'shade_configurator_quote_tokens';
 
-export interface QuoteToken {
+interface QuoteToken {
   quoteId: string;
   accessToken: string;
   quoteName: string;
@@ -11,7 +11,7 @@ export interface QuoteToken {
   pricingLockedUntil?: string;
 }
 
-export interface TokenStore {
+interface TokenStore {
   tokens: QuoteToken[];
   version: number;
 }
@@ -75,13 +75,13 @@ export function addQuoteToken(
   saveTokenStore(store);
 }
 
-export function getQuoteToken(quoteId: string): QuoteToken | null {
+function getQuoteToken(quoteId: string): QuoteToken | null {
   const store = getTokenStore();
   const token = store.tokens.find(t => t.quoteId === quoteId);
   return token || null;
 }
 
-export function getAllQuoteTokens(email?: string): QuoteToken[] {
+function getAllQuoteTokens(email?: string): QuoteToken[] {
   const store = getTokenStore();
 
   let tokens = store.tokens;
@@ -95,24 +95,24 @@ export function getAllQuoteTokens(email?: string): QuoteToken[] {
   );
 }
 
-export function getAccessTokens(email?: string): string[] {
+function getAccessTokens(email?: string): string[] {
   return getAllQuoteTokens(email).map(t => t.accessToken);
 }
 
-export function removeQuoteToken(quoteId: string): void {
+function removeQuoteToken(quoteId: string): void {
   const store = getTokenStore();
   store.tokens = store.tokens.filter(t => t.quoteId !== quoteId);
   saveTokenStore(store);
 }
 
-export function clearAllTokens(): void {
+function clearAllTokens(): void {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
 }
 
-export function cleanupExpiredTokens(_store?: TokenStore): void {
+function cleanupExpiredTokens(_store?: TokenStore): void {
 }
 
-export function importQuoteFromUrl(url: string): { quoteId: string; accessToken: string } | null {
+function importQuoteFromUrl(url: string): { quoteId: string; accessToken: string } | null {
   try {
     const urlObj = new URL(url);
     const quoteId = urlObj.searchParams.get('quote');
@@ -129,11 +129,11 @@ export function importQuoteFromUrl(url: string): { quoteId: string; accessToken:
   }
 }
 
-export function hasTokenForEmail(email: string): boolean {
+function hasTokenForEmail(email: string): boolean {
   return getAllQuoteTokens(email).length > 0;
 }
 
-export function getTokenCount(): number {
+function getTokenCount(): number {
   const store = getTokenStore();
   return store.tokens.length;
 }

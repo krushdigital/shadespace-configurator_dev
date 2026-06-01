@@ -61,7 +61,7 @@ export interface ShadeCalculations {
   totalWeightGrams: number;
 }
 
-export type FabricType = string;
+type FabricType = string;
 export type EdgeType = 'webbing' | 'cabled' | 'none';
 
 export interface Fabric {

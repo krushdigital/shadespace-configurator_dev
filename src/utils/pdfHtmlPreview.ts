@@ -58,12 +58,12 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   NZD: 'NZ$', USD: 'US$', AUD: 'AU$', GBP: '\u00a3', EUR: '\u20ac', CAD: 'CA$',
 };
 
-export function formatCurrencyPreview(amount: number, code: string): string {
+function formatCurrencyPreview(amount: number, code: string): string {
   const symbol = CURRENCY_SYMBOLS[code] || code;
   return `${symbol}${(amount || 0).toFixed(2)}`;
 }
 
-export function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'): string {
+function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'): string {
   if (!mm || !isFinite(mm)) return 'Not provided';
   if (unit === 'imperial') {
     const inches = mm * 0.0393701;
@@ -80,7 +80,7 @@ export function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'
   return `${Math.round(mm)}mm`;
 }
 
-export function formatAreaPreview(mm2: number, unit: 'metric' | 'imperial'): string {
+function formatAreaPreview(mm2: number, unit: 'metric' | 'imperial'): string {
   if (unit === 'imperial') {
     const sqft = mm2 * (0.0393701 * 0.0393701) / 144;
     const m2 = mm2 / 1000000;

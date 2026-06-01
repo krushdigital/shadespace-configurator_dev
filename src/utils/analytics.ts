@@ -9,7 +9,7 @@ export interface GAEventProperties {
   [key: string]: string | number | boolean | undefined;
 }
 
-export const trackEvent = (eventName: string, properties?: GAEventProperties): void => {
+const trackEvent = (eventName: string, properties?: GAEventProperties): void => {
   if (typeof window === 'undefined') return;
 
   if (window.gtag) {

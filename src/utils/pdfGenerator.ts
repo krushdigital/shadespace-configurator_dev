@@ -9,7 +9,7 @@ import {
 } from './pdfHtmlPreview';
 import { renderQuotePdfFromHtml } from './pdfHtmlRenderer';
 
-export interface PdfTemplateBranding {
+interface PdfTemplateBranding {
   primaryColor?: string;
   accentColor?: string;
   accentDark?: string;
@@ -20,7 +20,7 @@ export interface PdfTemplateBranding {
   fontFamily?: string;
 }
 
-export interface PdfTemplateChrome {
+interface PdfTemplateChrome {
   brand?: PdfTemplateBranding;
   header?: { title?: string; tagline?: string };
   footer?: { line1?: string; line2?: string };
@@ -38,7 +38,7 @@ export interface CustomerDetails {
 
 export type PdfDensity = 'comfortable' | 'compact' | 'ultra';
 
-export interface PdfLayoutOptions {
+interface PdfLayoutOptions {
   density?: PdfDensity;
   columns?: 1 | 2;
   columnGap?: number;

@@ -18,7 +18,7 @@ export function formatCurrency(amount: number, currencyCode?: string): string {
   return `${symbol}${amount.toFixed(2)}`;
 }
 
-export function formatCurrencyCompact(amount: number, currencyCode?: string): string {
+function formatCurrencyCompact(amount: number, currencyCode?: string): string {
   const displayCurrency = currencyCode || window.Shopify?.currency?.active || 'USD';
   const symbol = CURRENCY_SYMBOLS[displayCurrency] || displayCurrency;
 

@@ -61,7 +61,7 @@ export function sanitizeCustomerReference(reference: string): string {
   return sanitized;
 }
 
-export function sanitizeForFilename(name: string): string {
+function sanitizeForFilename(name: string): string {
   if (!name) return '';
 
   let sanitized = name
@@ -79,7 +79,7 @@ export function sanitizeForFilename(name: string): string {
   return sanitized;
 }
 
-export function validateQuoteName(name: string): { valid: boolean; error?: string } {
+function validateQuoteName(name: string): { valid: boolean; error?: string } {
   if (!name) {
     return { valid: true };
   }
@@ -96,7 +96,7 @@ export function validateQuoteName(name: string): { valid: boolean; error?: strin
   return { valid: true };
 }
 
-export function validateCustomerReference(reference: string): { valid: boolean; error?: string } {
+function validateCustomerReference(reference: string): { valid: boolean; error?: string } {
   if (!reference) {
     return { valid: true };
   }

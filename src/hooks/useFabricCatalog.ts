@@ -144,7 +144,7 @@ export function useFabricCatalog(): FabricCatalogState & { refetch: () => Promis
   return { ...state, refetch: fetchData };
 }
 
-export function clearFabricCatalogCache() {
+function clearFabricCatalogCache() {
   cachedFabrics = null;
   cacheTimestamp = null;
 }

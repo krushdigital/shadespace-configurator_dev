@@ -1,5 +1,5 @@
 // Webbing Reinforced Fabric Pricing (NZD) - Based on Perimeter Length
-export const WEBBING_FABRIC_PRICING = [
+const WEBBING_FABRIC_PRICING = [
   { perimeter: 9.0, monotec370: 598.23, extrablock330: 583.26, shadetec320: 549.57 },
   { perimeter: 9.5, monotec370: 631.41, extrablock330: 614.73, shadetec320: 577.20 },
   { perimeter: 10.0, monotec370: 665.51, extrablock330: 647.03, shadetec320: 605.44 },
@@ -106,7 +106,7 @@ export const WEBBING_FABRIC_PRICING = [
 ];
 
 // Cabled Edge Fabric Pricing (NZD) - Based on Perimeter Length
-export const CABLED_FABRIC_PRICING = [
+const CABLED_FABRIC_PRICING = [
   { perimeter: 9.0, monotec370: 606.36, extrablock330: 591.39, shadetec320: 557.70 },
   { perimeter: 9.5, monotec370: 639.54, extrablock330: 622.86, shadetec320: 585.33 },
   { perimeter: 10.0, monotec370: 673.64, extrablock330: 655.16, shadetec320: 613.57 },
@@ -233,7 +233,7 @@ export const CABLED_HARDWARE_COSTS = {
 };
 
 // Cabled Edge Features based on Perimeter Length
-export const CABLED_FEATURES = [
+const CABLED_FEATURES = [
   { minPerimeter: 0, maxPerimeter: 29.5, wireThickness: 4 },    // 4mm wire
   { minPerimeter: 30, maxPerimeter: 40, wireThickness: 5 },     // 5mm wire
   { minPerimeter: 40, maxPerimeter: 60, wireThickness: 6 }      // 6mm wire
@@ -260,7 +260,7 @@ export const HARDWARE_COSTS = {
 };
 
 // Webbing Features based on Perimeter Length
-export const WEBBING_FEATURES = [
+const WEBBING_FEATURES = [
   { minPerimeter: 0, maxPerimeter: 34.5, width: 50 }, // 50mm webbing
   { minPerimeter: 35, maxPerimeter: 60, width: 63 }   // 63mm webbing
 ];
@@ -280,7 +280,7 @@ export const EXCHANGE_RATES: { [key: string]: number } = {
   'AED': 2.19
 };
 
-export const CURRENCY_MARKUPS: { [key: string]: number } = {
+const CURRENCY_MARKUPS: { [key: string]: number } = {
   'NZD': 1.00,
   'USD': 1.30,
   'AUD': 0.90,
@@ -290,7 +290,7 @@ export const CURRENCY_MARKUPS: { [key: string]: number } = {
   'AED': 2.10
 };
 
-export const BASE_PRICING_MARKUP = 1.0;
+const BASE_PRICING_MARKUP = 1.0;
 
 export const CURRENCY_SYMBOLS: { [key: string]: string } = {
   'NZD': 'NZ$',
@@ -302,7 +302,7 @@ export const CURRENCY_SYMBOLS: { [key: string]: string } = {
   'AED': 'AED'
 };
 
-export const CURRENCY_NAMES: { [key: string]: string } = {
+const CURRENCY_NAMES: { [key: string]: string } = {
   'NZD': 'New Zealand Dollar',
   'USD': 'US Dollar',
   'AUD': 'Australian Dollar',

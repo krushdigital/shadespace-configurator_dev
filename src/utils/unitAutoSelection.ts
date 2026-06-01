@@ -1,12 +1,12 @@
 type MeasurementUnit = 'metric' | 'imperial';
 
-export interface CurrencyUnitMapping {
+interface CurrencyUnitMapping {
   unit: MeasurementUnit;
   confidence: 'high' | 'medium' | 'low';
   displayName: string;
 }
 
-export const CURRENCY_TO_UNIT_MAP: { [key: string]: CurrencyUnitMapping } = {
+const CURRENCY_TO_UNIT_MAP: { [key: string]: CurrencyUnitMapping } = {
   NZD: { unit: 'metric', confidence: 'high', displayName: 'New Zealand' },
   AUD: { unit: 'metric', confidence: 'high', displayName: 'Australia' },
   EUR: { unit: 'metric', confidence: 'high', displayName: 'Europe' },
@@ -19,14 +19,14 @@ export const CURRENCY_TO_UNIT_MAP: { [key: string]: CurrencyUnitMapping } = {
 const UNIT_PREFERENCE_KEY = 'shadespace_unit_preference';
 const UNIT_OVERRIDE_KEY = 'shadespace_unit_override';
 
-export interface UnitPreference {
+interface UnitPreference {
   unit: MeasurementUnit;
   currency: string;
   timestamp: number;
   isOverride: boolean;
 }
 
-export function getStoredUnitPreference(): UnitPreference | null {
+function getStoredUnitPreference(): UnitPreference | null {
   try {
     const stored = localStorage.getItem(UNIT_PREFERENCE_KEY);
     if (stored) {
@@ -56,7 +56,7 @@ export function setStoredUnitPreference(
   }
 }
 
-export function clearStoredUnitPreference(): void {
+function clearStoredUnitPreference(): void {
   try {
     localStorage.removeItem(UNIT_PREFERENCE_KEY);
   } catch (error) {
@@ -112,14 +112,14 @@ export function determineUnit(
   };
 }
 
-export function shouldShowProminentToggle(
+function shouldShowProminentToggle(
   confidence: 'high' | 'medium' | 'low',
   currency: string
 ): boolean {
   return confidence === 'medium' || confidence === 'low';
 }
 
-export function getUnitDisplayMessage(
+function getUnitDisplayMessage(
   unit: MeasurementUnit,
   currency: string,
   source: 'saved_quote' | 'user_preference' | 'currency_mapping' | 'default'
@@ -152,7 +152,7 @@ export function getAlternativeUnitName(currentUnit: MeasurementUnit): string {
   return currentUnit === 'metric' ? 'Imperial (in/ft)' : 'Metric (mm/m)';
 }
 
-export function trackUnitChange(
+function trackUnitChange(
   fromUnit: MeasurementUnit,
   toUnit: MeasurementUnit,
   currency: string,

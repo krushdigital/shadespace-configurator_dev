@@ -36,7 +36,7 @@ async function loadCurrencyMap(): Promise<CurrencyMapping[]> {
   return preloadCurrencyMap();
 }
 
-export async function lookupTargetForCurrency(currency: string): Promise<CurrencyMapping | null> {
+async function lookupTargetForCurrency(currency: string): Promise<CurrencyMapping | null> {
   const code = currency?.toUpperCase();
   if (!code) return null;
   const rows = await loadCurrencyMap();
@@ -95,7 +95,7 @@ function alreadyAttempted(signature: string): boolean {
   }
 }
 
-export function hasRedirectFailed(quoteId: string | null | undefined): boolean {
+function hasRedirectFailed(quoteId: string | null | undefined): boolean {
   if (!quoteId) return false;
   try {
     return sessionStorage.getItem(REDIRECT_FAILED_KEY) === quoteId;

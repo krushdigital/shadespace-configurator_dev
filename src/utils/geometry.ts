@@ -5,8 +5,8 @@ const MM_TO_INCHES = 0.0393701;
 const INCHES_TO_MM = 25.4;
 
 // Measurement range constants (4-5 digits in metric)
-export const MIN_MEASUREMENT_MM = 1000; // 1000mm = 39.4 inches (minimum 4-digit metric)
-export const MAX_MEASUREMENT_MM = 99999; // 99999mm = 3937 inches (maximum 5-digit metric)
+const MIN_MEASUREMENT_MM = 1000; // 1000mm = 39.4 inches (minimum 4-digit metric)
+const MAX_MEASUREMENT_MM = 99999; // 99999mm = 3937 inches (maximum 5-digit metric)
 
 // Expected typical ranges for shade sails
 const TYPICAL_MIN_MM = 1800; // 1.8m - typical minimum edge length (allows better imperial typo detection)
@@ -502,7 +502,7 @@ export function getShapeAccuracy(
  * @param c Side length in mm
  * @returns Area in square mm, or 0 if triangle is invalid
  */
-export function calculateTriangleArea(a: number, b: number, c: number): number {
+function calculateTriangleArea(a: number, b: number, c: number): number {
   // Check triangle inequality - all sides must be positive and satisfy triangle inequality
   if (a <= 0 || b <= 0 || c <= 0) return 0;
   if (a + b <= c || a + c <= b || b + c <= a) return 0;
@@ -527,7 +527,7 @@ export function calculateTriangleArea(a: number, b: number, c: number): number {
  * @param allowCollinear If true, allows collinear points (diagonal = sum of two edges)
  * @returns Object with isValid boolean and error message if invalid
  */
-export function validateTriangle(a: number, b: number, c: number, allowCollinear: boolean = false): { isValid: boolean; error?: string } {
+function validateTriangle(a: number, b: number, c: number, allowCollinear: boolean = false): { isValid: boolean; error?: string } {
   if (a <= 0 || b <= 0 || c <= 0) {
     return { isValid: false, error: 'All sides must be positive' };
   }
@@ -591,7 +591,7 @@ export function calculateTriangleSideRange(side1: number, side2: number, allowCo
  * @param oppositeSide2 Second opposite side
  * @returns Object with min and max feasible diagonal lengths
  */
-export function calculateDiagonalRange(
+function calculateDiagonalRange(
   side1: number,
   side2: number,
   oppositeSide1: number,
@@ -628,7 +628,7 @@ export function calculateDiagonalRange(
  * @param diagonalName Name of the diagonal (e.g., 'AC')
  * @returns Object with isValid boolean and error message if invalid
  */
-export function validateDiagonal(
+function validateDiagonal(
   diagonal: number,
   side1: number,
   side2: number,
@@ -672,7 +672,7 @@ export function validateDiagonal(
  * @param errors Array of error messages from validation
  * @returns Formatted error messages with context
  */
-export function formatDiagonalErrors(errors: string[]): string[] {
+function formatDiagonalErrors(errors: string[]): string[] {
   if (errors.length === 0) return [];
 
   const formattedErrors: string[] = [];
@@ -1275,14 +1275,14 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
 /**
  * Calculate Euclidean distance between two points
  */
-export function calculateDistance(p1: Point, p2: Point): number {
+function calculateDistance(p1: Point, p2: Point): number {
   return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
 }
 
 /**
  * Calculate the centroid (center point) of a polygon
  */
-export function calculateCentroid(points: Point[]): Point {
+function calculateCentroid(points: Point[]): Point {
   const sum = points.reduce((acc, point) => ({
     x: acc.x + point.x,
     y: acc.y + point.y
@@ -1341,7 +1341,7 @@ function trilateratePoint(
 /**
  * Scale polygon to fit within canvas bounds
  */
-export function scalePolygonToCanvas(
+function scalePolygonToCanvas(
   points: Point[],
   canvasWidth: number,
   canvasHeight: number,

@@ -33,7 +33,7 @@ export function getBlockColumn(block: PdfBlock): BlockColumn {
   return v === 'left' || v === 'right' ? v : 'full';
 }
 
-export function getBlockDensityOverride(block: PdfBlock): 'comfortable' | 'compact' | 'ultra' | undefined {
+function getBlockDensityOverride(block: PdfBlock): 'comfortable' | 'compact' | 'ultra' | undefined {
   const v = block.props?.densityOverride;
   return v === 'comfortable' || v === 'compact' || v === 'ultra' ? v : undefined;
 }

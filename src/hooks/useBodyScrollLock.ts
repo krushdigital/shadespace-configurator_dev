@@ -26,7 +26,7 @@ export function useBodyScrollLock(isOpen: boolean) {
   }, [isOpen]);
 }
 
-export function forceReleaseLock() {
+function forceReleaseLock() {
   lockCount = 0;
   document.body.style.overflow = originalBodyOverflow;
   document.documentElement.style.overflow = originalHtmlOverflow;

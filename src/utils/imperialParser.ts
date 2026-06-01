@@ -291,6 +291,6 @@ export function inchesToFeetInches(totalInches: number): { feet: number; inches:
 /**
  * Validates if a measurement is within reasonable bounds
  */
-export function validateMeasurementRange(totalInches: number, min: number = 0, max: number = 600): boolean {
+function validateMeasurementRange(totalInches: number, min: number = 0, max: number = 600): boolean {
   return totalInches >= min && totalInches <= max;
 }

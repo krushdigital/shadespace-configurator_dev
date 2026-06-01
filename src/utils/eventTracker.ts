@@ -61,7 +61,7 @@ const trackEventDirectly = async (params: TrackEventParams): Promise<void> => {
   }
 };
 
-export const trackEvent = async (params: TrackEventParams): Promise<void> => {
+const trackEvent = async (params: TrackEventParams): Promise<void> => {
   const {
     eventType,
     eventData = {},
