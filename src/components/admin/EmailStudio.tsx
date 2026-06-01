@@ -67,6 +67,7 @@ export interface EmailAutomation {
   max_sends_per_email: number | null;
   cooldown_days: number | null;
   suppress_if_purchased: boolean;
+  suppression_window_hours: number | null;
   respect_exclusions: boolean;
 }
 
@@ -144,6 +145,17 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
     } catch (e) { alert(`Queue run failed: ${e instanceof Error ? e.message : e}`); }
   };
 
+  const clearQueue = async () => {
+    if (!confirm('Skip all pending and sending emails in the queue? This cannot be undone.')) return;
+    const { error } = await supabase
+      .from('email_queue')
+      .update({ status: 'skipped' })
+      .in('status', ['pending', 'sending']);
+    if (error) { alert(`Failed: ${error.message}`); return; }
+    alert('Queue cleared. All pending emails have been skipped.');
+    loadHealth();
+  };
+
   if (editingTemplate) {
     return <TemplateEditor template={editingTemplate} senders={senders} onBack={() => { setEditingTemplate(null); refresh(); }} />;
   }
@@ -158,6 +170,7 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => { runEvaluatorNow(); loadHealth(); }}>Run evaluator</Button>
           <Button size="sm" variant="outline" onClick={() => { processQueueNow(); loadHealth(); }}>Process queue</Button>
+          <Button size="sm" variant="outline" onClick={clearQueue} className="text-amber-600 border-amber-300">Clear queue</Button>
           <Button size="sm" variant="outline" onClick={pauseAll} className="text-red-600 border-red-300">Pause all</Button>
         </div>
       </div>
@@ -234,7 +247,7 @@ export const EmailStudio: React.FC<EmailStudioProps> = ({ dateRange, excludeInte
 
       {!loading && sub === 'senders' && <SendersManager senders={senders} onRefresh={refresh} />}
 
-      {!loading && sub === 'suppressed' && <SuppressedCustomers />}
+      {!loading && sub === 'suppressed' && <SuppressedCustomers isSuperAdmin={isSuperAdmin} />}
 
       {!loading && sub === 'analytics' && <EmailAnalytics dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
     </div>
@@ -277,18 +290,32 @@ const TemplatesList: React.FC<{ templates: EmailTemplate[]; onEdit: (t: EmailTem
   </Card>
 );
 
-const SuppressedCustomers: React.FC = () => {
+const SuppressedCustomers: React.FC<{ isSuperAdmin?: boolean }> = ({ isSuperAdmin }) => {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [addEmail, setAddEmail] = useState('');
   const [syncing, setSyncing] = useState(false);
+  const [windowHours, setWindowHours] = useState<number>(24);
+  const [windowSaving, setWindowSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('email_suppressed_customers').select('*').order('suppressed_at', { ascending: false }).limit(200);
+    const [{ data }, { data: cfg }] = await Promise.all([
+      supabase.from('email_suppressed_customers').select('*').order('suppressed_at', { ascending: false }).limit(200),
+      supabase.from('email_pipeline_config').select('suppression_window_hours_default').eq('id', 1).maybeSingle(),
+    ]);
     setRows(data || []);
+    if (cfg) setWindowHours(cfg.suppression_window_hours_default ?? 24);
     setLoading(false);
   }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const saveWindowHours = async () => {
+    setWindowSaving(true);
+    await supabase.from('email_pipeline_config').update({ suppression_window_hours_default: windowHours }).eq('id', 1);
+    setWindowSaving(false);
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -337,6 +364,28 @@ const SuppressedCustomers: React.FC = () => {
           </Button>
         </div>
       </div>
+      {isSuperAdmin && (
+        <div className="p-4 border-b border-gray-100 bg-gray-50">
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">Purchase suppression window:</label>
+            <input
+              type="number"
+              min={1}
+              max={168}
+              value={windowHours}
+              onChange={e => setWindowHours(Number(e.target.value))}
+              className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+            />
+            <span className="text-sm text-gray-500">hours</span>
+            <Button size="sm" variant="outline" onClick={saveWindowHours} disabled={windowSaving}>
+              {windowSaving ? 'Saving...' : 'Save'}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            When a customer purchases one design, suppress emails for other designs they saved within this window (e.g. same-day comparison quotes).
+          </p>
+        </div>
+      )}
       <div className="p-4 border-b border-gray-100 flex items-center gap-2">
         <input
           type="email"
