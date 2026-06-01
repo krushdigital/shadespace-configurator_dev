@@ -20,7 +20,7 @@ Deno.serve(async (req: Request) => {
       .eq("status", "pending")
       .lte("scheduled_at", new Date().toISOString())
       .order("scheduled_at", { ascending: true })
-      .limit(50);
+      .limit(20);
 
     let sent = 0, failed = 0;
     for (const q of pending || []) {

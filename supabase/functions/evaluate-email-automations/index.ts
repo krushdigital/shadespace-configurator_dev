@@ -38,6 +38,7 @@ Deno.serve(async (req: Request) => {
     const { data: automations } = await autoQ;
     if (!automations) return new Response(JSON.stringify({ enqueued: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const BATCH_LIMIT = 20; // Max emails to enqueue per run (Resend rate limit: 2-5 req/sec)
     let enqueued = 0;
     const report: any[] = [];
 
@@ -56,6 +57,8 @@ Deno.serve(async (req: Request) => {
     }
 
     for (const a of automations) {
+      if (enqueued >= BATCH_LIMIT) break;
+
       if (a.template_id) {
         const { data: tpl } = await supabase
           .from("email_templates")
@@ -95,6 +98,7 @@ Deno.serve(async (req: Request) => {
       }
 
       for (const row of candidates) {
+        if (enqueued >= BATCH_LIMIT) break;
         if ((conds || []).some((c: any) => !conditionPasses(row, c))) continue;
         if (!row.customer_email) continue;
 
@@ -155,7 +159,7 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ enqueued, report }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ enqueued, batch_limit: BATCH_LIMIT, batch_limit_reached: enqueued >= BATCH_LIMIT, report }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
