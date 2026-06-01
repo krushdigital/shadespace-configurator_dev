@@ -317,12 +317,20 @@ export function ShapeCanvas({
         Interactive Canvas Guide
       </p>
       <div className="space-y-2 text-sm text-[#01312D]/80">
-        <p>
-          <strong>Auto Mode:</strong> The shape automatically fits your measurements. Perfect for accurate sizing.
-        </p>
-        <p>
-          <strong>Manual Mode:</strong> Drag the corners to customize the shape. Use the toggle button below the canvas to switch modes.
-        </p>
+        {config.corners >= 4 ? (
+          <>
+            <p>
+              <strong>Auto Mode:</strong> The shape automatically fits your measurements. Perfect for accurate sizing.
+            </p>
+            <p>
+              <strong>Manual Mode:</strong> Drag the corners to customize the shape. Use the toggle button below the canvas to switch modes.
+            </p>
+          </>
+        ) : (
+          <p>
+            The shape automatically matches your measurements as you enter them.
+          </p>
+        )}
         <p>
           Enter your {measurementOption === 'adjust' ? 'space measurements (distance between fixing points)' : 'desired shade dimensions'} in the fields {isMobile ? 'below' : 'to the right'} to calculate pricing.
         </p>
