@@ -45,13 +45,7 @@ export default defineConfig({
     outDir: "../public/shadespace/",
     emptyOutDir: true,
     sourcemap: false,
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: false,
-        drop_debugger: true,
-      },
-    },
+    minify: "esbuild",
     rollupOptions: {
       output: {
         inlineDynamicImports: false,
