@@ -154,6 +154,24 @@ Deno.serve(async (req: Request) => {
         updatePayload.customer_email = customerEmail;
       }
 
+      // Store shipping address and order notes for fulfilment PDF
+      if (order.shipping_address) {
+        updatePayload.shipping_address = {
+          address1: order.shipping_address.address1 || "",
+          address2: order.shipping_address.address2 || "",
+          city: order.shipping_address.city || "",
+          province: order.shipping_address.province || "",
+          zip: order.shipping_address.zip || "",
+          country: order.shipping_address.country || "",
+        };
+      }
+      if (order.note) {
+        updatePayload.order_notes = order.note;
+      }
+      if (order.total_weight) {
+        updatePayload.estimated_weight_kg = order.total_weight / 1000;
+      }
+
       await supabase
         .from("saved_quotes")
         .update(updatePayload)

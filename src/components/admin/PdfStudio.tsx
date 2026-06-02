@@ -4,8 +4,10 @@ import { Button } from '../ui/Button';
 import { supabase } from '../../lib/supabase';
 import {
   BLOCK_LABELS,
+  BLOCK_ROW_DEFINITIONS,
   BlockType,
   DEFAULT_BLOCKS,
+  DEFAULT_FULFILMENT_BLOCKS,
   DYNAMIC_TYPES,
   PdfBlock,
   makeDefaultProps,
@@ -35,10 +37,13 @@ interface PdfTemplateRow {
   id: string;
   name: string;
   is_active: boolean;
+  template_type: 'quote' | 'fulfilment';
   config: PdfTemplateConfig;
   blocks: PdfBlock[];
   updated_at: string;
 }
+
+type PdfTemplateType = 'quote' | 'fulfilment';
 
 const DEFAULT_CONFIG: PdfTemplateConfig = {
   brand: {
@@ -101,6 +106,7 @@ function normalizeBlocks(input: unknown): PdfBlock[] {
 }
 
 export const PdfStudio: React.FC = () => {
+  const [templateType, setTemplateType] = useState<PdfTemplateType>('quote');
   const [templates, setTemplates] = useState<PdfTemplateRow[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [config, setConfig] = useState<PdfTemplateConfig>(DEFAULT_CONFIG);
@@ -159,23 +165,29 @@ export const PdfStudio: React.FC = () => {
     }
     const rows = ((data || []) as unknown as PdfTemplateRow[]).map((r) => ({
       ...r,
+      template_type: (r.template_type || 'quote') as PdfTemplateType,
       blocks: normalizeBlocks((r as unknown as { blocks: unknown }).blocks),
     }));
     setTemplates(rows);
-    const active = rows.find((r) => r.is_active) || rows[0];
+    const filtered = rows.filter((r) => r.template_type === templateType);
+    const active = filtered.find((r) => r.is_active) || filtered[0];
     if (active) {
       setActiveId(active.id);
       setName(active.name);
       setConfig(mergeConfig(active.config));
       setBlocks(active.blocks);
       setSelectedBlockId(active.blocks[0]?.id ?? null);
+    } else {
+      setActiveId(null);
+      setName('');
+      setBlocks(templateType === 'fulfilment' ? DEFAULT_FULFILMENT_BLOCKS : DEFAULT_BLOCKS);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     loadTemplates();
-  }, []);
+  }, [templateType]);
 
   const handleSelect = (id: string) => {
     const row = templates.find((t) => t.id === id);
@@ -208,7 +220,7 @@ export const PdfStudio: React.FC = () => {
   const handleSetActive = async () => {
     if (!activeId) return;
     setSaving(true);
-    await supabase.from('pdf_templates').update({ is_active: false }).neq('id', activeId);
+    await supabase.from('pdf_templates').update({ is_active: false }).eq('template_type', templateType).neq('id', activeId);
     const { error } = await supabase
       .from('pdf_templates')
       .update({ is_active: true })
@@ -227,7 +239,7 @@ export const PdfStudio: React.FC = () => {
     setSaving(true);
     const { data, error } = await supabase
       .from('pdf_templates')
-      .insert({ name: newName, is_active: false, config, blocks })
+      .insert({ name: newName, is_active: false, template_type: templateType, config, blocks })
       .select()
       .single();
     setSaving(false);
@@ -361,6 +373,27 @@ export const PdfStudio: React.FC = () => {
   return (
     <div className="space-y-6">
       <Card className="p-4 sm:p-6 border border-gray-200">
+        <div className="flex gap-2 mb-4">
+          <button
+            type="button"
+            onClick={() => setTemplateType('quote')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg border ${templateType === 'quote' ? 'border-lime-500 bg-lime-50 text-lime-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+          >
+            Quote PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => setTemplateType('fulfilment')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg border ${templateType === 'fulfilment' ? 'border-slate-700 bg-slate-50 text-slate-800' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+          >
+            Order Fulfilment PDF
+          </button>
+        </div>
+        {templateType === 'fulfilment' && (
+          <div className="mb-4 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+            The Order Fulfilment PDF is for internal staff only. It appears as a link in Shopify order fulfillment details and is not visible to customers.
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-medium text-gray-600 mb-1">Template</label>
@@ -369,7 +402,7 @@ export const PdfStudio: React.FC = () => {
               onChange={(e) => handleSelect(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500"
             >
-              {templates.map((t) => (
+              {templates.filter((t) => t.template_type === templateType).map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.name} {t.is_active ? '(active)' : ''}
                 </option>
@@ -784,6 +817,32 @@ const BlockPropsEditor: React.FC<{
           value={String(props.title ?? '')}
           onChange={(v) => onProp('title', v)}
         />
+      )}
+
+      {BLOCK_ROW_DEFINITIONS[block.type] && (
+        <div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5">Line items (show/hide rows)</label>
+          <div className="space-y-1 bg-gray-50 rounded-lg p-2 border border-gray-200">
+            {BLOCK_ROW_DEFINITIONS[block.type]!.map((row) => {
+              const showRows = (props.showRows as Record<string, boolean>) || {};
+              const checked = showRows[row.key] !== false;
+              return (
+                <label key={row.key} className="flex items-center gap-2 text-xs text-gray-700 py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={(e) => {
+                      const next = { ...showRows, [row.key]: e.target.checked };
+                      onProp('showRows', next);
+                    }}
+                    className="rounded border-gray-300 text-lime-600 focus:ring-lime-500 h-3.5 w-3.5"
+                  />
+                  {row.label}
+                </label>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {block.type === 'diagramImage' && (

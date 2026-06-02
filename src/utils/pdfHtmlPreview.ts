@@ -52,6 +52,10 @@ export interface PreviewLiveData {
   created_at?: string | null;
   config_data?: ConfiguratorState | null;
   calculations_data?: ShadeCalculations | null;
+  shopify_order_number?: string | null;
+  shipping_address?: { address1?: string; address2?: string; city?: string; province?: string; zip?: string; country?: string } | null;
+  estimated_weight_kg?: number | null;
+  order_notes?: string | null;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
@@ -171,6 +175,12 @@ function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: P
   return out.join('');
 }
 
+function isRowVisible(block: PdfBlock, rowKey: string): boolean {
+  const showRows = block.props?.showRows as Record<string, boolean> | undefined;
+  if (!showRows) return true;
+  return showRows[rowKey] !== false;
+}
+
 function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveData | null): string {
   const p = block.props || {};
   const title = (p.title as string) || BLOCK_LABELS[block.type];
@@ -187,14 +197,16 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       const fabricationMethodSummary = cfgData?.measurementOption === 'adjust'
         ? 'Manufactured to fit my space'
         : 'Custom dimensions provided by customer';
-      return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>
-        <div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>
-        <div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>
-        <div class="row"><span class="muted">Total Area</span><span class="val">${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)}</span></div>
-        <div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${cfgData?.edgeType === 'webbing' ? 'Webbing Reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled Edge' : 'Webbing Reinforced'}</span></div>
-        <div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>
-        <div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethodSummary)}</span></div>`;
+      const edgeLabel = cfgData?.edgeType === 'webbing' ? 'Webbing Reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled Edge' : 'Webbing Reinforced';
+      const sRows: string[] = [];
+      if (isRowVisible(block, 'fabricMaterial')) sRows.push(`<div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>`);
+      if (isRowVisible(block, 'fabricColor')) sRows.push(`<div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>`);
+      if (isRowVisible(block, 'corners')) sRows.push(`<div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>`);
+      if (isRowVisible(block, 'totalArea')) sRows.push(`<div class="row"><span class="muted">Total Area</span><span class="val">${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)}</span></div>`);
+      if (isRowVisible(block, 'edgeReinforcement')) sRows.push(`<div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${edgeLabel}</span></div>`);
+      if (isRowVisible(block, 'thread')) sRows.push(`<div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>`);
+      if (isRowVisible(block, 'fabricationMethod')) sRows.push(`<div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethodSummary)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${sRows.join('')}`;
     }
     case 'measurements': {
       if (cfgData && cfgData.measurements) {
@@ -313,13 +325,40 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       const cfgAny = cfgData as Record<string, unknown> | null | undefined;
       const custRef = live?.customer_reference || (cfgAny?.customerReference as string | undefined);
       const quoteName = live?.quote_name || (cfgAny?.quoteName as string | undefined);
-      return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Customer Name</span><span class="val">${escapeHtml(name)}</span></div>
-        <div class="row"><span class="muted">Email</span><span class="val">${escapeHtml(email)}</span></div>
-        <div class="row"><span class="muted">Quote Reference</span><span class="val">${escapeHtml(ref)}</span></div>
-        ${quoteName ? `<div class="row"><span class="muted">Quote Name</span><span class="val">${escapeHtml(quoteName)}</span></div>` : ''}
-        ${custRef ? `<div class="row"><span class="muted">Customer Reference</span><span class="val">${escapeHtml(custRef)}</span></div>` : ''}
-        <div class="row"><span class="muted">Date</span><span class="val">${escapeHtml(date)}</span></div>`;
+      const rows: string[] = [];
+      if (isRowVisible(block, 'customerName')) rows.push(`<div class="row"><span class="muted">Customer Name</span><span class="val">${escapeHtml(name)}</span></div>`);
+      if (isRowVisible(block, 'email')) rows.push(`<div class="row"><span class="muted">Email</span><span class="val">${escapeHtml(email)}</span></div>`);
+      if (isRowVisible(block, 'quoteReference')) rows.push(`<div class="row"><span class="muted">Quote Reference</span><span class="val">${escapeHtml(ref)}</span></div>`);
+      if (isRowVisible(block, 'quoteName') && quoteName) rows.push(`<div class="row"><span class="muted">Quote Name</span><span class="val">${escapeHtml(quoteName)}</span></div>`);
+      if (isRowVisible(block, 'customerReference') && custRef) rows.push(`<div class="row"><span class="muted">Customer Reference</span><span class="val">${escapeHtml(custRef)}</span></div>`);
+      if (isRowVisible(block, 'date')) rows.push(`<div class="row"><span class="muted">Date</span><span class="val">${escapeHtml(date)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
+    }
+    case 'orderDetails': {
+      const fullName = [live?.customer_first_name, live?.customer_last_name].filter(Boolean).join(' ').trim();
+      const name = fullName || 'Pending (from Shopify order)';
+      const email = live?.customer_email || 'Pending';
+      const ref = live?.quote_reference || 'Pending';
+      const orderNum = live?.shopify_order_number || 'Pending';
+      const date = live?.created_at
+        ? new Date(live.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+        : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const addr = live?.shipping_address;
+      const addressStr = addr
+        ? [addr.address1, addr.address2, addr.city, addr.province, addr.zip, addr.country].filter(Boolean).join(', ')
+        : 'Pending (from Shopify order)';
+      const weight = live?.estimated_weight_kg != null ? `${live.estimated_weight_kg} kg` : 'Calculated at fulfilment';
+      const notes = live?.order_notes || 'None';
+      const rows: string[] = [];
+      if (isRowVisible(block, 'customerName')) rows.push(`<div class="row"><span class="muted">Customer Name</span><span class="val">${escapeHtml(name)}</span></div>`);
+      if (isRowVisible(block, 'email')) rows.push(`<div class="row"><span class="muted">Email</span><span class="val">${escapeHtml(email)}</span></div>`);
+      if (isRowVisible(block, 'quoteReference')) rows.push(`<div class="row"><span class="muted">Quote Reference</span><span class="val">${escapeHtml(ref)}</span></div>`);
+      if (isRowVisible(block, 'shopifyOrderNumber')) rows.push(`<div class="row"><span class="muted">Shopify Order</span><span class="val">#${escapeHtml(orderNum)}</span></div>`);
+      if (isRowVisible(block, 'shippingAddress')) rows.push(`<div class="row"><span class="muted">Shipping Address</span><span class="val">${escapeHtml(addressStr)}</span></div>`);
+      if (isRowVisible(block, 'weight')) rows.push(`<div class="row"><span class="muted">Estimated Weight</span><span class="val">${escapeHtml(weight)}</span></div>`);
+      if (isRowVisible(block, 'orderNotes')) rows.push(`<div class="row"><span class="muted">Order Notes</span><span class="val">${escapeHtml(notes)}</span></div>`);
+      if (isRowVisible(block, 'date')) rows.push(`<div class="row"><span class="muted">Date</span><span class="val">${escapeHtml(date)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
     }
     case 'stepSelections': {
       const manufacturing = cfgData?.measurementOption === 'exact'
@@ -332,7 +371,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       const hwLabel = hwMode === 'standard' ? `Standard tensioning kit included (${corners}-corner pack)` : hwMode === 'manual' ? 'Manual hardware per corner' : 'No tensioning hardware';
       const fixingLabel = cfgData?.fixingPointsInstalled === true ? 'Already installed' : cfgData?.fixingPointsInstalled === false ? 'Planning installation' : 'Not specified';
       const edgeLabel = cfgData?.edgeType === 'webbing' ? 'Webbing reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled edge' : 'Webbing reinforced';
-      const rows: Array<[string, string]> = [
+      const stepRowKeys = ['manufacturing', 'fabrication', 'corners', 'units', 'fabric', 'edge', 'hardware', 'fixingPoints'];
+      const stepRows: Array<[string, string]> = [
         ['Manufacturing Approach', manufacturing],
         ['Fabrication Method', fabricationMethod],
         ['Number of Corners', `${corners}-corner shade sail`],
@@ -342,7 +382,9 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
         ['Tensioning Hardware', hwLabel],
         ['Fixing Points', fixingLabel],
       ];
-      return `<h2>${escapeHtml(title)}</h2>${rows.map(([label, value], idx) => `<div class="row"><span class="muted">Step ${idx + 1} - ${escapeHtml(label)}</span><span class="val">${escapeHtml(value)}</span></div>`).join('')}`;
+      let stepNum = 0;
+      const filteredStepRows = stepRows.filter((_, idx) => isRowVisible(block, stepRowKeys[idx]));
+      return `<h2>${escapeHtml(title)}</h2>${filteredStepRows.map(([label, value]) => { stepNum++; return `<div class="row"><span class="muted">Step ${stepNum} - ${escapeHtml(label)}</span><span class="val">${escapeHtml(value)}</span></div>`; }).join('')}`;
     }
     case 'diagramImage': {
       const mw = Number(p.maxWidth) || 520;

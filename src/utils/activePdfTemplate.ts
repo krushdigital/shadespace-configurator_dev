@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
-import { DEFAULT_BLOCKS, PdfBlock, BlockType, newBlockId } from './pdfBlocks';
+import { DEFAULT_BLOCKS, DEFAULT_FULFILMENT_BLOCKS, PdfBlock, BlockType, newBlockId } from './pdfBlocks';
+
+export type PdfTemplateType = 'quote' | 'fulfilment';
 
 export interface ActivePdfTemplate {
   blocks: PdfBlock[];
@@ -45,8 +47,29 @@ const DEFAULT_TEMPLATE: ActivePdfTemplate = {
   layout: { density: 'comfortable', columns: 1 },
 };
 
-function normalizeBlocks(input: unknown): PdfBlock[] {
-  if (!Array.isArray(input) || input.length === 0) return DEFAULT_TEMPLATE.blocks;
+const DEFAULT_FULFILMENT_TEMPLATE: ActivePdfTemplate = {
+  blocks: DEFAULT_FULFILMENT_BLOCKS.map((b) => ({ ...b, id: newBlockId() })),
+  chrome: {
+    brand: {
+      primaryColor: '#1E293B',
+      accentColor: '#BFF102',
+      accentDark: '#307C31',
+      textColor: '#1E293B',
+      mutedColor: '#64748B',
+      backgroundColor: '#FFFFFF',
+    },
+    header: { title: 'FULFILLMENT ORDER', tagline: 'Internal Staff Document' },
+    footer: {
+      line1: 'ShadeSpace Fulfilment - Internal Use Only',
+      line2: 'Do not share with customers',
+    },
+    paper: 'A4',
+  },
+  layout: { density: 'compact', columns: 1 },
+};
+
+function normalizeBlocks(input: unknown, fallback: PdfBlock[]): PdfBlock[] {
+  if (!Array.isArray(input) || input.length === 0) return fallback;
   return input
     .filter((b) => b && typeof b === 'object')
     .map((raw) => {
@@ -60,20 +83,26 @@ function normalizeBlocks(input: unknown): PdfBlock[] {
     });
 }
 
-let cached: { value: ActivePdfTemplate; ts: number } | null = null;
+const cacheMap: Record<PdfTemplateType, { value: ActivePdfTemplate; ts: number } | null> = {
+  quote: null,
+  fulfilment: null,
+};
 const CACHE_MS = 60_000;
 
-export async function loadActivePdfTemplate(force = false): Promise<ActivePdfTemplate> {
+export async function loadActivePdfTemplate(force = false, type: PdfTemplateType = 'quote'): Promise<ActivePdfTemplate> {
+  const cached = cacheMap[type];
   if (!force && cached && Date.now() - cached.ts < CACHE_MS) return cached.value;
+  const fallbackTemplate = type === 'fulfilment' ? DEFAULT_FULFILMENT_TEMPLATE : DEFAULT_TEMPLATE;
   try {
     const { data } = await supabase
       .from('pdf_templates')
       .select('config, blocks')
       .eq('is_active', true)
+      .eq('template_type', type)
       .maybeSingle();
     if (!data) {
-      cached = { value: DEFAULT_TEMPLATE, ts: Date.now() };
-      return DEFAULT_TEMPLATE;
+      cacheMap[type] = { value: fallbackTemplate, ts: Date.now() };
+      return fallbackTemplate;
     }
     const cfg = (data.config || {}) as Record<string, unknown>;
     const brand = (cfg.brand as ActivePdfTemplate['chrome']['brand']) || {};
@@ -81,23 +110,23 @@ export async function loadActivePdfTemplate(force = false): Promise<ActivePdfTem
     const footer = (cfg.footer as ActivePdfTemplate['chrome']['footer']) || {};
     const layout = (cfg.layout as Partial<ActivePdfTemplate['layout']>) || {};
     const value: ActivePdfTemplate = {
-      blocks: normalizeBlocks(data.blocks),
+      blocks: normalizeBlocks(data.blocks, fallbackTemplate.blocks),
       chrome: {
-        brand: { ...DEFAULT_TEMPLATE.chrome.brand, ...brand },
-        header: { ...DEFAULT_TEMPLATE.chrome.header, ...header },
-        footer: { ...DEFAULT_TEMPLATE.chrome.footer, ...footer },
-        paper: (cfg.paper as 'A4' | 'Letter') || DEFAULT_TEMPLATE.chrome.paper,
+        brand: { ...fallbackTemplate.chrome.brand, ...brand },
+        header: { ...fallbackTemplate.chrome.header, ...header },
+        footer: { ...fallbackTemplate.chrome.footer, ...footer },
+        paper: (cfg.paper as 'A4' | 'Letter') || fallbackTemplate.chrome.paper,
       },
       layout: {
-        density: (layout.density as ActivePdfTemplate['layout']['density']) || DEFAULT_TEMPLATE.layout.density,
+        density: (layout.density as ActivePdfTemplate['layout']['density']) || fallbackTemplate.layout.density,
         columns: (layout.columns === 2 ? 2 : 1) as 1 | 2,
         columnGap: typeof layout.columnGap === 'number' ? layout.columnGap : undefined,
       },
     };
-    cached = { value, ts: Date.now() };
+    cacheMap[type] = { value, ts: Date.now() };
     return value;
   } catch (err) {
     console.warn('[loadActivePdfTemplate] Failed, using defaults:', err);
-    return DEFAULT_TEMPLATE;
+    return fallbackTemplate;
   }
 }

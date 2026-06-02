@@ -12,6 +12,7 @@ export type BlockType =
   | 'diagram3D'
   | 'billOfMaterials'
   | 'resumeButton'
+  | 'orderDetails'
   | 'customText'
   | 'customImage'
   | 'customHtml'
@@ -52,6 +53,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   diagram3D: '3D Shade Sail Render',
   billOfMaterials: 'Itemised Bill of Materials',
   resumeButton: 'Resume Quote Button',
+  orderDetails: 'Order Details (Fulfilment)',
   customText: 'Custom Text',
   customImage: 'Custom Image',
   customHtml: 'Custom HTML',
@@ -74,6 +76,7 @@ export const DYNAMIC_TYPES: BlockType[] = [
   'diagram3D',
   'billOfMaterials',
   'resumeButton',
+  'orderDetails',
 ];
 
 export const DEFAULT_BLOCKS: PdfBlock[] = [
@@ -89,6 +92,16 @@ export const DEFAULT_BLOCKS: PdfBlock[] = [
   { id: 'b-guarantee', type: 'guarantee', visible: true, props: { title: 'Premium Quality Guarantee' } },
   { id: 'b-callout', type: 'pricingCallout', visible: true, props: { title: 'All-Inclusive Price to Your Door' } },
   { id: 'b-resume', type: 'resumeButton', visible: true, props: { title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' } },
+];
+
+export const DEFAULT_FULFILMENT_BLOCKS: PdfBlock[] = [
+  { id: 'f-order', type: 'orderDetails', visible: true, props: { title: 'Order Details' } },
+  { id: 'f-diagram', type: 'diagramImage', visible: true, props: { title: 'Shade Sail Diagram', maxWidth: 520 } },
+  { id: 'f-summary', type: 'summary', visible: true, props: { title: 'Configuration Summary' } },
+  { id: 'f-measurements', type: 'measurements', visible: true, props: { title: 'Measurements' } },
+  { id: 'f-anchor', type: 'anchorPoints', visible: true, props: { title: 'Anchor Points' } },
+  { id: 'f-hardware', type: 'hardwareBreakdown', visible: true, props: { title: 'Hardware Breakdown' } },
+  { id: 'f-steps', type: 'stepSelections', visible: true, props: { title: 'Step-by-Step Selections' } },
 ];
 
 export function makeDefaultProps(type: BlockType): Record<string, unknown> {
@@ -112,6 +125,8 @@ export function makeDefaultProps(type: BlockType): Record<string, unknown> {
       return { ...base, title: '3D Shade Sail Render', maxWidth: 520 };
     case 'resumeButton':
       return { ...base, title: 'Resume Your Quote & Add to Cart', label: 'Open My Saved Quote' };
+    case 'orderDetails':
+      return { ...base, title: 'Order Details', showRows: { customerName: true, email: true, quoteReference: true, shopifyOrderNumber: true, shippingAddress: true, weight: true, orderNotes: true, date: true } };
     default:
       return { ...base, title: BLOCK_LABELS[type] };
   }
@@ -120,6 +135,55 @@ export function makeDefaultProps(type: BlockType): Record<string, unknown> {
 export function newBlockId(): string {
   return `b-${Math.random().toString(36).slice(2, 10)}`;
 }
+
+/**
+ * Defines which rows each dynamic block type can show/hide.
+ * Used by PdfStudio to render row-level visibility toggles.
+ */
+export const BLOCK_ROW_DEFINITIONS: Partial<Record<BlockType, { key: string; label: string }[]>> = {
+  orderDetails: [
+    { key: 'customerName', label: 'Customer Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'quoteReference', label: 'Quote Reference' },
+    { key: 'shopifyOrderNumber', label: 'Shopify Order Number' },
+    { key: 'shippingAddress', label: 'Shipping Address' },
+    { key: 'weight', label: 'Estimated Weight' },
+    { key: 'orderNotes', label: 'Order Notes' },
+    { key: 'date', label: 'Date' },
+  ],
+  quoteMeta: [
+    { key: 'customerName', label: 'Customer Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'quoteReference', label: 'Quote Reference' },
+    { key: 'quoteName', label: 'Quote Name' },
+    { key: 'customerReference', label: 'Customer Reference' },
+    { key: 'date', label: 'Date' },
+  ],
+  summary: [
+    { key: 'fabricMaterial', label: 'Fabric Material' },
+    { key: 'fabricColor', label: 'Fabric Color' },
+    { key: 'corners', label: 'Corners' },
+    { key: 'totalArea', label: 'Total Area' },
+    { key: 'edgeReinforcement', label: 'Edge Reinforcement' },
+    { key: 'thread', label: 'Thread' },
+    { key: 'fabricationMethod', label: 'Fabrication Method' },
+  ],
+  stepSelections: [
+    { key: 'manufacturing', label: 'Manufacturing Approach' },
+    { key: 'fabrication', label: 'Fabrication Method' },
+    { key: 'corners', label: 'Number of Corners' },
+    { key: 'units', label: 'Measurement Units' },
+    { key: 'fabric', label: 'Fabric' },
+    { key: 'edge', label: 'Edge Reinforcement' },
+    { key: 'hardware', label: 'Tensioning Hardware' },
+    { key: 'fixingPoints', label: 'Fixing Points' },
+  ],
+  priceBreakdown: [
+    { key: 'shadeSail', label: 'Shade Sail Cost' },
+    { key: 'hardware', label: 'Hardware Cost' },
+    { key: 'total', label: 'Total' },
+  ],
+};
 
 export function escapeHtml(s: unknown): string {
   return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({

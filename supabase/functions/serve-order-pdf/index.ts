@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
     const { data: quote, error: quoteErr } = await supabase
       .from("saved_quotes")
       .select(
-        "id, quote_reference, quote_name, customer_first_name, customer_last_name, customer_email, customer_reference, config_data, calculations_data, diagram_public_url, diagram_3d_public_url, created_at, access_token, shopify_order_number"
+        "id, quote_reference, quote_name, customer_first_name, customer_last_name, customer_email, customer_reference, config_data, calculations_data, diagram_public_url, diagram_3d_public_url, created_at, access_token, shopify_order_number, shipping_address, estimated_weight_kg, order_notes"
       )
       .eq("quote_reference", ref)
       .maybeSingle();
@@ -64,12 +64,25 @@ Deno.serve(async (req: Request) => {
       return htmlResponse(errorPage("Quote not found. The reference may be invalid or expired."), 404);
     }
 
-    // Load active PDF template
-    const { data: templateRow } = await supabase
+    // Load active fulfilment PDF template (fall back to quote template)
+    let templateRow = null;
+    const { data: fulfilmentTemplate } = await supabase
       .from("pdf_templates")
       .select("config, blocks")
       .eq("is_active", true)
+      .eq("template_type", "fulfilment")
       .maybeSingle();
+    if (fulfilmentTemplate) {
+      templateRow = fulfilmentTemplate;
+    } else {
+      const { data: quoteTemplate } = await supabase
+        .from("pdf_templates")
+        .select("config, blocks")
+        .eq("is_active", true)
+        .eq("template_type", "quote")
+        .maybeSingle();
+      templateRow = quoteTemplate;
+    }
 
     const defaultBrand = {
       primaryColor: "#01312D",
@@ -113,11 +126,15 @@ Deno.serve(async (req: Request) => {
       created_at: quote.created_at,
       config_data: quote.config_data,
       calculations_data: quote.calculations_data,
+      shopify_order_number: quote.shopify_order_number,
+      shipping_address: quote.shipping_address,
+      estimated_weight_kg: quote.estimated_weight_kg,
+      order_notes: quote.order_notes,
     };
 
     const quoteHtml = buildQuoteHtml(brand, header, footer, blocks, live, density);
     const customerName = [quote.customer_first_name, quote.customer_last_name].filter(Boolean).join(" ").trim() || "Customer";
-    const filename = `shade-sail-quote-${quote.quote_reference}.pdf`;
+    const filename = `shade-sail-fulfilment-${quote.quote_reference}.pdf`;
 
     const page = renderDownloadPage(quoteHtml, filename, customerName, quote.quote_reference, paper);
     return htmlResponse(page);
@@ -177,6 +194,7 @@ const BLOCK_LABELS: Record<string, string> = {
   guarantee: "Quality Guarantee",
   pricingCallout: "Total Price",
   quoteMeta: "Quote Details",
+  orderDetails: "Order Details",
   stepSelections: "Step-by-Step Selections",
   diagramImage: "Shade Sail Diagram",
   diagram3D: "3D Render",
@@ -247,6 +265,16 @@ interface LiveData {
   created_at?: string | null;
   config_data?: Record<string, unknown> | null;
   calculations_data?: Record<string, unknown> | null;
+  shopify_order_number?: string | null;
+  shipping_address?: { address1?: string; address2?: string; city?: string; province?: string; zip?: string; country?: string } | null;
+  estimated_weight_kg?: number | null;
+  order_notes?: string | null;
+}
+
+function isRowVisible(block: PdfBlock, rowKey: string): boolean {
+  const showRows = block.props?.showRows as Record<string, boolean> | undefined;
+  if (!showRows) return true;
+  return showRows[rowKey] !== false;
 }
 
 function renderBlock(block: PdfBlock, brand: Record<string, string>, live: LiveData): string {
@@ -364,13 +392,40 @@ function renderBlock(block: PdfBlock, brand: Record<string, string>, live: LiveD
         : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
       const custRef = live.customer_reference || (cfgData?.customerReference as string | undefined);
       const quoteName = live.quote_name || (cfgData?.quoteName as string | undefined);
-      return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Customer Name</span><span class="val">${escapeHtml(name)}</span></div>
-        <div class="row"><span class="muted">Email</span><span class="val">${escapeHtml(email)}</span></div>
-        <div class="row"><span class="muted">Quote Reference</span><span class="val">${escapeHtml(qRef)}</span></div>
-        ${quoteName ? `<div class="row"><span class="muted">Quote Name</span><span class="val">${escapeHtml(quoteName)}</span></div>` : ""}
-        ${custRef ? `<div class="row"><span class="muted">Customer Reference</span><span class="val">${escapeHtml(custRef)}</span></div>` : ""}
-        <div class="row"><span class="muted">Date</span><span class="val">${escapeHtml(date)}</span></div>`;
+      const qmRows: string[] = [];
+      if (isRowVisible(block, "customerName")) qmRows.push(`<div class="row"><span class="muted">Customer Name</span><span class="val">${escapeHtml(name)}</span></div>`);
+      if (isRowVisible(block, "email")) qmRows.push(`<div class="row"><span class="muted">Email</span><span class="val">${escapeHtml(email)}</span></div>`);
+      if (isRowVisible(block, "quoteReference")) qmRows.push(`<div class="row"><span class="muted">Quote Reference</span><span class="val">${escapeHtml(qRef)}</span></div>`);
+      if (isRowVisible(block, "quoteName") && quoteName) qmRows.push(`<div class="row"><span class="muted">Quote Name</span><span class="val">${escapeHtml(quoteName)}</span></div>`);
+      if (isRowVisible(block, "customerReference") && custRef) qmRows.push(`<div class="row"><span class="muted">Customer Reference</span><span class="val">${escapeHtml(custRef)}</span></div>`);
+      if (isRowVisible(block, "date")) qmRows.push(`<div class="row"><span class="muted">Date</span><span class="val">${escapeHtml(date)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${qmRows.join("")}`;
+    }
+    case "orderDetails": {
+      const fullName = [live.customer_first_name, live.customer_last_name].filter(Boolean).join(" ").trim();
+      const name = fullName || "Pending (from Shopify order)";
+      const email = live.customer_email || "Pending";
+      const odRef = live.quote_reference || "Pending";
+      const orderNum = live.shopify_order_number || "Pending";
+      const date = live.created_at
+        ? new Date(live.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+      const addr = live.shipping_address;
+      const addressStr = addr
+        ? [addr.address1, addr.address2, addr.city, addr.province, addr.zip, addr.country].filter(Boolean).join(", ")
+        : "Pending (from Shopify order)";
+      const weight = live.estimated_weight_kg != null ? `${live.estimated_weight_kg} kg` : "Calculated at fulfilment";
+      const notes = live.order_notes || "None";
+      const odRows: string[] = [];
+      if (isRowVisible(block, "customerName")) odRows.push(`<div class="row"><span class="muted">Customer Name</span><span class="val">${escapeHtml(name)}</span></div>`);
+      if (isRowVisible(block, "email")) odRows.push(`<div class="row"><span class="muted">Email</span><span class="val">${escapeHtml(email)}</span></div>`);
+      if (isRowVisible(block, "quoteReference")) odRows.push(`<div class="row"><span class="muted">Quote Reference</span><span class="val">${escapeHtml(odRef)}</span></div>`);
+      if (isRowVisible(block, "shopifyOrderNumber")) odRows.push(`<div class="row"><span class="muted">Shopify Order</span><span class="val">#${escapeHtml(orderNum)}</span></div>`);
+      if (isRowVisible(block, "shippingAddress")) odRows.push(`<div class="row"><span class="muted">Shipping Address</span><span class="val">${escapeHtml(addressStr)}</span></div>`);
+      if (isRowVisible(block, "weight")) odRows.push(`<div class="row"><span class="muted">Estimated Weight</span><span class="val">${escapeHtml(weight)}</span></div>`);
+      if (isRowVisible(block, "orderNotes")) odRows.push(`<div class="row"><span class="muted">Order Notes</span><span class="val">${escapeHtml(notes)}</span></div>`);
+      if (isRowVisible(block, "date")) odRows.push(`<div class="row"><span class="muted">Date</span><span class="val">${escapeHtml(date)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${odRows.join("")}`;
     }
     case "stepSelections": {
       const manufacturing = cfgData?.measurementOption === "exact"
