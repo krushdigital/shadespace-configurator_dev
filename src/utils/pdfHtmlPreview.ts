@@ -183,14 +183,19 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
   const corners = cfgData?.corners ?? 4;
   const unit: 'metric' | 'imperial' = cfgData?.unit || 'metric';
   switch (block.type) {
-    case 'summary':
+    case 'summary': {
+      const fabricationMethodSummary = cfgData?.measurementOption === 'adjust'
+        ? 'Manufactured to fit my space'
+        : 'Custom dimensions provided by customer';
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>
         <div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>
         <div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>
         <div class="row"><span class="muted">Total Area</span><span class="val">${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)}</span></div>
         <div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${cfgData?.edgeType === 'webbing' ? 'Webbing Reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled Edge' : 'Webbing Reinforced'}</span></div>
-        <div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>`;
+        <div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>
+        <div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethodSummary)}</span></div>`;
+    }
     case 'measurements': {
       if (cfgData && cfgData.measurements) {
         const edges: string[] = [];
@@ -320,12 +325,16 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       const manufacturing = cfgData?.measurementOption === 'exact'
         ? 'Manufacture Shade Sail to the Exact Dimensions I provide'
         : 'Manufacture Shade Sail to fit my Space';
+      const fabricationMethod = cfgData?.measurementOption === 'adjust'
+        ? 'Manufactured to fit my space'
+        : 'Custom dimensions provided by customer';
       const hwMode = cfgData?.hardwareSelectionMode || (cfgData?.measurementOption === 'adjust' ? 'standard' : 'none');
       const hwLabel = hwMode === 'standard' ? `Standard tensioning kit included (${corners}-corner pack)` : hwMode === 'manual' ? 'Manual hardware per corner' : 'No tensioning hardware';
       const fixingLabel = cfgData?.fixingPointsInstalled === true ? 'Already installed' : cfgData?.fixingPointsInstalled === false ? 'Planning installation' : 'Not specified';
       const edgeLabel = cfgData?.edgeType === 'webbing' ? 'Webbing reinforced' : cfgData?.edgeType === 'cabled' ? 'Cabled edge' : 'Webbing reinforced';
       const rows: Array<[string, string]> = [
         ['Manufacturing Approach', manufacturing],
+        ['Fabrication Method', fabricationMethod],
         ['Number of Corners', `${corners}-corner shade sail`],
         ['Measurement Units', unit === 'metric' ? 'Metric (mm / m)' : 'Imperial (in / ft)'],
         ['Fabric', `${fabricLabel}${fabricColor ? ` - ${fabricColor}` : ''}`],
