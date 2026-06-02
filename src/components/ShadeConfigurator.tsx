@@ -933,8 +933,7 @@ export function ShadeConfigurator() {
   const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
   const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
 
-  const canAddToCart = !purchasedOrder &&
-    allDiagonalsEntered &&
+  const canAddToCart = allDiagonalsEntered &&
     allAcknowledgmentsChecked &&
     (!heightIsRequiredForCheckout || allHeightsProvided);
 
