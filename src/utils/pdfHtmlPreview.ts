@@ -203,6 +203,7 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       if (isRowVisible(block, 'fabricColor')) sRows.push(`<div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>`);
       if (isRowVisible(block, 'corners')) sRows.push(`<div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>`);
       if (isRowVisible(block, 'totalArea')) sRows.push(`<div class="row"><span class="muted">Total Area</span><span class="val">${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)}</span></div>`);
+      if (isRowVisible(block, 'edgePerimeter')) sRows.push(`<div class="row"><span class="muted">Edge Perimeter</span><span class="val">${formatMeasurementPreview((calc?.perimeter || 14) * 1000, unit)}</span></div>`);
       if (isRowVisible(block, 'edgeReinforcement')) sRows.push(`<div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${edgeLabel}</span></div>`);
       if (isRowVisible(block, 'thread')) sRows.push(`<div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>`);
       if (isRowVisible(block, 'fabricationMethod')) sRows.push(`<div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethodSummary)}</span></div>`);

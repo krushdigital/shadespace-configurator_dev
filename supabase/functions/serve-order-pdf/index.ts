@@ -296,14 +296,17 @@ function renderBlock(block: PdfBlock, brand: Record<string, string>, live: LiveD
         ? "Manufactured to fit my space"
         : "Custom dimensions provided by customer";
       const edgeType = cfgData?.edgeType === "cabled" ? "Cabled Edge" : "Webbing Reinforced";
-      return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>
-        <div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>
-        <div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>
-        <div class="row"><span class="muted">Total Area</span><span class="val">${formatArea(((calc?.area as number) || 12.5) * 1000000, unit)}</span></div>
-        <div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${edgeType}</span></div>
-        <div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>
-        <div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethod)}</span></div>`;
+      const perimeterMm = ((calc?.perimeter as number) || 14) * 1000;
+      const sRows: string[] = [];
+      if (isRowVisible(block, "fabricMaterial")) sRows.push(`<div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>`);
+      if (isRowVisible(block, "fabricColor")) sRows.push(`<div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>`);
+      if (isRowVisible(block, "corners")) sRows.push(`<div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>`);
+      if (isRowVisible(block, "totalArea")) sRows.push(`<div class="row"><span class="muted">Total Area</span><span class="val">${formatArea(((calc?.area as number) || 12.5) * 1000000, unit)}</span></div>`);
+      if (isRowVisible(block, "edgePerimeter")) sRows.push(`<div class="row"><span class="muted">Edge Perimeter</span><span class="val">${formatMeasurement(perimeterMm, unit)}</span></div>`);
+      if (isRowVisible(block, "edgeReinforcement")) sRows.push(`<div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${edgeType}</span></div>`);
+      if (isRowVisible(block, "thread")) sRows.push(`<div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>`);
+      if (isRowVisible(block, "fabricationMethod")) sRows.push(`<div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethod)}</span></div>`);
+      return `<h2>${escapeHtml(title)}</h2>${sRows.join("")}`;
     }
     case "measurements": {
       const edges: string[] = [];

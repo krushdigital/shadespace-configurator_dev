@@ -164,6 +164,7 @@ export const BLOCK_ROW_DEFINITIONS: Partial<Record<BlockType, { key: string; lab
     { key: 'fabricColor', label: 'Fabric Color' },
     { key: 'corners', label: 'Corners' },
     { key: 'totalArea', label: 'Total Area' },
+    { key: 'edgePerimeter', label: 'Edge Perimeter' },
     { key: 'edgeReinforcement', label: 'Edge Reinforcement' },
     { key: 'thread', label: 'Thread' },
     { key: 'fabricationMethod', label: 'Fabrication Method' },
