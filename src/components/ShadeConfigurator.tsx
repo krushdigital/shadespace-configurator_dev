@@ -1372,7 +1372,6 @@ export function ShadeConfigurator() {
       const allowedCartProperties = [
         'fabric_material',
         'fabric_color',
-        'fabric_certification_type',
         'edge_type',
         'wire_thickness',
         'corners',
@@ -1408,9 +1407,9 @@ export function ShadeConfigurator() {
       {
         const mode = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
         if (mode === 'standard') {
-          metafieldProperties['Hardware Included'] = 'Included';
+          metafieldProperties['Hardware Pack'] = 'Included';
         } else if (mode === 'none') {
-          metafieldProperties['Hardware Included'] = 'Not Included';
+          metafieldProperties['Hardware Pack'] = 'Not Included';
         }
       }
 
