@@ -24,7 +24,8 @@ interface ShopifyOrder {
   created_at: string;
   financial_status: string;
   note_attributes?: Array<{ name: string; value: string }>;
-  customer?: { id: number; email: string };
+  customer?: { id: number; email: string; first_name?: string; last_name?: string };
+  shipping_address?: { first_name?: string; last_name?: string };
 }
 
 Deno.serve(async (req: Request) => {
@@ -148,14 +149,35 @@ Deno.serve(async (req: Request) => {
       }
 
       if (matchedQuoteId) {
+        const shippingFirst = order.shipping_address?.first_name || order.customer?.first_name || "";
+        const shippingLast = order.shipping_address?.last_name || order.customer?.last_name || "";
+
+        const { data: existingQuote } = await supabase
+          .from("saved_quotes")
+          .select("customer_first_name, customer_last_name, customer_email")
+          .eq("id", matchedQuoteId)
+          .maybeSingle();
+
+        const updatePayload: Record<string, unknown> = {
+          status: "purchased",
+          shopify_order_id: shopifyOrderId,
+          shopify_order_number: shopifyOrderNumber,
+          purchased_at: purchasedAt,
+        };
+
+        if (!existingQuote?.customer_first_name && shippingFirst) {
+          updatePayload.customer_first_name = shippingFirst;
+        }
+        if (!existingQuote?.customer_last_name && shippingLast) {
+          updatePayload.customer_last_name = shippingLast;
+        }
+        if (!existingQuote?.customer_email && customerEmail) {
+          updatePayload.customer_email = customerEmail;
+        }
+
         await supabase
           .from("saved_quotes")
-          .update({
-            status: "purchased",
-            shopify_order_id: shopifyOrderId,
-            shopify_order_number: shopifyOrderNumber,
-            purchased_at: purchasedAt,
-          })
+          .update(updatePayload)
           .eq("id", matchedQuoteId);
 
         await supabase.from("email_suppressed_customers").upsert(

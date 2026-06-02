@@ -1,0 +1,326 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-Client-Info, Apikey",
+};
+
+function jsonResponse(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function generateReference(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let ref = "";
+  for (let i = 0; i < 8; i++) {
+    ref += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return ref;
+}
+
+function generateAccessToken(): string {
+  const chars =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let token = "";
+  for (let i = 0; i < 48; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 200, headers: corsHeaders });
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  try {
+    if (req.method === "GET") {
+      return handleGet(req, supabase);
+    } else if (req.method === "POST") {
+      return handlePost(req, supabase);
+    } else if (req.method === "PATCH") {
+      return handlePatch(req, supabase);
+    }
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  } catch (err) {
+    console.error("save-quote error:", err);
+    return jsonResponse(
+      { error: err instanceof Error ? err.message : String(err) },
+      500
+    );
+  }
+});
+
+async function handleGet(
+  req: Request,
+  supabase: ReturnType<typeof createClient>
+) {
+  const url = new URL(req.url);
+  const id = url.searchParams.get("id");
+  const token = url.searchParams.get("token");
+
+  if (!id || !token) {
+    return jsonResponse({ error: "id and token are required" }, 400);
+  }
+
+  const { data: quote, error } = await supabase
+    .from("saved_quotes")
+    .select("*")
+    .eq("id", id)
+    .eq("access_token", token)
+    .maybeSingle();
+
+  if (error || !quote) {
+    return jsonResponse(
+      { success: false, error: "Quote not found or invalid token" },
+      404
+    );
+  }
+
+  // Update last accessed
+  await supabase
+    .from("saved_quotes")
+    .update({ last_accessed_at: new Date().toISOString() })
+    .eq("id", id);
+
+  // Determine pricing status
+  const pricingLockedUntil = quote.pricing_locked_until;
+  const pricingStatus =
+    pricingLockedUntil && new Date(pricingLockedUntil) > new Date()
+      ? "locked"
+      : "live";
+
+  return jsonResponse({
+    success: true,
+    quote: {
+      id: quote.id,
+      quote_reference: quote.quote_reference,
+      quote_name: quote.quote_name,
+      customer_reference: quote.customer_reference,
+      name_auto_generated: quote.name_auto_generated,
+      customer_email: quote.customer_email,
+      customer_first_name: quote.customer_first_name,
+      customer_last_name: quote.customer_last_name,
+      config_data: quote.config_data,
+      calculations_data: quote.calculations_data,
+      pricing_snapshot: quote.pricing_snapshot,
+      locked_total: quote.locked_total,
+      locked_total_currency: quote.locked_total_currency,
+      locked_total_base_nzd: quote.locked_total_base_nzd,
+      locked_fx_rate: quote.locked_fx_rate,
+      locked_market_markup: quote.locked_market_markup,
+      locked_zonos_dhl_markup: quote.locked_zonos_dhl_markup,
+      locked_at: quote.locked_at,
+      created_at: quote.created_at,
+      expires_at: quote.expires_at,
+      pricing_locked_until: pricingLockedUntil,
+      pricing_status: pricingStatus,
+      status: quote.status,
+      current_step: quote.current_step,
+      total_steps: quote.total_steps,
+      shopify_order_id: quote.shopify_order_id,
+      shopify_order_number: quote.shopify_order_number,
+      purchased_at: quote.purchased_at,
+    },
+  });
+}
+
+async function handlePost(
+  req: Request,
+  supabase: ReturnType<typeof createClient>
+) {
+  const body = await req.json();
+  const {
+    config,
+    calculations,
+    email,
+    quoteName,
+    customerReference,
+    currentStep,
+    totalSteps,
+    pricingSnapshot,
+    firstName,
+    lastName,
+    canvasImageUrl,
+    canvasImage3DUrl,
+    status: requestedStatus,
+  } = body;
+
+  if (!config || !calculations) {
+    return jsonResponse(
+      { error: "config and calculations are required" },
+      400
+    );
+  }
+
+  const reference = generateReference();
+  const accessToken = generateAccessToken();
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); // 90 days
+  const pricingLockedUntil = new Date(
+    now.getTime() + 14 * 24 * 60 * 60 * 1000
+  ); // 14 days
+
+  const nameAutoGenerated = !quoteName;
+  const finalQuoteName = quoteName || `Quote ${reference}`;
+
+  // Determine initial status
+  const validStatuses = [
+    "in_progress",
+    "quote_ready",
+    "completed",
+    "checkout_pending",
+  ];
+  const initialStatus = requestedStatus && validStatuses.includes(requestedStatus)
+    ? requestedStatus
+    : "quote_ready";
+
+  // Determine locked total from calculations
+  const lockedTotal =
+    calculations.totalPrice && calculations.totalPrice > 0
+      ? calculations.totalPrice
+      : null;
+  const lockedCurrency = config.currency || null;
+
+  const insertPayload: Record<string, unknown> = {
+    quote_reference: reference,
+    access_token: accessToken,
+    customer_email: email || null,
+    customer_first_name: firstName || null,
+    customer_last_name: lastName || null,
+    config_data: config,
+    calculations_data: calculations,
+    quote_name: finalQuoteName,
+    customer_reference: customerReference || null,
+    name_auto_generated: nameAutoGenerated,
+    current_step: currentStep ?? 7,
+    total_steps: totalSteps ?? 7,
+    completion_percentage: currentStep && totalSteps
+      ? Math.round((currentStep / totalSteps) * 100)
+      : 100,
+    status: initialStatus,
+    expires_at: expiresAt.toISOString(),
+    pricing_locked_until: pricingLockedUntil.toISOString(),
+    pricing_snapshot: pricingSnapshot || null,
+    locked_total: lockedTotal,
+    locked_total_currency: lockedCurrency,
+    locked_at: lockedTotal ? now.toISOString() : null,
+    diagram_public_url: canvasImageUrl || null,
+    diagram_3d_public_url: canvasImage3DUrl || null,
+  };
+
+  const { data: inserted, error: insertErr } = await supabase
+    .from("saved_quotes")
+    .insert(insertPayload)
+    .select("id")
+    .single();
+
+  if (insertErr) {
+    console.error("Insert error:", insertErr);
+    return jsonResponse({ success: false, error: insertErr.message }, 500);
+  }
+
+  // Skip Shopify customer creation for checkout_pending (no email available)
+  let shopifyCustomerCreated = false;
+  let shopifyCustomerId: string | null = null;
+
+  if (email && initialStatus !== "checkout_pending") {
+    try {
+      const addCustomerUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/add-shopify-customer`;
+      const custResponse = await fetch(addCustomerUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          firstName: firstName || null,
+          lastName: lastName || null,
+          quoteReference: reference,
+        }),
+      });
+      if (custResponse.ok) {
+        const custData = await custResponse.json();
+        if (custData.customerId) {
+          shopifyCustomerCreated = true;
+          shopifyCustomerId = custData.customerId;
+          await supabase
+            .from("saved_quotes")
+            .update({ shopify_customer_id: shopifyCustomerId })
+            .eq("id", inserted.id);
+        }
+      }
+    } catch (custErr) {
+      console.warn("Shopify customer creation failed (non-blocking):", custErr);
+    }
+  }
+
+  return jsonResponse({
+    success: true,
+    quote: {
+      id: inserted.id,
+      reference,
+      expiresAt: expiresAt.toISOString(),
+      pricingLockedUntil: pricingLockedUntil.toISOString(),
+      quoteName: finalQuoteName,
+      customerReference: customerReference || null,
+      nameAutoGenerated,
+      accessToken,
+      shopifyCustomerCreated,
+      shopifyCustomerId,
+      currentStep: currentStep ?? 7,
+      totalSteps: totalSteps ?? 7,
+      status: initialStatus,
+    },
+  });
+}
+
+async function handlePatch(
+  req: Request,
+  supabase: ReturnType<typeof createClient>
+) {
+  const body = await req.json();
+  const { id, token, status } = body;
+
+  if (!id || !token) {
+    return jsonResponse({ error: "id and token are required" }, 400);
+  }
+
+  // Verify access
+  const { data: existing } = await supabase
+    .from("saved_quotes")
+    .select("id")
+    .eq("id", id)
+    .eq("access_token", token)
+    .maybeSingle();
+
+  if (!existing) {
+    return jsonResponse(
+      { success: false, error: "Quote not found or invalid token" },
+      404
+    );
+  }
+
+  const updatePayload: Record<string, unknown> = {};
+  if (status) {
+    updatePayload.status = status;
+  }
+
+  if (Object.keys(updatePayload).length > 0) {
+    await supabase.from("saved_quotes").update(updatePayload).eq("id", id);
+  }
+
+  return jsonResponse({ success: true });
+}

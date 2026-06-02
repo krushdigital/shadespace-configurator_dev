@@ -30,7 +30,8 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
-import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted, QuoteData } from '../utils/quoteManager';
+import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
+import { generateDefaultQuoteName } from '../utils/quoteNaming';
 import { PricingSetting } from '../hooks/usePricingSettings';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
@@ -1104,6 +1105,30 @@ export function ShadeConfigurator() {
     }
   }
 
+  // Auto-create a saved_quotes row if the user never explicitly saved.
+  // This ensures the Shopify order webhook can match the order and backfill
+  // the customer name from their shipping address for the fulfillment PDF.
+  let autoSavedRef = quoteReference;
+  if (!autoSavedRef) {
+    try {
+      setLoadingStep({ text: 'Preparing order details...', progress: 15 });
+      const autoQuoteName = generateDefaultQuoteName(config, calculations);
+      const autoResult = await saveQuoteForCheckout(
+        config,
+        calculations,
+        autoQuoteName,
+        pricingSettingsMap || null,
+        orderData.canvasImageUrl || null,
+        null
+      );
+      autoSavedRef = autoResult.reference;
+      setQuoteReference(autoResult.reference);
+      console.log('Auto-saved quote for checkout:', autoResult.reference);
+    } catch (autoSaveErr) {
+      console.error('Auto-save for checkout failed (non-blocking):', autoSaveErr);
+    }
+  }
+
   const email: string | null = quoteData?.customer_email ?? capturedCustomerDetails?.email ?? null;
 
   try {
@@ -1345,7 +1370,7 @@ export function ShadeConfigurator() {
         originalUnit: config.unit,
         pdfUrl: pdfUrl || null,
         fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
-        quoteReference: quoteReference || null,
+        quoteReference: autoSavedRef || quoteReference || null,
         totalPrice: authoritativeTotal,
         currency: authoritativeCurrency, // Always send selected currency
         lockedTotal: lockedQuote?.total ?? null,
@@ -1428,7 +1453,7 @@ export function ShadeConfigurator() {
 
         // ============ PDF URL: Use dynamic serve-order-pdf endpoint ============
         // This generates the PDF on-demand with the latest customer details from the Shopify order
-        const quoteRef = quoteReference || (metafieldProperties['_locked_quote_reference'] as string) || null;
+        const quoteRef = autoSavedRef || quoteReference || (metafieldProperties['_locked_quote_reference'] as string) || null;
         if (quoteRef) {
           const dynamicPdfUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-order-pdf?ref=${encodeURIComponent(quoteRef)}`;
           metafieldProperties['_quote_pdf_url'] = dynamicPdfUrl;
