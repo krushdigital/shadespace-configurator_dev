@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { ConfiguratorState, ShadeCalculations } from '../types';
@@ -497,8 +498,8 @@ export function UnifiedSaveModal({
     });
   };
 
-  return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4" onClick={handleClose}>
+  return createPortal(
+    <div data-lenis-prevent className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4" onClick={handleClose}>
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-6 pb-0">
           <div />
@@ -843,6 +844,7 @@ export function UnifiedSaveModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
