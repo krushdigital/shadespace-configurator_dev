@@ -2,14 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-/** App Proxy timestamps must be within this window (seconds) to prevent replays. */
 const PROXY_TIMESTAMP_TOLERANCE_S = 300;
 
-/**
- * CORS headers scoped to the Shopify store origin.
- * App Proxy requests originate from Shopify servers; these headers cover
- * browser-side embedded/iframe scenarios.
- */
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://shadespace.myshopify.com",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -31,15 +25,11 @@ export interface SavedQuoteRow {
   access_token: string;
   diagram_public_url: string | null;
   config_data: Record<string, unknown>;
+  shopify_order_number: string | null;
+  purchased_at: string | null;
 }
 
-/**
- * Verifies a Shopify App Proxy HMAC signature.
- * Fails closed: returns false when secret is empty or missing.
- * Uses constant-time comparison to prevent timing attacks.
- */
 export function verifyShopifyProxy(query: URLSearchParams, secret: string): boolean {
-  // Fail closed — never allow a request through without a valid secret
   if (!secret) return false;
 
   const signature = query.get("signature");
@@ -58,22 +48,16 @@ export function verifyShopifyProxy(query: URLSearchParams, secret: string): bool
   hmac.update(message);
   const computed = hmac.digest("hex");
 
-  // Constant-time comparison prevents timing-based signature extraction
   try {
     return timingSafeEqual(
       Buffer.from(computed, "hex"),
       Buffer.from(signature, "hex"),
     );
   } catch {
-    // Signatures differ in byte length — cannot be equal
     return false;
   }
 }
 
-/**
- * Validates that the App Proxy timestamp is within the tolerance window.
- * Prevents replay attacks using captured valid requests.
- */
 export function validateTimestamp(query: URLSearchParams): boolean {
   const ts = query.get("timestamp");
   if (!ts) return false;
@@ -85,7 +69,7 @@ export function validateTimestamp(query: URLSearchParams): boolean {
 
 function formatPrice(amount: number, currency: string): string {
   const symbols: Record<string, string> = {
-    NZD: "$", AUD: "$", USD: "$", CAD: "$", GBP: "£", EUR: "€",
+    NZD: "$", AUD: "$", USD: "$", CAD: "$", GBP: "\u00a3", EUR: "\u20ac",
   };
   const symbol = symbols[currency.toUpperCase()] || "$";
   return `${symbol}${amount.toFixed(2)} ${currency.toUpperCase()}`;
@@ -114,8 +98,18 @@ function buildResumeUrl(quoteId: string, token: string, currency?: string): stri
   return `https://${domain}/pages/shade-sail-configurator?quote=${safeId}&token=${safeToken}&_ab=0&_fd=0#quote=${safeId}&token=${safeToken}`;
 }
 
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 function renderDesignCard(q: SavedQuoteRow): string {
   const isReady = q.status === "quote_ready";
+  const isPurchased = q.status === "purchased";
   const currency = q.locked_total_currency || (q.config_data?.currency as string) || "NZD";
   const resumeUrl = buildResumeUrl(q.id, q.access_token, currency);
   const addToCartUrl = `${resumeUrl}&action=add-to-cart`;
@@ -126,21 +120,38 @@ function renderDesignCard(q: SavedQuoteRow): string {
         <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="#94a3b8" stroke-width="1.5"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
        </div>`;
 
-  const statusBadge = isReady
-    ? `<span style="display:inline-block;background:#dcfce7;color:#166534;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;">Ready to Purchase</span>`
-    : `<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;">In Progress</span>`;
+  let statusBadge: string;
+  if (isPurchased) {
+    const orderLabel = q.shopify_order_number ? ` \u2014 Order ${escapeHtml(q.shopify_order_number)}` : "";
+    statusBadge = `<span style="display:inline-block;background:#01312D;color:#ffffff;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;">Purchased${orderLabel}</span>`;
+  } else if (isReady) {
+    statusBadge = `<span style="display:inline-block;background:#dcfce7;color:#166534;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;">Ready to Purchase</span>`;
+  } else {
+    statusBadge = `<span style="display:inline-block;background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;">In Progress</span>`;
+  }
 
-  const priceSection = isReady && q.locked_total
-    ? `<div style="font-size:20px;font-weight:800;color:#01312D;margin:10px 0 4px 0;">${formatPrice(q.locked_total, currency)}</div>
-       ${q.pricing_locked_until ? `<div style="font-size:11px;color:#64748B;">Price locked until ${formatDate(q.pricing_locked_until)}</div>` : ""}`
-    : `<div style="font-size:13px;color:#64748B;margin:10px 0 4px 0;">${getProgressText(q.current_step, q.total_steps)}</div>`;
+  let priceSection: string;
+  if (isPurchased && q.locked_total) {
+    priceSection = `<div style="font-size:20px;font-weight:800;color:#01312D;margin:10px 0 4px 0;">${formatPrice(q.locked_total, currency)}</div>
+       <div style="font-size:11px;color:#64748B;">Purchased ${q.purchased_at ? formatDate(q.purchased_at) : ""}</div>`;
+  } else if (isReady && q.locked_total) {
+    priceSection = `<div style="font-size:20px;font-weight:800;color:#01312D;margin:10px 0 4px 0;">${formatPrice(q.locked_total, currency)}</div>
+       ${q.pricing_locked_until ? `<div style="font-size:11px;color:#64748B;">Price locked until ${formatDate(q.pricing_locked_until)}</div>` : ""}`;
+  } else {
+    priceSection = `<div style="font-size:13px;color:#64748B;margin:10px 0 4px 0;">${getProgressText(q.current_step, q.total_steps)}</div>`;
+  }
 
-  const actions = isReady
-    ? `<div style="display:flex;gap:8px;margin-top:16px;">
+  let actions: string;
+  if (isPurchased) {
+    actions = `<a href="${escapeHtml(resumeUrl)}" style="display:block;text-align:center;background:#ffffff;color:#01312D;border:2px solid #01312D;text-decoration:none;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-top:16px;">View Design</a>`;
+  } else if (isReady) {
+    actions = `<div style="display:flex;gap:8px;margin-top:16px;">
         <a href="${escapeHtml(resumeUrl)}" style="flex:1;display:block;text-align:center;background:#ffffff;color:#307C31;border:2px solid #307C31;text-decoration:none;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;">Review</a>
         <a href="${escapeHtml(addToCartUrl)}" style="flex:1;display:block;text-align:center;background:#307C31;color:#ffffff;text-decoration:none;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;">Add to Cart</a>
-       </div>`
-    : `<a href="${escapeHtml(resumeUrl)}" style="display:block;text-align:center;background:#307C31;color:#ffffff;text-decoration:none;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-top:16px;">Continue Designing</a>`;
+       </div>`;
+  } else {
+    actions = `<a href="${escapeHtml(resumeUrl)}" style="display:block;text-align:center;background:#307C31;color:#ffffff;text-decoration:none;padding:10px 12px;border-radius:8px;font-size:13px;font-weight:600;margin-top:16px;">Continue Designing</a>`;
+  }
 
   return `
     <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
@@ -158,22 +169,10 @@ function renderDesignCard(q: SavedQuoteRow): string {
     </div>`;
 }
 
-export function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;");
-}
-
 function renderPage(designs: SavedQuoteRow[], customerName: string): string {
+  const purchasedDesigns = designs.filter((d) => d.status === "purchased");
   const readyDesigns = designs.filter((d) => d.status === "quote_ready");
-  const inProgressDesigns = designs.filter((d) => d.status !== "quote_ready");
-
-  const designCards = designs.length > 0
-    ? designs.map(renderDesignCard).join("")
-    : "";
+  const inProgressDesigns = designs.filter((d) => d.status !== "quote_ready" && d.status !== "purchased");
 
   const emptyState = `
     <div style="text-align:center;padding:60px 20px;">
@@ -185,10 +184,19 @@ function renderPage(designs: SavedQuoteRow[], customerName: string): string {
       <a href="https://shadespace.com.au/pages/shade-sail-configurator" style="display:inline-block;background:#307C31;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:999px;font-size:15px;font-weight:700;">Start Designing</a>
     </div>`;
 
+  const purchasedSection = purchasedDesigns.length > 0
+    ? `<div style="margin-bottom:32px;">
+        <h2 style="color:#01312D;font-size:18px;font-weight:700;margin:0 0 16px 0;">Purchased (${purchasedDesigns.length})</h2>
+        <div class="designs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+          ${purchasedDesigns.map(renderDesignCard).join("")}
+        </div>
+       </div>`
+    : "";
+
   const readySection = readyDesigns.length > 0
     ? `<div style="margin-bottom:32px;">
         <h2 style="color:#01312D;font-size:18px;font-weight:700;margin:0 0 16px 0;">Ready to Purchase (${readyDesigns.length})</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+        <div class="designs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
           ${readyDesigns.map(renderDesignCard).join("")}
         </div>
        </div>`
@@ -197,15 +205,12 @@ function renderPage(designs: SavedQuoteRow[], customerName: string): string {
   const progressSection = inProgressDesigns.length > 0
     ? `<div style="margin-bottom:32px;">
         <h2 style="color:#01312D;font-size:18px;font-weight:700;margin:0 0 16px 0;">In Progress (${inProgressDesigns.length})</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+        <div class="designs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
           ${inProgressDesigns.map(renderDesignCard).join("")}
         </div>
        </div>`
     : "";
 
-  // No logo — Shopify theme header already shows the store logo.
-  // Returns an HTML fragment (no DOCTYPE/html/head/body) for correct embedding
-  // via liquid() in the Shopify App Proxy theme {{ content_for_layout }}.
   return `<style>
   * { box-sizing: border-box; }
   .account-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
@@ -235,16 +240,14 @@ function renderPage(designs: SavedQuoteRow[], customerName: string): string {
       </a>
     </div>
     <h1 style="color:#01312D;font-size:28px;font-weight:800;margin:0 0 6px 0;">My Shade Sail Designs</h1>
-    <p style="color:#64748B;font-size:14px;margin:0;">Hi ${escapeHtml(customerName)} — all your saved configurations in one place.</p>
+    <p style="color:#64748B;font-size:14px;margin:0;">Hi ${escapeHtml(customerName)} \u2014 all your saved configurations in one place.</p>
   </div>
-  ${designs.length > 0 ? `${readySection}${progressSection}` : emptyState}
+  ${designs.length > 0 ? `${purchasedSection}${readySection}${progressSection}` : emptyState}
   <div style="text-align:center;margin-top:40px;padding-top:24px;border-top:1px solid #e2e8f0;">
     <p style="color:#94a3b8;font-size:12px;margin:0;">Need help? <a href="mailto:sails@shadespace.com" style="color:#307C31;text-decoration:underline;">sails@shadespace.com</a></p>
   </div>
 </div>`;
 }
-
-// ─── Main handler (exported for unit testing) ─────────────────────────────────
 
 export async function handleRequest(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
@@ -255,10 +258,9 @@ export async function handleRequest(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const query = url.searchParams;
 
-    // ── 1. Validate required environment variables ───────────────────────────
     const shopifySecret = Deno.env.get("SHOPIFY_API_SECRET") ?? "";
-    const supabaseUrl   = Deno.env.get("SUPABASE_URL") ?? "";
-    const serviceKey    = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
     if (!supabaseUrl || !serviceKey) {
       console.error("[customer-designs-page] FATAL: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing");
@@ -268,7 +270,6 @@ export async function handleRequest(req: Request): Promise<Response> {
       });
     }
 
-    // ── 2. Verify App Proxy HMAC signature (fail-closed) ────────────────────
     if (!shopifySecret) {
       console.error("[customer-designs-page] FATAL: SHOPIFY_API_SECRET missing");
       return new Response("<h1>Service misconfigured</h1>", {
@@ -284,7 +285,6 @@ export async function handleRequest(req: Request): Promise<Response> {
       });
     }
 
-    // ── 3. Validate timestamp — prevent replay attacks ───────────────────────
     if (!validateTimestamp(query)) {
       return new Response("<h1>Request expired</h1>", {
         status: 401,
@@ -292,25 +292,15 @@ export async function handleRequest(req: Request): Promise<Response> {
       });
     }
 
-    // ── 4. Resolve customer identity ─────────────────────────────────────────
-    //
-    // The Remix route (my-designs.js) already resolved logged_in_customer_id
-    // to a customer email via the Shopify Admin API before calling this function.
-    // This function therefore only needs:
-    //   B) customer_email query param — forwarded directly by Remix (primary)
-    //   C) email + token pair — save-progress email links
-    //
     let customerEmail = "";
-    let customerName  = "there";
+    let customerName = "there";
 
-    // Path B: primary — Remix resolves customer ID to email and passes it here.
     customerEmail = query.get("customer_email") || query.get("logged_in_customer_email") || "";
     if (customerEmail) {
       customerName = query.get("customer_name") || query.get("logged_in_customer_name") || "there";
     }
 
     if (!customerEmail) {
-      // Path C: token-based auth for email links from the configurator
       const tokenEmail = query.get("email") ?? "";
       const tokenValue = query.get("token") ?? "";
 
@@ -331,9 +321,6 @@ export async function handleRequest(req: Request): Promise<Response> {
 
     console.log("[customer-designs-page] resolved:", { hasEmail: !!customerEmail });
 
-    // ── 5. No identity → sign-in prompt ─────────────────────────────────────
-    // No logo — Shopify theme header already shows the store logo.
-    // HTML fragment (no DOCTYPE/html/head/body) for clean App Proxy embedding.
     if (!customerEmail) {
       const signInHtml = `<div style="padding:60px 20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;text-align:center;">
   <div style="max-width:400px;margin:0 auto;">
@@ -348,16 +335,15 @@ export async function handleRequest(req: Request): Promise<Response> {
       });
     }
 
-    // ── 6. Fetch saved quotes from Supabase ──────────────────────────────────
     const supabase = createClient(supabaseUrl, serviceKey);
 
     const { data: quotes, error } = await supabase
       .from("saved_quotes")
       .select(
-        "id, quote_reference, quote_name, customer_reference, status, current_step, total_steps, locked_total, locked_total_currency, pricing_locked_until, created_at, access_token, diagram_public_url, config_data",
+        "id, quote_reference, quote_name, customer_reference, status, current_step, total_steps, locked_total, locked_total_currency, pricing_locked_until, created_at, access_token, diagram_public_url, config_data, shopify_order_number, purchased_at",
       )
       .eq("customer_email", customerEmail)
-      .in("status", ["in_progress", "quote_ready"])
+      .in("status", ["in_progress", "quote_ready", "purchased"])
       .order("created_at", { ascending: false })
       .limit(25);
 
