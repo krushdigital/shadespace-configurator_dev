@@ -32,6 +32,9 @@ interface Quote {
   total_steps: number | null;
   calculations_data: ShadeCalculations;
   config_data: ConfiguratorState;
+  shopify_order_id: string | null;
+  shopify_order_number: string | null;
+  purchased_at: string | null;
 }
 
 export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean; timezone?: string }> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
@@ -71,7 +74,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       if (!supabaseUrl) return;
 
-      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
+      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
 
       if (statusFilter !== 'all') {
         query += `&status=eq.${statusFilter}`;
@@ -119,17 +122,23 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
     return `${symbols[currency] || currency}${amount.toFixed(2)}`;
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, orderNumber?: string | null) => {
     const statusStyles: Record<string, string> = {
       in_progress: 'bg-yellow-100 text-yellow-800',
       quote_ready: 'bg-green-100 text-green-800',
       completed: 'bg-blue-100 text-blue-800',
       expired: 'bg-gray-100 text-gray-800',
+      purchased: 'bg-teal-100 text-teal-800',
     };
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}>
-        {status.replace('_', ' ')}
-      </span>
+      <div className="flex items-center gap-1.5">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}>
+          {status.replace('_', ' ')}
+        </span>
+        {status === 'purchased' && orderNumber && (
+          <span className="text-xs font-medium text-teal-700">{orderNumber}</span>
+        )}
+      </div>
     );
   };
 
@@ -270,7 +279,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
     const csvHeaders = [
       'Quote Reference', 'Quote Name', 'Customer Name', 'Customer Email', 'Customer Reference',
       'IP Address', 'Country', 'Internal',
-      'Status', 'Total Price', 'Currency', 'Corners', 'Fabric Type', 'Fabric Color',
+      'Status', 'Order Number', 'Purchased At', 'Total Price', 'Currency', 'Corners', 'Fabric Type', 'Fabric Color',
       'Edge Type', 'Step Progress', 'Created At',
     ];
     const rows = filteredQuotes.map(q => [
@@ -283,6 +292,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       q.customer_country || '',
       q.is_excluded ? 'Yes' : 'No',
       q.status,
+      q.shopify_order_number || '',
+      q.purchased_at || '',
       q.calculations_data?.totalPrice ?? '',
       q.config_data?.currency ?? '',
       q.config_data?.corners ?? '',
@@ -326,6 +337,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               <option value="in_progress">In Progress</option>
               <option value="quote_ready">Quote Ready</option>
               <option value="completed">Completed</option>
+              <option value="purchased">Purchased</option>
               <option value="expired">Expired</option>
             </select>
           </div>
@@ -371,7 +383,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                         <div className="text-xs text-gray-500">{quote.customer_country_code ? `${quote.customer_country_code} - ` : ''}{quote.customer_country}</div>
                       )}
                     </td>
-                    <td className="px-4 py-4">{getStatusBadge(quote.status)}</td>
+                    <td className="px-4 py-4">{getStatusBadge(quote.status, quote.shopify_order_number)}</td>
                     <td className="px-4 py-4 text-sm font-medium text-gray-900">
                       {formatCurrency(quote.calculations_data?.totalPrice ?? 0, quote.config_data?.currency ?? 'NZD')}
                     </td>
@@ -426,7 +438,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Status</label>
-                <div className="mt-1">{getStatusBadge(selectedQuote.status)}</div>
+                <div className="mt-1">{getStatusBadge(selectedQuote.status, selectedQuote.shopify_order_number)}</div>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Created</label>
@@ -460,6 +472,31 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
             {selectedQuote.is_excluded && (
               <div className="mt-4 bg-gray-100 border border-gray-300 rounded-lg p-3">
                 <p className="text-sm text-gray-700 font-medium">This quote is flagged as internal/test traffic and excluded from analytics.</p>
+              </div>
+            )}
+            {selectedQuote.status === 'purchased' && (
+              <div className="mt-4 bg-teal-50 border border-teal-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-teal-900 mb-2">Purchase Details</h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {selectedQuote.shopify_order_number && (
+                    <div>
+                      <span className="text-teal-700">Order Number:</span>{' '}
+                      <span className="font-medium text-teal-900">{selectedQuote.shopify_order_number}</span>
+                    </div>
+                  )}
+                  {selectedQuote.purchased_at && (
+                    <div>
+                      <span className="text-teal-700">Purchased:</span>{' '}
+                      <span className="font-medium text-teal-900">{formatDate(selectedQuote.purchased_at)}</span>
+                    </div>
+                  )}
+                  {selectedQuote.shopify_order_id && (
+                    <div className="col-span-2">
+                      <span className="text-teal-700">Shopify Order ID:</span>{' '}
+                      <span className="font-mono text-xs text-teal-900">{selectedQuote.shopify_order_id}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

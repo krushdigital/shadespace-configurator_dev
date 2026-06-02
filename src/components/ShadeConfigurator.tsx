@@ -95,6 +95,7 @@ export function ShadeConfigurator() {
   // Quote management state
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(() => !!getQuoteFromUrl());
+  const [purchasedOrder, setPurchasedOrder] = useState<{ orderNumber: string | null; purchasedAt: string | null } | null>(null);
   const [redirectingForCurrency, setRedirectingForCurrency] = useState<{
     targetDomain?: string;
     targetCountry?: string;
@@ -334,10 +335,19 @@ export function ShadeConfigurator() {
           setPendingAutoAddToCart(true);
         }
 
-        const statusMessage = quote.status === 'quote_ready'
+        if (quote.status === 'purchased') {
+          setPurchasedOrder({
+            orderNumber: quote.shopify_order_number || null,
+            purchasedAt: quote.purchased_at || null,
+          });
+        }
+
+        const statusMessage = quote.status === 'purchased'
+          ? `Quote ${quote.quote_reference} loaded — this design has been ordered${quote.shopify_order_number ? ` (${quote.shopify_order_number})` : ''}.`
+          : quote.status === 'quote_ready'
           ? `Quote ${quote.quote_reference} loaded successfully!`
           : `Configuration ${quote.quote_reference} loaded. Continue where you left off!`;
-        showToast(statusMessage, 'success');
+        showToast(statusMessage, quote.status === 'purchased' ? 'info' : 'success');
       } catch (error: any) {
         console.error('Failed to load quote:', error);
 
@@ -923,7 +933,8 @@ export function ShadeConfigurator() {
   const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
   const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
 
-  const canAddToCart = allDiagonalsEntered &&
+  const canAddToCart = !purchasedOrder &&
+    allDiagonalsEntered &&
     allAcknowledgmentsChecked &&
     (!heightIsRequiredForCheckout || allHeightsProvided);
 
@@ -2382,6 +2393,21 @@ export function ShadeConfigurator() {
             </div>
           )}
         </div>
+
+        {purchasedOrder && (
+          <div className="mb-6 mx-auto max-w-2xl bg-teal-50 border border-teal-200 rounded-lg p-4 flex items-center gap-3">
+            <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-sm text-teal-800">
+              <span className="font-semibold">This shade sail has been ordered</span>
+              {purchasedOrder.orderNumber && <span> ({purchasedOrder.orderNumber})</span>}
+              {purchasedOrder.purchasedAt && (
+                <span className="text-teal-600"> on {new Date(purchasedOrder.purchasedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              )}
+            </p>
+          </div>
+        )}
 
         <div className={`grid grid-cols-1 gap-8 ${(openStep === 4 || openStep === 5) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}

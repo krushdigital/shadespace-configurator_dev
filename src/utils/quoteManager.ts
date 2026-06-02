@@ -43,6 +43,9 @@ export interface QuoteData {
   status: string;
   current_step?: number;
   total_steps?: number;
+  shopify_order_id?: string | null;
+  shopify_order_number?: string | null;
+  purchased_at?: string | null;
 }
 
 
