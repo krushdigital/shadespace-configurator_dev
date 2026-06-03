@@ -9,12 +9,15 @@ interface AnalyticsSummaryProps {
 
 interface Analytics {
   total_quotes: number;
+  total_all_quotes: number;
   total_events: number;
   pdf_downloads: number;
   email_summaries: number;
   add_to_cart: number;
   unique_customers: number;
   total_quote_value: number;
+  pipeline_value: number;
+  purchased_value: number;
   avg_quote_value: number;
   conversion_rate: number;
   excluded_quotes: number;
@@ -150,8 +153,9 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange, e
       valueColor: 'text-red-700',
     },
     {
-      label: 'Total Quote Value',
-      value: `$${analytics.total_quote_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      label: 'Pipeline Value',
+      value: `$${(analytics.pipeline_value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      subtitle: 'Active quotes',
       icon: (
         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -160,6 +164,19 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange, e
       bgColor: 'bg-lime-50',
       iconColor: 'text-lime-600',
       valueColor: 'text-lime-700',
+    },
+    {
+      label: 'Purchased Value',
+      value: `$${(analytics.purchased_value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
+      subtitle: 'Confirmed orders',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+      bgColor: 'bg-emerald-50',
+      iconColor: 'text-emerald-600',
+      valueColor: 'text-emerald-700',
     },
     {
       label: 'Avg Quote Value',
@@ -206,6 +223,9 @@ export const AnalyticsSummary: React.FC<AnalyticsSummaryProps> = ({ dateRange, e
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600 mb-2">{metric.label}</p>
                 <p className={`text-3xl font-bold ${metric.valueColor}`}>{metric.value}</p>
+                {'subtitle' in metric && metric.subtitle && (
+                  <p className="text-xs text-gray-500 mt-1">{metric.subtitle}</p>
+                )}
               </div>
               <div className={`p-3 rounded-xl ${metric.bgColor} ${metric.iconColor}`}>
                 {metric.icon}

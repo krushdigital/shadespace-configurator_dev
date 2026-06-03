@@ -95,6 +95,8 @@ export function ShadeConfigurator() {
 
   // Quote management state
   const [quoteReference, setQuoteReference] = useState<string | null>(null);
+  const [savedQuoteId, setSavedQuoteId] = useState<string | null>(null);
+  const [savedAccessToken, setSavedAccessToken] = useState<string | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(() => !!getQuoteFromUrl());
   const [purchasedOrder, setPurchasedOrder] = useState<{ orderNumber: string | null; purchasedAt: string | null } | null>(null);
   const [redirectingForCurrency, setRedirectingForCurrency] = useState<{
@@ -294,6 +296,8 @@ export function ShadeConfigurator() {
 
         setConfig(quote.config_data);
         setQuoteReference(quote.quote_reference);
+        setSavedQuoteId(quoteParams!.id);
+        setSavedAccessToken(quoteParams!.token);
 
         // Restore the locked total verbatim if we are within the lock window.
         // This bypasses the pricing engine so Market / FX / markup never reruns.
@@ -2670,6 +2674,13 @@ export function ShadeConfigurator() {
         totalSteps={7}
         shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
         pricingSnapshot={pricingSettingsMap}
+        existingQuoteId={savedQuoteId}
+        existingAccessToken={savedAccessToken}
+        onQuoteCreated={(ref, id, token) => {
+          setQuoteReference(ref);
+          setSavedQuoteId(id);
+          setSavedAccessToken(token);
+        }}
         onSaveComplete={() => setLoadedPricingSnapshot(null)}
         onCustomerDetailsCaptured={setCapturedCustomerDetails}
         onGeneratePDFWithDetails={handleGeneratePDFWithDetails}

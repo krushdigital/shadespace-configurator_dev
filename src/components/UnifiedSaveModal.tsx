@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { saveQuote, generateQuoteUrl } from '../utils/quoteManager';
+import { saveQuote, updateQuote, generateQuoteUrl } from '../utils/quoteManager';
 import { addQuoteToken } from '../utils/tokenManager';
 import { useToast } from './ui/ToastProvider';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
@@ -29,6 +29,9 @@ interface UnifiedSaveModalProps {
   totalSteps?: number;
   shouldShowEmailOption?: boolean;
   pricingSnapshot?: Record<string, unknown> | null;
+  existingQuoteId?: string | null;
+  existingAccessToken?: string | null;
+  onQuoteCreated?: (reference: string, id: string, accessToken: string) => void;
   onGeneratePDFWithDetails?: (
     firstName: string,
     lastName: string,
@@ -64,6 +67,9 @@ export function UnifiedSaveModal({
   totalSteps = 7,
   shouldShowEmailOption = false,
   pricingSnapshot,
+  existingQuoteId,
+  existingAccessToken,
+  onQuoteCreated,
   onGeneratePDFWithDetails,
   onEmailPDFQuote,
   onSaveComplete,
@@ -165,20 +171,35 @@ export function UnifiedSaveModal({
         }
       }
 
-      const result = await saveQuote(
-        config,
-        calculations,
-        email,
-        finalQuoteName,
-        sanitizedReference,
-        currentStep,
-        totalSteps,
-        pricingSnapshot,
-        firstName.trim(),
-        lastName.trim(),
-        capturedCanvasUrl,
-        capturedCanvas3DUrl
-      );
+      const result = existingQuoteId && existingAccessToken
+        ? await updateQuote(existingQuoteId, existingAccessToken, config, calculations, {
+            email: email.trim(),
+            quoteName: finalQuoteName,
+            customerReference: sanitizedReference,
+            currentStep,
+            totalSteps,
+            pricingSnapshot,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            canvasImageUrl: capturedCanvasUrl,
+            canvasImage3DUrl: capturedCanvas3DUrl,
+            status: isEmailMode ? 'quote_ready' : 'in_progress',
+          })
+        : await saveQuote(
+            config,
+            calculations,
+            email,
+            finalQuoteName,
+            sanitizedReference,
+            currentStep,
+            totalSteps,
+            pricingSnapshot,
+            firstName.trim(),
+            lastName.trim(),
+            capturedCanvasUrl,
+            capturedCanvas3DUrl,
+            isEmailMode ? undefined : 'in_progress'
+          );
 
       console.log('Save quote result:', result);
 
@@ -280,6 +301,7 @@ export function UnifiedSaveModal({
         quoteReference: result.reference,
       });
 
+      onQuoteCreated?.(result.reference, result.id, result.accessToken);
       setModalStep('success');
       onSaveComplete?.();
     } catch (error: any) {
@@ -321,20 +343,34 @@ export function UnifiedSaveModal({
         }
       }
 
-      const result = await saveQuote(
-        config,
-        calculations,
-        email.trim(),
-        finalQuoteName,
-        sanitizedReference || undefined,
-        currentStep,
-        totalSteps,
-        pricingSnapshot,
-        firstName.trim(),
-        lastName.trim(),
-        capturedCanvasUrl,
-        capturedCanvas3DUrl
-      );
+      const result = existingQuoteId && existingAccessToken
+        ? await updateQuote(existingQuoteId, existingAccessToken, config, calculations, {
+            email: email.trim(),
+            quoteName: finalQuoteName,
+            customerReference: sanitizedReference || undefined,
+            currentStep,
+            totalSteps,
+            pricingSnapshot,
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            canvasImageUrl: capturedCanvasUrl,
+            canvasImage3DUrl: capturedCanvas3DUrl,
+            status: 'quote_ready',
+          })
+        : await saveQuote(
+            config,
+            calculations,
+            email.trim(),
+            finalQuoteName,
+            sanitizedReference || undefined,
+            currentStep,
+            totalSteps,
+            pricingSnapshot,
+            firstName.trim(),
+            lastName.trim(),
+            capturedCanvasUrl,
+            capturedCanvas3DUrl
+          );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
       const savedRef = result.reference;
@@ -401,6 +437,7 @@ export function UnifiedSaveModal({
             quoteReference: savedRef,
           });
 
+          onQuoteCreated?.(result.reference, result.id, result.accessToken);
           setEmailSent(true);
           setModalStep('success');
           showToast(pdfBase64 ? 'PDF sent to your email!' : 'Quote email sent!', 'success');

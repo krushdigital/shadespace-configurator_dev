@@ -41,7 +41,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('active');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -76,7 +76,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
 
       let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
 
-      if (statusFilter !== 'all') {
+      if (statusFilter === 'active') {
+        query += '&status=in.(quote_ready,purchased,completed)';
+      } else if (statusFilter !== 'all') {
         query += `&status=eq.${statusFilter}`;
       }
 
@@ -129,6 +131,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       completed: 'bg-blue-100 text-blue-800',
       expired: 'bg-gray-100 text-gray-800',
       purchased: 'bg-teal-100 text-teal-800',
+      checkout_pending: 'bg-orange-100 text-orange-800',
     };
     return (
       <div className="flex items-center gap-1.5">
@@ -333,11 +336,13 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
           <div className="flex-1 flex gap-4">
             <Input placeholder="Search quotes..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-gray-300 rounded px-3 py-2">
+              <option value="active">Active (default)</option>
               <option value="all">All Statuses</option>
-              <option value="in_progress">In Progress</option>
               <option value="quote_ready">Quote Ready</option>
-              <option value="completed">Completed</option>
               <option value="purchased">Purchased</option>
+              <option value="completed">Completed</option>
+              <option value="in_progress">In Progress</option>
+              <option value="checkout_pending">Checkout Pending</option>
               <option value="expired">Expired</option>
             </select>
           </div>
