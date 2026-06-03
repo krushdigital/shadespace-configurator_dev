@@ -86,21 +86,39 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, message: "Order already processed", matched_quote_id: existingOrder.id });
     }
 
-    // Try to match by quote reference in note attributes
+    // Try to match by quote reference from note attributes or line item properties
     let matchedQuoteId: string | null = null;
     let matchedQuoteRef: string | null = null;
 
+    // Strategy 1: Check order-level note_attributes
     const noteAttributes = order.note_attributes || [];
     const quoteRefAttr = noteAttributes.find(
       (attr: { name: string; value: string }) =>
         attr.name === "quote_reference" || attr.name === "Quote Reference"
     );
 
-    if (quoteRefAttr?.value) {
+    let candidateRef: string | null = quoteRefAttr?.value || null;
+
+    // Strategy 2: Check line item properties for _locked_quote_reference
+    if (!candidateRef && order.line_items) {
+      for (const item of order.line_items) {
+        const props = item.properties || [];
+        const refProp = props.find(
+          (p: { name: string; value: string }) =>
+            p.name === "_locked_quote_reference"
+        );
+        if (refProp?.value) {
+          candidateRef = refProp.value;
+          break;
+        }
+      }
+    }
+
+    if (candidateRef) {
       const { data: exactMatch } = await supabase
         .from("saved_quotes")
         .select("id, quote_reference")
-        .eq("quote_reference", quoteRefAttr.value)
+        .eq("quote_reference", candidateRef)
         .maybeSingle();
 
       if (exactMatch) {
@@ -115,7 +133,7 @@ Deno.serve(async (req: Request) => {
         .from("saved_quotes")
         .select("id, quote_reference")
         .ilike("customer_email", customerEmail)
-        .in("status", ["quote_ready", "completed"])
+        .in("status", ["quote_ready", "completed", "checkout_pending", "in_progress"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();

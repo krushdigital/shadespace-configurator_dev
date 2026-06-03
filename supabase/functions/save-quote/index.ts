@@ -16,12 +16,43 @@ function jsonResponse(data: unknown, status = 200) {
 }
 
 function generateReference(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let ref = "";
-  for (let i = 0; i < 8; i++) {
-    ref += chars.charAt(Math.floor(Math.random() * chars.length));
+  const digits = "0123456789";
+  let num = "";
+  for (let i = 0; i < 6; i++) {
+    num += digits.charAt(Math.floor(Math.random() * digits.length));
   }
-  return ref;
+  return `SS-${num}`;
+}
+
+function getClientIp(req: Request): string | null {
+  const headers = [
+    "cf-connecting-ip",
+    "x-real-ip",
+    "x-forwarded-for",
+  ];
+  for (const h of headers) {
+    const val = req.headers.get(h);
+    if (val) {
+      return val.split(",")[0].trim();
+    }
+  }
+  return null;
+}
+
+async function resolveCountry(ip: string): Promise<{ country: string; countryCode: string } | null> {
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.status === "success") {
+      return { country: data.country, countryCode: data.countryCode };
+    }
+  } catch {
+    // Non-blocking -- geolocation failure should not block quote save
+  }
+  return null;
 }
 
 function generateAccessToken(): string {
@@ -193,6 +224,18 @@ async function handlePost(
       : null;
   const lockedCurrency = config.currency || null;
 
+  // Extract client IP and resolve country (non-blocking)
+  const clientIp = getClientIp(req);
+  let customerCountry: string | null = null;
+  let customerCountryCode: string | null = null;
+  if (clientIp) {
+    const geo = await resolveCountry(clientIp);
+    if (geo) {
+      customerCountry = geo.country;
+      customerCountryCode = geo.countryCode;
+    }
+  }
+
   const insertPayload: Record<string, unknown> = {
     quote_reference: reference,
     access_token: accessToken,
@@ -218,6 +261,9 @@ async function handlePost(
     locked_at: lockedTotal ? now.toISOString() : null,
     diagram_public_url: canvasImageUrl || null,
     diagram_3d_public_url: canvasImage3DUrl || null,
+    customer_ip: clientIp,
+    customer_country: customerCountry,
+    customer_country_code: customerCountryCode,
   };
 
   const { data: inserted, error: insertErr } = await supabase
