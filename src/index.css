@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reset button borders within app to prevent host site (Shopify) styles leaking in */
+#SHADE_SPACE button {
+  border: none;
+}
+
 /* Account for fixed website header when scrolling */
 html {
   scroll-padding-top: 100px;

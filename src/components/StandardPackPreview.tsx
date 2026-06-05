@@ -129,7 +129,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
         onMouseLeave={!isMobile ? handleClose : undefined}
         onFocus={!isMobile ? handleOpen : undefined}
         onBlur={!isMobile ? handleClose : undefined}
-        className={triggerClassName ?? "inline-flex items-center gap-1 rounded border-b border-dotted border-slate-400 text-left hover:text-[#01312D] focus:outline-none focus:ring-2 focus:ring-[#307C31] focus:ring-offset-1"}
+        className={triggerClassName ?? "inline-flex items-center gap-1 rounded !border-b !border-dotted !border-slate-400 text-left hover:text-[#01312D] focus:outline-none focus:ring-2 focus:ring-[#307C31] focus:ring-offset-1"}
         aria-expanded={open}
       >
         {typeof children === 'function'
