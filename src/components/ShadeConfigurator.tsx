@@ -296,8 +296,8 @@ export function ShadeConfigurator() {
 
         setConfig(quote.config_data);
         setQuoteReference(quote.quote_reference);
-        setSavedQuoteId(quoteParams!.id);
-        setSavedAccessToken(quoteParams!.token);
+        setSavedQuoteId(quoteData.id);
+        setSavedAccessToken(quoteData.token);
 
         // Restore the locked total verbatim if we are within the lock window.
         // This bypasses the pricing engine so Market / FX / markup never reruns.
