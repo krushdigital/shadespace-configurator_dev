@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -37,10 +37,16 @@ interface Quote {
   purchased_at: string | null;
 }
 
+const PAGE_SIZE = 50;
+const SELECT_FIELDS = 'id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at';
+
 export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean; timezone?: string }> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('active');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
@@ -52,6 +58,8 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [resendSuccess, setResendSuccess] = useState(false);
   const [regenerateMode, setRegenerateMode] = useState<'single' | 'bulk' | null>(null);
   const [regenerateQuote, setRegenerateQuote] = useState<Quote | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useBodyScrollLock(!!selectedQuote || !!quoteToDelete || !!regenerateMode);
 
   useEffect(() => {
@@ -65,7 +73,46 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   }, [selectedQuote, quoteToDelete]);
 
   useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(0);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [dateRange, statusFilter, excludeInternal]);
+
+  useEffect(() => {
     fetchQuotes();
+  }, [dateRange, statusFilter, excludeInternal, debouncedSearch, page]);
+
+  const buildQueryParams = useCallback((searchTerm: string) => {
+    const params: string[] = [
+      `select=${SELECT_FIELDS}`,
+      `created_at=gte.${dateRange.start}T00:00:00`,
+      `created_at=lte.${dateRange.end}T23:59:59`,
+      'order=created_at.desc',
+    ];
+
+    if (statusFilter === 'active') {
+      params.push('status=in.(quote_ready,purchased,completed)');
+    } else if (statusFilter !== 'all') {
+      params.push(`status=eq.${statusFilter}`);
+    }
+
+    if (excludeInternal) {
+      params.push('is_excluded=eq.false');
+    }
+
+    if (searchTerm) {
+      const encoded = encodeURIComponent(`*${searchTerm}*`);
+      params.push(`or=(quote_name.ilike.${encoded},quote_reference.ilike.${encoded},customer_email.ilike.${encoded},customer_reference.ilike.${encoded},customer_first_name.ilike.${encoded},customer_last_name.ilike.${encoded})`);
+    }
+
+    return params;
   }, [dateRange, statusFilter, excludeInternal]);
 
   const fetchQuotes = async () => {
@@ -74,24 +121,24 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       if (!supabaseUrl) return;
 
-      let query = `${supabaseUrl}/rest/v1/saved_quotes?select=id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=100`;
+      const params = buildQueryParams(debouncedSearch);
+      const offset = page * PAGE_SIZE;
+      params.push(`limit=${PAGE_SIZE}`, `offset=${offset}`);
 
-      if (statusFilter === 'active') {
-        query += '&status=in.(quote_ready,purchased,completed)';
-      } else if (statusFilter !== 'all') {
-        query += `&status=eq.${statusFilter}`;
-      }
-
-      if (excludeInternal) {
-        query += '&is_excluded=eq.false';
-      }
-
+      const query = `${supabaseUrl}/rest/v1/saved_quotes?${params.join('&')}`;
       const headers = await getAdminAuthHeaders();
-      const response = await fetch(query, { headers });
+      const response = await fetch(query, {
+        headers: { ...headers, 'Prefer': 'count=exact' },
+      });
 
       if (response.ok) {
         const data = await response.json();
         setQuotes(data);
+        const contentRange = response.headers.get('content-range');
+        if (contentRange) {
+          const total = parseInt(contentRange.split('/')[1], 10);
+          if (!isNaN(total)) setTotalCount(total);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch quotes:', error);
@@ -99,18 +146,6 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       setLoading(false);
     }
   };
-
-  const filteredQuotes = quotes.filter((quote) => {
-    const searchLower = search.toLowerCase();
-    const customerName = [quote.customer_first_name, quote.customer_last_name].filter(Boolean).join(' ').toLowerCase();
-    return (
-      quote.quote_name?.toLowerCase().includes(searchLower) ||
-      quote.quote_reference?.toLowerCase().includes(searchLower) ||
-      quote.customer_email?.toLowerCase().includes(searchLower) ||
-      quote.customer_reference?.toLowerCase().includes(searchLower) ||
-      customerName.includes(searchLower)
-    );
-  });
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -278,43 +313,60 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
     alert('Quote link copied to clipboard!');
   };
 
-  const exportToCSV = () => {
-    const csvHeaders = [
-      'Quote Reference', 'Quote Name', 'Customer Name', 'Customer Email', 'Customer Reference',
-      'IP Address', 'Country', 'Internal',
-      'Status', 'Order Number', 'Purchased At', 'Total Price', 'Currency', 'Corners', 'Fabric Type', 'Fabric Color',
-      'Edge Type', 'Step Progress', 'Created At',
-    ];
-    const rows = filteredQuotes.map(q => [
-      q.quote_reference,
-      q.quote_name,
-      [q.customer_first_name, q.customer_last_name].filter(Boolean).join(' '),
-      q.customer_email || '',
-      q.customer_reference || '',
-      q.customer_ip || '',
-      q.customer_country || '',
-      q.is_excluded ? 'Yes' : 'No',
-      q.status,
-      q.shopify_order_number || '',
-      q.purchased_at || '',
-      q.calculations_data?.totalPrice ?? '',
-      q.config_data?.currency ?? '',
-      q.config_data?.corners ?? '',
-      q.config_data?.fabricType ?? '',
-      q.config_data?.fabricColor ?? '',
-      q.config_data?.edgeType ?? '',
-      q.current_step != null && q.total_steps ? `${q.current_step + 1}/${q.total_steps}` : '',
-      q.created_at,
-    ]);
+  const exportToCSV = async () => {
+    try {
+      setExporting(true);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) return;
 
-    const csv = [csvHeaders, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `shadespace-quotes-${dateRange.start}-to-${dateRange.end}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      const params = buildQueryParams(debouncedSearch);
+      const query = `${supabaseUrl}/rest/v1/saved_quotes?${params.join('&')}`;
+      const headers = await getAdminAuthHeaders();
+      const response = await fetch(query, { headers });
+      if (!response.ok) return;
+      const allQuotes: Quote[] = await response.json();
+
+      const csvHeaders = [
+        'Quote Reference', 'Quote Name', 'Customer Name', 'Customer Email', 'Customer Reference',
+        'IP Address', 'Country', 'Internal',
+        'Status', 'Order Number', 'Purchased At', 'Total Price', 'Currency', 'Corners', 'Fabric Type', 'Fabric Color',
+        'Edge Type', 'Step Progress', 'Created At',
+      ];
+      const rows = allQuotes.map(q => [
+        q.quote_reference,
+        q.quote_name,
+        [q.customer_first_name, q.customer_last_name].filter(Boolean).join(' '),
+        q.customer_email || '',
+        q.customer_reference || '',
+        q.customer_ip || '',
+        q.customer_country || '',
+        q.is_excluded ? 'Yes' : 'No',
+        q.status,
+        q.shopify_order_number || '',
+        q.purchased_at || '',
+        q.calculations_data?.totalPrice ?? '',
+        q.config_data?.currency ?? '',
+        q.config_data?.corners ?? '',
+        q.config_data?.fabricType ?? '',
+        q.config_data?.fabricColor ?? '',
+        q.config_data?.edgeType ?? '',
+        q.current_step != null && q.total_steps ? `${q.current_step + 1}/${q.total_steps}` : '',
+        q.created_at,
+      ]);
+
+      const csv = [csvHeaders, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `shadespace-quotes-${dateRange.start}-to-${dateRange.end}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('CSV export failed:', error);
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -347,7 +399,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
             </select>
           </div>
           <Button onClick={() => setRegenerateMode('bulk')} size="sm" variant="outline" className="text-[#01312D] border-[#01312D]/30 hover:bg-[#01312D]/5">Regenerate Prices</Button>
-          <Button onClick={exportToCSV} size="sm" variant="outline">Export CSV</Button>
+          <Button onClick={exportToCSV} size="sm" variant="outline" disabled={exporting}>{exporting ? 'Exporting...' : 'Export CSV'}</Button>
         </div>
 
         <div className="overflow-x-auto">
@@ -365,10 +417,10 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               </tr>
             </thead>
             <tbody>
-              {filteredQuotes.length === 0 ? (
+              {quotes.length === 0 ? (
                 <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No quotes found</td></tr>
               ) : (
-                filteredQuotes.map((quote) => (
+                quotes.map((quote) => (
                   <tr key={quote.id} className={`border-b border-gray-100 hover:bg-gray-50 ${quote.is_excluded ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1.5">
@@ -409,7 +461,32 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
           </table>
         </div>
 
-        <div className="mt-4 text-sm text-gray-600">Showing {filteredQuotes.length} of {quotes.length} quotes</div>
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Showing {totalCount === 0 ? 0 : page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} of {totalCount} quotes
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-gray-700">
+              Page {page + 1} of {Math.max(1, Math.ceil(totalCount / PAGE_SIZE))}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage(p => p + 1)}
+              disabled={(page + 1) * PAGE_SIZE >= totalCount}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </Card>
 
       {selectedQuote && (
