@@ -215,7 +215,10 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
               mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'pulsate-guidance' : ''
             }`}
           >
-            Continue to {nextStepTitle}
+            <span className="flex flex-col items-center leading-tight">
+              <span>Continue</span>
+              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+            </span>
           </Button>
         </div>
 
@@ -249,7 +252,10 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
               mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'pulsate-guidance' : ''
             }`}
           >
-            Continue to {nextStepTitle}
+            <span className="flex flex-col items-center leading-tight">
+              <span>Continue</span>
+              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+            </span>
           </Button>
         </div>
       </div>

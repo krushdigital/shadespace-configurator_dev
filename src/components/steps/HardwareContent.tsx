@@ -336,7 +336,10 @@ export function HardwareContent({
             disabled={mode === 'manual' && !allManualConfigured}
             className="w-full py-4 sm:py-2"
           >
-            {nextStepTitle ? `Continue to ${nextStepTitle}` : 'Next'}
+            <span className="flex flex-col items-center leading-tight">
+              <span>Continue</span>
+              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+            </span>
           </Button>
         </div>
 
@@ -355,7 +358,10 @@ export function HardwareContent({
             disabled={mode === 'manual' && !allManualConfigured}
             className="flex-1"
           >
-            {nextStepTitle ? `Continue to ${nextStepTitle}` : 'Next'}
+            <span className="flex flex-col items-center leading-tight">
+              <span>Continue</span>
+              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+            </span>
           </Button>
         </div>
       </div>

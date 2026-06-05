@@ -2266,24 +2266,23 @@ export function ShadeConfigurator() {
 
   // Define step titles for navigation with dynamic skipping
   const getNextStepTitle = (currentStep: number): string => {
-    const stepTitles = [
-      'Fabric & Color',
+    const stepSubtitles = [
       'Style',
       'Fixing Points',
       'Measurement Options',
       'Dimensions',
       'Hardware Selection',
-      'Review & Purchase'
+      'see pricing',
+      ''
     ];
 
     const actualNextStep = getActualNextStep(currentStep);
 
-    // If we're on Dimensions and Hardware step is skipped, jump to Review
     if (currentStep === 4 && shouldSkipStep(5)) {
-      return 'Review & Purchase';
+      return 'see pricing';
     }
 
-    return stepTitles[actualNextStep] || '';
+    return stepSubtitles[actualNextStep] || '';
   };
   const shouldShowBackButton = (currentStep: number) => currentStep > 0;
 

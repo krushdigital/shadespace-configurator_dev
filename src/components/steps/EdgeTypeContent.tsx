@@ -193,7 +193,10 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
               mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'pulsate-guidance' : ''
             }`}
           >
-            Continue to {nextStepTitle}
+            <span className="flex flex-col items-center leading-tight">
+              <span>Continue</span>
+              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+            </span>
           </Button>
         </div>
 
@@ -227,7 +230,10 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
               mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'pulsate-guidance' : ''
             }`}
           >
-            Continue to {nextStepTitle}
+            <span className="flex flex-col items-center leading-tight">
+              <span>Continue</span>
+              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+            </span>
           </Button>
         </div>
       </div>

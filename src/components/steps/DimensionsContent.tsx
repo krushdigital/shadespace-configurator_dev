@@ -1220,7 +1220,10 @@ export function DimensionsContent({
                   size="md"
                   className={`w-full py-4 sm:py-2 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Continue to {nextStepTitle}
+                  <span className="flex flex-col items-center leading-tight">
+                    <span>Continue</span>
+                    {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                  </span>
                 </Button>
               </div>
 
@@ -1247,7 +1250,10 @@ export function DimensionsContent({
                   size="md"
                   className={`flex-1 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Continue to {nextStepTitle}
+                  <span className="flex flex-col items-center leading-tight">
+                    <span>Continue</span>
+                    {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                  </span>
                 </Button>
               </div>
             </>
