@@ -103,7 +103,7 @@ Deno.serve(async (req: Request) => {
         .in("id", templateIds),
       supabase
         .from("email_senders")
-        .select("id, from_name, from_email, reply_to")
+        .select("id, from_name, from_email, reply_to, first_name")
         .in("id", senderIds),
     ]);
 
@@ -128,6 +128,7 @@ Deno.serve(async (req: Request) => {
           from_name: string;
           from_email: string;
           reply_to: string | null;
+          first_name: string | null;
         } | undefined;
 
         if (!template || !sender) {
@@ -154,6 +155,14 @@ Deno.serve(async (req: Request) => {
             .maybeSingle();
 
           if (quote) {
+            // Build resume URL using the correct storefront domain for the quote's currency
+            const quoteCurrency = quote.config_data?.currency || "AUD";
+            let domain = "www.shadespace.com.au";
+            if (quoteCurrency !== "AUD" && quoteCurrency !== "NZD") {
+              domain = "www.shadespace.com";
+            }
+            const resumeUrl = `https://${domain}/pages/custom-shade-sail-designer?quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}&_ab=0&_fd=0#quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}`;
+
             const vars: Record<string, string> = {
               "{{first_name}}": quote.customer_first_name || "",
               "{{last_name}}": quote.customer_last_name || "",
@@ -161,6 +170,8 @@ Deno.serve(async (req: Request) => {
               "{{quote_reference}}": quote.quote_reference || "",
               "{{quote_name}}": quote.quote_name || "",
               "{{access_token}}": quote.access_token || "",
+              "{{resume_url}}": resumeUrl,
+              "{{sender_first_name}}": sender.first_name || sender.from_name.split(" ")[0] || "",
             };
             for (const [key, val] of Object.entries(vars)) {
               subject = subject.replaceAll(key, val);
@@ -172,6 +183,11 @@ Deno.serve(async (req: Request) => {
         // Build unsubscribe link
         const unsubLink = `${Deno.env.get("SUPABASE_URL")}/functions/v1/email-unsubscribe?email=${encodeURIComponent(item.recipient_email)}`;
         html = html.replaceAll("{{unsubscribe_url}}", unsubLink);
+
+        // Always substitute sender_first_name (doesn't depend on quote)
+        const senderFirstName = sender.first_name || sender.from_name.split(" ")[0] || "";
+        subject = subject.replaceAll("{{sender_first_name}}", senderFirstName);
+        html = html.replaceAll("{{sender_first_name}}", senderFirstName);
 
         // Send via Resend
         const resendRes = await fetch("https://api.resend.com/emails", {

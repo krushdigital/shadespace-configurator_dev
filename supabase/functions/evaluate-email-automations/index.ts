@@ -256,7 +256,8 @@ async function findCandidateQuotes(
     )
     .not("customer_email", "is", null)
     .gte("updated_at", lookback)
-    .lte("updated_at", cutoff);
+    .lte("updated_at", cutoff)
+    .gte("created_at", lookback);
 
   // Apply trigger-specific filters
   if (automation.trigger_type === "quote_reached_step") {

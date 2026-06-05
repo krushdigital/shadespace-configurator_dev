@@ -266,6 +266,7 @@ async function handlePost(
     customer_ip: clientIp,
     customer_country: customerCountry,
     customer_country_code: customerCountryCode,
+    marketing_opt_in: !!email,
   };
 
   const { data: inserted, error: insertErr } = await supabase
