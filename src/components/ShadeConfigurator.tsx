@@ -2267,13 +2267,13 @@ export function ShadeConfigurator() {
   // Define step titles for navigation with dynamic skipping
   const getNextStepTitle = (currentStep: number): string => {
     const stepSubtitles = [
+      'Fabric & Color',
       'Style',
       'Fixing Points',
       'Measurement Options',
       'Dimensions',
       'Hardware Selection',
-      'see pricing',
-      ''
+      'see pricing'
     ];
 
     const actualNextStep = getActualNextStep(currentStep);
