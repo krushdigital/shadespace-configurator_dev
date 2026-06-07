@@ -1348,7 +1348,7 @@ export function ShadeConfigurator() {
         const quoteRef = autoSavedRef || quoteReference || (metafieldProperties['_locked_quote_reference'] as string) || null;
         if (quoteRef) {
           const baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/serve-order-pdf?ref=${encodeURIComponent(quoteRef)}`;
-          metafieldProperties['_quote_pdf_url'] = `${baseUrl}&type=quote`;
+          metafieldProperties['Quote PDF'] = `${baseUrl}&type=quote`;
           metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteRef}.pdf`;
           metafieldProperties['_fulfilment_pdf_url'] = `${baseUrl}&type=fulfilment`;
           metafieldProperties['_fulfilment_pdf_filename'] = `shade-sail-fulfilment-${quoteRef}.pdf`;
