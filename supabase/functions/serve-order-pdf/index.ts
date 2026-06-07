@@ -6,6 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers":
     "Content-Type, Authorization, X-Client-Info, Apikey",
+  "X-Content-Type-Options": "nosniff",
 };
 
 function htmlResponse(html: string, status = 200) {
@@ -60,7 +61,11 @@ Deno.serve(async (req: Request) => {
       .eq("quote_reference", ref)
       .maybeSingle();
 
-    if (quoteErr || !quote) {
+    if (quoteErr) {
+      console.error("serve-order-pdf DB error:", quoteErr);
+      return htmlResponse(errorPage(`Database error while loading quote. Please try again.`, quoteErr.message), 500);
+    }
+    if (!quote) {
       return htmlResponse(errorPage("Quote not found. The reference may be invalid or expired."), 404);
     }
 
@@ -777,10 +782,10 @@ function renderDownloadPage(quoteHtml: string, filename: string, customerName: s
 </html>`;
 }
 
-function errorPage(message: string): string {
+function errorPage(message: string, detail?: string): string {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Quote Not Found</title>
     <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#F8FAFC;color:#334155;}
     .box{text-align:center;padding:40px;background:white;border-radius:16px;border:1px solid #E2E8F0;max-width:400px;}
-    h1{font-size:20px;color:#01312D;margin-bottom:8px;}p{font-size:14px;color:#64748B;}</style>
-    </head><body><div class="box"><h1>Quote Not Found</h1><p>${escapeHtml(message)}</p></div></body></html>`;
+    h1{font-size:20px;color:#01312D;margin-bottom:8px;}p{font-size:14px;color:#64748B;}.debug{margin-top:16px;font-size:11px;color:#94A3B8;word-break:break-all;}</style>
+    </head><body><div class="box"><h1>Quote Not Found</h1><p>${escapeHtml(message)}</p>${detail ? `<p class="debug">${escapeHtml(detail)}</p>` : ""}</div></body></html>`;
 }
