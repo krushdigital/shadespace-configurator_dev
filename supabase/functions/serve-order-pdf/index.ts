@@ -42,10 +42,14 @@ Deno.serve(async (req: Request) => {
   try {
     const url = new URL(req.url);
     const ref = url.searchParams.get("ref");
+    const pdfType = url.searchParams.get("type") || "fulfilment";
 
     if (!ref) {
       return htmlResponse(errorPage("Missing quote reference. Please provide ?ref=QUOTE_REFERENCE"), 400);
     }
+
+    const validTypes = ["quote", "fulfilment"];
+    const resolvedType = validTypes.includes(pdfType) ? pdfType : "fulfilment";
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -69,24 +73,26 @@ Deno.serve(async (req: Request) => {
       return htmlResponse(errorPage("Quote not found. The reference may be invalid or expired."), 404);
     }
 
-    // Load active fulfilment PDF template (fall back to quote template)
+    // Load active PDF template based on requested type
     let templateRow = null;
-    const { data: fulfilmentTemplate } = await supabase
+    const { data: primaryTemplate } = await supabase
       .from("pdf_templates")
       .select("config, blocks")
       .eq("is_active", true)
-      .eq("template_type", "fulfilment")
+      .eq("template_type", resolvedType)
       .maybeSingle();
-    if (fulfilmentTemplate) {
-      templateRow = fulfilmentTemplate;
+    if (primaryTemplate) {
+      templateRow = primaryTemplate;
     } else {
-      const { data: quoteTemplate } = await supabase
+      // Fallback: if requested type not found, try the other type
+      const fallbackType = resolvedType === "fulfilment" ? "quote" : "fulfilment";
+      const { data: fallbackTemplate } = await supabase
         .from("pdf_templates")
         .select("config, blocks")
         .eq("is_active", true)
-        .eq("template_type", "quote")
+        .eq("template_type", fallbackType)
         .maybeSingle();
-      templateRow = quoteTemplate;
+      templateRow = fallbackTemplate;
     }
 
     const defaultBrand = {
@@ -146,9 +152,11 @@ Deno.serve(async (req: Request) => {
 
     const quoteHtml = buildQuoteHtml(brand, header, footer, blocks, live, density);
     const customerName = [quote.customer_first_name, quote.customer_last_name].filter(Boolean).join(" ").trim() || "Customer";
-    const filename = `shade-sail-fulfilment-${quote.quote_reference}.pdf`;
+    const filename = resolvedType === "fulfilment"
+      ? `shade-sail-fulfilment-${quote.quote_reference}.pdf`
+      : `shade-sail-quote-${quote.quote_reference}.pdf`;
 
-    const page = renderDownloadPage(quoteHtml, filename, customerName, quote.quote_reference, paper);
+    const page = renderDownloadPage(quoteHtml, filename, customerName, quote.quote_reference, paper, resolvedType);
     return htmlResponse(page);
   } catch (err) {
     console.error("serve-order-pdf error:", err);
@@ -609,14 +617,17 @@ function buildQuoteHtml(
   </body></html>`;
 }
 
-function renderDownloadPage(quoteHtml: string, filename: string, customerName: string, quoteRef: string, paper: string): string {
+function renderDownloadPage(quoteHtml: string, filename: string, customerName: string, quoteRef: string, paper: string, pdfType: string): string {
   const escapedHtml = quoteHtml.replace(/`/g, "\\`").replace(/<\/script/g, "<\\/script");
+  const pageTitle = pdfType === "fulfilment"
+    ? `Fulfilment Order - ${escapeHtml(quoteRef)}`
+    : `Shade Sail Quote - ${escapeHtml(quoteRef)}`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shade Sail Quote - ${escapeHtml(quoteRef)}</title>
+  <title>${pageTitle}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: system-ui, -apple-system, sans-serif; background: #F8FAFC; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
@@ -643,7 +654,7 @@ function renderDownloadPage(quoteHtml: string, filename: string, customerName: s
     <div class="icon">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8" fill="none" stroke="#01312D" stroke-width="1.5"/></svg>
     </div>
-    <h1>Shade Sail Quote PDF</h1>
+    <h1>${pdfType === "fulfilment" ? "Fulfilment Order PDF" : "Shade Sail Quote PDF"}</h1>
     <p class="subtitle">Customer: ${escapeHtml(customerName)} &middot; Ref: ${escapeHtml(quoteRef)}</p>
     <div class="status generating" id="status">
       <span class="status-text"><span class="spinner"></span>Generating PDF...</span>
