@@ -111,6 +111,13 @@ Deno.serve(async (req: Request) => {
     // Blocks
     const blocks = normalizeBlocks(templateRow?.blocks);
 
+    // Filter out expired staged upload URLs (they expire after a few hours)
+    const validImageUrl = (url: string | null): string | null => {
+      if (!url) return null;
+      if (url.includes("shopify-staged-uploads")) return null;
+      return url;
+    };
+
     // Build live data for template rendering
     const live = {
       id: quote.id,
@@ -121,8 +128,8 @@ Deno.serve(async (req: Request) => {
       customer_email: quote.customer_email,
       customer_reference: quote.customer_reference,
       access_token: quote.access_token,
-      diagram_public_url: quote.diagram_public_url,
-      diagram_3d_url: quote.diagram_3d_public_url,
+      diagram_public_url: validImageUrl(quote.diagram_public_url),
+      diagram_3d_url: validImageUrl(quote.diagram_3d_public_url),
       created_at: quote.created_at,
       config_data: quote.config_data,
       calculations_data: quote.calculations_data,
@@ -681,12 +688,17 @@ function renderDownloadPage(quoteHtml: string, filename: string, customerName: s
         doc.write(QUOTE_HTML);
         doc.close();
 
-        // Wait for fonts and images
+        // Wait for fonts and images (with 5s timeout per image to avoid hanging)
         await new Promise(r => setTimeout(r, 500));
         await Promise.all(
-          Array.from(doc.images).map(img =>
-            img.complete ? Promise.resolve() : new Promise(r => { img.onload = r; img.onerror = r; })
-          )
+          Array.from(doc.images).map(img => {
+            if (img.complete) return Promise.resolve();
+            return new Promise(r => {
+              const timeout = setTimeout(r, 5000);
+              img.onload = () => { clearTimeout(timeout); r(); };
+              img.onerror = () => { clearTimeout(timeout); img.style.display = 'none'; r(); };
+            });
+          })
         );
 
         const body = doc.body;
@@ -710,26 +722,30 @@ function renderDownloadPage(quoteHtml: string, filename: string, customerName: s
         let pageStarted = true;
 
         for (const el of blockEls) {
-          const canvas = await html2canvas(el, {
-            scale: 2,
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: null,
-            width: 688,
-            windowWidth: 688,
-          });
+          try {
+            const canvas = await html2canvas(el, {
+              scale: 2,
+              useCORS: true,
+              allowTaint: true,
+              backgroundColor: null,
+              width: 688,
+              windowWidth: 688,
+            });
 
-          const imgWidthMm = contentWidthMm;
-          const imgHeightMm = (canvas.height / canvas.width) * imgWidthMm;
+            const imgWidthMm = contentWidthMm;
+            const imgHeightMm = (canvas.height / canvas.width) * imgWidthMm;
 
-          if (cursorMm + imgHeightMm > contentHeightMm && cursorMm > 0) {
-            pdf.addPage();
-            cursorMm = 0;
+            if (cursorMm + imgHeightMm > contentHeightMm && cursorMm > 0) {
+              pdf.addPage();
+              cursorMm = 0;
+            }
+
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', marginLeft, marginTop + cursorMm, imgWidthMm, imgHeightMm);
+            cursorMm += imgHeightMm + 2;
+          } catch (blockErr) {
+            console.warn('Skipping block due to render error:', blockErr);
           }
-
-          const imgData = canvas.toDataURL('image/png');
-          pdf.addImage(imgData, 'PNG', marginLeft, marginTop + cursorMm, imgWidthMm, imgHeightMm);
-          cursorMm += imgHeightMm + 2;
         }
 
         const blob = pdf.output('blob');
