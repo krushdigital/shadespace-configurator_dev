@@ -243,9 +243,9 @@ function formatArea(mm2: number, unit: "metric" | "imperial"): string {
   if (unit === "imperial") {
     const sqft = mm2 * (0.0393701 * 0.0393701) / 144;
     const m2 = mm2 / 1000000;
-    return `${sqft.toFixed(1)} ft\u00b2 (${m2.toFixed(2)} m\u00b2)`;
+    return `${sqft.toFixed(1)} ft&sup2; (${m2.toFixed(2)} m&sup2;)`;
   }
-  return `${(mm2 / 1000000).toFixed(2)} m\u00b2`;
+  return `${(mm2 / 1000000).toFixed(2)} m&sup2;`;
 }
 
 function getDiagonalKeysForCorners(corners: number): string[] {
@@ -311,7 +311,7 @@ function renderBlock(block: PdfBlock, brand: Record<string, string>, live: LiveD
       if (isRowVisible(block, "totalArea")) sRows.push(`<div class="row"><span class="muted">Total Area</span><span class="val">${formatArea(((calc?.area as number) || 12.5) * 1000000, unit)}</span></div>`);
       if (isRowVisible(block, "edgePerimeter")) sRows.push(`<div class="row"><span class="muted">Edge Perimeter</span><span class="val">${formatMeasurement(perimeterMm, unit)}</span></div>`);
       if (isRowVisible(block, "edgeReinforcement")) sRows.push(`<div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${edgeType}</span></div>`);
-      if (isRowVisible(block, "thread")) sRows.push(`<div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>`);
+      if (isRowVisible(block, "thread")) sRows.push(`<div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix&reg; PTFE thread</span></div>`);
       if (isRowVisible(block, "fabricationMethod")) sRows.push(`<div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethod)}</span></div>`);
       return `<h2>${escapeHtml(title)}</h2>${sRows.join("")}`;
     }
