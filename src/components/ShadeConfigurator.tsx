@@ -1138,122 +1138,11 @@ export function ShadeConfigurator() {
   try {
     setLoadingStep({ text: 'Creating your custom product...', progress: 30 });
 
-    // ============ UPDATED SECTION START: Generate and Upload PDF FIRST ============
-    let pdfUrl = null;
-    let technicalDrawingUrl = orderData.canvasImageUrl || null;
-
-    // Generate PDF and upload technical drawing in parallel (non-blocking)
-    const generatePDFAndUpload = (async () => {
-      try {
-        setLoadingStep({ text: 'Generating PDF documentation...', progress: 40 });
-
-        // Generate PDF with customer details
-        const customerFirstName = quoteData?.customer_first_name || capturedCustomerDetails?.firstName || '';
-        const customerLastName = quoteData?.customer_last_name || capturedCustomerDetails?.lastName || '';
-        const customerEmail = quoteData?.customer_email || capturedCustomerDetails?.email || '';
-
-        console.log('Calling handleGeneratePDFWithDetails...');
-        const pdfResult = await handleGeneratePDFWithDetails(
-          customerFirstName,
-          customerLastName,
-          customerEmail,
-          'Custom Shade Sail Quote',
-          quoteReference
-        );
-
-        console.log('PDF result type:', typeof pdfResult, 'Result:', pdfResult);
-
-        if (pdfResult) {
-          let pdfBlob: Blob | null = null;
-
-          if (typeof pdfResult === 'string' && pdfResult.startsWith('blob:')) {
-            console.log('PDF is blob URL, fetching blob...');
-            try {
-              const response = await fetch(pdfResult);
-              pdfBlob = await response.blob();
-              console.log('Fetched PDF blob:', { size: pdfBlob.size, type: pdfBlob.type });
-            } catch (fetchError) {
-              console.error('Failed to fetch PDF blob:', fetchError);
-            }
-          } else if (
-            typeof Blob !== "undefined" &&
-            typeof Blob === "function" &&
-            typeof pdfResult === "object" &&
-            pdfResult !== null &&
-            (pdfResult as any) instanceof Blob
-          ) {
-            console.log('PDF is Blob object:', { size: (pdfResult as Blob).size, type: (pdfResult as Blob).type });
-            pdfBlob = pdfResult as Blob;
-          } else if (typeof pdfResult === 'string' && pdfResult.startsWith('http')) {
-            console.log('PDF already has URL:', pdfResult);
-            pdfUrl = pdfResult;
-          } else {
-            console.log('Unknown PDF result format:', pdfResult);
-          }
-
-          if (pdfBlob) {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
-            const pdfFile = new File([pdfBlob], pdfFilename, { type: 'application/pdf' });
-            console.log('Uploading PDF to Shopify...');
-            try {
-              const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
-              if (uploadResponse) {
-                pdfUrl = uploadResponse;
-                console.log('PDF uploaded successfully, URL:', pdfUrl);
-              }
-            } catch (uploadError) {
-              console.error('PDF upload error:', uploadError);
-            }
-          } else if (typeof pdfResult === 'string' && !pdfResult.startsWith('http')) {
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const pdfFilename = `shade-sail-quote-${timestamp}.pdf`;
-            async function base64ToBlob(base64: any) {
-              const res = await fetch(base64);
-              return await res.blob();
-            }
-            const pdfFile = await base64ToBlob(pdfResult);
-            try {
-              const uploadResponse = await uploadImageToShopify(pdfFile, pdfFilename);
-              pdfUrl = uploadResponse;
-            } catch (error) {
-              console.error('Something went wrong while uploading pdf file.');
-            }
-          }
-        }
-      } catch (pdfError) {
-        console.error('Failed to generate or upload PDF:', pdfError);
-      }
-    })();
-
-    // Upload technical drawing in parallel
-    const uploadDrawing = (async () => {
-      if (orderData.canvasImageUrl && orderData.canvasImageUrl.startsWith('blob:')) {
-        setLoadingStep({ text: 'Uploading technical drawing...', progress: 45 });
-        try {
-          console.log('Fetching technical drawing from blob URL...');
-          const response = await fetch(orderData.canvasImageUrl);
-          const imageBlob = await response.blob();
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const imageFilename = `technical-drawing-${timestamp}.png`;
-          const imageFile = new File([imageBlob], imageFilename, { type: 'image/png' });
-          const imageUploadResponse = await uploadImageToShopify(imageFile, imageFilename);
-          if (imageUploadResponse) {
-            technicalDrawingUrl = imageUploadResponse;
-            console.log('Technical drawing uploaded successfully, URL:', technicalDrawingUrl);
-          }
-        } catch (imageError) {
-          console.error('Failed to upload technical drawing:', imageError);
-        }
-      }
-    })();
-
-    // Wait for both operations to complete
-    await Promise.all([generatePDFAndUpload, uploadDrawing]);
-
-    console.log('Final PDF URL for line item:', pdfUrl);
-    console.log('Final technical drawing URL:', technicalDrawingUrl);
-    // ============ UPDATED SECTION END ============
+    // PDF is generated on-demand via the serve-order-pdf edge function (permanent URL).
+    // Technical drawing uses the permanent diagram_public_url stored during save.
+    // No staged uploads needed -- those expire after a few hours.
+    setLoadingStep({ text: 'Preparing order details...', progress: 40 });
+    const technicalDrawingUrl = orderData.canvasImageUrl || null;
 
     // Format measurements for cart display
     const formatCartProperties = (measurements: any) => {
@@ -1372,7 +1261,6 @@ export function ShadeConfigurator() {
         backendDiagonalMeasurements,
         backendAnchorMeasurements,
         originalUnit: config.unit,
-        pdfUrl: pdfUrl || null,
         fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
         quoteReference: autoSavedRef || quoteReference || null,
         totalPrice: authoritativeTotal,
@@ -1464,16 +1352,8 @@ export function ShadeConfigurator() {
           metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteRef}.pdf`;
           metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
           console.log('✅ Added dynamic PDF URL to line item properties:', dynamicPdfUrl);
-        } else if (pdfUrl) {
-          const pdfUrlString = String(pdfUrl).trim();
-          if (pdfUrlString.startsWith('http')) {
-            metafieldProperties['_quote_pdf_url'] = pdfUrlString;
-            metafieldProperties['_quote_pdf_filename'] = `shade-sail-quote-${quoteReference || 'custom'}.pdf`;
-            metafieldProperties['_pdf_generated_at'] = new Date().toISOString();
-            console.log('✅ Added static PDF URL to line item properties:', pdfUrlString);
-          }
         } else {
-          console.log('❌ No PDF URL available to add to line item');
+          console.log('❌ No quote reference available for PDF URL');
         }
 
         // Corner hardware line items
@@ -1518,7 +1398,7 @@ export function ShadeConfigurator() {
         : 'Custom dimensions provided by customer';
       console.log('✅ Added fabrication type:', fabricationTypeValue);
 
-      if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http')) {
+      if (technicalDrawingUrl && technicalDrawingUrl.startsWith('http') && !technicalDrawingUrl.includes('shopify-staged-uploads')) {
         metafieldProperties['_technical_drawing_url'] = technicalDrawingUrl;
         console.log('✅ Added technical drawing URL:', technicalDrawingUrl);
       }
@@ -1631,7 +1511,7 @@ export function ShadeConfigurator() {
 
           if (cartData.items && cartData.items[0] && cartData.items[0].properties) {
             console.log('📦 Properties in cart item:', cartData.items[0].properties);
-            if (pdfUrl && cartData.items[0].properties['_quote_pdf_url']) {
+            if (cartData.items[0].properties['_quote_pdf_url']) {
               console.log('✅ PDF URL successfully added to cart!');
             }
           }
