@@ -38,7 +38,7 @@ const EDGE_OPTIONS = [
     label: 'Webbing Reinforced',
     description: 'Robust reinforcement with webbing tape. Easiest to install.',
     longDescription: 'Our webbing-reinforced design incorporates a unique method, utilizing an exceptionally strong 48mm (2-inch) polyester webbing expertly integrated within the hemline. This webbing is meticulously pre-set and pre-sewn, ensuring optimal tension is achieved effortlessly once the sail is fully stretched into position. This innovative approach guarantees a hassle-free on-site installation: simply tension from each fixing point and enjoy your perfectly taut shade sail.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge.png?v=1778472343'
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge_Config.jpg?v=1779842113'
   }
 ];
 
