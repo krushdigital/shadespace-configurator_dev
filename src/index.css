@@ -420,22 +420,22 @@ button.bg-transparent:focus-visible {
 }
 
 /* ===== ENERGY BORDER CHASE - Rotating element technique ===== */
-/* Uses a physically rotating gradient element clipped by overflow + inner fill */
-/* This is GPU-accelerated via transform: rotate() and constant-speed in all browsers */
+/* GPU-accelerated via transform: rotate() - constant speed in all browsers */
+/* Uses soft lime single-color-family trail with gentle opacity fade at head/tail */
 
 @keyframes energy-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-/* Step number circle: rotating border + scale pulse */
+/* Step number circle: subtle breathing scale */
 @keyframes step-circle-pulse {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  50% { transform: scale(1.04); }
 }
 
 .step-number-glow {
-  animation: step-circle-pulse 2s ease-in-out infinite;
+  animation: step-circle-pulse 2.5s ease-in-out infinite;
 }
 
 /* Wrapper that provides the rotating energy border for step circle */
@@ -443,7 +443,7 @@ button.bg-transparent:focus-visible {
   position: relative;
   border-radius: 9999px;
   padding: 3px;
-  animation: step-circle-pulse 2s ease-in-out infinite;
+  animation: step-circle-pulse 2.5s ease-in-out infinite;
   overflow: hidden;
 }
 
@@ -456,16 +456,19 @@ button.bg-transparent:focus-visible {
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    transparent 40%,
-    rgba(191, 241, 2, 0.4) 48%,
-    rgba(48, 124, 49, 0.9) 52%,
-    rgba(191, 241, 2, 1) 55%,
-    rgba(48, 124, 49, 0.9) 58%,
-    rgba(191, 241, 2, 0.4) 62%,
-    transparent 70%,
+    transparent 30%,
+    rgba(191, 241, 2, 0.08) 38%,
+    rgba(191, 241, 2, 0.25) 44%,
+    rgba(191, 241, 2, 0.55) 49%,
+    rgba(191, 241, 2, 0.8) 52%,
+    rgba(191, 241, 2, 0.55) 55%,
+    rgba(191, 241, 2, 0.25) 60%,
+    rgba(191, 241, 2, 0.08) 66%,
+    transparent 74%,
     transparent 100%
   );
-  animation: energy-rotate 2.5s linear infinite;
+  animation: energy-rotate 3s linear infinite;
+  will-change: transform;
   z-index: 0;
 }
 
@@ -489,16 +492,19 @@ button.bg-transparent:focus-visible {
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    transparent 40%,
-    rgba(191, 241, 2, 0.3) 47%,
-    rgba(48, 124, 49, 0.8) 52%,
-    rgba(191, 241, 2, 0.9) 55%,
-    rgba(48, 124, 49, 0.8) 58%,
-    rgba(191, 241, 2, 0.3) 63%,
-    transparent 70%,
+    transparent 30%,
+    rgba(191, 241, 2, 0.06) 37%,
+    rgba(191, 241, 2, 0.2) 43%,
+    rgba(191, 241, 2, 0.5) 49%,
+    rgba(191, 241, 2, 0.75) 52%,
+    rgba(191, 241, 2, 0.5) 55%,
+    rgba(191, 241, 2, 0.2) 61%,
+    rgba(191, 241, 2, 0.06) 67%,
+    transparent 74%,
     transparent 100%
   );
-  animation: energy-rotate 3s linear infinite;
+  animation: energy-rotate 3.5s linear infinite;
+  will-change: transform;
   z-index: -1;
   border-radius: inherit;
 }
@@ -513,6 +519,7 @@ button.bg-transparent:focus-visible {
 }
 
 /* Button energy wrapper - wraps around the button element */
+/* Uses very large rotating element (800% diagonal) to ensure coverage on wide buttons */
 .energy-border-chase-btn {
   position: relative;
   border-radius: 12px;
@@ -523,22 +530,28 @@ button.bg-transparent:focus-visible {
 .energy-border-chase-btn::before {
   content: '';
   position: absolute;
-  inset: -50%;
-  width: 200%;
-  height: 200%;
+  top: 50%;
+  left: 50%;
+  width: 800%;
+  height: 800%;
+  margin-top: -400%;
+  margin-left: -400%;
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    transparent 35%,
-    rgba(191, 241, 2, 0.5) 43%,
-    rgba(48, 124, 49, 1) 48%,
-    rgba(191, 241, 2, 1) 52%,
-    rgba(48, 124, 49, 1) 56%,
-    rgba(191, 241, 2, 0.5) 63%,
+    transparent 32%,
+    rgba(191, 241, 2, 0.1) 38%,
+    rgba(191, 241, 2, 0.3) 43%,
+    rgba(191, 241, 2, 0.6) 48%,
+    rgba(191, 241, 2, 0.85) 51%,
+    rgba(191, 241, 2, 0.6) 54%,
+    rgba(191, 241, 2, 0.3) 59%,
+    rgba(191, 241, 2, 0.1) 64%,
     transparent 70%,
     transparent 100%
   );
-  animation: energy-rotate 2.5s linear infinite;
+  animation: energy-rotate 4s linear infinite;
+  will-change: transform;
   z-index: 0;
 }
 
@@ -547,7 +560,7 @@ button.bg-transparent:focus-visible {
   z-index: 1;
 }
 
-/* Shiny text sweep effect for guidance labels */
+/* Shiny text sweep effect for guidance labels - subtle shimmer */
 @keyframes shiny-sweep {
   0% { background-position: 200% center; }
   100% { background-position: -200% center; }
@@ -556,19 +569,19 @@ button.bg-transparent:focus-visible {
 .shiny-text-guidance {
   background: linear-gradient(
     120deg,
-    #01312D 0%,
-    #01312D 40%,
-    #BFF102 48%,
-    #307C31 52%,
-    #BFF102 56%,
-    #01312D 64%,
-    #01312D 100%
+    #1a4a3a 0%,
+    #1a4a3a 38%,
+    #3d8b4a 46%,
+    #5aad5a 50%,
+    #3d8b4a 54%,
+    #1a4a3a 62%,
+    #1a4a3a 100%
   );
-  background-size: 200% auto;
+  background-size: 250% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shiny-sweep 3s linear infinite;
+  animation: shiny-sweep 4s ease-in-out infinite;
 }
 
 /* Micro-tooltip hint that appears briefly */
@@ -647,12 +660,12 @@ button.bg-transparent:focus-visible {
   .energy-border-chase::before,
   .energy-border-chase-btn::before {
     animation: none;
-    background: rgba(191, 241, 2, 0.4);
+    background: rgba(191, 241, 2, 0.3);
   }
 
   .shiny-text-guidance {
     animation: none;
-    -webkit-text-fill-color: #01312D;
+    -webkit-text-fill-color: #1a4a3a;
     background: none;
   }
 
