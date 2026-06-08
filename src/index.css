@@ -419,101 +419,156 @@ button.bg-transparent:focus-visible {
   perspective: 1000;
 }
 
-/* Active step number pulsating glow */
-@keyframes step-number-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(191, 241, 2, 0.6), 0 0 8px 2px rgba(191, 241, 2, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(191, 241, 2, 0.15), 0 0 16px 4px rgba(191, 241, 2, 0.3);
-  }
+/* ===== ENERGY BORDER CHASE - Rotating element technique ===== */
+/* Uses a physically rotating gradient element clipped by overflow + inner fill */
+/* This is GPU-accelerated via transform: rotate() and constant-speed in all browsers */
+
+@keyframes energy-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Step number circle: rotating border + scale pulse */
+@keyframes step-circle-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
 }
 
 .step-number-glow {
-  animation: step-number-glow 2.5s ease-in-out infinite;
+  animation: step-circle-pulse 2s ease-in-out infinite;
 }
 
-/* Energy border chase - gradient trail sweeping around the element */
-@keyframes energy-chase-spin {
-  0% {
-    --angle: 0deg;
-  }
-  100% {
-    --angle: 360deg;
-  }
+/* Wrapper that provides the rotating energy border for step circle */
+.step-circle-energy {
+  position: relative;
+  border-radius: 9999px;
+  padding: 3px;
+  animation: step-circle-pulse 2s ease-in-out infinite;
+  overflow: hidden;
 }
 
-@property --angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
+.step-circle-energy::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(191, 241, 2, 0.4) 48%,
+    rgba(48, 124, 49, 0.9) 52%,
+    rgba(191, 241, 2, 1) 55%,
+    rgba(48, 124, 49, 0.9) 58%,
+    rgba(191, 241, 2, 0.4) 62%,
+    transparent 70%,
+    transparent 100%
+  );
+  animation: energy-rotate 2.5s linear infinite;
+  z-index: 0;
 }
 
+.step-circle-energy > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* General energy border chase for rectangular/rounded elements */
 .energy-border-chase {
   position: relative;
-  isolation: isolate;
+  border-radius: inherit;
 }
 
 .energy-border-chase::before {
   content: '';
   position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  padding: 2px;
+  inset: -100%;
+  width: 300%;
+  height: 300%;
   background: conic-gradient(
-    from var(--angle),
+    from 0deg,
     transparent 0%,
-    transparent 60%,
-    rgba(191, 241, 2, 0.3) 70%,
-    rgba(48, 124, 49, 0.8) 80%,
-    rgba(191, 241, 2, 0.9) 85%,
-    rgba(48, 124, 49, 0.8) 90%,
-    rgba(191, 241, 2, 0.3) 95%,
+    transparent 40%,
+    rgba(191, 241, 2, 0.3) 47%,
+    rgba(48, 124, 49, 0.8) 52%,
+    rgba(191, 241, 2, 0.9) 55%,
+    rgba(48, 124, 49, 0.8) 58%,
+    rgba(191, 241, 2, 0.3) 63%,
+    transparent 70%,
     transparent 100%
   );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  animation: energy-chase-spin 3s linear infinite;
-  z-index: 1;
-  pointer-events: none;
+  animation: energy-rotate 3s linear infinite;
+  z-index: -1;
+  border-radius: inherit;
 }
 
-.energy-border-chase-fast::before {
-  animation: energy-chase-spin 2s linear infinite;
+.energy-border-chase::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  background: white;
+  border-radius: inherit;
+  z-index: -1;
 }
 
-/* Rounded variant for buttons */
+/* Button energy wrapper - wraps around the button element */
 .energy-border-chase-btn {
   position: relative;
-  isolation: isolate;
+  border-radius: 12px;
+  padding: 3px;
+  overflow: hidden;
 }
 
 .energy-border-chase-btn::before {
   content: '';
   position: absolute;
-  inset: -3px;
-  border-radius: 12px;
-  padding: 3px;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
   background: conic-gradient(
-    from var(--angle),
+    from 0deg,
     transparent 0%,
-    transparent 55%,
-    rgba(191, 241, 2, 0.4) 65%,
-    rgba(48, 124, 49, 0.9) 75%,
-    rgba(191, 241, 2, 1) 80%,
-    rgba(48, 124, 49, 0.9) 85%,
-    rgba(191, 241, 2, 0.4) 92%,
+    transparent 35%,
+    rgba(191, 241, 2, 0.5) 43%,
+    rgba(48, 124, 49, 1) 48%,
+    rgba(191, 241, 2, 1) 52%,
+    rgba(48, 124, 49, 1) 56%,
+    rgba(191, 241, 2, 0.5) 63%,
+    transparent 70%,
     transparent 100%
   );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  animation: energy-chase-spin 2.5s linear infinite;
+  animation: energy-rotate 2.5s linear infinite;
+  z-index: 0;
+}
+
+.energy-border-chase-btn > * {
+  position: relative;
   z-index: 1;
-  pointer-events: none;
+}
+
+/* Shiny text sweep effect for guidance labels */
+@keyframes shiny-sweep {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.shiny-text-guidance {
+  background: linear-gradient(
+    120deg,
+    #01312D 0%,
+    #01312D 40%,
+    #BFF102 48%,
+    #307C31 52%,
+    #BFF102 56%,
+    #01312D 64%,
+    #01312D 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shiny-sweep 3s linear infinite;
 }
 
 /* Micro-tooltip hint that appears briefly */
@@ -583,15 +638,22 @@ button.bg-transparent:focus-visible {
     animation: none;
   }
 
-  .step-number-glow {
+  .step-number-glow,
+  .step-circle-energy {
     animation: none;
   }
 
+  .step-circle-energy::before,
   .energy-border-chase::before,
-  .energy-border-chase-fast::before,
   .energy-border-chase-btn::before {
     animation: none;
     background: rgba(191, 241, 2, 0.4);
+  }
+
+  .shiny-text-guidance {
+    animation: none;
+    -webkit-text-fill-color: #01312D;
+    background: none;
   }
 
   .guidance-hint {

@@ -55,7 +55,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
     if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
       console.log('[FabricSelection] Guiding to color section');
       mobileGuidance.scrollToElement('color-selection', 400, 80, true);
-      mobileGuidance.setHighlightTarget('color-selection', 5000);
+      mobileGuidance.setHighlightTarget('color-selection');
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
@@ -69,7 +69,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
     if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
       console.log('[FabricSelection] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-fabric', 400);
-      mobileGuidance.setHighlightTarget('continue-button-fabric', 5000);
+      mobileGuidance.setHighlightTarget('continue-button-fabric');
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
@@ -310,9 +310,11 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
       {selectedFabric && (
         <div className="mb-8" id="color-selection" data-guidance-id="color-selection">
           <div className={`flex items-center gap-2 mb-4 px-2 py-1 -mx-2 rounded-lg transition-all duration-300 ${
-            mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-[#BFF102]/10 energy-border-chase' : ''
+            mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-[#BFF102]/10' : ''
           }`}>
-            <h4 className="text-lg font-semibold text-[#01312D]">
+            <h4 className={`text-lg font-semibold ${
+              mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'shiny-text-guidance' : 'text-[#01312D]'
+            }`}>
               Choose Color
             </h4>
             <Tooltip
@@ -457,28 +459,49 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                       </span>
                     </div>
                   )}
-                  <Button
-                    onClick={() => {
-                      const timeSpent = (Date.now() - stepStartTime.current) / 1000;
-                      analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
-                        fabric_type: config.fabricType,
-                        fabric_color: config.fabricColor,
-                      });
-                      mobileGuidance?.clearHighlight();
-                      onNext();
-                    }}
-                    size="md"
-                    id="continue-button-fabric"
-                    data-guidance-id="continue-button-fabric"
-                    className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''} ${
-                      mobileGuidance?.currentHighlightTarget === 'continue-button-fabric' ? 'energy-border-chase-btn' : ''
-                    }`}
-                  >
-                    <span className="flex flex-col items-center leading-tight">
-                      <span>Continue</span>
-                      {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                    </span>
-                  </Button>
+                  {mobileGuidance?.currentHighlightTarget === 'continue-button-fabric' && !incomplete ? (
+                    <div className="energy-border-chase-btn" id="continue-button-fabric" data-guidance-id="continue-button-fabric">
+                      <Button
+                        onClick={() => {
+                          const timeSpent = (Date.now() - stepStartTime.current) / 1000;
+                          analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
+                            fabric_type: config.fabricType,
+                            fabric_color: config.fabricColor,
+                          });
+                          mobileGuidance?.clearHighlight();
+                          onNext();
+                        }}
+                        size="md"
+                        className="py-4 sm:py-2 w-full"
+                      >
+                        <span className="flex flex-col items-center leading-tight">
+                          <span>Continue</span>
+                          {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                        </span>
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        const timeSpent = (Date.now() - stepStartTime.current) / 1000;
+                        analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
+                          fabric_type: config.fabricType,
+                          fabric_color: config.fabricColor,
+                        });
+                        mobileGuidance?.clearHighlight();
+                        onNext();
+                      }}
+                      size="md"
+                      id="continue-button-fabric"
+                      data-guidance-id="continue-button-fabric"
+                      className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <span className="flex flex-col items-center leading-tight">
+                        <span>Continue</span>
+                        {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                      </span>
+                    </Button>
+                  )}
                 </>
               );
             })()}

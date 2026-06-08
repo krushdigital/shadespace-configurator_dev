@@ -197,7 +197,7 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
 
   const setHighlightTarget = useCallback((
     targetId: string | null,
-    duration: number = 5000
+    duration: number = 0
   ) => {
     if (highlightTimeoutRef.current) {
       clearTimeout(highlightTimeoutRef.current);

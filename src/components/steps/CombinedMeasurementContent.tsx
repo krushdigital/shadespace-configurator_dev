@@ -76,7 +76,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
     if (mobileGuidance?.isGuidanceActive && config.unit && !config.measurementOption) {
       console.log('[CombinedMeasurement] Guiding to measurement option section');
       mobileGuidance.scrollToElement('measurement-option-section', 400);
-      mobileGuidance.setHighlightTarget('measurement-option-section', 5000);
+      mobileGuidance.setHighlightTarget('measurement-option-section');
     }
   }, [config.unit, config.measurementOption, mobileGuidance?.isGuidanceActive]);
 
@@ -90,7 +90,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
     if (mobileGuidance?.isGuidanceActive && config.unit && config.measurementOption) {
       console.log('[CombinedMeasurement] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-measurement', 400);
-      mobileGuidance.setHighlightTarget('continue-button-measurement', 5000);
+      mobileGuidance.setHighlightTarget('continue-button-measurement');
     }
   }, [config.unit, config.measurementOption, mobileGuidance?.isGuidanceActive]);
   const handleMeasurementOptionChange = (option: 'adjust' | 'exact') => {
@@ -136,7 +136,9 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             Choose how your sail will be manufactured
           </div>
         )}
-        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+        <h4 className={`text-lg font-semibold mb-4 ${
+          !config.measurementOption && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-slate-900'
+        }`}>
           How would you like your shade sail to be manufactured?
         </h4>
 
@@ -434,23 +436,39 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               />
             )}
           </div>
-          <Button
-            onClick={() => {
-              mobileGuidance?.clearHighlight();
-              onNext();
-            }}
-            size="md"
-            id="continue-button-measurement"
-            data-guidance-id="continue-button-measurement"
-            className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'energy-border-chase-btn' : ''
-            }`}
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span>Continue</span>
-              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-            </span>
-          </Button>
+          {mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? (
+            <div className="energy-border-chase-btn w-full" id="continue-button-measurement" data-guidance-id="continue-button-measurement">
+              <Button
+                onClick={() => {
+                  mobileGuidance?.clearHighlight();
+                  onNext();
+                }}
+                size="md"
+                className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+              >
+                <span className="flex flex-col items-center leading-tight">
+                  <span>Continue</span>
+                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => {
+                mobileGuidance?.clearHighlight();
+                onNext();
+              }}
+              size="md"
+              id="continue-button-measurement"
+              data-guidance-id="continue-button-measurement"
+              className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span>Continue</span>
+                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+              </span>
+            </Button>
+          )}
         </div>
 
         {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
@@ -471,23 +489,39 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               className="w-auto"
             />
           )}
-          <Button
-            onClick={() => {
-              mobileGuidance?.clearHighlight();
-              onNext();
-            }}
-            size="md"
-            id="continue-button-measurement"
-            data-guidance-id="continue-button-measurement"
-            className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'energy-border-chase-btn' : ''
-            }`}
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span>Continue</span>
-              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-            </span>
-          </Button>
+          {mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? (
+            <div className="energy-border-chase-btn flex-1" id="continue-button-measurement" data-guidance-id="continue-button-measurement">
+              <Button
+                onClick={() => {
+                  mobileGuidance?.clearHighlight();
+                  onNext();
+                }}
+                size="md"
+                className={`w-full ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+              >
+                <span className="flex flex-col items-center leading-tight">
+                  <span>Continue</span>
+                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => {
+                mobileGuidance?.clearHighlight();
+                onNext();
+              }}
+              size="md"
+              id="continue-button-measurement"
+              data-guidance-id="continue-button-measurement"
+              className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''}`}
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span>Continue</span>
+                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+              </span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

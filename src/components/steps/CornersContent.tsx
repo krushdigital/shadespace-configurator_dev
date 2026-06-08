@@ -42,7 +42,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     if (mobileGuidance?.isGuidanceActive && config.corners >= 3) {
       console.log('[Corners] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-corners', 400);
-      mobileGuidance.setHighlightTarget('continue-button-corners', 5000);
+      mobileGuidance.setHighlightTarget('continue-button-corners');
     }
   }, [config.corners, mobileGuidance?.isGuidanceActive]);
   const generateRegularPoints = (corners: number) => {
@@ -164,7 +164,9 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
             Select the number of fixing points for your sail
           </div>
         )}
-        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+        <h4 className={`text-lg font-semibold mb-4 ${
+          !config.corners && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-slate-900'
+        }`}>
           How many fixing points will your shade sail have?
         </h4>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -220,23 +222,39 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
               />
             )}
           </div>
-          <Button
-            onClick={() => {
-              mobileGuidance?.clearHighlight();
-              onNext();
-            }}
-            size="md"
-            id="continue-button-corners"
-            data-guidance-id="continue-button-corners"
-            className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'energy-border-chase-btn' : ''
-            }`}
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span>Continue</span>
-              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-            </span>
-          </Button>
+          {mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? (
+            <div className="energy-border-chase-btn w-full" id="continue-button-corners" data-guidance-id="continue-button-corners">
+              <Button
+                onClick={() => {
+                  mobileGuidance?.clearHighlight();
+                  onNext();
+                }}
+                size="md"
+                className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''}`}
+              >
+                <span className="flex flex-col items-center leading-tight">
+                  <span>Continue</span>
+                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => {
+                mobileGuidance?.clearHighlight();
+                onNext();
+              }}
+              size="md"
+              id="continue-button-corners"
+              data-guidance-id="continue-button-corners"
+              className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''}`}
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span>Continue</span>
+                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+              </span>
+            </Button>
+          )}
         </div>
 
         {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
@@ -257,23 +275,39 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
               className="w-auto"
             />
           )}
-          <Button
-            onClick={() => {
-              mobileGuidance?.clearHighlight();
-              onNext();
-            }}
-            size="md"
-            id="continue-button-corners"
-            data-guidance-id="continue-button-corners"
-            className={`flex-1 ${!config.corners ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'energy-border-chase-btn' : ''
-            }`}
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span>Continue</span>
-              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-            </span>
-          </Button>
+          {mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? (
+            <div className="energy-border-chase-btn flex-1" id="continue-button-corners" data-guidance-id="continue-button-corners">
+              <Button
+                onClick={() => {
+                  mobileGuidance?.clearHighlight();
+                  onNext();
+                }}
+                size="md"
+                className={`w-full ${!config.corners ? 'opacity-50' : ''}`}
+              >
+                <span className="flex flex-col items-center leading-tight">
+                  <span>Continue</span>
+                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => {
+                mobileGuidance?.clearHighlight();
+                onNext();
+              }}
+              size="md"
+              id="continue-button-corners"
+              data-guidance-id="continue-button-corners"
+              className={`flex-1 ${!config.corners ? 'opacity-50' : ''}`}
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span>Continue</span>
+                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+              </span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

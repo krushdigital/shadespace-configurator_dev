@@ -67,7 +67,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
     if (mobileGuidance?.isGuidanceActive && config.edgeType) {
       console.log('[EdgeType] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-edge', 400);
-      mobileGuidance.setHighlightTarget('continue-button-edge', 5000);
+      mobileGuidance.setHighlightTarget('continue-button-edge');
     }
   }, [config.edgeType, mobileGuidance?.isGuidanceActive]);
 
@@ -91,7 +91,9 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             Choose your preferred edge style
           </div>
         )}
-        <h4 className="text-lg font-semibold text-slate-900 mb-4">
+        <h4 className={`text-lg font-semibold mb-4 ${
+          !config.edgeType && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-slate-900'
+        }`}>
           Select Edge Reinforcement Type
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
@@ -198,23 +200,39 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
               />
             )}
           </div>
-          <Button
-            onClick={() => {
-              mobileGuidance?.clearHighlight();
-              onNext();
-            }}
-            size="md"
-            id="continue-button-edge"
-            data-guidance-id="continue-button-edge"
-            className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn' : ''
-            }`}
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span>Continue</span>
-              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-            </span>
-          </Button>
+          {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
+            <div className="energy-border-chase-btn w-full" id="continue-button-edge" data-guidance-id="continue-button-edge">
+              <Button
+                onClick={() => {
+                  mobileGuidance?.clearHighlight();
+                  onNext();
+                }}
+                size="md"
+                className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
+              >
+                <span className="flex flex-col items-center leading-tight">
+                  <span>Continue</span>
+                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => {
+                mobileGuidance?.clearHighlight();
+                onNext();
+              }}
+              size="md"
+              id="continue-button-edge"
+              data-guidance-id="continue-button-edge"
+              className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span>Continue</span>
+                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+              </span>
+            </Button>
+          )}
         </div>
 
         {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
@@ -235,23 +253,39 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
               className="w-auto"
             />
           )}
-          <Button
-            onClick={() => {
-              mobileGuidance?.clearHighlight();
-              onNext();
-            }}
-            size="md"
-            id="continue-button-edge"
-            data-guidance-id="continue-button-edge"
-            className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn' : ''
-            }`}
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span>Continue</span>
-              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-            </span>
-          </Button>
+          {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
+            <div className="energy-border-chase-btn flex-1" id="continue-button-edge" data-guidance-id="continue-button-edge">
+              <Button
+                onClick={() => {
+                  mobileGuidance?.clearHighlight();
+                  onNext();
+                }}
+                size="md"
+                className={`w-full ${!config.edgeType ? 'opacity-50' : ''}`}
+              >
+                <span className="flex flex-col items-center leading-tight">
+                  <span>Continue</span>
+                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => {
+                mobileGuidance?.clearHighlight();
+                onNext();
+              }}
+              size="md"
+              id="continue-button-edge"
+              data-guidance-id="continue-button-edge"
+              className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''}`}
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span>Continue</span>
+                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+              </span>
+            </Button>
+          )}
         </div>
       </div>
 

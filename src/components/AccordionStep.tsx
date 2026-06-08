@@ -44,22 +44,33 @@ export function AccordionStep({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-grow">
             {/* Step Number/Check */}
-            <div className={`
-              flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-md flex-shrink-0
-              ${isCompleted
-                ? 'bg-[#307C31] border-[#307C31] text-white'
-                : isCurrent
-                ? 'bg-[#01312D] border-[#01312D] text-white'
-                : 'bg-white border-[#307C31] text-[#307C31]'
-              }
-              ${isCurrent && isOpen ? 'step-number-glow' : ''}
-            `}>
-              {isCompleted ? (
-                <Check className="w-6 h-6" />
-              ) : (
-                <span className="text-base font-bold">{stepNumber}</span>
-              )}
-            </div>
+            {isCurrent && isOpen ? (
+              <div className="step-circle-energy flex-shrink-0">
+                <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 bg-[#01312D] border-[#01312D] text-white shadow-md">
+                  {isCompleted ? (
+                    <Check className="w-6 h-6" />
+                  ) : (
+                    <span className="text-base font-bold">{stepNumber}</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className={`
+                flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-md flex-shrink-0
+                ${isCompleted
+                  ? 'bg-[#307C31] border-[#307C31] text-white'
+                  : isCurrent
+                  ? 'bg-[#01312D] border-[#01312D] text-white'
+                  : 'bg-white border-[#307C31] text-[#307C31]'
+                }
+              `}>
+                {isCompleted ? (
+                  <Check className="w-6 h-6" />
+                ) : (
+                  <span className="text-base font-bold">{stepNumber}</span>
+                )}
+              </div>
+            )}
 
             {/* Title and Subtitle */}
             <div className="flex flex-col">
