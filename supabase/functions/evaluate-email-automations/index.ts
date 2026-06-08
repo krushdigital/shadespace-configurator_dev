@@ -51,6 +51,27 @@ Deno.serve(async (req: Request) => {
       // empty body is fine
     }
 
+    // Retroactive suppression: skip pending/sending emails for non-primary quotes
+    if (!dryRun) {
+      const { data: nonPrimaryQuotes } = await supabase
+        .from("saved_quotes")
+        .select("id")
+        .eq("is_thread_primary", false)
+        .not("quote_thread_id", "is", null);
+
+      if (nonPrimaryQuotes && nonPrimaryQuotes.length > 0) {
+        const nonPrimaryIds = nonPrimaryQuotes.map((q: { id: string }) => q.id);
+        for (let i = 0; i < nonPrimaryIds.length; i += 50) {
+          const batch = nonPrimaryIds.slice(i, i + 50);
+          await supabase
+            .from("email_queue")
+            .update({ status: "skipped" })
+            .in("status", ["pending", "sending"])
+            .in("quote_id", batch);
+        }
+      }
+    }
+
     // Fetch active automations (or a specific one for dry-run)
     let automationsQuery = supabase
       .from("email_automations")
@@ -141,12 +162,16 @@ Deno.serve(async (req: Request) => {
         // Skip if no marketing opt-in (for non-transactional)
         if (!quote.marketing_opt_in) continue;
 
-        // Check purchase suppression with time-window logic
+        // Skip non-primary quotes (only email the representative quote per thread)
+        if (quote.is_thread_primary === false) continue;
+
+        // Check purchase suppression with thread-aware logic
         if (automation.suppress_if_purchased) {
           const windowHours =
             automation.suppression_window_hours ?? globalWindowHours;
           if (
-            isSupressedByPurchase(
+            await isSuppressedByPurchase(
+              supabase,
               suppressedRows || [],
               email,
               quote,
@@ -166,15 +191,34 @@ Deno.serve(async (req: Request) => {
           .in("status", ["pending", "sending", "sent"]);
         if ((quoteSendCount ?? 0) >= automation.max_sends_per_quote) continue;
 
-        // Check max_sends_per_email
+        // Check max_sends_per_email (thread-aware: check all quotes in thread)
         if (automation.max_sends_per_email) {
-          const { count: emailSendCount } = await supabase
-            .from("email_queue")
-            .select("id", { count: "exact", head: true })
-            .eq("automation_id", automation.id)
-            .eq("recipient_email", email)
-            .in("status", ["pending", "sending", "sent"]);
-          if ((emailSendCount ?? 0) >= automation.max_sends_per_email) continue;
+          let emailSendCount = 0;
+          if (quote.quote_thread_id) {
+            const { data: threadQuotes } = await supabase
+              .from("saved_quotes")
+              .select("id")
+              .eq("quote_thread_id", quote.quote_thread_id);
+            if (threadQuotes && threadQuotes.length > 0) {
+              const threadQuoteIds = threadQuotes.map((q: { id: string }) => q.id);
+              const { count } = await supabase
+                .from("email_queue")
+                .select("id", { count: "exact", head: true })
+                .eq("automation_id", automation.id)
+                .in("quote_id", threadQuoteIds)
+                .in("status", ["pending", "sending", "sent"]);
+              emailSendCount = count ?? 0;
+            }
+          } else {
+            const { count } = await supabase
+              .from("email_queue")
+              .select("id", { count: "exact", head: true })
+              .eq("automation_id", automation.id)
+              .eq("recipient_email", email)
+              .in("status", ["pending", "sending", "sent"]);
+            emailSendCount = count ?? 0;
+          }
+          if (emailSendCount >= automation.max_sends_per_email) continue;
         }
 
         // Check cooldown_days
@@ -246,15 +290,15 @@ async function findCandidateQuotes(
   const now = Date.now();
   const delayMs = automation.delay_minutes * 60 * 1000;
   const cutoff = new Date(now - delayMs).toISOString();
-  // Only look back 14 days max to avoid processing ancient quotes
   const lookback = new Date(now - 14 * 86400000).toISOString();
 
   let query = supabase
     .from("saved_quotes")
     .select(
-      "id, customer_email, current_step, status, created_at, updated_at, is_excluded, marketing_opt_in, config_data"
+      "id, customer_email, current_step, status, created_at, updated_at, is_excluded, marketing_opt_in, config_data, is_thread_primary, quote_thread_id"
     )
     .not("customer_email", "is", null)
+    .eq("is_thread_primary", true)
     .gte("updated_at", lookback)
     .lte("updated_at", cutoff)
     .gte("created_at", lookback);
@@ -296,16 +340,17 @@ async function findCandidateQuotes(
   return data || [];
 }
 
-function isSupressedByPurchase(
+async function isSuppressedByPurchase(
+  supabase: ReturnType<typeof createClient>,
   suppressedRows: Array<{
     email: string;
     quote_id: string | null;
     suppressed_at: string;
   }>,
   email: string,
-  quote: { id: string; created_at: string },
+  quote: { id: string; created_at: string; quote_thread_id: string | null },
   windowHours: number
-): boolean {
+): Promise<boolean> {
   const matchingSuppressions = suppressedRows.filter(
     (s) => s.email.toLowerCase() === email
   );
@@ -315,13 +360,24 @@ function isSupressedByPurchase(
     // Direct match: this exact quote was purchased
     if (suppression.quote_id === quote.id) return true;
 
+    // Thread-aware: if the suppressed quote is in the same thread, suppress
+    if (quote.quote_thread_id && suppression.quote_id) {
+      const { data: suppressedQuote } = await supabase
+        .from("saved_quotes")
+        .select("quote_thread_id")
+        .eq("id", suppression.quote_id)
+        .maybeSingle();
+
+      if (suppressedQuote?.quote_thread_id === quote.quote_thread_id) {
+        return true;
+      }
+    }
+
     // Time-window match: another quote from same email was purchased
-    // Suppress if the candidate quote was created within windowHours of the suppression
     if (suppression.quote_id !== null) {
       const suppressedAt = new Date(suppression.suppressed_at).getTime();
       const quoteCreatedAt = new Date(quote.created_at).getTime();
       const windowMs = windowHours * 3600000;
-      // If the quote was created within the window of the purchase, suppress it
       if (Math.abs(quoteCreatedAt - suppressedAt) <= windowMs) {
         return true;
       }

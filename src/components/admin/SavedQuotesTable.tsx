@@ -36,10 +36,19 @@ interface Quote {
   shopify_order_number: string | null;
   purchased_at: string | null;
   diagram_3d_public_url: string | null;
+  quote_thread_id: string | null;
+  is_thread_primary: boolean;
+}
+
+interface ThreadGroup {
+  threadId: string;
+  primary: Quote;
+  secondaries: Quote[];
+  quoteCount: number;
 }
 
 const PAGE_SIZE = 50;
-const SELECT_FIELDS = 'id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at,diagram_3d_public_url';
+const SELECT_FIELDS = 'id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at,diagram_3d_public_url,quote_thread_id,is_thread_primary';
 
 export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean; timezone?: string }> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -61,6 +70,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [regenerateMode, setRegenerateMode] = useState<'single' | 'bulk' | null>(null);
   const [regenerateQuote, setRegenerateQuote] = useState<Quote | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [groupByThread, setGroupByThread] = useState(true);
+  const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+  const [threadActionLoading, setThreadActionLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useBodyScrollLock(!!selectedQuote || !!quoteToDelete || !!regenerateMode);
 
@@ -189,6 +201,135 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
     if (quote.customer_email) return <span className="text-gray-600">{quote.customer_email}</span>;
     return <span className="text-gray-400">No contact info</span>;
   };
+
+  const buildThreadGroups = (allQuotes: Quote[]): ThreadGroup[] => {
+    const threadMap = new Map<string, Quote[]>();
+    const noThread: Quote[] = [];
+
+    for (const q of allQuotes) {
+      if (q.quote_thread_id) {
+        const existing = threadMap.get(q.quote_thread_id) || [];
+        existing.push(q);
+        threadMap.set(q.quote_thread_id, existing);
+      } else {
+        noThread.push(q);
+      }
+    }
+
+    const groups: ThreadGroup[] = [];
+
+    for (const [threadId, threadQuotes] of threadMap) {
+      const primary = threadQuotes.find(q => q.is_thread_primary) || threadQuotes[0];
+      const secondaries = threadQuotes.filter(q => q.id !== primary.id).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      groups.push({ threadId, primary, secondaries, quoteCount: threadQuotes.length });
+    }
+
+    for (const q of noThread) {
+      groups.push({ threadId: q.id, primary: q, secondaries: [], quoteCount: 1 });
+    }
+
+    groups.sort((a, b) => new Date(b.primary.created_at).getTime() - new Date(a.primary.created_at).getTime());
+    return groups;
+  };
+
+  const toggleThread = (threadId: string) => {
+    setExpandedThreads(prev => {
+      const next = new Set(prev);
+      if (next.has(threadId)) next.delete(threadId);
+      else next.add(threadId);
+      return next;
+    });
+  };
+
+  const splitFromThread = async (quote: Quote) => {
+    if (!quote.quote_thread_id) return;
+    try {
+      setThreadActionLoading(true);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) return;
+      const headers = await getAdminAuthHeaders();
+
+      // Create a new solo thread for this quote
+      const threadRes = await fetch(`${supabaseUrl}/rest/v1/quote_threads`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify({
+          customer_email: quote.customer_email,
+          primary_quote_id: quote.id,
+          status: quote.status,
+          quote_count: 1,
+          latest_value: quote.calculations_data?.totalPrice ?? null,
+          latest_currency: quote.config_data?.currency ?? null,
+        }),
+      });
+      if (!threadRes.ok) { alert('Failed to create new thread.'); return; }
+      const [newThread] = await threadRes.json();
+
+      // Move quote to new thread
+      await fetch(`${supabaseUrl}/rest/v1/saved_quotes?id=eq.${quote.id}`, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ quote_thread_id: newThread.id, is_thread_primary: true }),
+      });
+
+      // Recalculate old thread count
+      const oldThreadId = quote.quote_thread_id;
+      const countRes = await fetch(`${supabaseUrl}/rest/v1/saved_quotes?quote_thread_id=eq.${oldThreadId}&select=id`, { headers });
+      const remaining = countRes.ok ? await countRes.json() : [];
+      if (remaining.length > 0) {
+        await fetch(`${supabaseUrl}/rest/v1/quote_threads?id=eq.${oldThreadId}`, {
+          method: 'PATCH',
+          headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ quote_count: remaining.length }),
+        });
+      } else {
+        await fetch(`${supabaseUrl}/rest/v1/quote_threads?id=eq.${oldThreadId}`, {
+          method: 'DELETE',
+          headers,
+        });
+      }
+
+      fetchQuotes();
+      setSelectedQuote(null);
+    } catch (error) {
+      console.error('Split from thread failed:', error);
+      alert('Failed to split quote from thread.');
+    } finally {
+      setThreadActionLoading(false);
+    }
+  };
+
+  const markCustomerCommercial = async (quote: Quote) => {
+    if (!quote.customer_email) { alert('No email on this quote.'); return; }
+    try {
+      setThreadActionLoading(true);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) return;
+      const headers = await getAdminAuthHeaders();
+
+      // Upsert customer_thread_config
+      await fetch(`${supabaseUrl}/rest/v1/customer_thread_config`, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify({
+          customer_email: quote.customer_email.toLowerCase(),
+          default_thread_type: 'commercial',
+          always_separate_threads: true,
+        }),
+      });
+
+      alert(`${quote.customer_email} marked as commercial. Future quotes will each get their own thread.`);
+    } catch (error) {
+      console.error('Mark commercial failed:', error);
+      alert('Failed to mark customer as commercial.');
+    } finally {
+      setThreadActionLoading(false);
+    }
+  };
+
+  const threadGroups = groupByThread ? buildThreadGroups(quotes) : [];
 
   const handleDownloadPDF = async (quote: Quote) => {
     try {
@@ -427,6 +568,12 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               <option value="checkout_pending">Checkout Pending</option>
               <option value="expired">Expired</option>
             </select>
+            <button
+              onClick={() => setGroupByThread(!groupByThread)}
+              className={`px-3 py-2 rounded border text-sm font-medium transition-colors ${groupByThread ? 'bg-[#01312D] text-white border-[#01312D]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+            >
+              {groupByThread ? 'Grouped' : 'Flat List'}
+            </button>
           </div>
           <Button onClick={() => setRegenerateMode('bulk')} size="sm" variant="outline" className="text-[#01312D] border-[#01312D]/30 hover:bg-[#01312D]/5">Regenerate Prices</Button>
           <Button onClick={exportToCSV} size="sm" variant="outline" disabled={exporting}>{exporting ? 'Exporting...' : 'Export CSV'}</Button>
@@ -449,6 +596,81 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
             <tbody>
               {quotes.length === 0 ? (
                 <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">No quotes found</td></tr>
+              ) : groupByThread ? (
+                threadGroups.map((group) => (
+                  <React.Fragment key={group.threadId}>
+                    <tr className={`border-b border-gray-100 hover:bg-gray-50 ${group.primary.is_excluded ? 'opacity-50' : ''}`}>
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-1.5">
+                          {group.quoteCount > 1 && (
+                            <button
+                              onClick={() => toggleThread(group.threadId)}
+                              className="w-5 h-5 flex items-center justify-center rounded hover:bg-gray-200 text-gray-500 mr-1 flex-shrink-0"
+                            >
+                              <svg className={`w-3.5 h-3.5 transition-transform ${expandedThreads.has(group.threadId) ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                            </button>
+                          )}
+                          <button onClick={() => setSelectedQuote(group.primary)} className="text-lime-600 hover:text-lime-700 font-medium">
+                            {group.primary.quote_reference}
+                          </button>
+                          {group.quoteCount > 1 && (
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-200 text-gray-700">{group.quoteCount}</span>
+                          )}
+                          {group.primary.is_excluded && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600">INT</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">{group.primary.quote_name}</td>
+                      <td className="px-4 py-4 text-sm">{getCustomerDisplay(group.primary)}</td>
+                      <td className="px-4 py-4">
+                        <div className="text-xs font-mono text-gray-600">{group.primary.customer_ip && group.primary.customer_ip !== 'unknown' ? group.primary.customer_ip.split(',')[0].trim() : '-'}</div>
+                        {group.primary.customer_country && (
+                          <div className="text-xs text-gray-500">{group.primary.customer_country_code ? `${group.primary.customer_country_code} - ` : ''}{group.primary.customer_country}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-4">{getStatusBadge(group.primary.status, group.primary.shopify_order_number)}</td>
+                      <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                        {formatCurrency(group.primary.calculations_data?.totalPrice ?? 0, group.primary.config_data?.currency ?? 'NZD')}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-600">{formatDate(group.primary.created_at)}</td>
+                      <td className="px-4 py-4">
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleDownloadPDF(group.primary)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === group.primary.id}>
+                            {generatingPdf === group.primary.id ? '...' : 'PDF'}
+                          </Button>
+                          <Button onClick={() => copyQuoteUrl(group.primary)} size="sm" variant="outline" className="text-xs">Link</Button>
+                          <Button onClick={() => setSelectedQuote(group.primary)} size="sm" variant="outline" className="text-xs">View</Button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedThreads.has(group.threadId) && group.secondaries.map((sec) => (
+                      <tr key={sec.id} className="border-b border-gray-50 bg-gray-50/50">
+                        <td className="px-4 py-3 pl-12">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-4 h-px bg-gray-300"></span>
+                            <button onClick={() => setSelectedQuote(sec)} className="text-gray-500 hover:text-gray-700 text-sm">
+                              {sec.quote_reference}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{sec.quote_name}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{sec.customer_email || '-'}</td>
+                        <td className="px-4 py-3 text-xs text-gray-400">-</td>
+                        <td className="px-4 py-3">{getStatusBadge(sec.status, sec.shopify_order_number)}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500">
+                          {formatCurrency(sec.calculations_data?.totalPrice ?? 0, sec.config_data?.currency ?? 'NZD')}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{formatDate(sec.created_at)}</td>
+                        <td className="px-4 py-3">
+                          <Button onClick={() => setSelectedQuote(sec)} size="sm" variant="outline" className="text-xs">View</Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                ))
               ) : (
                 quotes.map((quote) => (
                   <tr key={quote.id} className={`border-b border-gray-100 hover:bg-gray-50 ${quote.is_excluded ? 'opacity-50' : ''}`}>
@@ -459,6 +681,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                         </button>
                         {quote.is_excluded && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600">INT</span>
+                        )}
+                        {!quote.is_thread_primary && quote.quote_thread_id && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-600">2nd</span>
                         )}
                       </div>
                     </td>
@@ -478,7 +703,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                     <td className="px-4 py-4">
                       <div className="flex gap-2">
                         <Button onClick={() => handleDownloadPDF(quote)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === quote.id}>
-                          {generatingPdf === quote.id ? 'Generating...' : 'PDF'}
+                          {generatingPdf === quote.id ? '...' : 'PDF'}
                         </Button>
                         <Button onClick={() => handleDownloadFulfilmentPDF(quote)} size="sm" variant="outline" className="text-xs text-amber-700 border-amber-300 hover:bg-amber-50" disabled={generatingFulfilment === quote.id}>
                           {generatingFulfilment === quote.id ? '...' : 'Fulfilment'}
@@ -615,6 +840,18 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               </div>
             )}
 
+            {selectedQuote.quote_thread_id && (
+              <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-slate-900 mb-2">Thread Info</h4>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${selectedQuote.is_thread_primary ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                    {selectedQuote.is_thread_primary ? 'Primary' : 'Secondary'}
+                  </span>
+                  <span className="text-slate-600">Thread: <span className="font-mono text-xs">{selectedQuote.quote_thread_id.slice(0, 8)}...</span></span>
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Configuration Details</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -695,6 +932,26 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               >
                 Regenerate Price
               </Button>
+              {selectedQuote.quote_thread_id && !selectedQuote.is_thread_primary && (
+                <Button
+                  onClick={() => splitFromThread(selectedQuote)}
+                  variant="outline"
+                  disabled={threadActionLoading}
+                  className="text-indigo-600 hover:bg-indigo-50 border-indigo-200"
+                >
+                  {threadActionLoading ? 'Splitting...' : 'Split from Thread'}
+                </Button>
+              )}
+              {selectedQuote.customer_email && (
+                <Button
+                  onClick={() => markCustomerCommercial(selectedQuote)}
+                  variant="outline"
+                  disabled={threadActionLoading}
+                  className="text-orange-600 hover:bg-orange-50 border-orange-200"
+                >
+                  Mark Commercial
+                </Button>
+              )}
               <Button onClick={() => handleDownloadPDF(selectedQuote)} variant="outline" disabled={generatingPdf === selectedQuote.id}>
                 {generatingPdf === selectedQuote.id ? 'Generating PDF...' : 'Download PDF'}
               </Button>

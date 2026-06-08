@@ -45,7 +45,7 @@ export const FunnelAnalysis: React.FC<FunnelAnalysisProps> = ({ dateRange, exclu
       const exclusionFilter = excludeInternal ? '&is_excluded=eq.false' : '';
       const [eventsRes, quotesRes] = await Promise.all([
         fetch(`${supabaseUrl}/rest/v1/user_events?created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&order=created_at.desc&limit=2000${exclusionFilter}`, { headers }),
-        fetch(`${supabaseUrl}/rest/v1/saved_quotes?select=config_data,calculations_data,status,created_at&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&limit=1000${exclusionFilter}`, { headers }),
+        fetch(`${supabaseUrl}/rest/v1/saved_quotes?select=config_data,calculations_data,status,created_at,is_thread_primary&created_at=gte.${dateRange.start}T00:00:00&created_at=lte.${dateRange.end}T23:59:59&is_thread_primary=eq.true&limit=1000${exclusionFilter}`, { headers }),
       ]);
 
       const events = eventsRes.ok ? await eventsRes.json() : [];
@@ -264,9 +264,3 @@ const OptionBreakdown: React.FC<{ title: string; options: PopularOption[]; color
     </Card>
   );
 };
-
-interface PopularOption {
-  value: string;
-  count: number;
-  percentage: number;
-}

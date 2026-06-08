@@ -65,6 +65,206 @@ function generateAccessToken(): string {
   return token;
 }
 
+const STATUS_RANK: Record<string, number> = {
+  purchased: 1,
+  quote_ready: 2,
+  completed: 3,
+  checkout_pending: 4,
+  in_progress: 5,
+  expired: 6,
+};
+
+async function assignQuoteToThread(
+  supabase: ReturnType<typeof createClient>,
+  quoteId: string,
+  email: string | null,
+  customerReference: string | null,
+  corners: number | null,
+  status: string,
+  value: number | null,
+  currency: string | null
+): Promise<string | null> {
+  if (!email) return null;
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Check if there's a customer_thread_config override
+  const { data: config } = await supabase
+    .from("customer_thread_config")
+    .select("always_separate_threads, default_thread_type")
+    .eq("customer_email", normalizedEmail)
+    .maybeSingle();
+
+  const alwaysSeparate = config?.always_separate_threads ?? false;
+  const threadType = config?.default_thread_type ?? "residential";
+
+  if (alwaysSeparate) {
+    // Commercial customer: always create a new thread
+    const { data: newThread } = await supabase
+      .from("quote_threads")
+      .insert({
+        customer_email: normalizedEmail,
+        customer_reference: customerReference || null,
+        thread_type: threadType,
+        primary_quote_id: quoteId,
+        status,
+        quote_count: 1,
+        latest_value: value,
+        latest_currency: currency,
+      })
+      .select("id")
+      .single();
+
+    if (newThread) {
+      await supabase
+        .from("saved_quotes")
+        .update({ quote_thread_id: newThread.id, is_thread_primary: true })
+        .eq("id", quoteId);
+      return newThread.id;
+    }
+    return null;
+  }
+
+  // Try to find an existing thread to join
+  let matchedThreadId: string | null = null;
+
+  // Strategy 1: Match by customer_reference (if provided)
+  if (customerReference) {
+    const { data: refMatch } = await supabase
+      .from("quote_threads")
+      .select("id")
+      .eq("customer_email", normalizedEmail)
+      .eq("customer_reference", customerReference)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (refMatch) matchedThreadId = refMatch.id;
+  }
+
+  // Strategy 2: Match by same email + same corners + within 7 days (no reference)
+  if (!matchedThreadId && !customerReference) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+
+    const { data: recentThreads } = await supabase
+      .from("quote_threads")
+      .select("id, primary_quote_id")
+      .eq("customer_email", normalizedEmail)
+      .is("customer_reference", null)
+      .gte("updated_at", sevenDaysAgo)
+      .order("updated_at", { ascending: false })
+      .limit(5);
+
+    if (recentThreads && recentThreads.length > 0 && corners !== null) {
+      for (const thread of recentThreads) {
+        if (!thread.primary_quote_id) continue;
+        const { data: primaryQuote } = await supabase
+          .from("saved_quotes")
+          .select("config_data")
+          .eq("id", thread.primary_quote_id)
+          .maybeSingle();
+
+        if (primaryQuote) {
+          const threadCorners = primaryQuote.config_data?.corners;
+          if (threadCorners === corners) {
+            matchedThreadId = thread.id;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (matchedThreadId) {
+    // Join existing thread
+    await supabase
+      .from("saved_quotes")
+      .update({ quote_thread_id: matchedThreadId, is_thread_primary: false })
+      .eq("id", quoteId);
+
+    // Recalculate primary for this thread
+    await recalculateThreadPrimary(supabase, matchedThreadId);
+    return matchedThreadId;
+  }
+
+  // No match: create a new thread
+  const { data: newThread } = await supabase
+    .from("quote_threads")
+    .insert({
+      customer_email: normalizedEmail,
+      customer_reference: customerReference || null,
+      thread_type: threadType,
+      primary_quote_id: quoteId,
+      status,
+      quote_count: 1,
+      latest_value: value,
+      latest_currency: currency,
+    })
+    .select("id")
+    .single();
+
+  if (newThread) {
+    await supabase
+      .from("saved_quotes")
+      .update({ quote_thread_id: newThread.id, is_thread_primary: true })
+      .eq("id", quoteId);
+    return newThread.id;
+  }
+
+  return null;
+}
+
+async function recalculateThreadPrimary(
+  supabase: ReturnType<typeof createClient>,
+  threadId: string
+): Promise<void> {
+  // Find the best quote in this thread
+  const { data: quotes } = await supabase
+    .from("saved_quotes")
+    .select("id, status, locked_total, locked_total_currency, calculations_data, config_data, updated_at")
+    .eq("quote_thread_id", threadId)
+    .order("updated_at", { ascending: false });
+
+  if (!quotes || quotes.length === 0) return;
+
+  // Sort by status rank then recency
+  quotes.sort((a, b) => {
+    const rankA = STATUS_RANK[a.status] ?? 99;
+    const rankB = STATUS_RANK[b.status] ?? 99;
+    if (rankA !== rankB) return rankA - rankB;
+    return new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
+  });
+
+  const primary = quotes[0];
+  const primaryValue = primary.locked_total ?? primary.calculations_data?.totalPrice ?? null;
+  const primaryCurrency = primary.locked_total_currency ?? primary.config_data?.currency ?? null;
+
+  // Set all to non-primary first
+  await supabase
+    .from("saved_quotes")
+    .update({ is_thread_primary: false })
+    .eq("quote_thread_id", threadId);
+
+  // Set the winner as primary
+  await supabase
+    .from("saved_quotes")
+    .update({ is_thread_primary: true })
+    .eq("id", primary.id);
+
+  // Update thread metadata
+  await supabase
+    .from("quote_threads")
+    .update({
+      primary_quote_id: primary.id,
+      status: primary.status,
+      quote_count: quotes.length,
+      latest_value: primaryValue,
+      latest_currency: primaryCurrency,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", threadId);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -280,6 +480,22 @@ async function handlePost(
     return jsonResponse({ success: false, error: insertErr.message }, 500);
   }
 
+  // Assign to thread (non-blocking for the response, but we await for consistency)
+  try {
+    await assignQuoteToThread(
+      supabase,
+      inserted.id,
+      email || null,
+      customerReference || null,
+      config.corners ?? null,
+      initialStatus,
+      lockedTotal,
+      lockedCurrency
+    );
+  } catch (threadErr) {
+    console.warn("Thread assignment failed (non-blocking):", threadErr);
+  }
+
   // Skip Shopify customer creation for checkout_pending (no email available)
   let shopifyCustomerCreated = false;
   let shopifyCustomerId: string | null = null;
@@ -368,7 +584,7 @@ async function handlePut(
 
   const { data: existing } = await supabase
     .from("saved_quotes")
-    .select("id, quote_reference, access_token, quote_name, name_auto_generated, customer_email, pricing_locked_until, expires_at")
+    .select("id, quote_reference, access_token, quote_name, name_auto_generated, customer_email, pricing_locked_until, expires_at, quote_thread_id, status")
     .eq("id", id)
     .eq("access_token", token)
     .maybeSingle();
@@ -450,6 +666,30 @@ async function handlePut(
     return jsonResponse({ success: false, error: updateErr.message }, 500);
   }
 
+  // Recalculate thread primary if status changed or this quote has a thread
+  try {
+    if (existing.quote_thread_id) {
+      await recalculateThreadPrimary(supabase, existing.quote_thread_id);
+    } else {
+      // Quote wasn't assigned yet (e.g. was created before threading), assign now
+      const effectiveEmail = email || existing.customer_email;
+      if (effectiveEmail) {
+        await assignQuoteToThread(
+          supabase,
+          id,
+          effectiveEmail,
+          customerReference || null,
+          config.corners ?? null,
+          finalStatus || existing.status || "quote_ready",
+          lockedTotal,
+          lockedCurrency
+        );
+      }
+    }
+  } catch (threadErr) {
+    console.warn("Thread recalculation failed (non-blocking):", threadErr);
+  }
+
   return jsonResponse({
     success: true,
     quote: {
@@ -484,7 +724,7 @@ async function handlePatch(
   // Verify access
   const { data: existing } = await supabase
     .from("saved_quotes")
-    .select("id")
+    .select("id, quote_thread_id")
     .eq("id", id)
     .eq("access_token", token)
     .maybeSingle();
@@ -499,10 +739,20 @@ async function handlePatch(
   const updatePayload: Record<string, unknown> = {};
   if (status) {
     updatePayload.status = status;
+    updatePayload.updated_at = new Date().toISOString();
   }
 
   if (Object.keys(updatePayload).length > 0) {
     await supabase.from("saved_quotes").update(updatePayload).eq("id", id);
+
+    // Recalculate thread primary on status change
+    if (existing.quote_thread_id && status) {
+      try {
+        await recalculateThreadPrimary(supabase, existing.quote_thread_id);
+      } catch (threadErr) {
+        console.warn("Thread recalculation failed (non-blocking):", threadErr);
+      }
+    }
   }
 
   return jsonResponse({ success: true });
