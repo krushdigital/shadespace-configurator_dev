@@ -54,7 +54,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
 
     if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
       console.log('[FabricSelection] Guiding to color section');
-      mobileGuidance.scrollToElement('color-selection', 400, 80, true);
+      mobileGuidance.scrollToElement('color-selection', 400, 140, true);
       mobileGuidance.setHighlightTarget('color-selection');
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
