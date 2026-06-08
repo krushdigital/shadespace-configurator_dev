@@ -6,8 +6,54 @@ type CurrencyMapping = {
   preferred_domain: string;
 };
 
+type IpDetection = {
+  countryCode: string | null;
+  currency: string | null;
+};
+
 let mappingCache: CurrencyMapping[] | null = null;
 let mappingPromise: Promise<CurrencyMapping[]> | null = null;
+let ipDetectionCache: IpDetection | null = null;
+let ipDetectionPromise: Promise<IpDetection> | null = null;
+
+/**
+ * Calls our detect-country edge function to get the customer's actual
+ * country/currency based on their IP, independent of Shopify's geo-IP.
+ */
+export function detectCountryFromIp(): Promise<IpDetection> {
+  if (ipDetectionCache) return Promise.resolve(ipDetectionCache);
+  if (ipDetectionPromise) return ipDetectionPromise;
+
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  if (!url) {
+    ipDetectionCache = { countryCode: null, currency: null };
+    return Promise.resolve(ipDetectionCache);
+  }
+
+  ipDetectionPromise = fetch(`${url}/functions/v1/detect-country`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(4000),
+  })
+    .then((res) => (res.ok ? res.json() : { countryCode: null, currency: null }))
+    .then((data: { countryCode?: string | null; currency?: string | null }) => {
+      ipDetectionCache = {
+        countryCode: data.countryCode?.toUpperCase() || null,
+        currency: data.currency?.toUpperCase() || null,
+      };
+      return ipDetectionCache;
+    })
+    .catch(() => {
+      ipDetectionCache = { countryCode: null, currency: null };
+      return ipDetectionCache;
+    });
+
+  return ipDetectionPromise;
+}
+
+export function getIpDetectionCache(): IpDetection | null {
+  return ipDetectionCache;
+}
 
 function fetchCurrencyMap(): Promise<CurrencyMapping[]> {
   const url = import.meta.env.VITE_SUPABASE_URL;
@@ -144,6 +190,9 @@ export type CurrencyAlignmentResult =
  * - If target domain differs from current, redirect there with params preserved.
  * - If same domain but different country, submit /localization form to switch.
  * - If already aligned, return aligned.
+ *
+ * Before acting on a mismatch, verifies against independent IP geolocation
+ * to avoid false positives from Shopify's geo-IP database being incorrect.
  */
 export async function alignStorefrontToCurrency(
   quoteCurrency: string,
@@ -159,7 +208,17 @@ export async function alignStorefrontToCurrency(
   const quoteCur = quoteCurrency.toUpperCase();
 
   if (shopifyCurrency === quoteCur) {
+    markCurrencyVerified();
     return { status: 'aligned', currency: shopifyCurrency };
+  }
+
+  // Verify against independent IP geolocation before acting on the mismatch.
+  // If the customer's real IP-based currency matches the quote currency,
+  // Shopify's geo-IP is wrong -- treat as aligned and suppress the popup.
+  const ipGeo = await detectCountryFromIp();
+  if (ipGeo.currency && ipGeo.currency === quoteCur) {
+    markCurrencyVerified();
+    return { status: 'aligned', currency: quoteCur };
   }
 
   const currentHost = getCurrentHost();
@@ -245,6 +304,18 @@ export async function alignStorefrontToCurrency(
   return { status: 'switching', targetCountry: target.preferred_country_code };
 }
 
+/**
+ * Sets a flag on window that the Shopify theme can check to suppress
+ * its native geolocation recommendation popup.
+ */
+function markCurrencyVerified() {
+  try {
+    (window as any).__shadespace_currency_verified = true;
+  } catch {
+    // ignore
+  }
+}
+
 function submitLocalizationForm(countryCode: string) {
   const form = document.createElement('form');
   form.method = 'POST';
@@ -274,6 +345,9 @@ function submitLocalizationForm(countryCode: string) {
 /**
  * Returns true if the live Shopify cart uses a different currency than `expected`.
  * Use as a guard before /cart/add.js.
+ *
+ * Verifies against independent IP geolocation to avoid false positives
+ * when Shopify's geo-IP database is incorrect.
  */
 export async function cartCurrencyMismatches(expected: string): Promise<{
   mismatch: boolean;
@@ -287,11 +361,21 @@ export async function cartCurrencyMismatches(expected: string): Promise<{
     const cartCurrency: string | null = (cart?.currency || '').toUpperCase() || null;
     const itemCount: number = Number(cart?.item_count || 0);
     if (!cartCurrency) return { mismatch: false, cartCurrency: null, itemCount };
-    return {
-      mismatch: cartCurrency !== expected.toUpperCase(),
-      cartCurrency,
-      itemCount,
-    };
+
+    const expectedUpper = expected.toUpperCase();
+    if (cartCurrency === expectedUpper) {
+      return { mismatch: false, cartCurrency, itemCount };
+    }
+
+    // Cart currency differs from expected -- verify with independent IP geo.
+    // If the customer's real IP currency matches expected, Shopify's geo is wrong.
+    const ipGeo = await detectCountryFromIp();
+    if (ipGeo.currency && ipGeo.currency === expectedUpper) {
+      markCurrencyVerified();
+      return { mismatch: false, cartCurrency, itemCount };
+    }
+
+    return { mismatch: true, cartCurrency, itemCount };
   } catch {
     return { mismatch: false, cartCurrency: null, itemCount: 0 };
   }
