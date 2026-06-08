@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Environment, Html } from '@react-three/drei';
+import { OrbitControls, Environment, Html, Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { ConfiguratorState, Point } from '../types';
 import { getFabricHexColor } from '../utils/fabricColorMap';
@@ -586,7 +586,7 @@ function FabricMesh({ corners3D, color, onClick, onPointerMissed }: { corners3D:
   if (!geometry) return null;
 
   return (
-    <mesh ref={meshRef} geometry={geometry} onClick={onClick} onPointerMissed={onPointerMissed}>
+    <mesh ref={meshRef} geometry={geometry} onClick={onClick} onPointerMissed={onPointerMissed} castShadow>
       <meshStandardMaterial
         color={color}
         side={THREE.DoubleSide}
@@ -824,17 +824,46 @@ function DimensionOverlay({
   );
 }
 
+const SUN_POSITION: [number, number, number] = [15, 20, 10];
+
 function GroundPlane() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-      <planeGeometry args={[20, 20]} />
-      <meshStandardMaterial color="#e8e8e0" roughness={1} metalness={0} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      <planeGeometry args={[40, 40]} />
+      <meshStandardMaterial color="#d4cfc6" roughness={0.92} metalness={0} />
     </mesh>
   );
 }
 
+function SunFlare() {
+  const spriteRef = useRef<THREE.Sprite>(null);
+  const texture = useMemo(() => {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    gradient.addColorStop(0, 'rgba(255, 255, 240, 1)');
+    gradient.addColorStop(0.1, 'rgba(255, 250, 220, 0.8)');
+    gradient.addColorStop(0.3, 'rgba(255, 240, 180, 0.3)');
+    gradient.addColorStop(0.6, 'rgba(255, 220, 100, 0.08)');
+    gradient.addColorStop(1, 'rgba(255, 200, 50, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    const tex = new THREE.CanvasTexture(canvas);
+    return tex;
+  }, []);
+
+  return (
+    <sprite ref={spriteRef} position={SUN_POSITION} scale={[6, 6, 1]}>
+      <spriteMaterial map={texture} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
+    </sprite>
+  );
+}
+
 function GridLines() {
-  return <gridHelper args={[20, 20, '#d0d0d0', '#e0e0e0']} position={[0, 0.001, 0]} />;
+  return <gridHelper args={[40, 40, '#c4bfb6', '#d0cbc2']} position={[0, 0.001, 0]} />;
 }
 
 function CameraFramer({ corners3D, centroid }: { corners3D: THREE.Vector3[]; centroid: THREE.Vector3 }) {
@@ -964,9 +993,28 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
 
   return (
     <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 8, 3]} intensity={0.8} castShadow />
-      <directionalLight position={[-3, 4, -5]} intensity={0.3} />
+      <Sky sunPosition={SUN_POSITION} turbidity={3} rayleigh={1.5} mieCoefficient={0.005} mieDirectionalG={0.8} />
+      <SunFlare />
+
+      <ambientLight intensity={0.6} color="#f0f4ff" />
+      <directionalLight
+        position={SUN_POSITION}
+        intensity={1.2}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-left={-12}
+        shadow-camera-right={12}
+        shadow-camera-top={12}
+        shadow-camera-bottom={-12}
+        shadow-camera-near={0.5}
+        shadow-camera-far={50}
+        shadow-bias={-0.001}
+        shadow-radius={3}
+        color="#fff8e8"
+      />
+      <directionalLight position={[-4, 6, -8]} intensity={0.25} color="#b8d4ff" />
+      <hemisphereLight args={['#87ceeb', '#d4cfc6', 0.3]} />
 
       <GroundPlane />
       <GridLines />
@@ -1060,7 +1108,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
         maxDistance={30}
         target={initialTarget}
       />
-      <Environment preset="city" />
+      <Environment preset="park" background={false} />
     </>
   );
 }
@@ -1113,7 +1161,7 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
       <div ref={containerRef} className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200">
         <Canvas
           camera={{ fov: 45, near: 0.1, far: 100 }}
-          shadows
+          shadows="soft"
           gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
         >
           <Scene config={config} highlightedMeasurement={highlightedMeasurement} highlightedCorner={highlightedCorner} activeSection={activeSection} />
