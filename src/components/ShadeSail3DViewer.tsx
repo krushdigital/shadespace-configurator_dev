@@ -19,7 +19,7 @@ const POLE_LEAN_DEG = 5;
 const POLE_RADIUS = 0.055;
 const MESH_SUBDIVISIONS = 48;
 const HARDWARE_LENGTH = 0.35;
-const EDGE_CURVE_RATIO = 0.08;
+const EDGE_CURVE_RATIO = 0.035;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
 const FIXING_POINT_OFFSET = 0.2;
 
@@ -347,7 +347,7 @@ function buildFabricGeometry(
   if (n < 3) return null;
 
   const centroid = computeCentroid(corners3D);
-  const segsPerEdge = Math.max(16, Math.ceil(subdivisions * 1.5 / n));
+  const segsPerEdge = Math.max(24, Math.ceil(subdivisions * 1.5 / n));
   const ringsFromCenter = Math.max(12, Math.ceil(subdivisions / 3));
 
   const vertices: number[] = [];
