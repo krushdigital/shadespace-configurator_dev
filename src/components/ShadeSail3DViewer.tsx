@@ -103,17 +103,15 @@ function Pole({ base, top, centroid, highlighted }: { base: THREE.Vector3; top: 
 
   return (
     <group>
-      <mesh position={mid} quaternion={quat}>
+      <mesh position={mid} quaternion={quat} castShadow>
         <cylinderGeometry args={[POLE_RADIUS, POLE_RADIUS * 1.1, length, 16]} />
         <meshStandardMaterial color={poleColor} roughness={0.35} metalness={0.85} />
       </mesh>
-      {/* Flat metal cap at top */}
-      <mesh position={leanedTop} quaternion={quat}>
+      <mesh position={leanedTop} quaternion={quat} castShadow>
         <cylinderGeometry args={[POLE_RADIUS * 1.08, POLE_RADIUS * 1.08, 0.012, 16]} />
         <meshStandardMaterial color="#555" roughness={0.3} metalness={0.92} />
       </mesh>
-      {/* Base plate */}
-      <mesh position={base} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={base} rotation={[-Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[POLE_RADIUS * 2, POLE_RADIUS * 2, 0.02, 16]} />
         <meshStandardMaterial color={highlighted ? '#c02020' : '#888'} roughness={0.4} metalness={0.8} />
       </mesh>
@@ -144,13 +142,11 @@ function EyeBolt({ position, direction, poleDir }: { position: THREE.Vector3; di
 
   return (
     <group>
-      {/* Stub rod from pole surface */}
-      <mesh position={stubMid} quaternion={stubQuat}>
+      <mesh position={stubMid} quaternion={stubQuat} castShadow>
         <cylinderGeometry args={[wireRadius * 1.2, wireRadius * 1.2, stubLength, 8]} />
         <meshStandardMaterial color="#c0c0c0" roughness={0.3} metalness={0.9} />
       </mesh>
-      {/* Eye ring */}
-      <mesh position={stubEnd} quaternion={ringQuat}>
+      <mesh position={stubEnd} quaternion={ringQuat} castShadow>
         <torusGeometry args={[ringRadius, wireRadius, 12, 16]} />
         <meshStandardMaterial color="#b8b8b8" roughness={0.25} metalness={0.95} />
       </mesh>
@@ -216,13 +212,11 @@ function SailDRing({ position, direction }: { position: THREE.Vector3; direction
 
   return (
     <group>
-      {/* Half-circle ring - curved part faces toward fixing point */}
-      <mesh position={ringOffset} quaternion={groupQuat}>
+      <mesh position={ringOffset} quaternion={groupQuat} castShadow>
         <torusGeometry args={[ringRadius, wireRadius, 10, 12, Math.PI]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.95} />
       </mesh>
-      {/* Straight bar across D - flat side flush with sail */}
-      <mesh position={ringOffset} quaternion={barQuat}>
+      <mesh position={ringOffset} quaternion={barQuat} castShadow>
         <cylinderGeometry args={[wireRadius, wireRadius, ringRadius * 2, 8]} />
         <meshStandardMaterial color="#a0a0a0" roughness={0.25} metalness={0.95} />
       </mesh>
@@ -268,55 +262,48 @@ function CornerHardware({ sailCorner, fixingPointSurface }: { poleTop: THREE.Vec
 
   return (
     <group>
-      {/* Shackle at eye bolt end */}
-      <mesh position={at(shackle1Mid)} quaternion={quat}>
+      <mesh position={at(shackle1Mid)} quaternion={quat} castShadow>
         <torusGeometry args={[shackleR, shackleWire, 8, 12, Math.PI]} />
         <meshStandardMaterial {...metalMat} />
       </mesh>
-      <mesh position={at(shackle1Mid)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={at(shackle1Mid)} quaternion={quat} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[shackleWire, shackleWire, shackleR * 2, 8]} />
         <meshStandardMaterial {...metalMat} />
       </mesh>
 
-      {/* Left threaded rod */}
-      <mesh position={at(rod1Mid)} quaternion={quat}>
+      <mesh position={at(rod1Mid)} quaternion={quat} castShadow>
         <cylinderGeometry args={[rodRadius, rodRadius, segLen(shackle1End, rod1End), 8]} />
         <meshStandardMaterial {...rodMat} />
       </mesh>
 
-      {/* Turnbuckle barrel */}
-      <mesh position={at(barrelMid)} quaternion={quat}>
+      <mesh position={at(barrelMid)} quaternion={quat} castShadow>
         <cylinderGeometry args={[barrelRadius, barrelRadius, segLen(rod1End, barrelEnd), 12]} />
         <meshStandardMaterial color="#a8a8a8" roughness={0.25} metalness={0.9} />
       </mesh>
-      {/* Barrel end caps */}
-      <mesh position={at(barrelEnd)} quaternion={quat}>
+      <mesh position={at(barrelEnd)} quaternion={quat} castShadow>
         <cylinderGeometry args={[barrelRadius * 1.15, barrelRadius, 0.006 * scale, 12]} />
         <meshStandardMaterial {...metalMat} />
       </mesh>
-      <mesh position={at(rod1End)} quaternion={quat}>
+      <mesh position={at(rod1End)} quaternion={quat} castShadow>
         <cylinderGeometry args={[barrelRadius, barrelRadius * 1.15, 0.006 * scale, 12]} />
         <meshStandardMaterial {...metalMat} />
       </mesh>
 
-      {/* Right threaded rod */}
-      <mesh position={at(rod2Mid)} quaternion={quat}>
+      <mesh position={at(rod2Mid)} quaternion={quat} castShadow>
         <cylinderGeometry args={[rodRadius, rodRadius, segLen(barrelEnd, rod2End), 8]} />
         <meshStandardMaterial {...rodMat} />
       </mesh>
 
-      {/* Snap hook at sail end */}
-      <mesh position={at(shackle2Mid)} quaternion={quat}>
+      <mesh position={at(shackle2Mid)} quaternion={quat} castShadow>
         <torusGeometry args={[shackleR, shackleWire, 8, 14, Math.PI]} />
         <meshStandardMaterial {...metalMat} />
       </mesh>
-      <mesh position={at(shackle2Mid)} quaternion={quat} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={at(shackle2Mid)} quaternion={quat} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[shackleWire, shackleWire, shackleR * 2, 8]} />
         <meshStandardMaterial {...metalMat} />
       </mesh>
 
-      {/* Connecting rod to D-ring */}
-      <mesh position={at(connectorMid)} quaternion={quat}>
+      <mesh position={at(connectorMid)} quaternion={quat} castShadow>
         <cylinderGeometry args={[rodRadius * 0.8, rodRadius * 0.8, segLen(shackle2End, 1.0), 8]} />
         <meshStandardMaterial {...rodMat} />
       </mesh>
