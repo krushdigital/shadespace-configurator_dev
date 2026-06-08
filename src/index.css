@@ -520,11 +520,17 @@ button.bg-transparent:focus-visible {
 
 /* Button energy wrapper - wraps around the button element */
 /* Uses very large rotating element (800% diagonal) to ensure coverage on wide buttons */
+@keyframes btn-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
 .energy-border-chase-btn {
   position: relative;
   border-radius: 12px;
   padding: 3px;
   overflow: hidden;
+  animation: btn-pulse 2.5s ease-in-out infinite;
 }
 
 .energy-border-chase-btn::before {
@@ -550,7 +556,7 @@ button.bg-transparent:focus-visible {
     transparent 70%,
     transparent 100%
   );
-  animation: energy-rotate 4s linear infinite;
+  animation: energy-rotate 7s linear infinite;
   will-change: transform;
   z-index: 0;
 }
@@ -570,18 +576,18 @@ button.bg-transparent:focus-visible {
   background: linear-gradient(
     120deg,
     #1a4a3a 0%,
-    #1a4a3a 38%,
-    #3d8b4a 46%,
+    #1a4a3a 35%,
+    #3d8b4a 44%,
     #5aad5a 50%,
-    #3d8b4a 54%,
-    #1a4a3a 62%,
+    #3d8b4a 56%,
+    #1a4a3a 65%,
     #1a4a3a 100%
   );
-  background-size: 250% auto;
+  background-size: 300% auto;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: shiny-sweep 4s ease-in-out infinite;
+  animation: shiny-sweep 8s linear infinite;
 }
 
 /* Micro-tooltip hint that appears briefly */
@@ -652,7 +658,8 @@ button.bg-transparent:focus-visible {
   }
 
   .step-number-glow,
-  .step-circle-energy {
+  .step-circle-energy,
+  .energy-border-chase-btn {
     animation: none;
   }
 
