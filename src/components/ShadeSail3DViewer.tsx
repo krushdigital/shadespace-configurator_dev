@@ -18,10 +18,8 @@ const DEFAULT_HEIGHT_MM = 2400;
 const POLE_LEAN_DEG = 5;
 const POLE_RADIUS = 0.055;
 const MESH_SUBDIVISIONS = 48;
-const SAG_FACTOR = 0.04;
 const HARDWARE_LENGTH = 0.35;
-const EDGE_TENSION_INWARD = 0.04;
-const EDGE_BLEND_ZONE = 0.25;
+const EDGE_CURVE_RATIO = 0.08;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
 const FIXING_POINT_OFFSET = 0.2;
 
@@ -327,40 +325,6 @@ function CornerLabel({ position, label, heightCompleted, highlighted }: { positi
   );
 }
 
-function barycentricPoint(
-  corners: THREE.Vector3[],
-  u: number,
-  v: number
-): THREE.Vector3 {
-  const n = corners.length;
-  if (n === 3) {
-    const w = 1 - u - v;
-    return new THREE.Vector3(
-      corners[0].x * w + corners[1].x * u + corners[2].x * v,
-      corners[0].y * w + corners[1].y * u + corners[2].y * v,
-      corners[0].z * w + corners[1].z * u + corners[2].z * v
-    );
-  }
-  if (n === 4) {
-    const p00 = corners[0], p10 = corners[1], p11 = corners[2], p01 = corners[3];
-    return new THREE.Vector3(
-      (1 - u) * (1 - v) * p00.x + u * (1 - v) * p10.x + u * v * p11.x + (1 - u) * v * p01.x,
-      (1 - u) * (1 - v) * p00.y + u * (1 - v) * p10.y + u * v * p11.y + (1 - u) * v * p01.y,
-      (1 - u) * (1 - v) * p00.z + u * (1 - v) * p10.z + u * v * p11.z + (1 - u) * v * p01.z
-    );
-  }
-  const centroid = computeCentroid(corners);
-  const angle = Math.atan2(v - 0.5, u - 0.5) + Math.PI;
-  const dist = Math.sqrt((u - 0.5) ** 2 + (v - 0.5) ** 2) * 2;
-  const sector = (angle / (2 * Math.PI)) * n;
-  const idx = Math.floor(sector) % n;
-  const nextIdx = (idx + 1) % n;
-  const frac = sector - Math.floor(sector);
-  const edgePoint = new THREE.Vector3().lerpVectors(corners[idx], corners[nextIdx], frac);
-  const t = Math.min(dist, 1);
-  return new THREE.Vector3().lerpVectors(centroid, edgePoint, t);
-}
-
 function computeEdgeCurvePoint(
   start: THREE.Vector3,
   end: THREE.Vector3,
@@ -370,188 +334,55 @@ function computeEdgeCurvePoint(
   const pt = new THREE.Vector3().lerpVectors(start, end, t);
   const edgeLen = start.distanceTo(end);
   const toCentroid = new THREE.Vector3().subVectors(centroid, pt).normalize();
-  const inwardAmount = EDGE_TENSION_INWARD * edgeLen * Math.sin(Math.PI * t);
+  const inwardAmount = EDGE_CURVE_RATIO * edgeLen * Math.sin(Math.PI * t);
   pt.add(toCentroid.multiplyScalar(inwardAmount));
-  pt.y -= SAG_FACTOR * 0.3 * edgeLen * 0.1 * Math.sin(Math.PI * t);
   return pt;
-}
-
-function smoothstep(t: number): number {
-  const c = Math.max(0, Math.min(1, t));
-  return c * c * (3 - 2 * c);
 }
 
 function buildFabricGeometry(
   corners3D: THREE.Vector3[],
-  subdivisions: number,
-  sagFactor: number
+  subdivisions: number
 ): THREE.BufferGeometry | null {
   const n = corners3D.length;
   if (n < 3) return null;
 
   const centroid = computeCentroid(corners3D);
-  const res = subdivisions;
-  const blendZone = EDGE_BLEND_ZONE;
-
-  if (n === 3) {
-    const vertices: number[] = [];
-    const indices: number[] = [];
-    const rows = res;
-
-    for (let i = 0; i <= rows; i++) {
-      const cols = rows - i;
-      for (let j = 0; j <= cols; j++) {
-        const u = j / rows;
-        const v = i / rows;
-        const w = 1 - u - v;
-
-        const minBary = Math.min(u, v, w);
-        const distFromEdge = minBary * 3;
-
-        let pt: THREE.Vector3;
-        if (distFromEdge < blendZone) {
-          let edgeIdx: number, nextIdx: number, edgeT: number;
-          if (w <= u && w <= v) {
-            edgeIdx = 1; nextIdx = 2; edgeT = v / (u + v || 1);
-          } else if (u <= v && u <= w) {
-            edgeIdx = 0; nextIdx = 2; edgeT = v / (v + w || 1);
-          } else {
-            edgeIdx = 0; nextIdx = 1; edgeT = u / (u + w || 1);
-          }
-          const edgePt = computeEdgeCurvePoint(corners3D[edgeIdx], corners3D[nextIdx], centroid, edgeT);
-          const interiorPt = barycentricPoint(corners3D, u, v);
-          const blend = smoothstep(distFromEdge / blendZone);
-          pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
-        } else {
-          pt = barycentricPoint(corners3D, u, v);
-        }
-
-        const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
-        pt.y -= sag * centroid.y * 0.4;
-        vertices.push(pt.x, pt.y, pt.z);
-      }
-    }
-
-    let rowStart = 0;
-    for (let i = 0; i < rows; i++) {
-      const cols = rows - i;
-      const nextRowStart = rowStart + cols + 1;
-      for (let j = 0; j < cols; j++) {
-        indices.push(rowStart + j, rowStart + j + 1, nextRowStart + j);
-        if (j < cols - 1) {
-          indices.push(rowStart + j + 1, nextRowStart + j + 1, nextRowStart + j);
-        }
-      }
-      rowStart = nextRowStart;
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    return geometry;
-  }
-
-  if (n === 4) {
-    const vertices: number[] = [];
-    const indices: number[] = [];
-
-    for (let i = 0; i <= res; i++) {
-      const v = i / res;
-      for (let j = 0; j <= res; j++) {
-        const u = j / res;
-
-        const distU = Math.min(u, 1 - u);
-        const distV = Math.min(v, 1 - v);
-        const distFromEdge = Math.min(distU, distV) * 2;
-
-        let pt: THREE.Vector3;
-        if (distFromEdge < blendZone) {
-          let edgeStart: THREE.Vector3, edgeEnd: THREE.Vector3, edgeT: number;
-          if (distV < distU) {
-            if (v < 0.5) {
-              edgeStart = corners3D[0]; edgeEnd = corners3D[1]; edgeT = u;
-            } else {
-              edgeStart = corners3D[3]; edgeEnd = corners3D[2]; edgeT = u;
-            }
-          } else {
-            if (u < 0.5) {
-              edgeStart = corners3D[0]; edgeEnd = corners3D[3]; edgeT = v;
-            } else {
-              edgeStart = corners3D[1]; edgeEnd = corners3D[2]; edgeT = v;
-            }
-          }
-          const edgePt = computeEdgeCurvePoint(edgeStart, edgeEnd, centroid, edgeT);
-          const interiorPt = barycentricPoint(corners3D, u, v);
-          const blend = smoothstep(distFromEdge / blendZone);
-          pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
-        } else {
-          pt = barycentricPoint(corners3D, u, v);
-        }
-
-        const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
-        pt.y -= sag * centroid.y * 0.4;
-        vertices.push(pt.x, pt.y, pt.z);
-      }
-    }
-
-    for (let i = 0; i < res; i++) {
-      for (let j = 0; j < res; j++) {
-        const a = i * (res + 1) + j;
-        const b = a + 1;
-        const c = a + (res + 1);
-        const d = c + 1;
-        indices.push(a, b, d);
-        indices.push(a, d, c);
-      }
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setIndex(indices);
-    geometry.computeVertexNormals();
-    return geometry;
-  }
+  const segsPerEdge = Math.max(16, Math.ceil(subdivisions * 1.5 / n));
+  const ringsFromCenter = Math.max(12, Math.ceil(subdivisions / 3));
 
   const vertices: number[] = [];
   const indices: number[] = [];
-  const segsPerEdge = Math.ceil(res / n);
-  const vertsPerRing = n * segsPerEdge;
 
   vertices.push(centroid.x, centroid.y, centroid.z);
 
-  for (let ring = 1; ring <= res; ring++) {
-    const t = ring / res;
-    const smoothT = t * t * (3 - 2 * t);
+  for (let ring = 1; ring <= ringsFromCenter; ring++) {
+    const ringT = ring / ringsFromCenter;
+
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
-        const curvedPt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
-        const straightPt = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
-        const edgeBlend = smoothstep(smoothT);
-        const edgePoint = new THREE.Vector3().lerpVectors(straightPt, curvedPt, edgeBlend);
-        const point = new THREE.Vector3().lerpVectors(centroid, edgePoint, smoothT);
-        const distFromEdge = 1 - smoothT;
-        const sag = sagFactor * (1 - distFromEdge) * distFromEdge;
-        point.y -= sag * centroid.y * 0.3;
+        const edgePt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
+        const point = new THREE.Vector3().lerpVectors(centroid, edgePt, ringT);
         vertices.push(point.x, point.y, point.z);
       }
     }
   }
 
+  const vertsPerRing = n * segsPerEdge;
+
   for (let s = 0; s < vertsPerRing; s++) {
-    const next = (s + 1) % vertsPerRing;
-    indices.push(0, 1 + s, 1 + next);
+    const nextS = (s + 1) % vertsPerRing;
+    indices.push(0, 1 + s, 1 + nextS);
   }
 
-  for (let ring = 1; ring < res; ring++) {
+  for (let ring = 1; ring < ringsFromCenter; ring++) {
     const ringStart = 1 + (ring - 1) * vertsPerRing;
     const nextRingStart = 1 + ring * vertsPerRing;
     for (let s = 0; s < vertsPerRing; s++) {
-      const next = (s + 1) % vertsPerRing;
-      indices.push(ringStart + s, nextRingStart + s, nextRingStart + next);
-      indices.push(ringStart + s, nextRingStart + next, ringStart + next);
+      const nextS = (s + 1) % vertsPerRing;
+      indices.push(ringStart + s, nextRingStart + s, nextRingStart + nextS);
+      indices.push(ringStart + s, nextRingStart + nextS, ringStart + nextS);
     }
   }
 
@@ -566,7 +397,7 @@ function FabricMesh({ corners3D, color, onClick, onPointerMissed }: { corners3D:
   const meshRef = useRef<THREE.Mesh>(null);
 
   const geometry = useMemo(
-    () => buildFabricGeometry(corners3D, MESH_SUBDIVISIONS, SAG_FACTOR),
+    () => buildFabricGeometry(corners3D, MESH_SUBDIVISIONS),
     [corners3D]
   );
 
