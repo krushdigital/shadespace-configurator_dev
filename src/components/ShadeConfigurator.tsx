@@ -38,6 +38,7 @@ import { analytics } from '../utils/analytics';
 import { eventTrackers } from '../utils/eventTracker';
 import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
+import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { Box, Layers } from 'lucide-react';
 import { canRender3D, Device3DTier } from '../utils/canRender3D';
 
@@ -623,9 +624,9 @@ export function ShadeConfigurator() {
           const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-          canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
+          canvasImageUrl = await uploadToQuoteAssets(canvasImageBlob, filename);
           if (!canvasImageUrl) {
-            console.warn('Failed to upload canvas image to Shopify, proceeding without image');
+            canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
           }
         } catch (error) {
           console.error('Error processing canvas image:', error);
@@ -639,7 +640,7 @@ export function ShadeConfigurator() {
           const blob3D = await fetch(screenshot3D).then(r => r.blob());
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const filename3D = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
-          canvasImage3DUrl = await uploadImageToShopify(blob3D, filename3D);
+          canvasImage3DUrl = await uploadToQuoteAssets(blob3D, filename3D);
         }
       } catch { /* 3D capture is optional */ }
 
@@ -1021,6 +1022,7 @@ export function ShadeConfigurator() {
       imageUrl?: string;
     };
     canvasImageUrl: string;
+    canvasImage3DUrl?: string | null;
     warranty: string;
     Fabric_Type: string;
     Shade_Factor: string;
@@ -1123,7 +1125,7 @@ export function ShadeConfigurator() {
         autoQuoteName,
         pricingSettingsMap || null,
         orderData.canvasImageUrl || null,
-        null
+        orderData.canvasImage3DUrl || null
       );
       autoSavedRef = autoResult.reference;
       setQuoteReference(autoResult.reference);
@@ -1604,15 +1606,26 @@ export function ShadeConfigurator() {
           const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-          canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
-
+          canvasImageUrl = await uploadToQuoteAssets(canvasImageBlob, filename);
           if (!canvasImageUrl) {
-            console.warn('Failed to upload canvas image to Shopify, proceeding without image');
+            canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
           }
         } catch (error) {
           console.error('Error processing canvas image:', error);
         }
       }
+
+      // Capture 3D screenshot for checkout save
+      let canvasImage3DUrlForCheckout: string | null = null;
+      try {
+        const screenshot3D = await viewer3DRef.current?.capture3DScreenshot();
+        if (screenshot3D) {
+          const blob3D = await fetch(screenshot3D).then(r => r.blob());
+          const ts3d = new Date().toISOString().replace(/[:.]/g, '-');
+          const fn3d = `shade-sail-3d-${config.corners}corner-${ts3d}.png`;
+          canvasImage3DUrlForCheckout = await uploadToQuoteAssets(blob3D, fn3d);
+        }
+      } catch { /* 3D capture is optional */ }
 
       // Prepare the edge measurements
       const edgeMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
@@ -1708,6 +1721,7 @@ export function ShadeConfigurator() {
         selectedFabric: selectedFabricLocal,
         selectedColor: selectedColorLocal,
         canvasImageUrl: canvasImageUrl,
+        canvasImage3DUrl: canvasImage3DUrlForCheckout,
         warranty: selectedFabricLocal?.warrantyYears || "",
         ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
           fixingHeights: config.fixingHeights,
@@ -2573,7 +2587,7 @@ export function ShadeConfigurator() {
             const blob = await convertSvgToPng(svgElement, 600, 500);
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-            return await uploadImageToShopify(blob, filename);
+            return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
           } catch (err) {
             console.warn('Failed to capture diagram for saved quote:', err);
             return null;
@@ -2586,7 +2600,7 @@ export function ShadeConfigurator() {
             const blob = await fetch(screenshot).then(r => r.blob());
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
             const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
-            return await uploadImageToShopify(blob, filename);
+            return await uploadToQuoteAssets(blob, filename);
           } catch (err) {
             console.warn('Failed to capture 3D for saved quote:', err);
             return null;

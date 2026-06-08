@@ -35,10 +35,11 @@ interface Quote {
   shopify_order_id: string | null;
   shopify_order_number: string | null;
   purchased_at: string | null;
+  diagram_3d_public_url: string | null;
 }
 
 const PAGE_SIZE = 50;
-const SELECT_FIELDS = 'id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at';
+const SELECT_FIELDS = 'id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at,diagram_3d_public_url';
 
 export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean; timezone?: string }> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -53,6 +54,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState<string | null>(null);
+  const [generatingFulfilment, setGeneratingFulfilment] = useState<string | null>(null);
   const [togglingExclusion, setTogglingExclusion] = useState(false);
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
   const [resendSuccess, setResendSuccess] = useState(false);
@@ -205,12 +207,40 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
         chrome: template.chrome,
         customer: customerDetails,
         isEmailSummary: false,
+        threeDImageDataUrl: quote.diagram_3d_public_url || undefined,
       });
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       alert('Failed to generate PDF. The quote may have incomplete configuration data.');
     } finally {
       setGeneratingPdf(null);
+    }
+  };
+
+  const handleDownloadFulfilmentPDF = async (quote: Quote) => {
+    try {
+      setGeneratingFulfilment(quote.id);
+      const customerDetails: CustomerDetails = {
+        firstName: quote.customer_first_name || undefined,
+        lastName: quote.customer_last_name || undefined,
+        email: quote.customer_email || undefined,
+        quoteName: quote.quote_name,
+        customerReference: quote.customer_reference,
+        quoteUrl: getQuoteUrl(quote),
+      };
+      const template = await loadActivePdfTemplate(false, 'fulfilment');
+      await generatePdfFromBlocks(quote.config_data, quote.calculations_data, template.blocks, {
+        layout: template.layout,
+        chrome: template.chrome,
+        customer: customerDetails,
+        isEmailSummary: false,
+        threeDImageDataUrl: quote.diagram_3d_public_url || undefined,
+      });
+    } catch (error) {
+      console.error('Failed to generate fulfilment PDF:', error);
+      alert('Failed to generate fulfilment PDF. The quote may have incomplete configuration data.');
+    } finally {
+      setGeneratingFulfilment(null);
     }
   };
 
@@ -450,6 +480,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                         <Button onClick={() => handleDownloadPDF(quote)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === quote.id}>
                           {generatingPdf === quote.id ? 'Generating...' : 'PDF'}
                         </Button>
+                        <Button onClick={() => handleDownloadFulfilmentPDF(quote)} size="sm" variant="outline" className="text-xs text-amber-700 border-amber-300 hover:bg-amber-50" disabled={generatingFulfilment === quote.id}>
+                          {generatingFulfilment === quote.id ? '...' : 'Fulfilment'}
+                        </Button>
                         <Button onClick={() => copyQuoteUrl(quote)} size="sm" variant="outline" className="text-xs">Link</Button>
                         <Button onClick={() => setSelectedQuote(quote)} size="sm" variant="outline" className="text-xs">View</Button>
                       </div>
@@ -664,6 +697,9 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               </Button>
               <Button onClick={() => handleDownloadPDF(selectedQuote)} variant="outline" disabled={generatingPdf === selectedQuote.id}>
                 {generatingPdf === selectedQuote.id ? 'Generating PDF...' : 'Download PDF'}
+              </Button>
+              <Button onClick={() => handleDownloadFulfilmentPDF(selectedQuote)} variant="outline" disabled={generatingFulfilment === selectedQuote.id} className="text-amber-700 hover:bg-amber-50 border-amber-300">
+                {generatingFulfilment === selectedQuote.id ? 'Generating...' : 'Fulfilment PDF'}
               </Button>
               <Button
                 onClick={() => handleResendEmail(selectedQuote)}
