@@ -29,6 +29,7 @@ interface CombinedMeasurementContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   isMobile?: boolean;
+  isStepOpen?: boolean;
   onSaveQuote?: () => void;
   mobileGuidance?: {
     isGuidanceActive: boolean;
@@ -39,7 +40,7 @@ interface CombinedMeasurementContentProps {
   };
 }
 
-export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, onSaveQuote, mobileGuidance }: CombinedMeasurementContentProps) {
+export function CombinedMeasurementContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isMobile = false, isStepOpen = true, onSaveQuote, mobileGuidance }: CombinedMeasurementContentProps) {
   const [wasAutoSelected, setWasAutoSelected] = React.useState(false);
   const [autoSelectionSource, setAutoSelectionSource] = React.useState<string>('');
   const [autoSelectionConfidence, setAutoSelectionConfidence] = React.useState<'high' | 'medium' | 'low'>('high');
@@ -116,13 +117,13 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
-    if (!config.measurementOption) {
+    if (isStepOpen && !config.measurementOption) {
       const timer = setTimeout(() => setShowHint(true), 600);
       return () => clearTimeout(timer);
     } else {
       setShowHint(false);
     }
-  }, [config.measurementOption]);
+  }, [config.measurementOption, isStepOpen]);
 
   return (
     <div className="p-4 sm:p-6">

@@ -18,6 +18,7 @@ interface FabricSelectionContentProps {
   onPrev?: () => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
+  isStepOpen?: boolean;
   onSaveQuote?: () => void;
   fabrics?: Fabric[];
   mobileGuidance?: {
@@ -29,7 +30,7 @@ interface FabricSelectionContentProps {
   };
 }
 
-export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, fabrics, mobileGuidance }: FabricSelectionContentProps) {
+export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, fabrics, mobileGuidance }: FabricSelectionContentProps) {
   const FABRICS = fabrics && fabrics.length > 0 ? fabrics : FALLBACK_FABRICS;
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const stepStartTime = useRef(Date.now());
@@ -76,13 +77,13 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
-    if (!config.fabricType) {
+    if (isStepOpen && !config.fabricType) {
       const timer = setTimeout(() => setShowHint(true), 600);
       return () => clearTimeout(timer);
     } else {
       setShowHint(false);
     }
-  }, [config.fabricType]);
+  }, [config.fabricType, isStepOpen]);
 
   return (
     <div className="p-6">

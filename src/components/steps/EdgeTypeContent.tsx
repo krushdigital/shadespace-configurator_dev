@@ -15,6 +15,7 @@ interface EdgeTypeContentProps {
   onPrev: () => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
+  isStepOpen?: boolean;
   onSaveQuote?: () => void;
   mobileGuidance?: {
     isGuidanceActive: boolean;
@@ -42,7 +43,7 @@ const EDGE_OPTIONS = [
   }
 ];
 
-export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
+export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
   const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string } | null>(null);
 
   useBodyScrollLock(!!enlargedImage);
@@ -74,13 +75,13 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
-    if (!config.edgeType) {
+    if (isStepOpen && !config.edgeType) {
       const timer = setTimeout(() => setShowHint(true), 600);
       return () => clearTimeout(timer);
     } else {
       setShowHint(false);
     }
-  }, [config.edgeType]);
+  }, [config.edgeType, isStepOpen]);
 
   return (
     <div className="p-6">

@@ -2418,6 +2418,7 @@ export function ShadeConfigurator() {
                     nextStepTitle={getNextStepTitle(index)}
                     showBackButton={shouldShowBackButton(index)}
                     isMobile={isMobile}
+                    isStepOpen={isOpen}
                     setHighlightedMeasurement={setHighlightedMeasurement}
                     highlightedMeasurement={highlightedMeasurement}
                     highlightedCorner={highlightedCorner}

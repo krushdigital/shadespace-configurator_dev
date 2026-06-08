@@ -13,6 +13,7 @@ interface CornersContentProps {
   onPrev: () => void;
   nextStepTitle?: string;
   showBackButton?: boolean;
+  isStepOpen?: boolean;
   onSaveQuote?: () => void;
   mobileGuidance?: {
     isGuidanceActive: boolean;
@@ -32,7 +33,7 @@ const SHAPE_OPTIONS = [
   { corners: 8, label: '8 Fixing Points', icon: Octagon, description: 'Maximum coverage layout' }
 ];
 
-export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, onSaveQuote, mobileGuidance }: CornersContentProps) {
+export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, mobileGuidance }: CornersContentProps) {
   React.useEffect(() => {
     console.log('[Corners] Effect triggered', {
       isGuidanceActive: mobileGuidance?.isGuidanceActive,
@@ -147,13 +148,13 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
-    if (!config.corners) {
+    if (isStepOpen && !config.corners) {
       const timer = setTimeout(() => setShowHint(true), 600);
       return () => clearTimeout(timer);
     } else {
       setShowHint(false);
     }
-  }, [config.corners]);
+  }, [config.corners, isStepOpen]);
 
   return (
     <div className="p-6">
