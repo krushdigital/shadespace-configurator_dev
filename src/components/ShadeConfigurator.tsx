@@ -2300,6 +2300,29 @@ export function ShadeConfigurator() {
 
   return (
     <>
+      {/* Mobile Sticky Progress Indicator */}
+      {isMobile && (
+        <div className="sticky top-0 left-0 right-0 z-[999] bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm px-4 py-2">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-[#01312D] truncate">
+                {steps[openStep]?.title || 'Configure'}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <span className="text-[10px] font-medium text-[#01312D]/60">
+                {Math.min(openStep + 1, steps.length)}/{steps.filter((_, i) => !shouldSkipStep(i)).length}
+              </span>
+              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-[#307C31] to-[#BFF102] rounded-full transition-all duration-500 progress-bar-fill"
+                  style={{ width: `${Math.min(((openStep + 1) / steps.filter((_, i) => !shouldSkipStep(i)).length) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
         {/* Header */}
         <div className="text-center mb-6">

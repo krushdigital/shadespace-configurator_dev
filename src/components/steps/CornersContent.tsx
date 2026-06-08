@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -144,9 +144,26 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     });
   };
 
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    if (!config.corners) {
+      const timer = setTimeout(() => setShowHint(true), 600);
+      return () => clearTimeout(timer);
+    } else {
+      setShowHint(false);
+    }
+  }, [config.corners]);
+
   return (
     <div className="p-6">
       <div className="mb-6">
+        {showHint && !config.corners && (
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+            Select the number of fixing points for your sail
+          </div>
+        )}
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How many fixing points will your shade sail have?
         </h4>
@@ -212,7 +229,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
             id="continue-button-corners"
             data-guidance-id="continue-button-corners"
             className={`w-full py-4 sm:py-2 ${!config.corners ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'pulsate-guidance' : ''
+              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'energy-border-chase-btn' : ''
             }`}
           >
             <span className="flex flex-col items-center leading-tight">
@@ -249,7 +266,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
             id="continue-button-corners"
             data-guidance-id="continue-button-corners"
             className={`flex-1 ${!config.corners ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'pulsate-guidance' : ''
+              mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? 'energy-border-chase-btn' : ''
             }`}
           >
             <span className="flex flex-col items-center leading-tight">

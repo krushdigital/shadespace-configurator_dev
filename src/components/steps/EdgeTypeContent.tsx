@@ -71,9 +71,26 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
     }
   }, [config.edgeType, mobileGuidance?.isGuidanceActive]);
 
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    if (!config.edgeType) {
+      const timer = setTimeout(() => setShowHint(true), 600);
+      return () => clearTimeout(timer);
+    } else {
+      setShowHint(false);
+    }
+  }, [config.edgeType]);
+
   return (
     <div className="p-6">
       <div className="mb-6">
+        {showHint && !config.edgeType && (
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+            Choose your preferred edge style
+          </div>
+        )}
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           Select Edge Reinforcement Type
         </h4>
@@ -190,7 +207,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             id="continue-button-edge"
             data-guidance-id="continue-button-edge"
             className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'pulsate-guidance' : ''
+              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn' : ''
             }`}
           >
             <span className="flex flex-col items-center leading-tight">
@@ -227,7 +244,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             id="continue-button-edge"
             data-guidance-id="continue-button-edge"
             className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'pulsate-guidance' : ''
+              mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn' : ''
             }`}
           >
             <span className="flex flex-col items-center leading-tight">

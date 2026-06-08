@@ -27,7 +27,7 @@ export function AccordionStep({
   children
 }: AccordionStepProps) {
   return (
-    <div 
+    <div
       id={`step-${stepNumber}`}
       className={`bg-white border rounded-xl shadow-sm overflow-hidden transition-all duration-300 ${
       isOpen ? 'border-[#BFF102] shadow-xl ring-2 ring-[#BFF102]/20' : 'border-slate-200 hover:border-[#307C31] hover:shadow-md'
@@ -46,12 +46,13 @@ export function AccordionStep({
             {/* Step Number/Check */}
             <div className={`
               flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 shadow-md flex-shrink-0
-              ${isCompleted 
-                ? 'bg-[#307C31] border-[#307C31] text-white' 
+              ${isCompleted
+                ? 'bg-[#307C31] border-[#307C31] text-white'
                 : isCurrent
                 ? 'bg-[#01312D] border-[#01312D] text-white'
                 : 'bg-white border-[#307C31] text-[#307C31]'
               }
+              ${isCurrent && isOpen ? 'step-number-glow' : ''}
             `}>
               {isCompleted ? (
                 <Check className="w-6 h-6" />
@@ -59,7 +60,7 @@ export function AccordionStep({
                 <span className="text-base font-bold">{stepNumber}</span>
               )}
             </div>
-            
+
             {/* Title and Subtitle */}
             <div className="flex flex-col">
               <h3 className={`text-lg sm:text-xl font-bold transition-all duration-200 ${
@@ -67,7 +68,7 @@ export function AccordionStep({
               }`}>
                 {title}
               </h3>
-              
+
               {/* Mobile Selection Display - Below Title */}
               {selection && !isOpen && (
                 <div className="sm:hidden mt-1">
@@ -76,7 +77,7 @@ export function AccordionStep({
                   </div>
                 </div>
               )}
-              
+
               {isOpen && (
                 <p className={`text-sm sm:text-base transition-all duration-200 mt-1 ${
                   isCurrent || isCompleted ? 'text-[#01312D]/70' : 'text-[#307C31]/70'
@@ -86,7 +87,7 @@ export function AccordionStep({
               )}
             </div>
           </div>
-          
+
           {/* Selection Display */}
           <div className="flex items-center gap-4 flex-shrink-0">
             {/* Desktop Selection Display - Side by Side */}
@@ -97,7 +98,7 @@ export function AccordionStep({
                 </div>
               </div>
             )}
-            
+
             {/* Chevron */}
             {canOpen && (
               <div className="transition-transform duration-200">
@@ -111,7 +112,7 @@ export function AccordionStep({
           </div>
         </div>
       </button>
-      
+
       {/* Content */}
       <div className={`transition-all duration-300 ease-in-out ${
         isOpen ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'

@@ -73,10 +73,27 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    if (!config.fabricType) {
+      const timer = setTimeout(() => setShowHint(true), 600);
+      return () => clearTimeout(timer);
+    } else {
+      setShowHint(false);
+    }
+  }, [config.fabricType]);
+
   return (
     <div className="p-6">
       {/* Fabric Type Selection */}
       <div className="mb-8">
+        {showHint && !config.fabricType && (
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+            Tap to select your fabric material
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <h4 className="text-lg font-semibold text-[#01312D]">
             <a
@@ -292,7 +309,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
       {/* Color Selection */}
       {selectedFabric && (
         <div className="mb-8" id="color-selection" data-guidance-id="color-selection">
-          <div className="flex items-center gap-2 mb-4">
+          <div className={`flex items-center gap-2 mb-4 px-2 py-1 -mx-2 rounded-lg transition-all duration-300 ${
+            mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-[#BFF102]/10 energy-border-chase' : ''
+          }`}>
             <h4 className="text-lg font-semibold text-[#01312D]">
               Choose Color
             </h4>
@@ -452,7 +471,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     id="continue-button-fabric"
                     data-guidance-id="continue-button-fabric"
                     className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''} ${
-                      mobileGuidance?.currentHighlightTarget === 'continue-button-fabric' ? 'pulsate-guidance' : ''
+                      mobileGuidance?.currentHighlightTarget === 'continue-button-fabric' ? 'energy-border-chase-btn' : ''
                     }`}
                   >
                     <span className="flex flex-col items-center leading-tight">

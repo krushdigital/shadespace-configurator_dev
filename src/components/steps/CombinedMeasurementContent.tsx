@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -113,10 +113,29 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
 
   const hardwarePackImageUrl = HARDWARE_PACK_IMAGES[config.corners];
 
+  const [showHint, setShowHint] = useState(false);
+
+  useEffect(() => {
+    if (!config.measurementOption) {
+      const timer = setTimeout(() => setShowHint(true), 600);
+      return () => clearTimeout(timer);
+    } else {
+      setShowHint(false);
+    }
+  }, [config.measurementOption]);
+
   return (
     <div className="p-4 sm:p-6">
       {/* Measurement Option Selection with Interactive Visualizer */}
-      <div className="mb-6 sm:mb-8" id="measurement-option-section" data-guidance-id="measurement-option-section">
+      <div className={`mb-6 sm:mb-8 rounded-xl p-1 -m-1 transition-all duration-300 ${
+        mobileGuidance?.currentHighlightTarget === 'measurement-option-section' ? 'energy-border-chase' : ''
+      }`} id="measurement-option-section" data-guidance-id="measurement-option-section">
+        {showHint && !config.measurementOption && (
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+            Choose how your sail will be manufactured
+          </div>
+        )}
         <h4 className="text-lg font-semibold text-slate-900 mb-4">
           How would you like your shade sail to be manufactured?
         </h4>
@@ -424,7 +443,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             id="continue-button-measurement"
             data-guidance-id="continue-button-measurement"
             className={`w-full py-4 sm:py-2 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'pulsate-guidance' : ''
+              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'energy-border-chase-btn' : ''
             }`}
           >
             <span className="flex flex-col items-center leading-tight">
@@ -461,7 +480,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
             id="continue-button-measurement"
             data-guidance-id="continue-button-measurement"
             className={`flex-1 ${!config.unit || !config.measurementOption ? 'opacity-50' : ''} ${
-              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'pulsate-guidance' : ''
+              mobileGuidance?.currentHighlightTarget === 'continue-button-measurement' ? 'energy-border-chase-btn' : ''
             }`}
           >
             <span className="flex flex-col items-center leading-tight">
