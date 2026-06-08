@@ -7,7 +7,7 @@ import { Input } from '../ui/Input';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -804,11 +804,16 @@ export function DimensionsContent({
                     <div className="mb-3 p-2 bg-amber-100 border border-amber-300 rounded-lg">
                       <p className="text-xs sm:text-sm text-amber-800 font-medium">
                         {(() => {
-                          const minimumDiagonals = config.corners - 3;
-                          if (minimumDiagonals === 1) {
-                            return 'Add at least one diagonal to see your exact shape in the preview above';
+                          const needed = getNextRequiredDiagonals(config.measurements, config.corners);
+                          if (needed.length === 0) {
+                            const minimumDiagonals = config.corners - 3;
+                            return `Add at least ${minimumDiagonals} diagonals to see your exact shape in the preview above`;
                           }
-                          return `Add at least ${minimumDiagonals} diagonals to see your exact shape in the preview above`;
+                          if (needed.length === 1) {
+                            return `Add diagonal ${needed[0].charAt(0)} to ${needed[0].charAt(1)} to see your exact shape in the preview above`;
+                          }
+                          const names = needed.map(k => `${k.charAt(0)} to ${k.charAt(1)}`).join(', ');
+                          return `Add diagonals ${names} to see your exact shape in the preview above`;
                         })()}
                       </p>
                     </div>
@@ -870,11 +875,16 @@ export function DimensionsContent({
                       const hasValidValue = config.measurements[key] && config.measurements[key] > 0;
                       const hasError = validationErrors[key];
                       const isSuccess = hasValidValue && !hasError;
-                      
+                      const neededDiags = isApproximate ? getNextRequiredDiagonals(config.measurements, config.corners) : [];
+                      const isNeeded = neededDiags.includes(key);
+
                       // Generate label from key (e.g., 'AC' -> 'Diagonal A → C')
-                      const label = config.measurementOption === 'adjust'
+                      const baseLabel = config.measurementOption === 'adjust'
                         ? `Space Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
                         : `Shade Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
+                      const label = isNeeded && !hasValidValue
+                        ? `${baseLabel} — needed for exact shape`
+                        : baseLabel;
                       
                       return (
                         <div key={key}>

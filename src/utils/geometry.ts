@@ -463,28 +463,23 @@ export function getShapeAccuracy(
       };
     }
 
-    // Define minimum diagonals needed for each polygon type
-    const minDiagonalsNeeded = corners - 3;
-
-    if (corners === 4 && diagonalCount >= 1) {
+    // Use hasRequiredMeasurements to determine if reconstruction can be exact
+    if (hasRequiredMeasurements(measurements, corners)) {
       return {
         accuracy: 'exact',
-        message: 'Shape is accurate based on your measurements',
+        message: 'Shape preview matches your measurements',
         hasDiagonals: true
       };
     }
 
-    if (diagonalCount >= minDiagonalsNeeded) {
-      return {
-        accuracy: 'exact',
-        message: 'Shape is accurate based on your measurements',
-        hasDiagonals: true
-      };
-    }
-
+    // Has some diagonals but not enough for exact reconstruction
+    const needed = getNextRequiredDiagonals(measurements, corners);
+    const neededStr = needed.length > 0
+      ? `Add diagonal ${needed[0].charAt(0)} to ${needed[0].charAt(1)} for an exact shape preview.`
+      : 'Add more diagonal measurements for better accuracy.';
     return {
       accuracy: 'approximate',
-      message: 'Shape preview is approximate. Add more diagonal measurements for better accuracy.',
+      message: neededStr,
       hasDiagonals: diagonalCount > 0
     };
   }
@@ -495,10 +490,58 @@ export function getShapeAccuracy(
     hasDiagonals: false
   };
 }
+
+export function getNextRequiredDiagonals(
+  measurements: { [key: string]: number },
+  corners: number
+): string[] {
+  if (corners === 4) {
+    if (!measurements['AC'] && !measurements['BD']) return ['AC'];
+    return [];
+  }
+  if (corners === 5) {
+    const needed: string[] = [];
+    if (!measurements['AC']) needed.push('AC');
+    if (!measurements['AD']) needed.push('AD');
+    if (needed.length > 0) return needed;
+    const hasThird = measurements['CE'] || measurements['BD'] || measurements['BE'];
+    if (!hasThird) return ['CE'];
+    return [];
+  }
+  if (corners === 6) {
+    const needed: string[] = [];
+    if (!measurements['AC']) needed.push('AC');
+    if (!measurements['AD']) needed.push('AD');
+    if (!measurements['AE']) needed.push('AE');
+    if (needed.length > 0) return needed;
+    const hasFourth = measurements['BD'] || measurements['BE'] || measurements['BF'] || measurements['CE'] || measurements['CF'] || measurements['DF'];
+    if (!hasFourth) return ['CE'];
+    return [];
+  }
+  if (corners === 7) {
+    const needed: string[] = [];
+    if (!measurements['AC']) needed.push('AC');
+    if (!measurements['AD']) needed.push('AD');
+    if (!measurements['AE']) needed.push('AE');
+    if (!measurements['AF']) needed.push('AF');
+    return needed;
+  }
+  if (corners === 8) {
+    const needed: string[] = [];
+    if (!measurements['AC']) needed.push('AC');
+    if (!measurements['AD']) needed.push('AD');
+    if (!measurements['AE']) needed.push('AE');
+    if (!measurements['AF']) needed.push('AF');
+    if (!measurements['AG']) needed.push('AG');
+    return needed;
+  }
+  return [];
+}
+
 /**
  * Calculate the area of a triangle using Heron's formula
  * @param a Side length in mm
- * @param b Side length in mm  
+ * @param b Side length in mm
  * @param c Side length in mm
  * @returns Area in square mm, or 0 if triangle is invalid
  */
@@ -1338,6 +1381,102 @@ function trilateratePoint(
   };
 }
 
+function trilateratePointBothSides(
+  A: Point,
+  B: Point,
+  distAC: number,
+  distBC: number
+): [Point, Point] | null {
+  const distAB = calculateDistance(A, B);
+
+  if (distAC + distBC < distAB || distAC + distAB < distBC || distBC + distAB < distAC) {
+    return null;
+  }
+
+  const dx = B.x - A.x;
+  const dy = B.y - A.y;
+  const angle = Math.atan2(dy, dx);
+  const x = (distAC * distAC - distBC * distBC + distAB * distAB) / (2 * distAB);
+  const ySquared = distAC * distAC - x * x;
+  if (ySquared < 0) return null;
+
+  const y = Math.sqrt(ySquared);
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+
+  return [
+    { x: A.x + x * cos - y * sin, y: A.y + x * sin + y * cos },
+    { x: A.x + x * cos + y * sin, y: A.y + x * sin - y * cos },
+  ];
+}
+
+function segmentsIntersect(
+  p1: Point, p2: Point, p3: Point, p4: Point
+): boolean {
+  const d1x = p2.x - p1.x, d1y = p2.y - p1.y;
+  const d2x = p4.x - p3.x, d2y = p4.y - p3.y;
+  const cross = d1x * d2y - d1y * d2x;
+  if (Math.abs(cross) < 1e-10) return false;
+  const t = ((p3.x - p1.x) * d2y - (p3.y - p1.y) * d2x) / cross;
+  const u = ((p3.x - p1.x) * d1y - (p3.y - p1.y) * d1x) / cross;
+  return t > 0.001 && t < 0.999 && u > 0.001 && u < 0.999;
+}
+
+function isSimplePolygon(points: Point[]): boolean {
+  const n = points.length;
+  for (let i = 0; i < n; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % n];
+    for (let j = i + 2; j < n; j++) {
+      if (j === n - 1 && i === 0) continue;
+      const c = points[j];
+      const d = points[(j + 1) % n];
+      if (segmentsIntersect(a, b, c, d)) return false;
+    }
+  }
+  return true;
+}
+
+function polygonSignedArea(points: Point[]): number {
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length;
+    area += points[i].x * points[j].y;
+    area -= points[j].x * points[i].y;
+  }
+  return area / 2;
+}
+
+function pickValidPoint(
+  candidates: [Point, Point],
+  existingPoints: Point[],
+  expectedEdgeFromLast: number | null
+): Point {
+  const [p1, p2] = candidates;
+  const n = existingPoints.length;
+
+  // Try candidate 1 first -- check if the resulting polygon remains simple
+  const test1 = [...existingPoints, p1];
+  const test2 = [...existingPoints, p2];
+
+  const simple1 = isSimplePolygon(test1);
+  const simple2 = isSimplePolygon(test2);
+
+  if (simple1 && !simple2) return p1;
+  if (simple2 && !simple1) return p2;
+
+  // Both are simple or both fail - pick the one that maintains consistent winding
+  // (positive signed area = counterclockwise in standard math coords)
+  const area1 = polygonSignedArea(test1);
+  const area2 = polygonSignedArea(test2);
+
+  // Prefer the solution that gives larger absolute area (more "spread out" polygon)
+  if (Math.abs(area1) > Math.abs(area2)) return p1;
+  if (Math.abs(area2) > Math.abs(area1)) return p2;
+
+  return p1;
+}
+
 /**
  * Scale polygon to fit within canvas bounds
  */
@@ -1395,15 +1534,21 @@ export function hasRequiredMeasurements(
     // For 4 corners, we need all edges
     return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA']);
   } else if (corners === 5) {
-    // For 5 corners, we need all edges AND minimum 2 diagonals (AC and AD) for reconstruction
+    // For 5 corners we need all edges + AC + AD + at least one of (CE, BD, BE)
+    // AC places C from A,B. AD places D from A,C. The third diagonal constrains E.
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
-    const minDiagonals = !!(measurements['AC'] && measurements['AD']);
-    return edges && minDiagonals;
+    const hasAC = !!measurements['AC'];
+    const hasAD = !!measurements['AD'];
+    const hasThirdDiag = !!(measurements['CE'] || measurements['BD'] || measurements['BE']);
+    return edges && hasAC && hasAD && hasThirdDiag;
   } else if (corners === 6) {
-    // For 6 corners, we need all edges AND minimum 3 diagonals (AC, AD, and AE) for reconstruction
+    // For 6 corners we need all edges + AC + AD + AE + at least one of (BD, BE, BF, CE, CF, DF)
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
-    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE']);
-    return edges && minDiagonals;
+    const hasAC = !!measurements['AC'];
+    const hasAD = !!measurements['AD'];
+    const hasAE = !!measurements['AE'];
+    const hasFourthDiag = !!(measurements['BD'] || measurements['BE'] || measurements['BF'] || measurements['CE'] || measurements['CF'] || measurements['DF']);
+    return edges && hasAC && hasAD && hasAE && hasFourthDiag;
   } else if (corners === 7) {
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GA']);
     const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF']);
@@ -1507,25 +1652,16 @@ export function reconstructPolygonFromMeasurements(
     // Calculate D using diagonals if available, otherwise approximate
     let D: Point | null = null;
     if (AC) {
-      // Precise placement using diagonal AC
-      console.log('Using diagonal AC for precise D placement');
-      D = trilateratePoint(A, C, DA, CD);
+      const candidates = trilateratePointBothSides(A, C, DA, CD);
+      if (candidates) D = pickValidPoint(candidates, [A, B, C], null);
     } else if (BD) {
-      // Use diagonal BD for better accuracy
-      console.log('Using diagonal BD for D placement');
-      D = trilateratePoint(A, B, DA, BD);
+      const candidates = trilateratePointBothSides(A, B, DA, BD);
+      if (candidates) D = pickValidPoint(candidates, [A, B, C], null);
     } else {
-      // Approximate: Calculate D to close the quadrilateral
-      // D must be DA from A and CD from C
-      // Use trilateration from A and C
-      console.log('Attempting trilateration from A and C for D');
-      D = trilateratePoint(A, C, DA, CD);
+      const candidates = trilateratePointBothSides(A, C, DA, CD);
+      if (candidates) D = pickValidPoint(candidates, [A, B, C], null);
 
-      // If that fails, use a geometric approximation
       if (!D) {
-        console.log('Trilateration failed, using parallelogram approximation for D');
-        // Place D to form a rough parallelogram-like shape
-        const angle = Math.PI; // 180 degrees from C-to-B direction
         const directionX = C.x - B.x;
         const directionY = C.y - B.y;
         const len = Math.sqrt(directionX * directionX + directionY * directionY);
@@ -1536,8 +1672,6 @@ export function reconstructPolygonFromMeasurements(
           x: A.x + DA * normalizedX,
           y: A.y + DA * normalizedY
         };
-      } else {
-        console.log('Trilateration succeeded for D!');
       }
     }
     if (!D) return null;
@@ -1545,7 +1679,6 @@ export function reconstructPolygonFromMeasurements(
     points = [A, B, C, D];
 
   } else if (corners === 5) {
-    // Reconstruct pentagon (requires all diagonals)
     const AB = measurements['AB'];
     const BC = measurements['BC'];
     const CD = measurements['CD'];
@@ -1557,74 +1690,81 @@ export function reconstructPolygonFromMeasurements(
     const BE = measurements['BE'];
     const CE = measurements['CE'];
 
-    console.log('5-corner reconstruction started with measurements:', {
-      edges: { AB, BC, CD, DE, EA },
-      diagonals: { AC, AD, BD, BE, CE }
-    });
-
-    // Place A at origin
     const A: Point = { x: 0, y: 0 };
-
-    // Place B along x-axis
     const B: Point = { x: AB, y: 0 };
 
-    // Calculate C using AC and BC
-    let C = trilateratePoint(A, B, AC, BC);
-    if (!C) {
-      console.warn('5-corner reconstruction failed: Could not place point C');
-      return null;
-    }
+    // C is uniquely determined by AC and BC (we always pick positive-y side of AB)
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
 
-    // Calculate D - use additional diagonals for refinement if available
+    // D: use trilateratePointBothSides and pick the valid solution
     let D: Point | null = null;
-    if (BD) {
-      // Try using BD for more accurate D placement
-      D = trilateratePoint(B, C, BD, CD);
-      // If BD placement fails or conflicts, fall back to AD
-      if (!D) {
-        D = trilateratePoint(A, C, AD, CD);
+    if (BD && AD) {
+      // Over-constrained: use BD+CD and verify against AD
+      const candidates = trilateratePointBothSides(B, C, BD, CD);
+      if (candidates) {
+        D = pickValidPoint(candidates, [A, B, C], null);
       }
-    } else {
-      D = trilateratePoint(A, C, AD, CD);
+    } else if (BD) {
+      const candidates = trilateratePointBothSides(B, C, BD, CD);
+      if (candidates) {
+        D = pickValidPoint(candidates, [A, B, C], null);
+      }
+    } else if (AD) {
+      const candidates = trilateratePointBothSides(A, C, AD, CD);
+      if (candidates) {
+        D = pickValidPoint(candidates, [A, B, C], null);
+      }
     }
-    if (!D) {
-      console.warn('5-corner reconstruction failed: Could not place point D');
-      return null;
-    }
+    if (!D) return null;
 
-    // Calculate E - use additional diagonals for refinement if available
+    // E: use available diagonals with both-sides picking
     let E: Point | null = null;
     if (BE) {
-      // Try using BE for more accurate E placement
-      E = trilateratePoint(B, D, BE, DE);
-      // If BE placement fails, try CE
-      if (!E && CE) {
-        E = trilateratePoint(C, D, CE, DE);
+      const candidates = trilateratePointBothSides(B, D, BE, DE);
+      if (candidates) {
+        E = pickValidPoint(candidates, [A, B, C, D], null);
       }
-      // Fall back to AE if both fail
-      if (!E) {
-        E = trilateratePoint(A, D, EA, DE);
+    }
+    if (!E && CE) {
+      const candidates = trilateratePointBothSides(C, D, CE, DE);
+      if (candidates) {
+        E = pickValidPoint(candidates, [A, B, C, D], null);
       }
-    } else if (CE) {
-      // Try using CE for more accurate E placement
-      E = trilateratePoint(C, D, CE, DE);
-      // Fall back to AE if it fails
-      if (!E) {
-        E = trilateratePoint(A, D, EA, DE);
-      }
-    } else {
-      E = trilateratePoint(A, D, EA, DE);
     }
     if (!E) {
-      console.warn('5-corner reconstruction failed: Could not place point E');
-      return null;
+      const candidates = trilateratePointBothSides(A, D, EA, DE);
+      if (candidates) {
+        E = pickValidPoint(candidates, [A, B, C, D], null);
+      }
     }
+    if (!E) return null;
 
-    console.log('5-corner reconstruction succeeded!');
     points = [A, B, C, D, E];
 
+    // Final validation: ensure simple polygon and verify entered measurements
+    if (!isSimplePolygon(points)) {
+      // Try flipping E
+      const altCandidates = trilateratePointBothSides(
+        BE ? B : CE ? C : A,
+        BE ? D : CE ? D : D,
+        BE ? BE : CE ? CE : EA,
+        DE
+      );
+      if (altCandidates) {
+        const altE = altCandidates[0] === E ? altCandidates[1] : altCandidates[0];
+        const altPoints = [A, B, C, D, altE];
+        if (isSimplePolygon(altPoints)) {
+          points = altPoints;
+        } else {
+          return null;
+        }
+      } else {
+        return null;
+      }
+    }
+
   } else if (corners === 6) {
-    // Reconstruct hexagon (requires all diagonals)
     const AB = measurements['AB'];
     const BC = measurements['BC'];
     const CD = measurements['CD'];
@@ -1641,117 +1781,67 @@ export function reconstructPolygonFromMeasurements(
     const CF = measurements['CF'];
     const DF = measurements['DF'];
 
-    console.log('6-corner reconstruction started with measurements:', {
-      edges: { AB, BC, CD, DE, EF, FA },
-      diagonals: { AC, AD, AE, BD, BE, BF, CE, CF, DF }
-    });
-
-    // Place A at origin
     const A: Point = { x: 0, y: 0 };
-
-    // Place B along x-axis
     const B: Point = { x: AB, y: 0 };
 
-    // Calculate C using AC and BC
-    let C = trilateratePoint(A, B, AC, BC);
-    if (!C) {
-      console.warn('6-corner reconstruction failed: Could not place point C');
-      return null;
-    }
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
 
-    // Calculate D - use additional diagonals for refinement if available
+    // D: use both-sides picking
     let D: Point | null = null;
     if (BD) {
-      // Try using BD for more accurate D placement
-      D = trilateratePoint(B, C, BD, CD);
-      // If BD placement fails or conflicts, fall back to AD
-      if (!D) {
-        D = trilateratePoint(A, C, AD, CD);
-      }
-    } else {
-      D = trilateratePoint(A, C, AD, CD);
+      const candidates = trilateratePointBothSides(B, C, BD, CD);
+      if (candidates) D = pickValidPoint(candidates, [A, B, C], null);
     }
-    if (!D) {
-      console.warn('6-corner reconstruction failed: Could not place point D');
-      return null;
+    if (!D && AD) {
+      const candidates = trilateratePointBothSides(A, C, AD, CD);
+      if (candidates) D = pickValidPoint(candidates, [A, B, C], null);
     }
+    if (!D) return null;
 
-    // Calculate E - use additional diagonals for refinement if available
+    // E: use both-sides picking
     let E: Point | null = null;
     if (BE) {
-      // Try using BE for more accurate E placement
-      E = trilateratePoint(B, D, BE, DE);
-      // If BE placement fails, try CE
-      if (!E && CE) {
-        E = trilateratePoint(C, D, CE, DE);
-      }
-      // Fall back to AE if both fail
-      if (!E) {
-        E = trilateratePoint(A, D, AE, DE);
-      }
-    } else if (CE) {
-      // Try using CE for more accurate E placement
-      E = trilateratePoint(C, D, CE, DE);
-      // Fall back to AE if it fails
-      if (!E) {
-        E = trilateratePoint(A, D, AE, DE);
-      }
-    } else {
-      E = trilateratePoint(A, D, AE, DE);
+      const candidates = trilateratePointBothSides(B, D, BE, DE);
+      if (candidates) E = pickValidPoint(candidates, [A, B, C, D], null);
     }
-    if (!E) {
-      console.warn('6-corner reconstruction failed: Could not place point E');
-      return null;
+    if (!E && CE) {
+      const candidates = trilateratePointBothSides(C, D, CE, DE);
+      if (candidates) E = pickValidPoint(candidates, [A, B, C, D], null);
     }
+    if (!E && AE) {
+      const candidates = trilateratePointBothSides(A, D, AE, DE);
+      if (candidates) E = pickValidPoint(candidates, [A, B, C, D], null);
+    }
+    if (!E) return null;
 
-    // Calculate F - use additional diagonals for refinement if available
+    // F: use both-sides picking
     let F: Point | null = null;
     if (BF) {
-      // Try using BF for more accurate F placement
-      F = trilateratePoint(B, E, BF, EF);
-      // If BF placement fails, try CF
-      if (!F && CF) {
-        F = trilateratePoint(C, E, CF, EF);
-      }
-      // Try DF if previous attempts fail
-      if (!F && DF) {
-        F = trilateratePoint(D, E, DF, EF);
-      }
-      // Fall back to AF if all fail
-      if (!F) {
-        F = trilateratePoint(A, E, FA, EF);
-      }
-    } else if (CF) {
-      // Try using CF for more accurate F placement
-      F = trilateratePoint(C, E, CF, EF);
-      // Try DF if it fails
-      if (!F && DF) {
-        F = trilateratePoint(D, E, DF, EF);
-      }
-      // Fall back to AF
-      if (!F) {
-        F = trilateratePoint(A, E, FA, EF);
-      }
-    } else if (DF) {
-      // Try using DF for more accurate F placement
-      F = trilateratePoint(D, E, DF, EF);
-      // Fall back to AF if it fails
-      if (!F) {
-        F = trilateratePoint(A, E, FA, EF);
-      }
-    } else {
-      F = trilateratePoint(A, E, FA, EF);
+      const candidates = trilateratePointBothSides(B, E, BF, EF);
+      if (candidates) F = pickValidPoint(candidates, [A, B, C, D, E], null);
+    }
+    if (!F && CF) {
+      const candidates = trilateratePointBothSides(C, E, CF, EF);
+      if (candidates) F = pickValidPoint(candidates, [A, B, C, D, E], null);
+    }
+    if (!F && DF) {
+      const candidates = trilateratePointBothSides(D, E, DF, EF);
+      if (candidates) F = pickValidPoint(candidates, [A, B, C, D, E], null);
     }
     if (!F) {
-      console.warn('6-corner reconstruction failed: Could not place point F');
+      const candidates = trilateratePointBothSides(A, E, FA, EF);
+      if (candidates) F = pickValidPoint(candidates, [A, B, C, D, E], null);
+    }
+    if (!F) return null;
+
+    points = [A, B, C, D, E, F];
+
+    if (!isSimplePolygon(points)) {
       return null;
     }
 
-    console.log('6-corner reconstruction succeeded!');
-    points = [A, B, C, D, E, F];
-
   } else if (corners === 7) {
-    // Reconstruct heptagon (requires minimum 4 diagonals: AC, AD, AE, AF)
     const AB = measurements['AB'];
     const BC = measurements['BC'];
     const CD = measurements['CD'];
@@ -1764,33 +1854,36 @@ export function reconstructPolygonFromMeasurements(
     const AE = measurements['AE'];
     const AF = measurements['AF'];
 
-    // Place A at origin
     const A: Point = { x: 0, y: 0 };
-
-    // Place B along x-axis
     const B: Point = { x: AB, y: 0 };
 
-    // Calculate C using AC and BC
     const C = trilateratePoint(A, B, AC, BC);
     if (!C) return null;
 
-    // Calculate D using AD and CD
-    const D = trilateratePoint(A, C, AD, CD);
+    let D: Point | null = null;
+    const dCands = trilateratePointBothSides(A, C, AD, CD);
+    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
     if (!D) return null;
 
-    // Calculate E using AE and DE
-    const E = trilateratePoint(A, D, AE, DE);
+    let E: Point | null = null;
+    const eCands = trilateratePointBothSides(A, D, AE, DE);
+    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
     if (!E) return null;
 
-    // Calculate F using AF and EF
-    const F = trilateratePoint(A, E, AF, EF);
+    let F: Point | null = null;
+    const fCands = trilateratePointBothSides(A, E, AF, EF);
+    if (fCands) F = pickValidPoint(fCands, [A, B, C, D, E], null);
     if (!F) return null;
 
-    // Calculate G using GA and FG
-    const G = trilateratePoint(A, F, GA, FG);
+    let G: Point | null = null;
+    const gCands = trilateratePointBothSides(A, F, GA, FG);
+    if (gCands) G = pickValidPoint(gCands, [A, B, C, D, E, F], null);
     if (!G) return null;
 
     points = [A, B, C, D, E, F, G];
+
+    if (!isSimplePolygon(points)) return null;
+
   } else if (corners === 8) {
     const AB = measurements['AB'];
     const BC = measurements['BC'];
@@ -1812,22 +1905,34 @@ export function reconstructPolygonFromMeasurements(
     const C = trilateratePoint(A, B, AC, BC);
     if (!C) return null;
 
-    const D = trilateratePoint(A, C, AD, CD);
+    let D: Point | null = null;
+    const dCands = trilateratePointBothSides(A, C, AD, CD);
+    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
     if (!D) return null;
 
-    const E = trilateratePoint(A, D, AE, DE);
+    let E: Point | null = null;
+    const eCands = trilateratePointBothSides(A, D, AE, DE);
+    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
     if (!E) return null;
 
-    const F = trilateratePoint(A, E, AF, EF);
+    let F: Point | null = null;
+    const fCands = trilateratePointBothSides(A, E, AF, EF);
+    if (fCands) F = pickValidPoint(fCands, [A, B, C, D, E], null);
     if (!F) return null;
 
-    const G = trilateratePoint(A, F, AG, FG);
+    let G: Point | null = null;
+    const gCands = trilateratePointBothSides(A, F, AG, FG);
+    if (gCands) G = pickValidPoint(gCands, [A, B, C, D, E, F], null);
     if (!G) return null;
 
-    const H = trilateratePoint(A, G, HA, GH);
+    let H: Point | null = null;
+    const hCands = trilateratePointBothSides(A, G, HA, GH);
+    if (hCands) H = pickValidPoint(hCands, [A, B, C, D, E, F, G], null);
     if (!H) return null;
 
     points = [A, B, C, D, E, F, G, H];
+
+    if (!isSimplePolygon(points)) return null;
   }
 
   // Scale and center the polygon to fit canvas

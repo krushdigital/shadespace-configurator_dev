@@ -354,6 +354,16 @@ export function ShapeCanvas({
           </div>
         </div>
       )}
+      {shapeAccuracyInfo.accuracy === 'approximate' && shapeAccuracyInfo.hasDiagonals && config.corners >= 4 && (
+        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <p className="text-sm text-amber-700">
+              {shapeAccuracyInfo.message}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className={`relative w-full pb-[100%] overflow-hidden ${plainBackground ? 'bg-white' : 'bg-gradient-to-br from-slate-50 to-slate-100'}`}>
         {/* Help Icon Tooltip in Top-Left Corner */}
