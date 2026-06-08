@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "build:analyze": "vite build --mode analyze"
+    "build:analyze": "vite build --mode analyze",
+    "build:shopify": "vite build --config vite.config.shopify.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

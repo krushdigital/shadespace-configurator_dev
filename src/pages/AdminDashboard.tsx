@@ -16,6 +16,7 @@ import { EmailStudio } from '../components/admin/EmailStudio';
 import { HardwareSyncCard } from '../components/admin/HardwareSyncCard';
 import { HardwareCatalogManager } from '../components/admin/HardwareCatalogManager';
 import { PdfStudio } from '../components/admin/PdfStudio';
+import { MyDesignsAnalytics } from '../components/admin/MyDesignsAnalytics';
 
 import type { AdminProfile } from '../hooks/useAdminProfile';
 import { useTabPermissions } from '../hooks/useTabPermissions';
@@ -175,6 +176,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
           <div className="space-y-6">
             <AnalyticsSummary dateRange={dateRange} excludeInternal={excludeInternal} />
             <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />
+            <MyDesignsAnalytics dateRange={dateRange} excludeInternal={excludeInternal} />
           </div>
         )}
 
