@@ -143,6 +143,36 @@ interface LiveData {
   order_notes?: string | null;
 }
 
+// ---------- Density presets ----------
+type DensityPreset = {
+  sectionTitle: number;
+  rowLabel: number;
+  rowValue: number;
+  subRow: number;
+  rowSpacing: number;
+  sectionGap: number;
+  headerH: number;
+  calloutH: number;
+  guaranteeH: number;
+};
+
+const DENSITY_PRESETS: Record<string, DensityPreset> = {
+  comfortable: { sectionTitle: 10, rowLabel: 9, rowValue: 9, subRow: 8, rowSpacing: 6, sectionGap: 6, headerH: 18, calloutH: 18, guaranteeH: 14 },
+  compact:     { sectionTitle: 9, rowLabel: 8, rowValue: 8, subRow: 7, rowSpacing: 5, sectionGap: 4, headerH: 16, calloutH: 16, guaranteeH: 12 },
+  ultra:       { sectionTitle: 8, rowLabel: 7.5, rowValue: 7.5, subRow: 7, rowSpacing: 4.5, sectionGap: 3, headerH: 14, calloutH: 14, guaranteeH: 11 },
+};
+
+function getBlockColumn(block: PdfBlock): "full" | "left" | "right" {
+  const v = block.props?.column;
+  return v === "left" || v === "right" ? v : "full";
+}
+
+function getBlockDensity(block: PdfBlock, templateDensity: string): DensityPreset {
+  const override = block.props?.densityOverride as string | undefined;
+  const key = override && DENSITY_PRESETS[override] ? override : (DENSITY_PRESETS[templateDensity] ? templateDensity : "comfortable");
+  return DENSITY_PRESETS[key];
+}
+
 // Layout constants
 const PAGE_WIDTH = 210;
 const PAGE_HEIGHT = 297;
@@ -151,17 +181,25 @@ const MARGIN_RIGHT = 14;
 const MARGIN_TOP = 14;
 const MARGIN_BOTTOM = 16;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
+const COL_GAP = 4;
+const COL_WIDTH = (CONTENT_WIDTH - COL_GAP) / 2;
 
 class PdfRenderer {
   private pdf: InstanceType<typeof jsPDF>;
   private y: number;
   private brand: typeof DEFAULT_BRAND;
+  private density: DensityPreset;
 
-  constructor(brand: typeof DEFAULT_BRAND) {
+  constructor(brand: typeof DEFAULT_BRAND, templateDensity = "comfortable") {
     this.pdf = new jsPDF("p", "mm", "a4");
     this.y = MARGIN_TOP;
     this.brand = brand;
+    this.density = DENSITY_PRESETS[templateDensity] || DENSITY_PRESETS.comfortable;
   }
+
+  setDensity(d: DensityPreset) { this.density = d; }
+  getY() { return this.y; }
+  setY(v: number) { this.y = v; }
 
   private checkPageBreak(needed: number) {
     if (this.y + needed > PAGE_HEIGHT - MARGIN_BOTTOM) {
@@ -309,7 +347,7 @@ class PdfRenderer {
     this.y = MARGIN_TOP;
   }
 
-  async addImage(url: string, maxW: number, maxH: number) {
+  async addImage(url: string, maxW: number, maxH: number, xOffset = MARGIN_LEFT, areaW = CONTENT_WIDTH) {
     try {
       const resp = await fetch(url);
       if (!resp.ok) return;
@@ -318,14 +356,103 @@ class PdfRenderer {
       const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
       const dataUri = `data:${contentType};base64,${base64}`;
       const format = contentType.includes("png") ? "PNG" : "JPEG";
-
+      const w = Math.min(maxW, areaW);
       this.checkPageBreak(maxH + 4);
-      const xCenter = MARGIN_LEFT + (CONTENT_WIDTH - maxW) / 2;
-      this.pdf.addImage(dataUri, format, xCenter, this.y, maxW, maxH);
+      const xCenter = xOffset + (areaW - w) / 2;
+      this.pdf.addImage(dataUri, format, xCenter, this.y, w, maxH);
       this.y += maxH + 4;
     } catch {
       // Skip image on failure
     }
+  }
+
+  drawSectionTitleCol(title: string, xOffset: number, width: number) {
+    this.checkPageBreak(10);
+    this.pdf.setFont("helvetica", "bold");
+    this.pdf.setFontSize(this.density.sectionTitle);
+    this.setColor(this.brand.primaryColor);
+    this.pdf.text(title, xOffset, this.y + 4);
+    this.setDrawColor(this.brand.accentColor);
+    this.pdf.setLineWidth(0.6);
+    this.pdf.line(xOffset, this.y + 6, xOffset + width, this.y + 6);
+    this.y += 10;
+  }
+
+  drawRowCol(label: string, value: string, xOffset: number, width: number, indent = 0) {
+    const sp = this.density.rowSpacing;
+    this.checkPageBreak(sp);
+    const xLabel = xOffset + indent;
+    const xVal = xOffset + width;
+    this.pdf.setFont("helvetica", "normal");
+    this.pdf.setFontSize(this.density.rowLabel);
+    this.setColor(this.brand.mutedColor);
+    const maxLabelW = width * 0.55 - indent;
+    const labelLines = this.pdf.splitTextToSize(label, maxLabelW);
+    this.pdf.text(labelLines, xLabel, this.y + 3);
+    this.pdf.setFont("helvetica", "bold");
+    this.pdf.setFontSize(this.density.rowValue);
+    this.setColor(this.brand.textColor);
+    const maxValW = width * 0.43;
+    const valLines = this.pdf.splitTextToSize(value, maxValW);
+    const valW = Math.max(...valLines.map((l: string) => this.pdf.getTextWidth(l)));
+    this.pdf.text(valLines, xVal - valW, this.y + 3);
+    const lineCount = Math.max(labelLines.length, valLines.length);
+    const lineH = lineCount > 1 ? sp + (lineCount - 1) * 3 : sp;
+    this.setDrawColor("#E5E7EB");
+    this.pdf.setLineWidth(0.15);
+    this.pdf.line(xOffset, this.y + lineH - 1, xOffset + width, this.y + lineH - 1);
+    this.y += lineH;
+  }
+
+  drawSubRowCol(label: string, value: string, xOffset: number, width: number) {
+    this.checkPageBreak(5);
+    this.pdf.setFont("helvetica", "normal");
+    this.pdf.setFontSize(this.density.subRow);
+    this.setColor(this.brand.mutedColor);
+    this.pdf.text(label, xOffset + 4, this.y + 3);
+    const xVal = xOffset + width;
+    const valWidth = this.pdf.getTextWidth(value);
+    this.pdf.text(value, xVal - valWidth, this.y + 3);
+    this.y += 5;
+  }
+
+  drawCalloutCol(label: string, price: string, xOffset: number, width: number) {
+    const h = this.density.calloutH;
+    this.checkPageBreak(h + 6);
+    this.setFillColor(this.brand.primaryColor);
+    this.pdf.roundedRect(xOffset, this.y, width, h, 3, 3, "F");
+    this.pdf.setFont("helvetica", "normal");
+    this.pdf.setFontSize(9);
+    this.pdf.setTextColor(255, 255, 255);
+    const labelW = this.pdf.getTextWidth(label);
+    this.pdf.text(label, xOffset + (width - labelW) / 2, this.y + 6);
+    this.pdf.setFont("helvetica", "bold");
+    this.pdf.setFontSize(14);
+    const [ar, ag, ab] = hexToRgb(this.brand.accentColor);
+    this.pdf.setTextColor(ar, ag, ab);
+    const priceW = this.pdf.getTextWidth(price);
+    this.pdf.text(price, xOffset + (width - priceW) / 2, this.y + 13);
+    this.y += h + 6;
+  }
+
+  drawGuaranteeCol(title: string, text: string, xOffset: number, width: number) {
+    const h = this.density.guaranteeH;
+    this.checkPageBreak(h + 6);
+    this.setFillColor("#E8F5CC");
+    this.pdf.roundedRect(xOffset, this.y, width, h, 3, 3, "F");
+    this.setDrawColor(this.brand.accentDark);
+    this.pdf.setLineWidth(0.4);
+    this.pdf.roundedRect(xOffset, this.y, width, h, 3, 3, "S");
+    this.pdf.setFont("helvetica", "bold");
+    this.pdf.setFontSize(this.density.rowValue);
+    this.setColor(this.brand.primaryColor);
+    this.pdf.text(title, xOffset + 4, this.y + 5);
+    this.pdf.setFont("helvetica", "normal");
+    this.pdf.setFontSize(this.density.subRow);
+    this.setColor(this.brand.textColor);
+    const wrappedText = this.pdf.splitTextToSize(text, width - 8);
+    this.pdf.text(wrappedText, xOffset + 4, this.y + 9);
+    this.y += h + 6;
   }
 
   getArrayBuffer(): ArrayBuffer {
@@ -333,12 +460,14 @@ class PdfRenderer {
   }
 }
 
-// ---------- Block rendering ----------
+// ---------- Block rendering (column-aware) ----------
 function renderBlockToPdf(
   r: PdfRenderer,
   block: PdfBlock,
   _brand: typeof DEFAULT_BRAND,
   live: LiveData,
+  xOffset = MARGIN_LEFT,
+  areaWidth = CONTENT_WIDTH,
 ) {
   const p = block.props || {};
   const title = (p.title as string) || "";
@@ -355,7 +484,7 @@ function renderBlockToPdf(
   switch (block.type) {
     case "quoteMeta": {
       const heading = title || "Quote Details";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       const fullName = [live.customer_first_name, live.customer_last_name].filter(Boolean).join(" ").trim();
       const name = fullName || "See Shopify Order";
       const email = live.customer_email || "See Shopify Order";
@@ -365,18 +494,18 @@ function renderBlockToPdf(
         : new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
       const custRef = live.customer_reference || (cfgData?.customerReference as string | undefined);
       const quoteName = live.quote_name || (cfgData?.quoteName as string | undefined);
-      if (isRowVisible(block, "customerName")) r.drawRow("Customer Name", name);
-      if (isRowVisible(block, "email")) r.drawRow("Email", email);
-      if (isRowVisible(block, "quoteReference")) r.drawRow("Quote Reference", qRef);
-      if (isRowVisible(block, "quoteName") && quoteName) r.drawRow("Quote Name", quoteName);
-      if (isRowVisible(block, "customerReference") && custRef) r.drawRow("Customer Reference", custRef);
-      if (isRowVisible(block, "date")) r.drawRow("Date", date);
+      if (isRowVisible(block, "customerName")) r.drawRowCol("Customer Name", name, xOffset, areaWidth);
+      if (isRowVisible(block, "email")) r.drawRowCol("Email", email, xOffset, areaWidth);
+      if (isRowVisible(block, "quoteReference")) r.drawRowCol("Quote Reference", qRef, xOffset, areaWidth);
+      if (isRowVisible(block, "quoteName") && quoteName) r.drawRowCol("Quote Name", quoteName, xOffset, areaWidth);
+      if (isRowVisible(block, "customerReference") && custRef) r.drawRowCol("Customer Reference", custRef, xOffset, areaWidth);
+      if (isRowVisible(block, "date")) r.drawRowCol("Date", date, xOffset, areaWidth);
       r.addSpacer();
       break;
     }
     case "orderDetails": {
       const heading = title || "Order Details";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       const fullName = [live.customer_first_name, live.customer_last_name].filter(Boolean).join(" ").trim();
       const name = fullName || "Pending (from Shopify order)";
       const email = live.customer_email || "Pending";
@@ -391,56 +520,56 @@ function renderBlockToPdf(
         : "Pending (from Shopify order)";
       const weight = live.estimated_weight_kg != null ? `${live.estimated_weight_kg} kg` : "Calculated at fulfilment";
       const notes = live.order_notes || "None";
-      if (isRowVisible(block, "customerName")) r.drawRow("Customer Name", name);
-      if (isRowVisible(block, "email")) r.drawRow("Email", email);
-      if (isRowVisible(block, "quoteReference")) r.drawRow("Quote Reference", odRef);
-      if (isRowVisible(block, "shopifyOrderNumber")) r.drawRow("Shopify Order", `#${orderNum}`);
-      if (isRowVisible(block, "shippingAddress")) r.drawRow("Shipping Address", addressStr);
-      if (isRowVisible(block, "weight")) r.drawRow("Estimated Weight", weight);
-      if (isRowVisible(block, "orderNotes")) r.drawRow("Order Notes", notes);
-      if (isRowVisible(block, "date")) r.drawRow("Date", date);
+      if (isRowVisible(block, "customerName")) r.drawRowCol("Customer Name", name, xOffset, areaWidth);
+      if (isRowVisible(block, "email")) r.drawRowCol("Email", email, xOffset, areaWidth);
+      if (isRowVisible(block, "quoteReference")) r.drawRowCol("Quote Reference", odRef, xOffset, areaWidth);
+      if (isRowVisible(block, "shopifyOrderNumber")) r.drawRowCol("Shopify Order", `#${orderNum}`, xOffset, areaWidth);
+      if (isRowVisible(block, "shippingAddress")) r.drawRowCol("Shipping Address", addressStr, xOffset, areaWidth);
+      if (isRowVisible(block, "weight")) r.drawRowCol("Estimated Weight", weight, xOffset, areaWidth);
+      if (isRowVisible(block, "orderNotes")) r.drawRowCol("Order Notes", notes, xOffset, areaWidth);
+      if (isRowVisible(block, "date")) r.drawRowCol("Date", date, xOffset, areaWidth);
       r.addSpacer();
       break;
     }
     case "summary": {
       const heading = title || "Shade Sail Summary";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       const fabricationMethod = cfgData?.measurementOption === "adjust"
         ? "Manufactured to fit my space"
         : "Custom dimensions provided by customer";
       const edgeType = cfgData?.edgeType === "cabled" ? "Cabled Edge" : "Webbing Reinforced";
       const perimeterMm = ((calc?.perimeter as number) || 14) * 1000;
-      if (isRowVisible(block, "fabricMaterial")) r.drawRow("Fabric Material", fabricLabel);
-      if (isRowVisible(block, "fabricColor")) r.drawRow("Fabric Color", fabricColor);
-      if (isRowVisible(block, "corners")) r.drawRow("Corners", String(corners));
-      if (isRowVisible(block, "totalArea")) r.drawRow("Total Area", formatArea(((calc?.area as number) || 12.5) * 1000000, unit));
-      if (isRowVisible(block, "edgePerimeter")) r.drawRow("Edge Perimeter", formatMeasurement(perimeterMm, unit));
-      if (isRowVisible(block, "edgeReinforcement")) r.drawRow("Edge Reinforcement", edgeType);
-      if (isRowVisible(block, "thread")) r.drawRow("Thread", "Sewn with SolarFix PTFE thread");
-      if (isRowVisible(block, "fabricationMethod")) r.drawRow("Fabrication Method", fabricationMethod);
+      if (isRowVisible(block, "fabricMaterial")) r.drawRowCol("Fabric Material", fabricLabel, xOffset, areaWidth);
+      if (isRowVisible(block, "fabricColor")) r.drawRowCol("Fabric Color", fabricColor, xOffset, areaWidth);
+      if (isRowVisible(block, "corners")) r.drawRowCol("Corners", String(corners), xOffset, areaWidth);
+      if (isRowVisible(block, "totalArea")) r.drawRowCol("Total Area", formatArea(((calc?.area as number) || 12.5) * 1000000, unit), xOffset, areaWidth);
+      if (isRowVisible(block, "edgePerimeter")) r.drawRowCol("Edge Perimeter", formatMeasurement(perimeterMm, unit), xOffset, areaWidth);
+      if (isRowVisible(block, "edgeReinforcement")) r.drawRowCol("Edge Reinforcement", edgeType, xOffset, areaWidth);
+      if (isRowVisible(block, "thread")) r.drawRowCol("Thread", "Sewn with SolarFix PTFE thread", xOffset, areaWidth);
+      if (isRowVisible(block, "fabricationMethod")) r.drawRowCol("Fabrication Method", fabricationMethod, xOffset, areaWidth);
       r.addSpacer();
       break;
     }
     case "measurements": {
       const heading = title || "Precise Measurements";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       for (let i = 0; i < corners; i++) {
         const next = (i + 1) % corners;
         const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + next)}`;
         const mm = measurements[key];
-        if (mm) r.drawRow(`Edge ${key.charAt(0)} to ${key.charAt(1)}`, formatMeasurement(mm, unit));
+        if (mm) r.drawRowCol(`Edge ${key.charAt(0)} to ${key.charAt(1)}`, formatMeasurement(mm, unit), xOffset, areaWidth);
       }
       const diagKeys = getDiagonalKeysForCorners(corners);
       for (const key of diagKeys) {
         const mm = measurements[key];
-        if (mm) r.drawRow(`Diagonal ${key.charAt(0)} to ${key.charAt(1)}`, formatMeasurement(mm, unit));
+        if (mm) r.drawRowCol(`Diagonal ${key.charAt(0)} to ${key.charAt(1)}`, formatMeasurement(mm, unit), xOffset, areaWidth);
       }
       r.addSpacer();
       break;
     }
     case "anchorPoints": {
       const heading = title || "Anchor Point Configuration";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       const fixingHeights = (cfgData?.fixingHeights || []) as number[];
       const fixingTypes = (cfgData?.fixingTypes || []) as string[];
       const eyeOrientations = (cfgData?.eyeOrientations || []) as string[];
@@ -449,19 +578,19 @@ function renderBlockToPdf(
         const h = fixingHeights[i] || 0;
         const t = fixingTypes[i] || "post";
         const o = eyeOrientations[i] || "horizontal";
-        r.drawRow(`Corner ${letter}`, `${formatMeasurement(h, unit)}, ${t}, ${o} eye`);
+        r.drawRowCol(`Corner ${letter}`, `${formatMeasurement(h, unit)}, ${t}, ${o} eye`, xOffset, areaWidth);
       }
       r.addSpacer();
       break;
     }
     case "hardwareBreakdown": {
       const heading = title || "Corner Hardware Breakdown";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       const hwMode = (cfgData?.hardwareSelectionMode as string) || (cfgData?.measurementOption === "adjust" ? "standard" : "none");
       if (hwMode === "none") {
-        r.drawRow("Hardware", "No tensioning hardware included");
+        r.drawRowCol("Hardware", "No tensioning hardware included", xOffset, areaWidth);
       } else if (hwMode === "standard") {
-        r.drawRow(`Hardware Tensioning Kit (${corners}-corner pack)`, "Included");
+        r.drawRowCol(`Hardware Tensioning Kit (${corners}-corner pack)`, "Included", xOffset, areaWidth);
       } else {
         const cornerHw = (cfgData?.cornerHardware || {}) as Record<number, Array<{ name: string; sku?: string; qty: number; livePrice?: number; livePriceCurrency?: string }>>;
         for (let i = 0; i < corners; i++) {
@@ -471,11 +600,11 @@ function renderBlockToPdf(
             const lp = l.livePriceCurrency === currency && l.livePrice != null ? l.livePrice : 0;
             return sum + lp * l.qty;
           }, 0);
-          r.drawRow(`Corner ${letter}`, formatCurrency(cornerTotal, currency));
+          r.drawRowCol(`Corner ${letter}`, formatCurrency(cornerTotal, currency), xOffset, areaWidth);
           for (const l of lines) {
             const skuPart = l.sku ? ` (${l.sku})` : "";
             const lineLive = l.livePriceCurrency === currency && l.livePrice != null ? l.livePrice * l.qty : 0;
-            r.drawSubRow(`${l.qty}x ${l.name}${skuPart}`, formatCurrency(lineLive, currency));
+            r.drawSubRowCol(`${l.qty}x ${l.name}${skuPart}`, formatCurrency(lineLive, currency), xOffset, areaWidth);
           }
         }
       }
@@ -484,33 +613,33 @@ function renderBlockToPdf(
     }
     case "priceBreakdown": {
       const heading = title || "Price Breakdown";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       const hb = calc?.hardwareBreakdown as Record<string, unknown> | undefined;
       const isManual = hb?.mode === "manual" && hb?.liveCurrency === currency && (hb?.hardwareOnlyLivePrice as number) > 0;
       if (isManual) {
         const hwLive = hb!.hardwareOnlyLivePrice as number;
-        r.drawRow("Shade sail", formatCurrency(total - hwLive, currency));
-        r.drawRow("Hardware", formatCurrency(hwLive, currency));
+        r.drawRowCol("Shade sail", formatCurrency(total - hwLive, currency), xOffset, areaWidth);
+        r.drawRowCol("Hardware", formatCurrency(hwLive, currency), xOffset, areaWidth);
       } else {
-        r.drawRow("Shade sail", formatCurrency(total, currency));
+        r.drawRowCol("Shade sail", formatCurrency(total, currency), xOffset, areaWidth);
       }
-      r.drawRow("Total", formatCurrency(total, currency));
+      r.drawRowCol("Total", formatCurrency(total, currency), xOffset, areaWidth);
       r.addSpacer();
       break;
     }
     case "pricingCallout": {
       const label = title || "All-Inclusive Price to Your Door";
-      r.drawCallout(label, formatCurrency(total, currency));
+      r.drawCalloutCol(label, formatCurrency(total, currency), xOffset, areaWidth);
       break;
     }
     case "guarantee": {
       const heading = title || "Quality Guarantee";
-      r.drawGuarantee(heading, "15-year Fabric & Workmanship Warranty - Weather-resistant materials - Free worldwide shipping");
+      r.drawGuaranteeCol(heading, "15-year Fabric & Workmanship Warranty - Weather-resistant materials - Free worldwide shipping", xOffset, areaWidth);
       break;
     }
     case "stepSelections": {
       const heading = title || "Step-by-Step Selections";
-      r.drawSectionTitle(heading);
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
       const manufacturing = cfgData?.measurementOption === "exact"
         ? "Manufacture Shade Sail to the Exact Dimensions I provide"
         : "Manufacture Shade Sail to fit my Space";
@@ -532,18 +661,18 @@ function renderBlockToPdf(
         ["Step 8 - Fixing Points", fixingLabel],
       ];
       for (const [label, value] of rows) {
-        r.drawRow(label, value);
+        r.drawRowCol(label, value, xOffset, areaWidth);
       }
       r.addSpacer();
       break;
     }
     case "billOfMaterials": {
       const heading = title || "Bill of Materials";
-      r.drawSectionTitle(heading);
-      r.drawRow(`${fabricLabel} - ${fabricColor} (${formatArea(((calc?.area as number) || 12.5) * 1000000, unit)})`, formatCurrency(total - 70, currency));
-      r.drawRow("Edge reinforcement", "Included");
-      r.drawRow(`Hardware Tensioning Kit (${corners}-corner pack)`, "Included");
-      r.drawRow("Total (all-inclusive)", formatCurrency(total, currency));
+      r.drawSectionTitleCol(heading, xOffset, areaWidth);
+      r.drawRowCol(`${fabricLabel} - ${fabricColor} (${formatArea(((calc?.area as number) || 12.5) * 1000000, unit)})`, formatCurrency(total - 70, currency), xOffset, areaWidth);
+      r.drawRowCol("Edge reinforcement", "Included", xOffset, areaWidth);
+      r.drawRowCol(`Hardware Tensioning Kit (${corners}-corner pack)`, "Included", xOffset, areaWidth);
+      r.drawRowCol("Total (all-inclusive)", formatCurrency(total, currency), xOffset, areaWidth);
       r.addSpacer();
       break;
     }
@@ -551,10 +680,10 @@ function renderBlockToPdf(
       const heading = p.heading as string | undefined;
       const body = p.body as string | undefined;
       if (heading) {
-        r.drawSectionTitle(heading);
+        r.drawSectionTitleCol(heading, xOffset, areaWidth);
       }
       if (body) {
-        r.drawRow("", body);
+        r.drawRowCol("", body, xOffset, areaWidth);
       }
       break;
     }
@@ -648,6 +777,7 @@ Deno.serve(async (req: Request) => {
     const brand = { ...DEFAULT_BRAND, ...(cfg.brand as Record<string, string> || {}) };
     const header = { ...DEFAULT_HEADER, ...(cfg.header as Record<string, string> || {}) };
     const footer = { ...DEFAULT_FOOTER, ...(cfg.footer as Record<string, string> || {}) };
+    const templateDensity = ((cfg.layout as Record<string, unknown> | undefined)?.density as string) || "comfortable";
     const blocks = normalizeBlocks(templateRow?.blocks);
 
     const validImageUrl = (imgUrl: string | null): string | null => {
@@ -676,35 +806,116 @@ Deno.serve(async (req: Request) => {
       order_notes: quote.order_notes,
     };
 
-    // Build PDF server-side
-    const renderer = new PdfRenderer(brand);
+    // Build PDF server-side with column layout support
+    const renderer = new PdfRenderer(brand, templateDensity);
     renderer.drawHeader(header);
 
     const visibleBlocks = blocks.filter((b) => b.visible);
 
+    // Group blocks into runs: full-width or paired left+right columns
+    type BlockGroup = { type: "full"; block: PdfBlock } | { type: "cols"; left: PdfBlock[]; right: PdfBlock[] };
+    const groups: BlockGroup[] = [];
+    let leftBuf: PdfBlock[] = [];
+    let rightBuf: PdfBlock[] = [];
+    const flushCols = () => {
+      if (leftBuf.length > 0 || rightBuf.length > 0) {
+        groups.push({ type: "cols", left: [...leftBuf], right: [...rightBuf] });
+        leftBuf = [];
+        rightBuf = [];
+      }
+    };
     for (const block of visibleBlocks) {
-      if (block.type === "diagramImage") {
-        const hasPlain = live.diagram_public_url;
-        const has3d = live.diagram_3d_url;
-        if (hasPlain || has3d) {
-          renderer.drawSectionTitle((block.props?.title as string) || "Shade Sail Diagram");
-          if (hasPlain) {
-            await renderer.addImage(hasPlain, 80, 60);
+      const col = getBlockColumn(block);
+      if (col === "full") {
+        flushCols();
+        groups.push({ type: "full", block });
+      } else if (col === "left") {
+        leftBuf.push(block);
+      } else {
+        rightBuf.push(block);
+      }
+    }
+    flushCols();
+
+    const leftX = MARGIN_LEFT;
+    const rightX = MARGIN_LEFT + COL_WIDTH + COL_GAP;
+
+    for (const group of groups) {
+      if (group.type === "full") {
+        const block = group.block;
+        const density = getBlockDensity(block, templateDensity);
+        renderer.setDensity(density);
+
+        if (block.type === "diagramImage") {
+          const hasPlain = live.diagram_public_url;
+          const has3d = live.diagram_3d_url;
+          if (hasPlain || has3d) {
+            renderer.drawSectionTitleCol((block.props?.title as string) || "Shade Sail Diagram", MARGIN_LEFT, CONTENT_WIDTH);
+            if (hasPlain && has3d) {
+              const imgW = Math.min(75, COL_WIDTH);
+              const savedY = renderer.getY();
+              await renderer.addImage(hasPlain, imgW, 55, leftX, COL_WIDTH);
+              const afterLeft = renderer.getY();
+              renderer.setY(savedY);
+              await renderer.addImage(has3d, imgW, 55, rightX, COL_WIDTH);
+              const afterRight = renderer.getY();
+              renderer.setY(Math.max(afterLeft, afterRight));
+            } else if (hasPlain) {
+              await renderer.addImage(hasPlain, 80, 60, MARGIN_LEFT, CONTENT_WIDTH);
+            } else if (has3d) {
+              await renderer.addImage(has3d, 80, 60, MARGIN_LEFT, CONTENT_WIDTH);
+            }
           }
-          if (has3d) {
-            await renderer.addImage(has3d, 80, 60);
+          continue;
+        }
+        if (block.type === "diagram3D") {
+          if (live.diagram_3d_url) {
+            renderer.drawSectionTitleCol((block.props?.title as string) || "3D Render", MARGIN_LEFT, CONTENT_WIDTH);
+            await renderer.addImage(live.diagram_3d_url, 80, 60, MARGIN_LEFT, CONTENT_WIDTH);
+          }
+          continue;
+        }
+        renderBlockToPdf(renderer, block, brand, live, MARGIN_LEFT, CONTENT_WIDTH);
+      } else {
+        // Render left and right columns side by side
+        const savedY = renderer.getY();
+
+        // Render left column blocks
+        for (const block of group.left) {
+          const density = getBlockDensity(block, templateDensity);
+          renderer.setDensity(density);
+          if (block.type === "diagramImage" || block.type === "diagram3D") {
+            const imgUrl = block.type === "diagram3D" ? live.diagram_3d_url : (live.diagram_public_url || live.diagram_3d_url);
+            if (imgUrl) {
+              renderer.drawSectionTitleCol((block.props?.title as string) || "Diagram", leftX, COL_WIDTH);
+              await renderer.addImage(imgUrl, COL_WIDTH - 4, 50, leftX, COL_WIDTH);
+            }
+          } else {
+            renderBlockToPdf(renderer, block, brand, live, leftX, COL_WIDTH);
           }
         }
-        continue;
-      }
-      if (block.type === "diagram3D") {
-        if (live.diagram_3d_url) {
-          renderer.drawSectionTitle((block.props?.title as string) || "3D Render");
-          await renderer.addImage(live.diagram_3d_url, 80, 60);
+        const afterLeftY = renderer.getY();
+
+        // Reset Y to render right column
+        renderer.setY(savedY);
+        for (const block of group.right) {
+          const density = getBlockDensity(block, templateDensity);
+          renderer.setDensity(density);
+          if (block.type === "diagramImage" || block.type === "diagram3D") {
+            const imgUrl = block.type === "diagram3D" ? live.diagram_3d_url : (live.diagram_public_url || live.diagram_3d_url);
+            if (imgUrl) {
+              renderer.drawSectionTitleCol((block.props?.title as string) || "Diagram", rightX, COL_WIDTH);
+              await renderer.addImage(imgUrl, COL_WIDTH - 4, 50, rightX, COL_WIDTH);
+            }
+          } else {
+            renderBlockToPdf(renderer, block, brand, live, rightX, COL_WIDTH);
+          }
         }
-        continue;
+        const afterRightY = renderer.getY();
+
+        // Advance to whichever column was taller
+        renderer.setY(Math.max(afterLeftY, afterRightY));
       }
-      renderBlockToPdf(renderer, block, brand, live);
     }
 
     renderer.drawFooter(footer);
@@ -719,7 +930,7 @@ Deno.serve(async (req: Request) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": `inline; filename="${filename}"`,
         "Cache-Control": "no-cache, no-store, must-revalidate",
       },
     });
