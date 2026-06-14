@@ -2,8 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Reset button borders within app to prevent host site (Shopify) styles leaking in */
-#SHADE_SPACE button {
+/* Reset button borders within app to prevent host site (Shopify) styles leaking in.
+   Exclude buttons that have explicit Tailwind border classes (e.g. border-2, border-slate-200). */
+#SHADE_SPACE button:not([class*="border-"]) {
   border: none;
 }
 
