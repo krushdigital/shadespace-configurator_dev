@@ -217,10 +217,6 @@ export const InteractiveMeasurementCanvas = forwardRef<InteractiveMeasurementCan
                     <div className="w-4 h-0.5 border-b-2 border-slate-400 border-dashed"></div>
                     <span className="text-slate-600">Diagonal measurements (color varies with fabric)</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-0.5 bg-red-500"></div>
-                    <span className="text-slate-600">Highlighted measurement</span>
-                  </div>
                 </div>
               }
             >
