@@ -123,27 +123,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Card className="mb-6 border border-gray-200 shadow-sm">
-          <div className="flex flex-wrap items-center gap-4 p-4 sm:p-5">
-            <label className="text-sm font-semibold text-gray-700">Date Range:</label>
+          <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
+            <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">Date Range:</label>
             <input
               type="date"
               value={dateRange.start}
               onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-              className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-colors"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-colors"
             />
             <span className="text-gray-500 font-medium">to</span>
             <input
               type="date"
               value={dateRange.end}
               onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-              className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-colors"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-lime-500 focus:border-lime-500 transition-colors"
             />
 
-            <div className="h-8 w-px bg-gray-300 mx-1"></div>
+            <div className="hidden sm:block h-8 w-px bg-gray-300"></div>
 
             <button
               onClick={handleToggleExclude}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border whitespace-nowrap ${
                 excludeInternal
                   ? 'bg-amber-50 border-amber-300 text-amber-800'
                   : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
@@ -155,16 +155,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
               Exclude Internal
             </button>
 
-            <div className="ml-auto flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => setDateRange({
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="whitespace-nowrap" onClick={() => setDateRange({
                 start: new Date().toISOString().split('T')[0],
                 end: new Date().toISOString().split('T')[0]
               })}>Today</Button>
-              <Button size="sm" variant="outline" onClick={() => setDateRange({
+              <Button size="sm" variant="outline" className="whitespace-nowrap" onClick={() => setDateRange({
                 start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 end: new Date().toISOString().split('T')[0]
               })}>Last 7 Days</Button>
-              <Button size="sm" variant="outline" onClick={() => setDateRange({
+              <Button size="sm" variant="outline" className="whitespace-nowrap" onClick={() => setDateRange({
                 start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                 end: new Date().toISOString().split('T')[0]
               })}>Last 30 Days</Button>
