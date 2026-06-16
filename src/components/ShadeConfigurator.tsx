@@ -774,8 +774,6 @@ export function ShadeConfigurator() {
         quoteReference: savedQuoteReference || quoteReference || undefined,
       };
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
       const effectiveQuoteId = savedQuoteId || null;
       const effectiveQuoteReference = savedQuoteReference || quoteReference || null;
       if (calculations.totalPrice == null || !config.currency) {
@@ -785,13 +783,11 @@ export function ShadeConfigurator() {
         });
       }
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/send-config-email`,
+        '/apps/shade_space/send-config-email',
         {
           method: "POST",
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseAnonKey}`,
-            'apikey': supabaseAnonKey,
           },
           body: JSON.stringify({
             pdf: pdfBase64,

@@ -1,7 +1,8 @@
 import { ConfiguratorState, ShadeCalculations } from '../types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Route save-quote calls through the Shopify App Proxy so the browser never
+// makes direct Supabase DNS requests (avoids ERR_NAME_NOT_RESOLVED / CORS).
+const SAVE_QUOTE_URL = '/apps/shade_space/save-quote';
 
 export interface SavedQuote {
   id: string;
@@ -67,10 +68,9 @@ export async function saveQuote(
   canvasImage3DUrl?: string | null,
   status?: string
 ): Promise<SavedQuote> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
+  const response = await fetch(SAVE_QUOTE_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -118,11 +118,10 @@ export async function saveQuote(
  */
 export async function getQuoteById(id: string, accessToken: string): Promise<QuoteData> {
   const response = await fetch(
-    `${SUPABASE_URL}/functions/v1/save-quote?id=${encodeURIComponent(id)}&token=${encodeURIComponent(accessToken)}`,
+    `${SAVE_QUOTE_URL}?id=${encodeURIComponent(id)}&token=${encodeURIComponent(accessToken)}`,
     {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
       },
     }
@@ -145,10 +144,9 @@ export async function updateQuoteStatus(
   accessToken: string,
   status: 'saved' | 'completed' | 'expired'
 ): Promise<void> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
+  const response = await fetch(SAVE_QUOTE_URL, {
     method: 'PATCH',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ id, token: accessToken, status }),
@@ -184,10 +182,9 @@ export async function updateQuote(
     status?: string;
   }
 ): Promise<SavedQuote> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
+  const response = await fetch(SAVE_QUOTE_URL, {
     method: 'PUT',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -317,10 +314,9 @@ export async function saveQuoteForCheckout(
   canvasImageUrl?: string | null,
   canvasImage3DUrl?: string | null
 ): Promise<SavedQuote> {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/save-quote`, {
+  const response = await fetch(SAVE_QUOTE_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
