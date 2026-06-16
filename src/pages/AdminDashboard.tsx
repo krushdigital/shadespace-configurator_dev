@@ -17,7 +17,6 @@ import { HardwareSyncCard } from '../components/admin/HardwareSyncCard';
 import { HardwareCatalogManager } from '../components/admin/HardwareCatalogManager';
 import { PdfStudio } from '../components/admin/PdfStudio';
 import { MyDesignsAnalytics } from '../components/admin/MyDesignsAnalytics';
-
 import type { AdminProfile } from '../hooks/useAdminProfile';
 import { useTabPermissions } from '../hooks/useTabPermissions';
 import { UserManagement } from '../components/admin/UserManagement';

@@ -8,20 +8,19 @@ import { preloadCurrencyMap, detectCountryFromIp } from "./utils/currencySync";
 declare const __BUILD_VERSION__: string;
 console.info(`[ShadeSpace] bundle version: ${typeof __BUILD_VERSION__ === "string" ? __BUILD_VERSION__ : "unknown"}`);
 
-preloadCurrencyMap();
-detectCountryFromIp();
+if (document.getElementById('CONFIGURATOR_ROOT')) {
+  preloadCurrencyMap();
+  detectCountryFromIp();
+}
 
-const container = document.getElementById("SHADE_SPACE");
+const container = document.getElementById("SHADESAIL_ROOT");
 
 if (container) {
-  container.setAttribute('data-lenis-prevent', '');
   createRoot(container).render(
-   <StrictMode>
+    <StrictMode>
       <ToastProvider>
         <App />
       </ToastProvider>
     </StrictMode>
   );
-} else {
-  console.error("❌ Root element #SHADE_SPACE not found in DOM.");
 }

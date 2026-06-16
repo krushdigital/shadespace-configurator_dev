@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 interface MyDesignsProps {
   email: string;
@@ -423,37 +420,57 @@ export default function MyDesigns({ email, name, isLoggedIn }: MyDesignsProps) {
   const [designs, setDesigns] = useState<SavedDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // resolvedLoggedIn stays false until server confirms a customer (handles NCA/mobile)
+  const [resolvedLoggedIn, setResolvedLoggedIn] = useState(isLoggedIn);
 
   useEffect(() => {
-    if (!isLoggedIn || !email) {
-      setLoading(false);
-      return;
+    console.log('[MyDesigns] Props received from #MY_DESIGNS_ROOT data attributes:', {
+      email,
+      name,
+      isLoggedIn,
+    });
+
+    // When DOM attributes are missing/wrong (common with NCA on mobile), fall back to
+    // a server-side lookup — the App Proxy injects logged_in_customer_email for us.
+    const url = email
+      ? `/apps/shade_space/my-designs?format=json&customer_email=${encodeURIComponent(email)}`
+      : `/apps/shade_space/my-designs?format=json`;
+
+    if (!isLoggedIn && !email) {
+      // No hint of a logged-in customer from DOM — try server-side probe anyway.
+      console.warn('[MyDesigns] DOM says not logged in — trying server-side lookup.');
     }
 
-    supabase
-      .from('saved_quotes')
-      .select('id, quote_reference, quote_name, customer_reference, status, current_step, total_steps, locked_total, locked_total_currency, pricing_locked_until, created_at, access_token, diagram_public_url, config_data, shopify_order_number, purchased_at')
-      .eq('customer_email', email)
-      .in('status', ['in_progress', 'quote_ready', 'purchased'])
-      .eq('is_thread_primary', true)
-      .order('created_at', { ascending: false })
-      .limit(25)
-      .then(({ data, error: err }) => {
-        if (err) {
-          setError('Failed to load your designs. Please try again.');
-          console.error('[MyDesigns] Supabase error:', err);
-        } else {
-          setDesigns((data as SavedDesign[]) || []);
-          trackEvent('my_designs_page_view', {
-            designCount: data?.length || 0,
-            source: 'shopify_account',
-          }, email);
+    console.log('[MyDesigns] Fetching designs via app proxy, email from DOM:', email || '(none, server will resolve)');
+
+    fetch(url)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then(({ designs, customerEmail: serverEmail }: { designs: SavedDesign[]; customerEmail?: string }) => {
+        const resolvedEmail = serverEmail || email;
+        if (!resolvedEmail) {
+          // Server also found no logged-in customer — show sign-in wall.
+          console.log('[MyDesigns] No customer resolved server-side — showing sign-in state.');
+          setResolvedLoggedIn(false);
+          setLoading(false);
+          return;
         }
+        console.log('[MyDesigns] ✅ Designs loaded:', designs?.length ?? 0, 'for', resolvedEmail);
+        setResolvedLoggedIn(true);
+        setDesigns(designs || []);
+        trackEvent('my_designs_page_view', {
+          designCount: designs?.length || 0,
+          source: 'shopify_account',
+        }, resolvedEmail);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error('[MyDesigns] ❌ Failed to load designs:', err);
+        setError('Failed to load your designs. Please try again.');
         setLoading(false);
       });
   }, [email, isLoggedIn]);
 
-  if (!isLoggedIn) {
+  if (!resolvedLoggedIn && !loading) {
     return (
       <div style={styles.signInState}>
         <h2 style={{ ...styles.heading, fontSize: '24px' }}>Sign in to view your designs</h2>

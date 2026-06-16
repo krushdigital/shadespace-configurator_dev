@@ -32,7 +32,10 @@
 
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const buildVersion = new Date().toISOString().replace(/[-:T]/g, "").split(".")[0];
 
 // https://vitejs.dev/config/
@@ -47,13 +50,14 @@ export default defineConfig({
     sourcemap: false,
     minify: "esbuild",
     rollupOptions: {
+      input: path.resolve(__dirname, "src/main.tsx"),
       output: {
         inlineDynamicImports: false,
         manualChunks: {
-          three: ['three', '@react-three/fiber', '@react-three/drei'],
+          three: ["three", "@react-three/fiber", "@react-three/drei"],
         },
         entryFileNames: "bundle.js",
-        chunkFileNames: "[name]-[hash].js",
+        chunkFileNames: "[name].js",
         assetFileNames: "bundle.[ext]",
       },
     },
@@ -63,3 +67,4 @@ export default defineConfig({
     exclude: ["lucide-react"],
   },
 });
+

@@ -1,17 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import MyDesigns from './MyDesigns';
+import { MyDesignsPortal } from '../nodes/mydesigns.node';
 
-document.querySelectorAll<HTMLElement>('.shade-space-my-designs').forEach((container) => {
-  const { customerEmail, customerName, loggedIn } = container.dataset;
+if (document.querySelector('#MY_DESIGNS_ROOT')) {
+  const mountNode = document.createElement('div');
+  document.body.appendChild(mountNode);
 
-  ReactDOM.createRoot(container).render(
+  ReactDOM.createRoot(mountNode).render(
     <React.StrictMode>
-      <MyDesigns
-        email={customerEmail || ''}
-        name={customerName || ''}
-        isLoggedIn={loggedIn === 'true'}
-      />
+      <MyDesignsPortal />
     </React.StrictMode>
   );
-});
+}

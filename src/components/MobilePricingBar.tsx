@@ -1,0 +1,129 @@
+import React, { useState, useEffect } from 'react';
+import { formatCurrency } from '../utils/currencyFormatter';
+import { Tooltip } from './ui/Tooltip';
+
+interface MobilePricingBarProps {
+  totalPrice: number;
+  currency: string;
+  isVisible: boolean;
+  quoteReference?: string;
+  onContinue?: () => void;
+  onSaveQuote?: () => void;
+  isLocked?: boolean;
+  isNewQuote?: boolean;
+  hasInvalidMeasurements?: boolean;
+  area?: number;
+}
+
+export function MobilePricingBar({
+  totalPrice,
+  currency,
+  isVisible,
+  quoteReference,
+  onContinue,
+  onSaveQuote,
+  isLocked = false,
+  isNewQuote = false,
+  hasInvalidMeasurements = false,
+  area = 0,
+}: MobilePricingBarProps) {
+  const [isHidden, setIsHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    if (isLocked) {
+      setIsHidden(false);
+      return;
+    }
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Hide when scrolling down, show when scrolling up
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsHidden(true);
+      } else {
+        setIsHidden(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY, isLocked]);
+
+  if (!isVisible) return null;
+
+  // Don't show if no price and no error to display
+  if (totalPrice <= 0 && !hasInvalidMeasurements) return null;
+
+  return (
+    <div
+      className={`lg:hidden fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${
+        isHidden ? 'translate-y-full' : 'translate-y-0'
+      } ${
+        isNewQuote ? 'animate-slideUpBounce' : ''
+      }`}
+    >
+      <div className={`bg-white border-t-2 shadow-2xl ${
+        isNewQuote ? 'border-[#BFF102] shadow-[#BFF102]/30' : 'border-[#307C31]'
+      }`}>
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <div className="text-xs font-medium text-slate-600">
+                  {quoteReference ? `Configuration ${quoteReference}` : 'Your Configuration'}
+                </div>
+                {isNewQuote && (
+                  <span className="px-1.5 py-0.5 bg-[#BFF102] text-[#01312D] text-[10px] font-bold rounded-full animate-pulse">
+                    PRICING
+                  </span>
+                )}
+              </div>
+              <div className={`text-lg font-bold ${hasInvalidMeasurements ? 'text-red-600' : 'text-[#01312D]'}`}>
+                {hasInvalidMeasurements ? 'Cannot Calculate' : formatCurrency(totalPrice, currency)}
+              </div>
+              <div className={`text-xs font-medium ${hasInvalidMeasurements ? 'text-red-600' : 'text-[#307C31]'}`}>
+                {hasInvalidMeasurements ? 'Invalid measurements - see error above' : 'Includes express freight, taxes & duties'}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {onSaveQuote && (
+                <Tooltip
+                  content={
+                    <div className="text-slate-700">
+                      <p className="font-semibold mb-1">Save Your Progress</p>
+                      <p>Save your configuration at any point and return later when you're ready to continue.</p>
+                    </div>
+                  }
+                >
+                  <button
+                    onClick={onSaveQuote}
+                    className="flex-shrink-0 p-3 bg-slate-100 border-2 border-slate-300 text-slate-600 rounded-lg hover:bg-slate-200 hover:border-slate-400 hover:text-slate-700 transition-all duration-200"
+                    aria-label="Save Progress"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </button>
+                </Tooltip>
+              )}
+
+              {onContinue && (
+                <button
+                  onClick={onContinue}
+                  className="flex-shrink-0 px-6 py-3 bg-[#BFF102] text-[#01312D] font-bold rounded-lg hover:bg-[#caee41] transition-all duration-200 shadow-lg hover:shadow-xl whitespace-nowrap"
+                >
+                  Continue
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

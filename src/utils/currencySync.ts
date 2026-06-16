@@ -30,9 +30,14 @@ export function detectCountryFromIp(): Promise<IpDetection> {
     return Promise.resolve(ipDetectionCache);
   }
 
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
   ipDetectionPromise = fetch(`${url}/functions/v1/detect-country`, {
     method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+    },
     signal: AbortSignal.timeout(4000),
   })
     .then((res) => (res.ok ? res.json() : { countryCode: null, currency: null }))
