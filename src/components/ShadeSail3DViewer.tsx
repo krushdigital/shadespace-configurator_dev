@@ -17,7 +17,7 @@ interface ShadeSail3DViewerProps {
 const DEFAULT_HEIGHT_MM = 2400;
 const POLE_LEAN_DEG = 5;
 const POLE_RADIUS = 0.055;
-const MESH_SUBDIVISIONS = 48;
+const MESH_SUBDIVISIONS = 72;
 const HARDWARE_LENGTH = 0.35;
 const EDGE_CURVE_RATIO = 0.05;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
@@ -365,29 +365,69 @@ function buildFabricGeometry(
   if (n < 3) return null;
 
   const centroid = computeCentroid(corners3D);
-  const segsPerEdge = Math.max(24, Math.ceil(subdivisions * 1.5 / n));
-  const ringsFromCenter = Math.max(12, Math.ceil(subdivisions / 3));
+  const segsPerEdge = Math.max(28, Math.ceil(subdivisions * 1.8 / n));
+  const ringsFromCenter = Math.max(20, Math.ceil(subdivisions / 2.5));
+  const vertsPerRing = n * segsPerEdge;
 
-  const vertices: number[] = [];
-  const indices: number[] = [];
+  const sagAmount = centroid.y * 0.025;
+  const saggedCentroid = centroid.clone();
+  saggedCentroid.y -= sagAmount;
 
-  vertices.push(centroid.x, centroid.y, centroid.z);
+  const ringPositions: THREE.Vector3[][] = [];
 
   for (let ring = 1; ring <= ringsFromCenter; ring++) {
     const ringT = ring / ringsFromCenter;
+    const heightT = Math.pow(ringT, 0.8);
+    const ringVerts: THREE.Vector3[] = [];
 
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
         const edgePt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
-        const point = new THREE.Vector3().lerpVectors(centroid, edgePt, ringT);
-        vertices.push(point.x, point.y, point.z);
+        const x = saggedCentroid.x + (edgePt.x - saggedCentroid.x) * ringT;
+        const z = saggedCentroid.z + (edgePt.z - saggedCentroid.z) * ringT;
+        const y = saggedCentroid.y + (edgePt.y - saggedCentroid.y) * heightT;
+        ringVerts.push(new THREE.Vector3(x, y, z));
       }
+    }
+    ringPositions.push(ringVerts);
+  }
+
+  const smoothPasses = 3;
+  const smoothFactor = 0.45;
+  for (let pass = 0; pass < smoothPasses; pass++) {
+    for (let ring = 0; ring < ringsFromCenter; ring++) {
+      const verts = ringPositions[ring];
+      const smoothed: THREE.Vector3[] = [];
+      for (let s = 0; s < vertsPerRing; s++) {
+        const prev = verts[(s - 1 + vertsPerRing) % vertsPerRing];
+        const curr = verts[s];
+        const nxt = verts[(s + 1) % vertsPerRing];
+        const avgX = (prev.x + nxt.x) * 0.5;
+        const avgY = (prev.y + nxt.y) * 0.5;
+        const avgZ = (prev.z + nxt.z) * 0.5;
+        smoothed.push(new THREE.Vector3(
+          curr.x + (avgX - curr.x) * smoothFactor,
+          curr.y + (avgY - curr.y) * smoothFactor,
+          curr.z + (avgZ - curr.z) * smoothFactor
+        ));
+      }
+      ringPositions[ring] = smoothed;
     }
   }
 
-  const vertsPerRing = n * segsPerEdge;
+  const vertices: number[] = [];
+  const indices: number[] = [];
+
+  vertices.push(saggedCentroid.x, saggedCentroid.y, saggedCentroid.z);
+
+  for (let ring = 0; ring < ringsFromCenter; ring++) {
+    for (let s = 0; s < vertsPerRing; s++) {
+      const v = ringPositions[ring][s];
+      vertices.push(v.x, v.y, v.z);
+    }
+  }
 
   for (let s = 0; s < vertsPerRing; s++) {
     const nextS = (s + 1) % vertsPerRing;
