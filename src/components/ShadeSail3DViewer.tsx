@@ -19,7 +19,7 @@ const POLE_LEAN_DEG = 5;
 const POLE_RADIUS = 0.055;
 const MESH_SUBDIVISIONS = 48;
 const HARDWARE_LENGTH = 0.35;
-const EDGE_CURVE_RATIO = 0.035;
+const EDGE_CURVE_RATIO = 0.05;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
 const FIXING_POINT_OFFSET = 0.2;
 const MOBILE_MIN_DIST = 3;
@@ -341,10 +341,20 @@ function computeEdgeCurvePoint(
 ): THREE.Vector3 {
   const pt = new THREE.Vector3().lerpVectors(start, end, t);
   const edgeLen = start.distanceTo(end);
-  const toCentroid = new THREE.Vector3().subVectors(centroid, pt).normalize();
+
+  // Compute inward direction once at the edge midpoint so every sample on this
+  // edge uses the same direction — prevents irregular deflection on asymmetric sails.
+  const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+  const inwardDir = new THREE.Vector3().subVectors(centroid, mid);
+
+  // Remove the component parallel to the edge chord so the bow is cleanly
+  // perpendicular to the chord regardless of corner height differences.
+  const edgeDir = new THREE.Vector3().subVectors(end, start).normalize();
+  inwardDir.addScaledVector(edgeDir, -inwardDir.dot(edgeDir));
+  inwardDir.normalize();
+
   const inwardAmount = EDGE_CURVE_RATIO * edgeLen * Math.sin(Math.PI * t);
-  pt.add(toCentroid.multiplyScalar(inwardAmount));
-  return pt;
+  return pt.addScaledVector(inwardDir, inwardAmount);
 }
 
 function buildFabricGeometry(

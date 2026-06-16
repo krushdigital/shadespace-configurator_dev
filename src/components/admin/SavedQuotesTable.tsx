@@ -162,10 +162,20 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-      timeZone: timezone,
-    });
+    const d = new Date(dateString);
+    const datePart = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit', timeZone: timezone });
+    const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', timeZone: timezone });
+    return { datePart, timePart };
+  };
+
+  const DateCell = ({ dateString }: { dateString: string }) => {
+    const { datePart, timePart } = formatDate(dateString);
+    return (
+      <div className="whitespace-nowrap">
+        <div>{datePart}</div>
+        <div className="text-xs text-gray-400">{timePart}</div>
+      </div>
+    );
   };
 
   const formatCurrency = (amount: number, currency: string) => {
@@ -555,10 +565,10 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   return (
     <>
       <Card className="p-6">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <div className="flex-1 flex gap-4">
-            <Input placeholder="Search quotes..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-md" />
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-gray-300 rounded px-3 py-2">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
+            <Input placeholder="Search quotes..." value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-xs" />
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-gray-300 rounded px-3 py-2 text-sm">
               <option value="active">Active (default)</option>
               <option value="all">All Statuses</option>
               <option value="quote_ready">Quote Ready</option>
@@ -570,27 +580,29 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
             </select>
             <button
               onClick={() => setGroupByThread(!groupByThread)}
-              className={`px-3 py-2 rounded border text-sm font-medium transition-colors ${groupByThread ? 'bg-[#01312D] text-white border-[#01312D]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+              className={`px-3 py-2 rounded border text-sm font-medium transition-colors whitespace-nowrap ${groupByThread ? 'bg-[#01312D] text-white border-[#01312D]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
             >
               {groupByThread ? 'Grouped' : 'Flat List'}
             </button>
           </div>
-          <Button onClick={() => setRegenerateMode('bulk')} size="sm" variant="outline" className="text-[#01312D] border-[#01312D]/30 hover:bg-[#01312D]/5">Regenerate Prices</Button>
-          <Button onClick={exportToCSV} size="sm" variant="outline" disabled={exporting}>{exporting ? 'Exporting...' : 'Export CSV'}</Button>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button onClick={() => setRegenerateMode('bulk')} size="sm" variant="outline" className="text-[#01312D] border-[#01312D]/30 hover:bg-[#01312D]/5 whitespace-nowrap">Regenerate Prices</Button>
+            <Button onClick={exportToCSV} size="sm" variant="outline" disabled={exporting} className="whitespace-nowrap">{exporting ? 'Exporting...' : 'Export CSV'}</Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 text-left">
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Reference</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Quote Name</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Customer</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">IP / Country</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Status</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Total Price</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Created</th>
-                <th className="px-4 pb-3 text-sm font-semibold text-gray-700">Actions</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Reference</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700">Quote Name</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700">Customer</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">IP / Country</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700">Status</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Total Price</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Created</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -600,7 +612,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                 threadGroups.map((group) => (
                   <React.Fragment key={group.threadId}>
                     <tr className={`border-b border-gray-100 hover:bg-gray-50 ${group.primary.is_excluded ? 'opacity-50' : ''}`}>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-4">
                         <div className="flex items-center gap-1.5">
                           {group.quoteCount > 1 && (
                             <button
@@ -623,20 +635,20 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900">{group.primary.quote_name}</td>
-                      <td className="px-4 py-4 text-sm">{getCustomerDisplay(group.primary)}</td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-4 text-sm text-gray-900">{group.primary.quote_name}</td>
+                      <td className="px-3 py-4 text-sm">{getCustomerDisplay(group.primary)}</td>
+                      <td className="px-3 py-4">
                         <div className="text-xs font-mono text-gray-600">{group.primary.customer_ip && group.primary.customer_ip !== 'unknown' ? group.primary.customer_ip.split(',')[0].trim() : '-'}</div>
                         {group.primary.customer_country && (
                           <div className="text-xs text-gray-500">{group.primary.customer_country_code ? `${group.primary.customer_country_code} - ` : ''}{group.primary.customer_country}</div>
                         )}
                       </td>
-                      <td className="px-4 py-4">{getStatusBadge(group.primary.status, group.primary.shopify_order_number)}</td>
-                      <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                      <td className="px-3 py-4">{getStatusBadge(group.primary.status, group.primary.shopify_order_number)}</td>
+                      <td className="px-3 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                         {formatCurrency(group.primary.calculations_data?.totalPrice ?? 0, group.primary.config_data?.currency ?? 'NZD')}
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-600">{formatDate(group.primary.created_at)}</td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 py-4 whitespace-nowrap"><DateCell dateString={group.primary.created_at} /></td>
+                      <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
                           <Button onClick={() => handleDownloadPDF(group.primary)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === group.primary.id}>
                             {generatingPdf === group.primary.id ? '...' : 'PDF'}
@@ -648,7 +660,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                     </tr>
                     {expandedThreads.has(group.threadId) && group.secondaries.map((sec) => (
                       <tr key={sec.id} className="border-b border-gray-50 bg-gray-50/50">
-                        <td className="px-4 py-3 pl-12">
+                        <td className="px-3 py-3 pl-12">
                           <div className="flex items-center gap-1.5">
                             <span className="w-4 h-px bg-gray-300"></span>
                             <button onClick={() => setSelectedQuote(sec)} className="text-gray-500 hover:text-gray-700 text-sm">
@@ -656,15 +668,15 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                             </button>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{sec.quote_name}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{sec.customer_email || '-'}</td>
-                        <td className="px-4 py-3 text-xs text-gray-400">-</td>
-                        <td className="px-4 py-3">{getStatusBadge(sec.status, sec.shopify_order_number)}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">
+                        <td className="px-3 py-3 text-xs text-gray-500">{sec.quote_name}</td>
+                        <td className="px-3 py-3 text-xs text-gray-500">{sec.customer_email || '-'}</td>
+                        <td className="px-3 py-3 text-xs text-gray-400">-</td>
+                        <td className="px-3 py-3">{getStatusBadge(sec.status, sec.shopify_order_number)}</td>
+                        <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">
                           {formatCurrency(sec.calculations_data?.totalPrice ?? 0, sec.config_data?.currency ?? 'NZD')}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{formatDate(sec.created_at)}</td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap"><DateCell dateString={sec.created_at} /></td>
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <Button onClick={() => setSelectedQuote(sec)} size="sm" variant="outline" className="text-xs">View</Button>
                         </td>
                       </tr>
@@ -674,7 +686,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               ) : (
                 quotes.map((quote) => (
                   <tr key={quote.id} className={`border-b border-gray-100 hover:bg-gray-50 ${quote.is_excluded ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-4">
                       <div className="flex items-center gap-1.5">
                         <button onClick={() => setSelectedQuote(quote)} className="text-lime-600 hover:text-lime-700 font-medium">
                           {quote.quote_reference}
@@ -687,20 +699,20 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-900">{quote.quote_name}</td>
-                    <td className="px-4 py-4 text-sm">{getCustomerDisplay(quote)}</td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-4 text-sm text-gray-900">{quote.quote_name}</td>
+                    <td className="px-3 py-4 text-sm">{getCustomerDisplay(quote)}</td>
+                    <td className="px-3 py-4">
                       <div className="text-xs font-mono text-gray-600">{quote.customer_ip && quote.customer_ip !== 'unknown' ? quote.customer_ip.split(',')[0].trim() : '-'}</div>
                       {quote.customer_country && (
                         <div className="text-xs text-gray-500">{quote.customer_country_code ? `${quote.customer_country_code} - ` : ''}{quote.customer_country}</div>
                       )}
                     </td>
-                    <td className="px-4 py-4">{getStatusBadge(quote.status, quote.shopify_order_number)}</td>
-                    <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                    <td className="px-3 py-4">{getStatusBadge(quote.status, quote.shopify_order_number)}</td>
+                    <td className="px-3 py-4 text-sm font-medium text-gray-900 whitespace-nowrap">
                       {formatCurrency(quote.calculations_data?.totalPrice ?? 0, quote.config_data?.currency ?? 'NZD')}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">{formatDate(quote.created_at)}</td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-4 whitespace-nowrap"><DateCell dateString={quote.created_at} /></td>
+                    <td className="px-3 py-4 whitespace-nowrap">
                       <div className="flex gap-2">
                         <Button onClick={() => handleDownloadPDF(quote)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === quote.id}>
                           {generatingPdf === quote.id ? '...' : 'PDF'}
@@ -782,7 +794,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Created</label>
-                <p className="text-gray-900">{formatDate(selectedQuote.created_at)}</p>
+                <p className="text-gray-900">{formatDate(selectedQuote.created_at).datePart} {formatDate(selectedQuote.created_at).timePart}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-600">Step Progress</label>
@@ -827,7 +839,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                   {selectedQuote.purchased_at && (
                     <div>
                       <span className="text-teal-700">Purchased:</span>{' '}
-                      <span className="font-medium text-teal-900">{formatDate(selectedQuote.purchased_at)}</span>
+                      <span className="font-medium text-teal-900">{formatDate(selectedQuote.purchased_at!).datePart} {formatDate(selectedQuote.purchased_at!).timePart}</span>
                     </div>
                   )}
                   {selectedQuote.shopify_order_id && (
