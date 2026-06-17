@@ -333,28 +333,24 @@ function CornerLabel({ position, label, heightCompleted, highlighted }: { positi
   );
 }
 
-function computeEdgeCurvePoint(
-  start: THREE.Vector3,
-  end: THREE.Vector3,
-  centroid: THREE.Vector3,
-  t: number
-): THREE.Vector3 {
-  const pt = new THREE.Vector3().lerpVectors(start, end, t);
-  const edgeLen = start.distanceTo(end);
+function catmullRomClosed(points: THREE.Vector3[], t: number): THREE.Vector3 {
+  const n = points.length;
+  const idx = ((t * n) % n + n) % n;
+  const i = Math.floor(idx);
+  const f = idx - i;
 
-  // Compute inward direction once at the edge midpoint so every sample on this
-  // edge uses the same direction — prevents irregular deflection on asymmetric sails.
-  const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-  const inwardDir = new THREE.Vector3().subVectors(centroid, mid);
+  const p0 = points[(i - 1 + n) % n];
+  const p1 = points[i % n];
+  const p2 = points[(i + 1) % n];
+  const p3 = points[(i + 2) % n];
 
-  // Remove the component parallel to the edge chord so the bow is cleanly
-  // perpendicular to the chord regardless of corner height differences.
-  const edgeDir = new THREE.Vector3().subVectors(end, start).normalize();
-  inwardDir.addScaledVector(edgeDir, -inwardDir.dot(edgeDir));
-  inwardDir.normalize();
-
-  const inwardAmount = EDGE_CURVE_RATIO * edgeLen * Math.sin(Math.PI * t);
-  return pt.addScaledVector(inwardDir, inwardAmount);
+  const f2 = f * f;
+  const f3 = f2 * f;
+  return new THREE.Vector3(
+    0.5 * ((2 * p1.x) + (-p0.x + p2.x) * f + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * f2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * f3),
+    0.5 * ((2 * p1.y) + (-p0.y + p2.y) * f + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * f2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * f3),
+    0.5 * ((2 * p1.z) + (-p0.z + p2.z) * f + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * f2 + (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * f3)
+  );
 }
 
 function buildFabricGeometry(
@@ -365,13 +361,26 @@ function buildFabricGeometry(
   if (n < 3) return null;
 
   const centroid = computeCentroid(corners3D);
-  const segsPerEdge = Math.max(28, Math.ceil(subdivisions * 1.8 / n));
-  const ringsFromCenter = Math.max(20, Math.ceil(subdivisions / 2.5));
-  const vertsPerRing = n * segsPerEdge;
+  const vertsPerRing = Math.max(96, n * 16);
+  const ringsFromCenter = Math.max(24, Math.ceil(subdivisions / 2.2));
 
   const sagAmount = centroid.y * 0.025;
   const saggedCentroid = centroid.clone();
   saggedCentroid.y -= sagAmount;
+
+  // Build edge midpoints with inward bow for the spline control points
+  const splinePoints: THREE.Vector3[] = [];
+  for (let i = 0; i < n; i++) {
+    const next = (i + 1) % n;
+    splinePoints.push(corners3D[i].clone());
+    const mid = new THREE.Vector3().addVectors(corners3D[i], corners3D[next]).multiplyScalar(0.5);
+    const edgeLen = corners3D[i].distanceTo(corners3D[next]);
+    const inwardDir = new THREE.Vector3().subVectors(centroid, mid);
+    const edgeDir = new THREE.Vector3().subVectors(corners3D[next], corners3D[i]).normalize();
+    inwardDir.addScaledVector(edgeDir, -inwardDir.dot(edgeDir));
+    inwardDir.normalize();
+    splinePoints.push(mid.addScaledVector(inwardDir, EDGE_CURVE_RATIO * edgeLen));
+  }
 
   const ringPositions: THREE.Vector3[][] = [];
 
@@ -380,40 +389,39 @@ function buildFabricGeometry(
     const heightT = Math.pow(ringT, 0.8);
     const ringVerts: THREE.Vector3[] = [];
 
-    for (let i = 0; i < n; i++) {
-      const next = (i + 1) % n;
-      for (let s = 0; s < segsPerEdge; s++) {
-        const edgeT = s / segsPerEdge;
-        const edgePt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
-        const x = saggedCentroid.x + (edgePt.x - saggedCentroid.x) * ringT;
-        const z = saggedCentroid.z + (edgePt.z - saggedCentroid.z) * ringT;
-        const y = saggedCentroid.y + (edgePt.y - saggedCentroid.y) * heightT;
-        ringVerts.push(new THREE.Vector3(x, y, z));
-      }
+    for (let s = 0; s < vertsPerRing; s++) {
+      const perimT = s / vertsPerRing;
+      const boundaryPt = catmullRomClosed(splinePoints, perimT);
+      const x = saggedCentroid.x + (boundaryPt.x - saggedCentroid.x) * ringT;
+      const z = saggedCentroid.z + (boundaryPt.z - saggedCentroid.z) * ringT;
+      const y = saggedCentroid.y + (boundaryPt.y - saggedCentroid.y) * heightT;
+      ringVerts.push(new THREE.Vector3(x, y, z));
     }
     ringPositions.push(ringVerts);
   }
 
-  const smoothPasses = 3;
-  const smoothFactor = 0.45;
+  // 2D Laplacian smoothing (tangential + radial)
+  const smoothPasses = 4;
+  const smoothFactor = 0.35;
   for (let pass = 0; pass < smoothPasses; pass++) {
+    const copy = ringPositions.map(r => r.map(v => v.clone()));
     for (let ring = 0; ring < ringsFromCenter; ring++) {
-      const verts = ringPositions[ring];
-      const smoothed: THREE.Vector3[] = [];
       for (let s = 0; s < vertsPerRing; s++) {
-        const prev = verts[(s - 1 + vertsPerRing) % vertsPerRing];
-        const curr = verts[s];
-        const nxt = verts[(s + 1) % vertsPerRing];
-        const avgX = (prev.x + nxt.x) * 0.5;
-        const avgY = (prev.y + nxt.y) * 0.5;
-        const avgZ = (prev.z + nxt.z) * 0.5;
-        smoothed.push(new THREE.Vector3(
+        const curr = copy[ring][s];
+        const tPrev = copy[ring][(s - 1 + vertsPerRing) % vertsPerRing];
+        const tNext = copy[ring][(s + 1) % vertsPerRing];
+        const rPrev = ring > 0 ? copy[ring - 1][s] : saggedCentroid;
+        const rNext = ring < ringsFromCenter - 1 ? copy[ring + 1][s] : curr;
+
+        const avgX = (tPrev.x + tNext.x + rPrev.x + rNext.x) * 0.25;
+        const avgY = (tPrev.y + tNext.y + rPrev.y + rNext.y) * 0.25;
+        const avgZ = (tPrev.z + tNext.z + rPrev.z + rNext.z) * 0.25;
+        ringPositions[ring][s] = new THREE.Vector3(
           curr.x + (avgX - curr.x) * smoothFactor,
           curr.y + (avgY - curr.y) * smoothFactor,
           curr.z + (avgZ - curr.z) * smoothFactor
-        ));
+        );
       }
-      ringPositions[ring] = smoothed;
     }
   }
 
