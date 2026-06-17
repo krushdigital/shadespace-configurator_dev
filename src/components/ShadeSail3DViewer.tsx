@@ -17,9 +17,10 @@ interface ShadeSail3DViewerProps {
 const DEFAULT_HEIGHT_MM = 2400;
 const POLE_LEAN_DEG = 5;
 const POLE_RADIUS = 0.055;
-const MESH_SUBDIVISIONS = 72;
+const MESH_SUBDIVISIONS = 48;
 const HARDWARE_LENGTH = 0.35;
-const EDGE_CURVE_RATIO = 0.05;
+const EDGE_TENSION_INWARD = 0.035;
+const SAG_FACTOR = 0.04;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
 const FIXING_POINT_OFFSET = 0.2;
 const MOBILE_MIN_DIST = 3;
@@ -333,117 +334,240 @@ function CornerLabel({ position, label, heightCompleted, highlighted }: { positi
   );
 }
 
+function computeEdgeInwardNormal(start: THREE.Vector3, end: THREE.Vector3, centroid: THREE.Vector3): THREE.Vector3 {
+  const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
+  const toCentroid = new THREE.Vector3().subVectors(centroid, mid);
+  toCentroid.y = 0;
+  const len = toCentroid.length();
+  return len > 0.0001 ? toCentroid.divideScalar(len) : new THREE.Vector3(0, 0, 0);
+}
+
 function computeEdgeCurvePoint(
   start: THREE.Vector3,
   end: THREE.Vector3,
   centroid: THREE.Vector3,
-  t: number
+  t: number,
+  inwardNormal?: THREE.Vector3
 ): THREE.Vector3 {
   const pt = new THREE.Vector3().lerpVectors(start, end, t);
   const edgeLen = start.distanceTo(end);
+  const normal = inwardNormal || computeEdgeInwardNormal(start, end, centroid);
+  const inwardAmount = EDGE_TENSION_INWARD * edgeLen * Math.sin(Math.PI * t);
+  pt.add(normal.clone().multiplyScalar(inwardAmount));
+  pt.y -= SAG_FACTOR * 0.3 * edgeLen * 0.1 * Math.sin(Math.PI * t);
+  return pt;
+}
 
-  const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
-  const inwardDir = new THREE.Vector3().subVectors(centroid, mid);
-  const edgeDir = new THREE.Vector3().subVectors(end, start).normalize();
-  inwardDir.addScaledVector(edgeDir, -inwardDir.dot(edgeDir));
-  inwardDir.normalize();
-
-  const inwardAmount = EDGE_CURVE_RATIO * edgeLen * Math.sin(Math.PI * t);
-  return pt.addScaledVector(inwardDir, inwardAmount);
+function barycentricPoint(corners: THREE.Vector3[], u: number, v: number): THREE.Vector3 {
+  const n = corners.length;
+  if (n === 3) {
+    const w = 1 - u - v;
+    return new THREE.Vector3(
+      corners[0].x * w + corners[1].x * u + corners[2].x * v,
+      corners[0].y * w + corners[1].y * u + corners[2].y * v,
+      corners[0].z * w + corners[1].z * u + corners[2].z * v
+    );
+  }
+  if (n === 4) {
+    const p00 = corners[0], p10 = corners[1], p11 = corners[2], p01 = corners[3];
+    return new THREE.Vector3(
+      (1 - u) * (1 - v) * p00.x + u * (1 - v) * p10.x + u * v * p11.x + (1 - u) * v * p01.x,
+      (1 - u) * (1 - v) * p00.y + u * (1 - v) * p10.y + u * v * p11.y + (1 - u) * v * p01.y,
+      (1 - u) * (1 - v) * p00.z + u * (1 - v) * p10.z + u * v * p11.z + (1 - u) * v * p01.z
+    );
+  }
+  const centroid = computeCentroid(corners);
+  const angle = Math.atan2(v - 0.5, u - 0.5) + Math.PI;
+  const dist = Math.sqrt((u - 0.5) ** 2 + (v - 0.5) ** 2) * 2;
+  const sector = (angle / (2 * Math.PI)) * n;
+  const idx = Math.floor(sector) % n;
+  const nextIdx = (idx + 1) % n;
+  const frac = sector - Math.floor(sector);
+  const edgePoint = new THREE.Vector3().lerpVectors(corners[idx], corners[nextIdx], frac);
+  const t = Math.min(dist, 1);
+  return new THREE.Vector3().lerpVectors(centroid, edgePoint, t);
 }
 
 function buildFabricGeometry(
   corners3D: THREE.Vector3[],
-  subdivisions: number
+  subdivisions: number,
+  sagFactor: number
 ): THREE.BufferGeometry | null {
   const n = corners3D.length;
   if (n < 3) return null;
-
   const centroid = computeCentroid(corners3D);
-  const segsPerEdge = Math.max(32, Math.ceil(subdivisions * 2 / n));
-  const ringsFromCenter = Math.max(28, Math.ceil(subdivisions / 2));
+  const res = subdivisions;
+
+  if (n === 3) {
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    const rows = res;
+    const cornerRadius = 3 / res;
+    const edgeNormals = [
+      computeEdgeInwardNormal(corners3D[0], corners3D[1], centroid),
+      computeEdgeInwardNormal(corners3D[1], corners3D[2], centroid),
+      computeEdgeInwardNormal(corners3D[0], corners3D[2], centroid),
+    ];
+    for (let i = 0; i <= rows; i++) {
+      const cols = rows - i;
+      for (let j = 0; j <= cols; j++) {
+        const u = j / rows;
+        const v = i / rows;
+        const w = 1 - u - v;
+        const minBary = Math.min(u, v, w);
+        const distFromEdge = minBary * 3;
+        const cornerDist = Math.min(
+          Math.sqrt(u * u + v * v),
+          Math.sqrt((1 - u) * (1 - u) + v * v) * 0.707,
+          Math.sqrt(u * u + (1 - v) * (1 - v)) * 0.707,
+          Math.min(u, v, w)
+        );
+        let pt: THREE.Vector3;
+        if (distFromEdge < 0.25) {
+          let edgeIdx: number, nextIdx: number, edgeT: number, normalIdx: number;
+          if (w <= u && w <= v) { edgeIdx = 1; nextIdx = 2; edgeT = v / (u + v || 1); normalIdx = 1; }
+          else if (u <= v && u <= w) { edgeIdx = 0; nextIdx = 2; edgeT = v / (v + w || 1); normalIdx = 2; }
+          else { edgeIdx = 0; nextIdx = 1; edgeT = u / (u + w || 1); normalIdx = 0; }
+          const edgePt = computeEdgeCurvePoint(corners3D[edgeIdx], corners3D[nextIdx], centroid, edgeT, edgeNormals[normalIdx]);
+          const interiorPt = barycentricPoint(corners3D, u, v);
+          const cornerBlendSuppression = cornerDist < cornerRadius ? cornerDist / cornerRadius : 1;
+          const blend = (distFromEdge / 0.25) * cornerBlendSuppression;
+          pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
+        } else {
+          pt = barycentricPoint(corners3D, u, v);
+        }
+        const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
+        pt.y -= sag * centroid.y * 0.4;
+        vertices.push(pt.x, pt.y, pt.z);
+      }
+    }
+    let rowStart = 0;
+    for (let i = 0; i < rows; i++) {
+      const cols = rows - i;
+      const nextRowStart = rowStart + cols + 1;
+      for (let j = 0; j < cols; j++) {
+        indices.push(rowStart + j, rowStart + j + 1, nextRowStart + j);
+        if (j < cols - 1) indices.push(rowStart + j + 1, nextRowStart + j + 1, nextRowStart + j);
+      }
+      rowStart = nextRowStart;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
+  if (n === 4) {
+    const vertices: number[] = [];
+    const indices: number[] = [];
+    const quadNormals = [
+      computeEdgeInwardNormal(corners3D[0], corners3D[1], centroid),
+      computeEdgeInwardNormal(corners3D[3], corners3D[2], centroid),
+      computeEdgeInwardNormal(corners3D[0], corners3D[3], centroid),
+      computeEdgeInwardNormal(corners3D[1], corners3D[2], centroid),
+    ];
+    const cornerRadius = 3 / res;
+    for (let i = 0; i <= res; i++) {
+      const v = i / res;
+      for (let j = 0; j <= res; j++) {
+        const u = j / res;
+        const distU = Math.min(u, 1 - u);
+        const distV = Math.min(v, 1 - v);
+        const distFromEdge = Math.min(distU, distV) * 2;
+        const cornerDist = Math.min(
+          Math.sqrt(u * u + v * v),
+          Math.sqrt((1 - u) * (1 - u) + v * v),
+          Math.sqrt(u * u + (1 - v) * (1 - v)),
+          Math.sqrt((1 - u) * (1 - u) + (1 - v) * (1 - v))
+        );
+        let pt: THREE.Vector3;
+        if (distFromEdge < 0.25) {
+          let edgeStart: THREE.Vector3, edgeEnd: THREE.Vector3, edgeT: number, normalIdx: number;
+          if (distV < distU) {
+            if (v < 0.5) { edgeStart = corners3D[0]; edgeEnd = corners3D[1]; edgeT = u; normalIdx = 0; }
+            else { edgeStart = corners3D[3]; edgeEnd = corners3D[2]; edgeT = u; normalIdx = 1; }
+          } else {
+            if (u < 0.5) { edgeStart = corners3D[0]; edgeEnd = corners3D[3]; edgeT = v; normalIdx = 2; }
+            else { edgeStart = corners3D[1]; edgeEnd = corners3D[2]; edgeT = v; normalIdx = 3; }
+          }
+          const edgePt = computeEdgeCurvePoint(edgeStart, edgeEnd, centroid, edgeT, quadNormals[normalIdx]);
+          const interiorPt = barycentricPoint(corners3D, u, v);
+          const cornerBlendSuppression = cornerDist < cornerRadius ? cornerDist / cornerRadius : 1;
+          const blend = (distFromEdge / 0.25) * cornerBlendSuppression;
+          pt = new THREE.Vector3().lerpVectors(edgePt, interiorPt, blend);
+        } else {
+          pt = barycentricPoint(corners3D, u, v);
+        }
+        const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
+        pt.y -= sag * centroid.y * 0.4;
+        vertices.push(pt.x, pt.y, pt.z);
+      }
+    }
+    for (let i = 0; i < res; i++) {
+      for (let j = 0; j < res; j++) {
+        const a = i * (res + 1) + j;
+        const b = a + 1;
+        const c = a + (res + 1);
+        const d = c + 1;
+        indices.push(a, b, d);
+        indices.push(a, d, c);
+      }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    return geometry;
+  }
+
+  // Generic n-gon (5+ corners): radial rings with smoothstep
+  const vertices: number[] = [];
+  const indices: number[] = [];
+  const segsPerEdge = Math.ceil(res / n);
   const vertsPerRing = n * segsPerEdge;
-
-  const sagAmount = centroid.y * 0.02;
-  const saggedCentroid = centroid.clone();
-  saggedCentroid.y -= sagAmount;
-
-  // Build ring positions: XZ from edge interpolation, Y initialized from radial blend
-  // yGrid[ring][s] stores the Y value for each ring vertex (ring 0..ringsFromCenter-1)
-  const xGrid: number[][] = [];
-  const zGrid: number[][] = [];
-  const yGrid: number[][] = [];
-
-  for (let ring = 1; ring <= ringsFromCenter; ring++) {
-    const ringT = ring / ringsFromCenter;
-    const xRow: number[] = [];
-    const zRow: number[] = [];
-    const yRow: number[] = [];
-
+  const ngonNormals: THREE.Vector3[] = [];
+  for (let i = 0; i < n; i++) {
+    ngonNormals.push(computeEdgeInwardNormal(corners3D[i], corners3D[(i + 1) % n], centroid));
+  }
+  vertices.push(centroid.x, centroid.y, centroid.z);
+  for (let ring = 1; ring <= res; ring++) {
+    const t = ring / res;
+    const smoothT = t * t * (3 - 2 * t);
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
-        const edgePt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
-        xRow.push(saggedCentroid.x + (edgePt.x - saggedCentroid.x) * ringT);
-        zRow.push(saggedCentroid.z + (edgePt.z - saggedCentroid.z) * ringT);
-        // Initial Y: simple radial lerp (will be relaxed for interior rings)
-        const heightT = Math.pow(ringT, 0.8);
-        yRow.push(saggedCentroid.y + (edgePt.y - saggedCentroid.y) * heightT);
-      }
-    }
-    xGrid.push(xRow);
-    zGrid.push(zRow);
-    yGrid.push(yRow);
-  }
-
-  // Constrained Laplacian relaxation on Y values only
-  // Boundary (outermost ring = index ringsFromCenter-1) is FIXED
-  // Centroid Y is FIXED
-  // Interior rings relax toward average of 4 neighbors
-  const RELAX_ITERATIONS = 40;
-  for (let iter = 0; iter < RELAX_ITERATIONS; iter++) {
-    for (let ring = 0; ring < ringsFromCenter - 1; ring++) {
-      for (let s = 0; s < vertsPerRing; s++) {
-        const prevS = (s - 1 + vertsPerRing) % vertsPerRing;
-        const nextS = (s + 1) % vertsPerRing;
-        const tangAvg = (yGrid[ring][prevS] + yGrid[ring][nextS]) * 0.5;
-        const innerY = ring > 0 ? yGrid[ring - 1][s] : saggedCentroid.y;
-        const outerY = yGrid[ring + 1][s];
-        yGrid[ring][s] = (tangAvg + innerY + outerY) / 3.0;
+        let edgePoint: THREE.Vector3;
+        if (smoothT > 0.85) {
+          edgePoint = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT, ngonNormals[i]);
+          const straightPt = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
+          const blend = (smoothT - 0.85) / 0.15;
+          edgePoint = new THREE.Vector3().lerpVectors(straightPt, edgePoint, blend);
+        } else {
+          edgePoint = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
+        }
+        const point = new THREE.Vector3().lerpVectors(centroid, edgePoint, smoothT);
+        const distFromEdge = 1 - smoothT;
+        const sag = sagFactor * (1 - distFromEdge) * distFromEdge;
+        point.y -= sag * centroid.y * 0.3;
+        vertices.push(point.x, point.y, point.z);
       }
     }
   }
-
-  // Build vertex buffer
-  const vertices: number[] = [];
-  const indices: number[] = [];
-
-  vertices.push(saggedCentroid.x, saggedCentroid.y, saggedCentroid.z);
-
-  for (let ring = 0; ring < ringsFromCenter; ring++) {
-    for (let s = 0; s < vertsPerRing; s++) {
-      vertices.push(xGrid[ring][s], yGrid[ring][s], zGrid[ring][s]);
-    }
-  }
-
-  // Triangulate: center fan
   for (let s = 0; s < vertsPerRing; s++) {
-    const nextS = (s + 1) % vertsPerRing;
-    indices.push(0, 1 + s, 1 + nextS);
+    const next = (s + 1) % vertsPerRing;
+    indices.push(0, 1 + s, 1 + next);
   }
-
-  // Triangulate: ring strips
-  for (let ring = 1; ring < ringsFromCenter; ring++) {
+  for (let ring = 1; ring < res; ring++) {
     const ringStart = 1 + (ring - 1) * vertsPerRing;
     const nextRingStart = 1 + ring * vertsPerRing;
     for (let s = 0; s < vertsPerRing; s++) {
-      const nextS = (s + 1) % vertsPerRing;
-      indices.push(ringStart + s, nextRingStart + s, nextRingStart + nextS);
-      indices.push(ringStart + s, nextRingStart + nextS, ringStart + nextS);
+      const next = (s + 1) % vertsPerRing;
+      indices.push(ringStart + s, nextRingStart + s, nextRingStart + next);
+      indices.push(ringStart + s, nextRingStart + next, ringStart + next);
     }
   }
-
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setIndex(indices);
@@ -455,7 +579,7 @@ function FabricMesh({ corners3D, color, onClick, onPointerMissed }: { corners3D:
   const meshRef = useRef<THREE.Mesh>(null);
 
   const geometry = useMemo(
-    () => buildFabricGeometry(corners3D, MESH_SUBDIVISIONS),
+    () => buildFabricGeometry(corners3D, MESH_SUBDIVISIONS, SAG_FACTOR),
     [corners3D]
   );
 
