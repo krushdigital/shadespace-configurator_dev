@@ -286,6 +286,7 @@ function DesignCard({ design, email }: { design: SavedDesign; email: string }) {
   const resumeUrl = buildResumeUrl(design.id, design.access_token, currency);
   const addToCartUrl = `${resumeUrl}&action=add-to-cart`;
   const corners = design.config_data?.corners ?? '?';
+  const [imgError, setImgError] = useState(false);
 
   const handleClick = (action: 'resume' | 'add_to_cart' | 'view') => {
     trackEvent('my_designs_resume_click', {
@@ -358,8 +359,13 @@ function DesignCard({ design, email }: { design: SavedDesign; email: string }) {
 
   return (
     <div style={styles.card}>
-      {design.diagram_public_url ? (
-        <img src={design.diagram_public_url} alt="Shade sail diagram" style={styles.thumbnail} />
+      {design.diagram_public_url && !imgError ? (
+        <img
+          src={design.diagram_public_url}
+          alt="Shade sail diagram"
+          style={styles.thumbnail}
+          onError={() => setImgError(true)}
+        />
       ) : (
         <div style={styles.thumbnailPlaceholder}><PlaceholderIcon /></div>
       )}

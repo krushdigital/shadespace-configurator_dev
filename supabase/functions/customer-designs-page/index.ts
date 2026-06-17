@@ -230,7 +230,7 @@ function renderPage(designs: SavedQuoteRow[], customerName: string): string {
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         My Orders
       </a>
-      <a href="/apps/shade_space/my-designs" class="active">
+      <a href="/pages/my-designs" class="active">
         <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
         My Designs
       </a>
@@ -326,7 +326,7 @@ export async function handleRequest(req: Request): Promise<Response> {
   <div style="max-width:400px;margin:0 auto;">
     <h1 style="color:#01312D;font-size:24px;font-weight:800;margin:0 0 12px 0;">Sign in to view your designs</h1>
     <p style="color:#64748B;font-size:14px;margin:0 0 28px 0;">Sign in with your email to see all your saved shade sail configurations.</p>
-    <a href="/account/login?return_to=/apps/shade_space/my-designs" style="display:inline-block;background:#307C31;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:700;">Sign In</a>
+    <a href="/account/login?return_to=/pages/my-designs" style="display:inline-block;background:#307C31;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:999px;font-size:15px;font-weight:700;">Sign In</a>
   </div>
 </div>`;
       return new Response(signInHtml, {

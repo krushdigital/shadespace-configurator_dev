@@ -107,9 +107,7 @@ Deno.serve(async (req: Request) => {
               pricing_locked_until: pricingLockedUntil || expiresAt
                 ? new Date(pricingLockedUntil || expiresAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
                 : "",
-              account_designs_url: resolvedAccessToken && email
-                ? `https://shadespace.com.au/apps/shade_space/my-designs?email=${encodeURIComponent(email)}&token=${encodeURIComponent(resolvedAccessToken)}`
-                : "https://shadespace.com.au/apps/shade_space/my-designs",
+              account_designs_url: "https://shadespace.com/pages/my-designs",
             },
           }),
         });

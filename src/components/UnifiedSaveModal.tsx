@@ -825,7 +825,7 @@ export function UnifiedSaveModal({
                         All your saved designs are stored in your ShadeSpace account. View them any time — just sign in with your email, no password needed.
                       </p>
                       <a
-                        href="https://shadespace.com.au/apps/shade_space/my-designs"
+                        href="https://shadespace.com/pages/my-designs"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-[#307C31] font-medium hover:underline mt-1.5 inline-block"
