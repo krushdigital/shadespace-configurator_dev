@@ -361,40 +361,79 @@ function buildFabricGeometry(
 
   const centroid = computeCentroid(corners3D);
   const segsPerEdge = Math.max(32, Math.ceil(subdivisions * 2 / n));
-  const ringsFromCenter = Math.max(24, Math.ceil(subdivisions / 2.2));
+  const ringsFromCenter = Math.max(28, Math.ceil(subdivisions / 2));
   const vertsPerRing = n * segsPerEdge;
 
-  const sagAmount = centroid.y * 0.025;
+  const sagAmount = centroid.y * 0.02;
   const saggedCentroid = centroid.clone();
   saggedCentroid.y -= sagAmount;
 
-  const vertices: number[] = [];
-  const indices: number[] = [];
-
-  vertices.push(saggedCentroid.x, saggedCentroid.y, saggedCentroid.z);
+  // Build ring positions: XZ from edge interpolation, Y initialized from radial blend
+  // yGrid[ring][s] stores the Y value for each ring vertex (ring 0..ringsFromCenter-1)
+  const xGrid: number[][] = [];
+  const zGrid: number[][] = [];
+  const yGrid: number[][] = [];
 
   for (let ring = 1; ring <= ringsFromCenter; ring++) {
     const ringT = ring / ringsFromCenter;
-    const heightT = Math.pow(ringT, 0.8);
+    const xRow: number[] = [];
+    const zRow: number[] = [];
+    const yRow: number[] = [];
 
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
         const edgePt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT);
-        const x = saggedCentroid.x + (edgePt.x - saggedCentroid.x) * ringT;
-        const z = saggedCentroid.z + (edgePt.z - saggedCentroid.z) * ringT;
-        const y = saggedCentroid.y + (edgePt.y - saggedCentroid.y) * heightT;
-        vertices.push(x, y, z);
+        xRow.push(saggedCentroid.x + (edgePt.x - saggedCentroid.x) * ringT);
+        zRow.push(saggedCentroid.z + (edgePt.z - saggedCentroid.z) * ringT);
+        // Initial Y: simple radial lerp (will be relaxed for interior rings)
+        const heightT = Math.pow(ringT, 0.8);
+        yRow.push(saggedCentroid.y + (edgePt.y - saggedCentroid.y) * heightT);
+      }
+    }
+    xGrid.push(xRow);
+    zGrid.push(zRow);
+    yGrid.push(yRow);
+  }
+
+  // Constrained Laplacian relaxation on Y values only
+  // Boundary (outermost ring = index ringsFromCenter-1) is FIXED
+  // Centroid Y is FIXED
+  // Interior rings relax toward average of 4 neighbors
+  const RELAX_ITERATIONS = 40;
+  for (let iter = 0; iter < RELAX_ITERATIONS; iter++) {
+    for (let ring = 0; ring < ringsFromCenter - 1; ring++) {
+      for (let s = 0; s < vertsPerRing; s++) {
+        const prevS = (s - 1 + vertsPerRing) % vertsPerRing;
+        const nextS = (s + 1) % vertsPerRing;
+        const tangAvg = (yGrid[ring][prevS] + yGrid[ring][nextS]) * 0.5;
+        const innerY = ring > 0 ? yGrid[ring - 1][s] : saggedCentroid.y;
+        const outerY = yGrid[ring + 1][s];
+        yGrid[ring][s] = (tangAvg + innerY + outerY) / 3.0;
       }
     }
   }
 
+  // Build vertex buffer
+  const vertices: number[] = [];
+  const indices: number[] = [];
+
+  vertices.push(saggedCentroid.x, saggedCentroid.y, saggedCentroid.z);
+
+  for (let ring = 0; ring < ringsFromCenter; ring++) {
+    for (let s = 0; s < vertsPerRing; s++) {
+      vertices.push(xGrid[ring][s], yGrid[ring][s], zGrid[ring][s]);
+    }
+  }
+
+  // Triangulate: center fan
   for (let s = 0; s < vertsPerRing; s++) {
     const nextS = (s + 1) % vertsPerRing;
     indices.push(0, 1 + s, 1 + nextS);
   }
 
+  // Triangulate: ring strips
   for (let ring = 1; ring < ringsFromCenter; ring++) {
     const ringStart = 1 + (ring - 1) * vertsPerRing;
     const nextRingStart = 1 + ring * vertsPerRing;
@@ -409,35 +448,6 @@ function buildFabricGeometry(
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
-
-  // Smooth normals at sector boundaries to eliminate crease lines
-  const normals = geometry.getAttribute('position').count > 0
-    ? (geometry.getAttribute('normal') as THREE.BufferAttribute)
-    : null;
-  if (normals) {
-    const smoothRadius = 3;
-    for (let ring = 0; ring < ringsFromCenter; ring++) {
-      for (let corner = 0; corner < n; corner++) {
-        const cornerIdx = corner * segsPerEdge;
-        for (let offset = -smoothRadius; offset <= smoothRadius; offset++) {
-          const s = ((cornerIdx + offset) % vertsPerRing + vertsPerRing) % vertsPerRing;
-          const vertIdx = 1 + ring * vertsPerRing + s;
-          const prevS = ((s - 1) + vertsPerRing) % vertsPerRing;
-          const nextS = (s + 1) % vertsPerRing;
-          const prevIdx = 1 + ring * vertsPerRing + prevS;
-          const nextIdx = 1 + ring * vertsPerRing + nextS;
-
-          const nx = (normals.getX(prevIdx) + normals.getX(vertIdx) + normals.getX(nextIdx)) / 3;
-          const ny = (normals.getY(prevIdx) + normals.getY(vertIdx) + normals.getY(nextIdx)) / 3;
-          const nz = (normals.getZ(prevIdx) + normals.getZ(vertIdx) + normals.getZ(nextIdx)) / 3;
-          const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
-          normals.setXYZ(vertIdx, nx / len, ny / len, nz / len);
-        }
-      }
-    }
-    normals.needsUpdate = true;
-  }
-
   return geometry;
 }
 
