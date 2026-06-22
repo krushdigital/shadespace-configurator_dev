@@ -14,7 +14,7 @@ const RESEND_FROM = Deno.env.get("RESEND_FROM_EMAIL") || "Shade Systems <sails@s
 const ADMIN_URL = "https://shadespace.com.au/pages/shade-sail-configurator/?admin=true";
 const SETUP_URL = "https://shadespace.com.au/pages/shade-sail-configurator/?setup-password=true";
 
-function buildAdminInviteHtml(opts: { inviterName: string; inviteeName: string; role: string }) {
+function buildAdminInviteHtml(opts: { inviterName: string; inviteeName: string; role: string; setupUrl: string }) {
   const roleLabel = opts.role === "super_admin" ? "Super Admin" : "Admin";
   return `<!doctype html><html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><!--[if gte mso 9]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelPerInch>96</o:PixelPerInch></o:OfficeDocumentSettings></xml><![endif]--><!--[if mso]><style type="text/css">body,table,td{font-family:Helvetica,Arial,sans-serif !important;}</style><![endif]--></head><body style="margin:0;background:#f6f7f8;font-family:Helvetica,Arial,sans-serif;color:#111">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f7f8;padding:32px 16px"><tr><td align="center">
@@ -26,12 +26,13 @@ function buildAdminInviteHtml(opts: { inviterName: string; inviteeName: string; 
       <tr><td style="padding:28px 32px;font-size:15px;line-height:23px;mso-line-height-rule:exactly;">
         <p style="margin:0 0 16px 0;">Hi${opts.inviteeName ? ` ${opts.inviteeName}` : ""},</p>
         <p style="margin:0 0 16px 0;"><strong>${opts.inviterName}</strong> has invited you to join the Shade Systems Admin Dashboard as a <strong>${roleLabel}</strong>.</p>
-        <p style="margin:0 0 16px 0;">Click the button below to sign in with your Google account. Your access will be activated automatically on first sign-in.</p>
+        <p style="margin:0 0 16px 0;">Click the button below to set up your password and get started.</p>
         <p style="text-align:center;margin:28px 0">
-          <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${ADMIN_URL}" style="height:42px;v-text-anchor:middle;width:250px;" arcsize="19%" strokecolor="#0f3d2e" fillcolor="#0f3d2e"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;">Sign in to Admin Dashboard</center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="${ADMIN_URL}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Sign in to Admin Dashboard</a><!--<![endif]-->
+          <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${opts.setupUrl}" style="height:42px;v-text-anchor:middle;width:250px;" arcsize="19%" strokecolor="#0f3d2e" fillcolor="#0f3d2e"><w:anchorlock/><center style="color:#ffffff;font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:bold;">Set up your password</center></v:roundrect><![endif]--><!--[if !mso]><!--><a href="${opts.setupUrl}" style="background:#0f3d2e;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;display:inline-block">Set up your password</a><!--<![endif]-->
         </p>
-        <p style="font-size:13px;color:#4b5563;margin:0 0 16px 0;">Or go to:<br/><a href="${ADMIN_URL}" style="color:#0f3d2e;word-break:break-all">${ADMIN_URL}</a></p>
-        <p style="font-size:12px;color:#6b7280;margin:24px 0 0 0;">If you weren't expecting this invite, you can safely ignore it.</p>
+        <p style="font-size:13px;color:#4b5563;margin:0 0 16px 0;">Or copy this link into your browser:<br/><a href="${opts.setupUrl}" style="color:#0f3d2e;word-break:break-all">${opts.setupUrl}</a></p>
+        <p style="font-size:13px;color:#4b5563;margin:0 0 16px 0;">Alternatively, you can <a href="${ADMIN_URL}" style="color:#0f3d2e">sign in with Google</a> if your email is a Google account.</p>
+        <p style="font-size:12px;color:#6b7280;margin:24px 0 0 0;">This link expires in 72 hours. If you weren't expecting this invite, you can safely ignore it.</p>
       </td></tr>
       <tr><td style="padding:16px 32px;background:#f9fafb;font-size:12px;color:#6b7280">Shade Systems - shadespace.com</td></tr>
     </table>
@@ -125,11 +126,8 @@ Deno.serve(async (req: Request) => {
       authUserId = newUser.user?.id ?? null;
     }
 
-    // For team_member, generate a setup token so they can set their password
-    let setupToken: string | null = null;
-    if (role === "team_member") {
-      setupToken = generateSetupToken();
-    }
+    // Generate a setup token for all roles so they can set their password
+    const setupToken = generateSetupToken();
 
     // Upsert admin_users record
     const payload: Record<string, any> = {
@@ -140,11 +138,9 @@ Deno.serve(async (req: Request) => {
       auth_user_id: authUserId,
       invited_by: caller.id,
       invited_at: new Date().toISOString(),
+      setup_token: setupToken,
+      setup_token_expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(),
     };
-    if (setupToken) {
-      payload.setup_token = setupToken;
-      payload.setup_token_expires_at = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
-    }
 
     if (existing) {
       await supabase.from("admin_users").update(payload).eq("id", existing.id);
@@ -154,18 +150,18 @@ Deno.serve(async (req: Request) => {
 
     // Send appropriate invite email
     const inviterName = caller.full_name || caller.email || "A Shade Systems super admin";
+    const setupUrl = `${SETUP_URL}&token=${setupToken}`;
     let html: string;
     let text: string;
     let subject: string;
 
     if (role === "team_member") {
-      const setupUrl = `${SETUP_URL}&token=${setupToken}`;
       html = buildTeamMemberInviteHtml({ inviterName, inviteeName: full_name || "", setupUrl });
       text = `${inviterName} has invited you to join the Shade Systems team dashboard.\n\nSet up your password here:\n${setupUrl}\n\nThis link expires in 72 hours.\n\nIf you weren't expecting this invite, you can safely ignore it.`;
       subject = "You're invited to the Shade Systems team";
     } else {
-      html = buildAdminInviteHtml({ inviterName, inviteeName: full_name || "", role });
-      text = `${inviterName} has invited you to join the Shade Systems Admin Dashboard as a ${role === "super_admin" ? "Super Admin" : "Admin"}.\n\nSign in with your Google account here:\n${ADMIN_URL}\n\nYour access will be activated automatically on first sign-in.\n\nIf you weren't expecting this invite, you can safely ignore it.`;
+      html = buildAdminInviteHtml({ inviterName, inviteeName: full_name || "", role, setupUrl });
+      text = `${inviterName} has invited you to join the Shade Systems Admin Dashboard as a ${role === "super_admin" ? "Super Admin" : "Admin"}.\n\nSet up your password here:\n${setupUrl}\n\nAlternatively, you can sign in with Google at:\n${ADMIN_URL}\n\nThis link expires in 72 hours.\n\nIf you weren't expecting this invite, you can safely ignore it.`;
       subject = "You're invited to the Shade Systems Admin Dashboard";
     }
 
