@@ -877,11 +877,12 @@ export function DimensionsContent({
                       const isSuccess = hasValidValue && !hasError;
                       const neededDiags = isApproximate ? getNextRequiredDiagonals(config.measurements, config.corners) : [];
                       const isNeeded = neededDiags.includes(key);
+                      const isVerification = key === 'BD' && config.corners >= 5;
 
                       // Generate label from key (e.g., 'AC' -> 'Diagonal A → C')
                       const baseLabel = config.measurementOption === 'adjust'
-                        ? `Space Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
-                        : `Shade Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
+                        ? `${isVerification ? 'Verification ' : ''}Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
+                        : `${isVerification ? 'Verification ' : ''}Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
                       const label = isNeeded && !hasValidValue
                         ? `${baseLabel} — needed for exact shape`
                         : baseLabel;

@@ -482,9 +482,13 @@ console.log('✌️result --->', result);
       if (config.corners === 4) {
         diagonalKeys.push('AC', 'BD');
       } else if (config.corners === 5) {
-        diagonalKeys.push('AC', 'AD', 'CE', 'BD', 'BE');
+        diagonalKeys.push('AC', 'AD', 'BD');
       } else if (config.corners === 6) {
-        diagonalKeys.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
+        diagonalKeys.push('AC', 'AD', 'AE', 'BD');
+      } else if (config.corners === 7) {
+        diagonalKeys.push('AC', 'AD', 'AE', 'AF', 'BD');
+      } else if (config.corners === 8) {
+        diagonalKeys.push('AC', 'AD', 'AE', 'AF', 'AG', 'BD');
       }
 
       diagonalKeys.forEach((diagonalKey) => {
