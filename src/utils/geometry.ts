@@ -395,13 +395,13 @@ export function getDiagonalKeysForCorners(corners: number): string[] {
   if (corners === 4) {
     diagonals.push('AC', 'BD');
   } else if (corners === 5) {
-    diagonals.push('AC', 'AD', 'BD');
+    diagonals.push('AC', 'AD', 'CE', 'BD', 'BE');
   } else if (corners === 6) {
-    diagonals.push('AC', 'AD', 'AE', 'BD');
+    diagonals.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
   } else if (corners === 7) {
-    diagonals.push('AC', 'AD', 'AE', 'AF', 'BD');
+    diagonals.push('AC', 'AD', 'AE', 'AF', 'BD', 'BE', 'BF', 'BG', 'CE', 'CF', 'CG', 'DF', 'DG', 'EG');
   } else if (corners === 8) {
-    diagonals.push('AC', 'AD', 'AE', 'AF', 'AG', 'BD');
+    diagonals.push('AC', 'AD', 'AE', 'AF', 'AG', 'BD', 'BE', 'BF', 'BG', 'BH', 'CE', 'CF', 'CG', 'CH', 'DF', 'DG', 'DH', 'EG', 'EH', 'FH');
   }
 
   return diagonals;
@@ -496,25 +496,27 @@ export function getNextRequiredDiagonals(
   corners: number
 ): string[] {
   if (corners === 4) {
-    const needed: string[] = [];
-    if (!measurements['AC']) needed.push('AC');
-    if (!measurements['BD']) needed.push('BD');
-    return needed;
+    if (!measurements['AC'] && !measurements['BD']) return ['AC'];
+    return [];
   }
   if (corners === 5) {
     const needed: string[] = [];
     if (!measurements['AC']) needed.push('AC');
     if (!measurements['AD']) needed.push('AD');
-    if (!measurements['BD']) needed.push('BD');
-    return needed;
+    if (needed.length > 0) return needed;
+    const hasThird = measurements['CE'] || measurements['BD'] || measurements['BE'];
+    if (!hasThird) return ['CE'];
+    return [];
   }
   if (corners === 6) {
     const needed: string[] = [];
     if (!measurements['AC']) needed.push('AC');
     if (!measurements['AD']) needed.push('AD');
     if (!measurements['AE']) needed.push('AE');
-    if (!measurements['BD']) needed.push('BD');
-    return needed;
+    if (needed.length > 0) return needed;
+    const hasFourth = measurements['BD'] || measurements['BE'] || measurements['BF'] || measurements['CE'] || measurements['CF'] || measurements['DF'];
+    if (!hasFourth) return ['CE'];
+    return [];
   }
   if (corners === 7) {
     const needed: string[] = [];
@@ -522,7 +524,6 @@ export function getNextRequiredDiagonals(
     if (!measurements['AD']) needed.push('AD');
     if (!measurements['AE']) needed.push('AE');
     if (!measurements['AF']) needed.push('AF');
-    if (!measurements['BD']) needed.push('BD');
     return needed;
   }
   if (corners === 8) {
@@ -532,7 +533,6 @@ export function getNextRequiredDiagonals(
     if (!measurements['AE']) needed.push('AE');
     if (!measurements['AF']) needed.push('AF');
     if (!measurements['AG']) needed.push('AG');
-    if (!measurements['BD']) needed.push('BD');
     return needed;
   }
   return [];
@@ -1063,21 +1063,12 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const AD = measurements['AD'] || 0;
     const AE = measurements['AE'] || 0;
     const AF = measurements['AF'] || 0;
-    const BD = measurements['BD'] || 0;
 
     if (AC > 0 && AB > 0 && BC > 0) {
       const v = validateTriangle(AB, BC, AC, true);
       if (!v.isValid) {
         const range = calculateTriangleSideRange(AB, BC, true);
         errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
-      }
-    }
-
-    if (BD > 0 && BC > 0 && CD > 0) {
-      const v = validateTriangle(BC, CD, BD, true);
-      if (!v.isValid) {
-        const range = calculateTriangleSideRange(BC, CD, true);
-        errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
     if (AD > 0 && AC > 0 && CD > 0) {
@@ -1136,20 +1127,12 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
     const AE = measurements['AE'] || 0;
     const AF = measurements['AF'] || 0;
     const AG = measurements['AG'] || 0;
-    const BD = measurements['BD'] || 0;
 
     if (AC > 0 && AB > 0 && BC > 0) {
       const v = validateTriangle(AB, BC, AC, true);
       if (!v.isValid) {
         const range = calculateTriangleSideRange(AB, BC, true);
         errors.push(`Diagonal AC (${AC.toFixed(0)}mm) is incompatible with edges AB and BC. Valid range: ${range.min}mm to ${range.max}mm.`);
-      }
-    }
-    if (BD > 0 && BC > 0 && CD > 0) {
-      const v = validateTriangle(BC, CD, BD, true);
-      if (!v.isValid) {
-        const range = calculateTriangleSideRange(BC, CD, true);
-        errors.push(`Diagonal BD (${BD.toFixed(0)}mm) is incompatible with edges BC and CD. Valid range: ${range.min}mm to ${range.max}mm.`);
       }
     }
     if (AD > 0 && AC > 0 && CD > 0) {
@@ -1548,18 +1531,24 @@ export function hasRequiredMeasurements(
   if (corners === 3) {
     return !!(measurements['AB'] && measurements['BC'] && measurements['CA']);
   } else if (corners === 4) {
-    return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA'] && measurements['AC']);
+    // For 4 corners, we need all edges
+    return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA']);
   } else if (corners === 5) {
+    // For 5 corners we need all edges + AC + AD + at least one of (CE, BD, BE)
+    // AC places C from A,B. AD places D from A,C. The third diagonal constrains E.
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
     const hasAC = !!measurements['AC'];
     const hasAD = !!measurements['AD'];
-    return edges && hasAC && hasAD;
+    const hasThirdDiag = !!(measurements['CE'] || measurements['BD'] || measurements['BE']);
+    return edges && hasAC && hasAD && hasThirdDiag;
   } else if (corners === 6) {
+    // For 6 corners we need all edges + AC + AD + AE + at least one of (BD, BE, BF, CE, CF, DF)
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
     const hasAC = !!measurements['AC'];
     const hasAD = !!measurements['AD'];
     const hasAE = !!measurements['AE'];
-    return edges && hasAC && hasAD && hasAE;
+    const hasFourthDiag = !!(measurements['BD'] || measurements['BE'] || measurements['BF'] || measurements['CE'] || measurements['CF'] || measurements['DF']);
+    return edges && hasAC && hasAD && hasAE && hasFourthDiag;
   } else if (corners === 7) {
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GA']);
     const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF']);
@@ -1710,14 +1699,19 @@ export function reconstructPolygonFromMeasurements(
 
     // D: use trilateratePointBothSides and pick the valid solution
     let D: Point | null = null;
-    if (AD) {
-      const candidates = trilateratePointBothSides(A, C, AD, CD);
+    if (BD && AD) {
+      // Over-constrained: use BD+CD and verify against AD
+      const candidates = trilateratePointBothSides(B, C, BD, CD);
       if (candidates) {
         D = pickValidPoint(candidates, [A, B, C], null);
       }
-    }
-    if (!D && BD) {
+    } else if (BD) {
       const candidates = trilateratePointBothSides(B, C, BD, CD);
+      if (candidates) {
+        D = pickValidPoint(candidates, [A, B, C], null);
+      }
+    } else if (AD) {
+      const candidates = trilateratePointBothSides(A, C, AD, CD);
       if (candidates) {
         D = pickValidPoint(candidates, [A, B, C], null);
       }
@@ -1795,28 +1789,28 @@ export function reconstructPolygonFromMeasurements(
 
     // D: use both-sides picking
     let D: Point | null = null;
-    if (AD) {
-      const candidates = trilateratePointBothSides(A, C, AD, CD);
+    if (BD) {
+      const candidates = trilateratePointBothSides(B, C, BD, CD);
       if (candidates) D = pickValidPoint(candidates, [A, B, C], null);
     }
-    if (!D && BD) {
-      const candidates = trilateratePointBothSides(B, C, BD, CD);
+    if (!D && AD) {
+      const candidates = trilateratePointBothSides(A, C, AD, CD);
       if (candidates) D = pickValidPoint(candidates, [A, B, C], null);
     }
     if (!D) return null;
 
     // E: use both-sides picking
     let E: Point | null = null;
-    if (AE) {
-      const candidates = trilateratePointBothSides(A, D, AE, DE);
-      if (candidates) E = pickValidPoint(candidates, [A, B, C, D], null);
-    }
-    if (!E && BE) {
+    if (BE) {
       const candidates = trilateratePointBothSides(B, D, BE, DE);
       if (candidates) E = pickValidPoint(candidates, [A, B, C, D], null);
     }
     if (!E && CE) {
       const candidates = trilateratePointBothSides(C, D, CE, DE);
+      if (candidates) E = pickValidPoint(candidates, [A, B, C, D], null);
+    }
+    if (!E && AE) {
+      const candidates = trilateratePointBothSides(A, D, AE, DE);
       if (candidates) E = pickValidPoint(candidates, [A, B, C, D], null);
     }
     if (!E) return null;
