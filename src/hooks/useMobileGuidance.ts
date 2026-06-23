@@ -156,34 +156,25 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
           alignMode: 'top',
         });
       } else {
-        try {
-          (element as HTMLElement).scrollIntoView({
-            block: 'center',
-            behavior: 'smooth',
-          });
-        } catch {
-          const rect = element.getBoundingClientRect();
-          const elementTop = rect.top + window.pageYOffset;
-          const viewportHeight = getViewportHeight();
-          const centerOffset = viewportHeight / 2 - rect.height / 2;
-          window.scrollTo({
-            top: Math.max(0, elementTop - centerOffset),
-            behavior: 'smooth',
-          });
-        }
+        const rect = element.getBoundingClientRect();
+        const elementTop = rect.top + window.pageYOffset;
+        const viewportHeight = getViewportHeight();
+        const centerOffset = viewportHeight / 2 - rect.height / 2;
+        let targetPosition = Math.max(0, elementTop - centerOffset);
 
         if (resolvedBias === 'below-center') {
-          const viewportHeight = getViewportHeight();
           const shift = Math.min(110, Math.max(70, viewportHeight * 0.12));
-          window.setTimeout(() => {
-            window.scrollBy({ top: shift, behavior: 'smooth' });
-          }, 450);
+          targetPosition += shift;
         }
 
-        const rectAfter = element.getBoundingClientRect();
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth',
+        });
+
         logScrollDiagnostic({
           elementId,
-          targetScrollY: rectAfter.top + window.pageYOffset,
+          targetScrollY: targetPosition,
           alignMode: resolvedBias,
         });
       }

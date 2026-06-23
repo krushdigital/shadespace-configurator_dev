@@ -23,13 +23,9 @@ const EDGE_TENSION_INWARD = 0.035;
 const SAG_FACTOR = 0.04;
 const HIGHLIGHT_TUBE_RADIUS = 0.025;
 const FIXING_POINT_OFFSET = 0.2;
-const MOBILE_MIN_DIST = 3;
-const MOBILE_MAX_DIST = 25;
 
 interface SceneProps extends ShadeSail3DViewerProps {
   isMobile: boolean;
-  mobileZoomRef: React.RefObject<number>;
-  sliderTouchedRef: React.RefObject<boolean>;
 }
 
 function getCornerLabel(index: number): string {
@@ -942,36 +938,9 @@ function HeightIndicators({ corners3D, highlightedCorner }: { corners3D: THREE.V
   );
 }
 
-function Scene({ config, highlightedMeasurement, highlightedCorner, activeSection, isMobile, mobileZoomRef, sliderTouchedRef }: SceneProps) {
+function Scene({ config, highlightedMeasurement, highlightedCorner, activeSection, isMobile }: SceneProps) {
   const controlsRef = useRef<any>(null);
   const [showOverlays, setShowOverlays] = useState(true);
-  const { gl } = useThree();
-
-  // On mobile, override the canvas touch-action so browser handles touch as page scroll
-  useEffect(() => {
-    if (!isMobile) return;
-    const canvas = gl.domElement;
-    const prev = canvas.style.touchAction;
-    canvas.style.touchAction = 'auto';
-    return () => { canvas.style.touchAction = prev; };
-  }, [isMobile, gl.domElement]);
-
-  // Apply mobile zoom slider value each frame
-  useFrame(() => {
-    if (!isMobile || !sliderTouchedRef.current || !controlsRef.current) return;
-    const controls = controlsRef.current;
-    if (!controls.object || !controls.target) return;
-    const camera = controls.object as THREE.PerspectiveCamera;
-    const target = controls.target as THREE.Vector3;
-    const dir = new THREE.Vector3().subVectors(camera.position, target);
-    const currentDist = dir.length();
-    const desiredDist = mobileZoomRef.current;
-    if (Math.abs(currentDist - desiredDist) > 0.02) {
-      dir.normalize().multiplyScalar(currentDist + (desiredDist - currentDist) * 0.25);
-      camera.position.copy(target).add(dir);
-      controls.update();
-    }
-  });
 
   const svgPoints = useMemo(() => {
     if (hasRequiredMeasurements(config.measurements, config.corners)) {
@@ -1127,9 +1096,9 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
 
       <OrbitControls
         ref={controlsRef}
-        enablePan={!isMobile}
-        enableZoom={!isMobile}
-        enableRotate={!isMobile}
+        enablePan={true}
+        enableZoom={true}
+        enableRotate={true}
         maxPolarAngle={Math.PI / 2 - 0.05}
         minDistance={2}
         maxDistance={30}
@@ -1181,10 +1150,6 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
       return window.matchMedia('(pointer: coarse)').matches;
     });
 
-    const mobileZoomRef = useRef<number>((MOBILE_MAX_DIST + MOBILE_MIN_DIST) / 2);
-    const sliderTouchedRef = useRef<boolean>(false);
-    const [sliderValue, setSliderValue] = useState(50);
-
     // Desktop: prevent page scroll while pointer hovers the 3D canvas
     useEffect(() => {
       if (isTouchDevice) return;
@@ -1204,14 +1169,6 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
       };
     }, [isTouchDevice]);
 
-    const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      sliderTouchedRef.current = true;
-      const v = Number(e.target.value);
-      setSliderValue(v);
-      // v=100 → closest (MIN_DIST), v=0 → farthest (MAX_DIST)
-      mobileZoomRef.current = MOBILE_MAX_DIST - (v / 100) * (MOBILE_MAX_DIST - MOBILE_MIN_DIST);
-    };
-
     useImperativeHandle(ref, () => ({
       capture3DScreenshot: async () => {
         const canvas = containerRef.current?.querySelector('canvas');
@@ -1221,7 +1178,11 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
     }));
 
     return (
-      <div ref={containerRef} className="w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200 relative">
+      <div
+        ref={containerRef}
+        className="w-[calc(100%-24px)] mx-auto sm:w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200 relative"
+        style={{ overscrollBehavior: 'contain', touchAction: isTouchDevice ? 'none' : 'auto' }}
+      >
         <Canvas
           camera={{ fov: 45, near: 0.1, far: 100 }}
           shadows="soft"
@@ -1233,64 +1194,9 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
             highlightedCorner={highlightedCorner}
             activeSection={activeSection}
             isMobile={isTouchDevice}
-            mobileZoomRef={mobileZoomRef}
-            sliderTouchedRef={sliderTouchedRef}
           />
           {onPerformanceWarning && <FpsMonitor onPerformanceWarning={onPerformanceWarning} />}
         </Canvas>
-
-        {isTouchDevice && (
-          <div
-            style={{
-              position: 'absolute',
-              right: 6,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 10,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 4,
-              background: 'rgba(255,255,255,0.88)',
-              backdropFilter: 'blur(6px)',
-              borderRadius: 24,
-              padding: '10px 6px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-            }}
-          >
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#307C31', userSelect: 'none', lineHeight: 1 }}>+</span>
-            <div
-              style={{
-                height: 130,
-                width: 36,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                touchAction: 'none',
-                pointerEvents: 'auto',
-                overflow: 'hidden',
-              }}
-            >
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={sliderValue}
-                onChange={handleSliderChange}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchMove={(e) => e.stopPropagation()}
-                style={{
-                  transform: 'rotate(-90deg)',
-                  width: 120,
-                  cursor: 'pointer',
-                  accentColor: '#307C31',
-                  flexShrink: 0,
-                }}
-              />
-            </div>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#307C31', userSelect: 'none', lineHeight: 1 }}>−</span>
-          </div>
-        )}
       </div>
     );
   }
