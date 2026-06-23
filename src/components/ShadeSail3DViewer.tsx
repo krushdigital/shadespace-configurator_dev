@@ -1155,16 +1155,12 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
       if (isTouchDevice) return;
       const el = containerRef.current;
       if (!el) return;
-      let hovered = false;
-      const onEnter = () => { hovered = true; };
-      const onLeave = () => { hovered = false; };
-      const onWheel = (e: WheelEvent) => { if (hovered) e.preventDefault(); };
-      el.addEventListener('mouseenter', onEnter);
-      el.addEventListener('mouseleave', onLeave);
+      const onWheel = (e: WheelEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+      };
       el.addEventListener('wheel', onWheel, { passive: false });
       return () => {
-        el.removeEventListener('mouseenter', onEnter);
-        el.removeEventListener('mouseleave', onLeave);
         el.removeEventListener('wheel', onWheel);
       };
     }, [isTouchDevice]);
@@ -1180,6 +1176,7 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
     return (
       <div
         ref={containerRef}
+        data-lenis-prevent
         className="w-[calc(100%-24px)] mx-auto sm:w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200 relative"
         style={{ overscrollBehavior: 'contain', touchAction: isTouchDevice ? 'none' : 'auto' }}
       >
