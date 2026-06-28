@@ -1259,7 +1259,7 @@ export function ShadeConfigurator() {
         backendDiagonalMeasurements,
         backendAnchorMeasurements,
         originalUnit: config.unit,
-        fabricationType: config.measurementOption === 'adjust' ? 'dimensions_provided' : 'fabricated_to_fit',
+        fabricationType: config.measurementOption === 'adjust' ? 'fabricated_to_fit' : 'dimensions_provided',
         quoteReference: autoSavedRef || quoteReference || null,
         totalPrice: authoritativeTotal,
         currency: authoritativeCurrency, // Always send selected currency
