@@ -2057,11 +2057,9 @@ export function ShadeConfigurator() {
     updateConfig({ points: centeredPoints });
     setOpenStep(nextStepIndex);
 
-    if (!isMobile) {
-      setTimeout(() => {
-        smoothScrollToStep(nextStepIndex);
-      }, 350);
-    }
+    setTimeout(() => {
+      smoothScrollToStep(nextStepIndex);
+    }, isMobile ? 400 : 350);
   };
 
   const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
@@ -2085,11 +2083,9 @@ export function ShadeConfigurator() {
     updateConfig({ points: centeredPoints });
     setOpenStep(prevStepIndex);
 
-    if (!isMobile) {
-      setTimeout(() => {
-        smoothScrollToStep(prevStepIndex);
-      }, 350);
-    }
+    setTimeout(() => {
+      smoothScrollToStep(prevStepIndex);
+    }, isMobile ? 400 : 350);
   };
 
   const toggleStep = (stepIndex: number) => {
@@ -2101,10 +2097,10 @@ export function ShadeConfigurator() {
       const newOpenStep = openStep === stepIndex ? -1 : stepIndex;
       setOpenStep(newOpenStep);
 
-      if (newOpenStep !== -1 && !isMobile) {
+      if (newOpenStep !== -1) {
         setTimeout(() => {
           smoothScrollToStep(newOpenStep);
-        }, 350);
+        }, isMobile ? 400 : 350);
       }
     }
   };
