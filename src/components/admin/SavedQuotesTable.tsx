@@ -386,6 +386,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
         customer: customerDetails,
         isEmailSummary: false,
         threeDImageDataUrl: quote.diagram_3d_public_url || undefined,
+        fulfilment: true,
       });
     } catch (error) {
       console.error('Failed to generate fulfilment PDF:', error);

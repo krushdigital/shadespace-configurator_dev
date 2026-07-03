@@ -624,9 +624,18 @@ export function getShapeAccuracy(
 
     // Use hasRequiredMeasurements to determine if reconstruction can be exact
     if (hasRequiredMeasurements(measurements, corners)) {
+      // Verify reconstruction actually succeeds (measurements may be geometrically impossible)
+      const testPoints = reconstructPolygonFromMeasurements(measurements, corners, 600, 600);
+      if (testPoints && testPoints.length === corners) {
+        return {
+          accuracy: 'exact',
+          message: 'Shape preview matches your measurements',
+          hasDiagonals: true
+        };
+      }
       return {
-        accuracy: 'exact',
-        message: 'Shape preview matches your measurements',
+        accuracy: 'approximate',
+        message: 'Shape could not be reconstructed from these measurements. Check that values are correct.',
         hasDiagonals: true
       };
     }
@@ -1513,29 +1522,32 @@ function trilateratePoint(
 ): Point | null {
   const distAB = calculateDistance(A, B);
 
-  // Check triangle inequality
-  if (distAC + distBC < distAB || distAC + distAB < distBC || distBC + distAB < distAC) {
+  // Tolerance: allow up to 0.1% of the longest side or 2mm (whichever is larger)
+  // to handle imperial-to-metric rounding and near-collinear fixing points
+  const tol = Math.max(2, Math.max(distAC, distBC, distAB) * 0.001);
+
+  if (distAC + distBC < distAB - tol || distAC + distAB < distBC - tol || distBC + distAB < distAC - tol) {
     return null;
   }
 
-  // Position C relative to A and B
-  // Place A at origin, B on x-axis
   const dx = B.x - A.x;
   const dy = B.y - A.y;
-
-  // Calculate angle of AB
   const angle = Math.atan2(dy, dx);
 
-  // Calculate x coordinate of C in rotated coordinate system
   const x = (distAC * distAC - distBC * distBC + distAB * distAB) / (2 * distAB);
 
-  // Calculate y coordinate of C
-  const ySquared = distAC * distAC - x * x;
-  if (ySquared < 0) return null;
+  let ySquared = distAC * distAC - x * x;
+  // Clamp near-zero negative values (collinear points from rounding)
+  if (ySquared < 0) {
+    if (ySquared > -(tol * tol)) {
+      ySquared = 0;
+    } else {
+      return null;
+    }
+  }
 
   const y = Math.sqrt(ySquared);
 
-  // Rotate back to original coordinate system
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
 
@@ -1553,7 +1565,9 @@ function trilateratePointBothSides(
 ): [Point, Point] | null {
   const distAB = calculateDistance(A, B);
 
-  if (distAC + distBC < distAB || distAC + distAB < distBC || distBC + distAB < distAC) {
+  const tol = Math.max(2, Math.max(distAC, distBC, distAB) * 0.001);
+
+  if (distAC + distBC < distAB - tol || distAC + distAB < distBC - tol || distBC + distAB < distAC - tol) {
     return null;
   }
 
@@ -1561,8 +1575,14 @@ function trilateratePointBothSides(
   const dy = B.y - A.y;
   const angle = Math.atan2(dy, dx);
   const x = (distAC * distAC - distBC * distBC + distAB * distAB) / (2 * distAB);
-  const ySquared = distAC * distAC - x * x;
-  if (ySquared < 0) return null;
+  let ySquared = distAC * distAC - x * x;
+  if (ySquared < 0) {
+    if (ySquared > -(tol * tol)) {
+      ySquared = 0;
+    } else {
+      return null;
+    }
+  }
 
   const y = Math.sqrt(ySquared);
   const cos = Math.cos(angle);
@@ -2156,13 +2176,20 @@ function reconstructPolygonRaw(
     const EA = measurements['EA'];
     const AC = measurements['AC'];
     const AD = measurements['AD'];
+    const BD = measurements['BD'] || 0;
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
     const C = trilateratePoint(A, B, AC, BC);
     if (!C) return null;
-    const dCands = trilateratePointBothSides(A, C, AD, CD);
     let D: Point | null = null;
-    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (BD > 0) {
+      const cands = trilateratePointBothSides(B, C, BD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
+    if (!D && AD) {
+      const cands = trilateratePointBothSides(A, C, AD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
     if (!D) return null;
     const eCands = trilateratePointBothSides(A, D, EA, DE);
     let E: Point | null = null;
@@ -2179,17 +2206,26 @@ function reconstructPolygonRaw(
     const AC = measurements['AC'];
     const AD = measurements['AD'];
     const AE = measurements['AE'];
+    const BD = measurements['BD'] || 0;
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
     const C = trilateratePoint(A, B, AC, BC);
     if (!C) return null;
-    const dCands = trilateratePointBothSides(A, C, AD, CD);
     let D: Point | null = null;
-    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (BD > 0) {
+      const cands = trilateratePointBothSides(B, C, BD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
+    if (!D && AD) {
+      const cands = trilateratePointBothSides(A, C, AD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
     if (!D) return null;
-    const eCands = trilateratePointBothSides(A, D, AE, DE);
     let E: Point | null = null;
-    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
+    if (AE) {
+      const cands = trilateratePointBothSides(A, D, AE, DE);
+      if (cands) E = pickValidPoint(cands, [A, B, C, D], null);
+    }
     if (!E) return null;
     const fCands = trilateratePointBothSides(A, E, FA, EF);
     let F: Point | null = null;
@@ -2208,21 +2244,32 @@ function reconstructPolygonRaw(
     const AD = measurements['AD'];
     const AE = measurements['AE'];
     const AF = measurements['AF'];
+    const BD = measurements['BD'] || 0;
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
     const C = trilateratePoint(A, B, AC, BC);
     if (!C) return null;
-    const dCands = trilateratePointBothSides(A, C, AD, CD);
     let D: Point | null = null;
-    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (BD > 0) {
+      const cands = trilateratePointBothSides(B, C, BD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
+    if (!D && AD) {
+      const cands = trilateratePointBothSides(A, C, AD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
     if (!D) return null;
-    const eCands = trilateratePointBothSides(A, D, AE, DE);
     let E: Point | null = null;
-    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
+    if (AE) {
+      const cands = trilateratePointBothSides(A, D, AE, DE);
+      if (cands) E = pickValidPoint(cands, [A, B, C, D], null);
+    }
     if (!E) return null;
-    const fCands = trilateratePointBothSides(A, E, AF, EF);
     let F: Point | null = null;
-    if (fCands) F = pickValidPoint(fCands, [A, B, C, D, E], null);
+    if (AF) {
+      const cands = trilateratePointBothSides(A, E, AF, EF);
+      if (cands) F = pickValidPoint(cands, [A, B, C, D, E], null);
+    }
     if (!F) return null;
     const gCands = trilateratePointBothSides(A, F, GA, FG);
     let G: Point | null = null;
@@ -2243,25 +2290,38 @@ function reconstructPolygonRaw(
     const AE = measurements['AE'];
     const AF = measurements['AF'];
     const AG = measurements['AG'];
+    const BD = measurements['BD'] || 0;
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
     const C = trilateratePoint(A, B, AC, BC);
     if (!C) return null;
-    const dCands = trilateratePointBothSides(A, C, AD, CD);
     let D: Point | null = null;
-    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (BD > 0) {
+      const cands = trilateratePointBothSides(B, C, BD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
+    if (!D && AD) {
+      const cands = trilateratePointBothSides(A, C, AD, CD);
+      if (cands) D = pickValidPoint(cands, [A, B, C], null);
+    }
     if (!D) return null;
-    const eCands = trilateratePointBothSides(A, D, AE, DE);
     let E: Point | null = null;
-    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
+    if (AE) {
+      const cands = trilateratePointBothSides(A, D, AE, DE);
+      if (cands) E = pickValidPoint(cands, [A, B, C, D], null);
+    }
     if (!E) return null;
-    const fCands = trilateratePointBothSides(A, E, AF, EF);
     let F: Point | null = null;
-    if (fCands) F = pickValidPoint(fCands, [A, B, C, D, E], null);
+    if (AF) {
+      const cands = trilateratePointBothSides(A, E, AF, EF);
+      if (cands) F = pickValidPoint(cands, [A, B, C, D, E], null);
+    }
     if (!F) return null;
-    const gCands = trilateratePointBothSides(A, F, AG, FG);
     let G: Point | null = null;
-    if (gCands) G = pickValidPoint(gCands, [A, B, C, D, E, F], null);
+    if (AG) {
+      const cands = trilateratePointBothSides(A, F, AG, FG);
+      if (cands) G = pickValidPoint(cands, [A, B, C, D, E, F], null);
+    }
     if (!G) return null;
     const hCands = trilateratePointBothSides(A, G, HA, GH);
     let H: Point | null = null;

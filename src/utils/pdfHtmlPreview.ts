@@ -67,21 +67,27 @@ function formatCurrencyPreview(amount: number, code: string): string {
   return `${symbol}${(amount || 0).toFixed(2)}`;
 }
 
+function formatImperialValue(mm: number): string {
+  const inches = mm * 0.0393701;
+  if (inches >= 12) {
+    const feet = Math.floor(inches / 12);
+    const rem = inches % 12;
+    return parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
+  }
+  return `${inches.toFixed(1)}"`;
+}
+
 function formatMeasurementPreview(mm: number, unit: 'metric' | 'imperial'): string {
   if (!mm || !isFinite(mm)) return 'Not provided';
   if (unit === 'imperial') {
-    const inches = mm * 0.0393701;
-    let imperial: string;
-    if (inches >= 12) {
-      const feet = Math.floor(inches / 12);
-      const rem = inches % 12;
-      imperial = parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
-    } else {
-      imperial = `${inches.toFixed(1)}"`;
-    }
-    return `${imperial} (${Math.round(mm)}mm)`;
+    return `${formatImperialValue(mm)} (${Math.round(mm)}mm)`;
   }
   return `${Math.round(mm)}mm`;
+}
+
+function formatMeasurementDual(mm: number): string {
+  if (!mm || !isFinite(mm)) return 'Not provided';
+  return `${Math.round(mm)}mm (${formatImperialValue(mm)})`;
 }
 
 function formatAreaPreview(mm2: number, unit: 'metric' | 'imperial'): string {
@@ -91,6 +97,12 @@ function formatAreaPreview(mm2: number, unit: 'metric' | 'imperial'): string {
     return `${sqft.toFixed(1)} ft\u00b2 (${m2.toFixed(2)} m\u00b2)`;
   }
   return `${(mm2 / 1000000).toFixed(2)} m\u00b2`;
+}
+
+function formatAreaDual(mm2: number): string {
+  const m2 = mm2 / 1000000;
+  const sqft = mm2 * (0.0393701 * 0.0393701) / 144;
+  return `${m2.toFixed(2)} m\u00b2 (${sqft.toFixed(1)} ft\u00b2)`;
 }
 
 type HtmlDensityPreset = {
@@ -132,7 +144,7 @@ function densityForBlock(block: PdfBlock, cfg: PdfTemplateConfig): 'comfortable'
   return (cfg.layout?.density || 'comfortable') as 'comfortable' | 'compact' | 'ultra';
 }
 
-function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveData | null): string {
+function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveData | null, fulfilment = false): string {
   const d = densityForBlock(block, cfg);
   const attrs: string[] = [
     `class="block-wrap density-${d}"`,
@@ -145,17 +157,17 @@ function wrapBlock(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveDat
     const h = Number((block.props || {}).height) || 16;
     attrs.push(`data-spacer-height="${h}"`);
   }
-  return `<div ${attrs.join(' ')}>${renderBlockHtml(block, cfg, live)}</div>`;
+  return `<div ${attrs.join(' ')}>${renderBlockHtml(block, cfg, live, fulfilment)}</div>`;
 }
 
-function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: PreviewLiveData | null): string {
+function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: PreviewLiveData | null, fulfilment = false): string {
   const out: string[] = [];
   let leftBuf: PdfBlock[] = [];
   let rightBuf: PdfBlock[] = [];
   const flush = () => {
     if (leftBuf.length === 0 && rightBuf.length === 0) return;
-    const leftHtml = leftBuf.map((x) => wrapBlock(x, cfg, live)).join('');
-    const rightHtml = rightBuf.map((x) => wrapBlock(x, cfg, live)).join('');
+    const leftHtml = leftBuf.map((x) => wrapBlock(x, cfg, live, fulfilment)).join('');
+    const rightHtml = rightBuf.map((x) => wrapBlock(x, cfg, live, fulfilment)).join('');
     out.push(`<div class="two-col"><div class="col">${leftHtml}</div><div class="col">${rightHtml}</div></div>`);
     leftBuf = [];
     rightBuf = [];
@@ -164,7 +176,7 @@ function renderGroupedBlocks(blocks: PdfBlock[], cfg: PdfTemplateConfig, live: P
     const col = getBlockColumn(block);
     if (col === 'full') {
       flush();
-      out.push(wrapBlock(block, cfg, live));
+      out.push(wrapBlock(block, cfg, live, fulfilment));
     } else if (col === 'left') {
       leftBuf.push(block);
     } else {
@@ -181,7 +193,7 @@ function isRowVisible(block: PdfBlock, rowKey: string): boolean {
   return showRows[rowKey] !== false;
 }
 
-function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveData | null): string {
+function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewLiveData | null, fulfilment = false): string {
   const p = block.props || {};
   const title = (p.title as string) || BLOCK_LABELS[block.type];
   const cfgData = live?.config_data || null;
@@ -192,6 +204,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
   const fabricColor = cfgData?.fabricColor || 'Domino Black';
   const corners = cfgData?.corners ?? 4;
   const unit: 'metric' | 'imperial' = cfgData?.unit || 'metric';
+  const fmtM = (mm: number) => fulfilment ? formatMeasurementDual(mm) : formatMeasurementPreview(mm, unit);
+  const fmtA = (mm2: number) => fulfilment ? formatAreaDual(mm2) : formatAreaPreview(mm2, unit);
   switch (block.type) {
     case 'summary': {
       const fabricationMethodSummary = cfgData?.measurementOption === 'adjust'
@@ -202,8 +216,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       if (isRowVisible(block, 'fabricMaterial')) sRows.push(`<div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>`);
       if (isRowVisible(block, 'fabricColor')) sRows.push(`<div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>`);
       if (isRowVisible(block, 'corners')) sRows.push(`<div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>`);
-      if (isRowVisible(block, 'totalArea')) sRows.push(`<div class="row"><span class="muted">Total Area</span><span class="val">${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)}</span></div>`);
-      if (isRowVisible(block, 'edgePerimeter')) sRows.push(`<div class="row"><span class="muted">Edge Perimeter</span><span class="val">${formatMeasurementPreview((calc?.perimeter || 14) * 1000, unit)}</span></div>`);
+      if (isRowVisible(block, 'totalArea')) sRows.push(`<div class="row"><span class="muted">Total Area</span><span class="val">${fmtA((calc?.area || 12.5) * 1000000)}</span></div>`);
+      if (isRowVisible(block, 'edgePerimeter')) sRows.push(`<div class="row"><span class="muted">Edge Perimeter</span><span class="val">${fmtM((calc?.perimeter || 14) * 1000)}</span></div>`);
       if (isRowVisible(block, 'edgeReinforcement')) sRows.push(`<div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${edgeLabel}</span></div>`);
       if (isRowVisible(block, 'thread')) sRows.push(`<div class="row"><span class="muted">Thread</span><span class="val">Sewn with SolarFix\u00AE PTFE thread</span></div>`);
       if (isRowVisible(block, 'fabricationMethod')) sRows.push(`<div class="row"><span class="muted">Fabrication Method</span><span class="val">${escapeHtml(fabricationMethodSummary)}</span></div>`);
@@ -216,12 +230,12 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
           const next = (i + 1) % corners;
           const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + next)}`;
           const mm = cfgData.measurements[key];
-          if (mm) edges.push(`<div class="row"><span class="muted">Edge ${key.charAt(0)} to ${key.charAt(1)}</span><span class="val">${formatMeasurementPreview(mm, unit)}</span></div>`);
+          if (mm) edges.push(`<div class="row"><span class="muted">Edge ${key.charAt(0)} to ${key.charAt(1)}</span><span class="val">${fmtM(mm)}</span></div>`);
         }
         const diagonalRows: string[] = [];
         for (const key of getDiagonalKeysForCorners(corners)) {
           const mm = cfgData.measurements[key];
-          if (mm) diagonalRows.push(`<div class="row"><span class="muted">Diagonal ${key.charAt(0)} to ${key.charAt(1)}</span><span class="val">${formatMeasurementPreview(mm, unit)}</span></div>`);
+          if (mm) diagonalRows.push(`<div class="row"><span class="muted">Diagonal ${key.charAt(0)} to ${key.charAt(1)}</span><span class="val">${fmtM(mm)}</span></div>`);
         }
         const edgesBlock = `<div style="margin-bottom:10px;"><div style="font-weight:700;color:${cfg.brand.accentDark};font-size:12px;margin-bottom:4px;">Edge Lengths</div>${edges.join('') || '<div class="row"><span class="muted">No edge measurements</span></div>'}</div>`;
         const diagonalsBlock = diagonalRows.length > 0
@@ -245,7 +259,7 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
           const letter = String.fromCharCode(65 + i);
           const t = cfgData.fixingTypes?.[i] || 'post';
           const o = cfgData.eyeOrientations?.[i] || 'horizontal';
-          return `<div class="row"><span class="muted">Corner ${letter}</span><span class="val">${formatMeasurementPreview(h || 0, unit)}, ${t}, ${o} eye</span></div>`;
+          return `<div class="row"><span class="muted">Corner ${letter}</span><span class="val">${fmtM(h || 0)}, ${t}, ${o} eye</span></div>`;
         }).join('');
         return `<h2>${escapeHtml(title)}</h2>${rows}`;
       }
@@ -259,8 +273,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
         const rows: string[] = [];
         rows.push(`<div class="row"><span class="muted">Shape Accuracy</span><span class="val">${Math.round(confidence.percentage)}% (${confidence.status})</span></div>`);
         if (confidence.measuredBD > 0) {
-          rows.push(`<div class="row"><span class="muted">Measured B-D</span><span class="val">${formatMeasurementPreview(confidence.measuredBD, unit)}</span></div>`);
-          rows.push(`<div class="row"><span class="muted">Expected B-D</span><span class="val">${formatMeasurementPreview(confidence.expectedBD, unit)}</span></div>`);
+          rows.push(`<div class="row"><span class="muted">Measured B-D</span><span class="val">${fmtM(confidence.measuredBD)}</span></div>`);
+          rows.push(`<div class="row"><span class="muted">Expected B-D</span><span class="val">${fmtM(confidence.expectedBD)}</span></div>`);
           rows.push(`<div class="row"><span class="muted">BD Deviation</span><span class="val">${confidence.bdDeviation.toFixed(1)}%</span></div>`);
         }
         if (heights && heights.length >= corners && heights.every(h => h > 0)) {
@@ -269,10 +283,10 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
           for (let i = 0; i < corners; i++) {
             const next = (i + 1) % corners;
             const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + next)}`;
-            if (projected[key]) rows.push(`<div class="row"><span class="muted">Edge ${key}</span><span class="val">${formatMeasurementPreview(projected[key], unit)}</span></div>`);
+            if (projected[key]) rows.push(`<div class="row"><span class="muted">Edge ${key}</span><span class="val">${fmtM(projected[key])}</span></div>`);
           }
           for (const key of getDiagonalKeysForCorners(corners)) {
-            if (projected[key]) rows.push(`<div class="row"><span class="muted">Diag ${key}</span><span class="val">${formatMeasurementPreview(projected[key], unit)}</span></div>`);
+            if (projected[key]) rows.push(`<div class="row"><span class="muted">Diag ${key}</span><span class="val">${fmtM(projected[key])}</span></div>`);
           }
         }
         return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
@@ -448,7 +462,7 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
     }
     case 'billOfMaterials':
       return `<h2>${escapeHtml(title)}</h2>
-        <div class="row"><span class="muted">${escapeHtml(fabricLabel)} - ${escapeHtml(fabricColor)} (${formatAreaPreview((calc?.area || 12.5) * 1000000, unit)})</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
+        <div class="row"><span class="muted">${escapeHtml(fabricLabel)} - ${escapeHtml(fabricColor)} (${fmtA((calc?.area || 12.5) * 1000000)})</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
         <div class="row"><span class="muted">Edge reinforcement</span><span class="val">Included</span></div>
         <div class="row"><span class="muted">Hardware Tensioning Kit (${corners}-corner pack)</span><span class="val">Included</span></div>
         <div class="row"><span class="val">Total (all-inclusive)</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`;
@@ -490,6 +504,8 @@ export interface BuildPreviewOptions {
    * matching A4 content width, no extra outer padding so html2canvas can paginate.
    */
   pageMode?: boolean;
+  /** When true, all measurements show metric-first with imperial in brackets. */
+  fulfilment?: boolean;
 }
 
 export function buildQuotePreviewHtml(
@@ -542,7 +558,7 @@ export function buildQuotePreviewHtml(
         <p class="tagline">${escapeHtml(cfg.header.tagline)}</p>
       </div>
     </div>
-    ${renderGroupedBlocks(blocks.filter((x) => x.visible), cfg, live)}
+    ${renderGroupedBlocks(blocks.filter((x) => x.visible), cfg, live, options.fulfilment)}
     <div class="footer">
       <div>${escapeHtml(cfg.footer.line1)}</div>
       <div>${escapeHtml(cfg.footer.line2)}</div>
