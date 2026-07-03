@@ -2,6 +2,7 @@ export type BlockType =
   | 'summary'
   | 'measurements'
   | 'anchorPoints'
+  | 'shapeVerification'
   | 'hardwareBreakdown'
   | 'priceBreakdown'
   | 'guarantee'
@@ -43,6 +44,7 @@ export const BLOCK_LABELS: Record<BlockType, string> = {
   summary: 'Shade Sail Summary',
   measurements: 'Precise Measurements',
   anchorPoints: 'Anchor Point Configuration',
+  shapeVerification: 'Shape Verification & 3D Projection',
   hardwareBreakdown: 'Corner Hardware Breakdown',
   priceBreakdown: 'Price Breakdown',
   guarantee: 'Premium Quality Guarantee',
@@ -100,6 +102,7 @@ export const DEFAULT_FULFILMENT_BLOCKS: PdfBlock[] = [
   { id: 'f-summary', type: 'summary', visible: true, props: { title: 'Configuration Summary' } },
   { id: 'f-measurements', type: 'measurements', visible: true, props: { title: 'Measurements' } },
   { id: 'f-anchor', type: 'anchorPoints', visible: true, props: { title: 'Anchor Points' } },
+  { id: 'f-verify', type: 'shapeVerification', visible: true, props: { title: 'Shape Verification' } },
   { id: 'f-hardware', type: 'hardwareBreakdown', visible: true, props: { title: 'Hardware Breakdown' } },
   { id: 'f-steps', type: 'stepSelections', visible: true, props: { title: 'Step-by-Step Selections' } },
 ];

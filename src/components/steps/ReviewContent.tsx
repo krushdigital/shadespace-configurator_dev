@@ -8,7 +8,7 @@ import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { AccordionItem } from '../ui/AccordionItem';
 import { useFabricCatalog } from '../../hooks/useFabricCatalog';
-import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided } from '../../utils/geometry';
+import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided, computeShapeConfidence } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
 import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
@@ -478,14 +478,7 @@ console.log('✌️result --->', result);
       const diagonalMeasurementsObj: { [key: string]: { unit: string; formatted: string } } = {};
 
       // Use the same diagonal keys that are displayed in the UI
-      const diagonalKeys = [];
-      if (config.corners === 4) {
-        diagonalKeys.push('AC', 'BD');
-      } else if (config.corners === 5) {
-        diagonalKeys.push('AC', 'AD', 'CE', 'BD', 'BE');
-      } else if (config.corners === 6) {
-        diagonalKeys.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
-      }
+      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
 
       diagonalKeys.forEach((diagonalKey) => {
         const measurement = config.measurements[diagonalKey];
@@ -633,6 +626,34 @@ console.log('✌️result --->', result);
             isMobile={isMobile}
           />
         )}
+
+        {/* Shape Confidence Score */}
+        {config.corners >= 4 && allDiagonalsEntered && (() => {
+          const confidence = computeShapeConfidence(config.measurements, config.corners, config.fixingHeights);
+          if (confidence.status === 'pending') return null;
+          const statusColors: Record<string, string> = {
+            excellent: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+            good: 'bg-blue-50 border-blue-200 text-blue-800',
+            warning: 'bg-amber-50 border-amber-200 text-amber-800',
+            error: 'bg-red-50 border-red-200 text-red-800',
+            pending: 'bg-slate-50 border-slate-200 text-slate-600'
+          };
+          return (
+            <div className={`p-3 sm:p-4 rounded-xl border ${statusColors[confidence.status]}`}>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">
+                  Shape Accuracy: {Math.round(confidence.percentage)}%
+                </span>
+                {confidence.measuredBD > 0 && (
+                  <span className="text-xs opacity-70">
+                    BD deviation: {confidence.bdDeviation.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+              <p className="text-xs mt-1 opacity-80">{confidence.message}</p>
+            </div>
+          );
+        })()}
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}

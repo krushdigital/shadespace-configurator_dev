@@ -2236,7 +2236,8 @@ export function ShadeConfigurator() {
           config.measurements,
           config.corners,
           600,
-          600
+          600,
+          config.fixingHeights
         );
 
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {

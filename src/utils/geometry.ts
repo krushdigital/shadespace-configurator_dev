@@ -250,12 +250,8 @@ export function validateMeasurements(measurements: {[key: string]: number}, corn
   return { errors, typoSuggestions };
 }
 
-export function getHeightRequirement(corners: number, measurementOption: 'adjust' | 'exact'): 'none' | 'optional' | 'required-at-checkout' {
+export function getHeightRequirement(corners: number, _measurementOption: 'adjust' | 'exact'): 'none' | 'optional' | 'required-at-checkout' {
   if (corners === 3) {
-    return 'none';
-  }
-
-  if (measurementOption !== 'adjust') {
     return 'none';
   }
 
@@ -270,8 +266,171 @@ export function getHeightRequirement(corners: number, measurementOption: 'adjust
   return 'none';
 }
 
-export function isHeightRequiredForCheckout(corners: number, measurementOption: 'adjust' | 'exact'): boolean {
-  return corners >= 5 && measurementOption === 'adjust';
+export function isHeightRequiredForCheckout(corners: number, _measurementOption: 'adjust' | 'exact'): boolean {
+  return corners >= 5;
+}
+
+/**
+ * Project a 3D tape-measure distance to its horizontal component using heights.
+ * When measuring between fixing points at different heights, the tape captures the
+ * hypotenuse. This function returns the horizontal leg.
+ */
+export function projectToHorizontal(measured3D: number, heightA: number, heightB: number): number {
+  const heightDiff = Math.abs(heightA - heightB);
+  if (measured3D <= heightDiff) return 0;
+  return Math.sqrt(measured3D * measured3D - heightDiff * heightDiff);
+}
+
+/**
+ * Check if a measurement is physically possible given the heights of its endpoints.
+ * A tape-measure distance cannot be shorter than the vertical drop between the points.
+ */
+export function isPhysicallyPossible(measured3D: number, heightA: number, heightB: number): boolean {
+  return measured3D >= Math.abs(heightA - heightB);
+}
+
+/**
+ * Project all measurements to horizontal using heights (for 3D-aware reconstruction).
+ * Returns a new measurements object with projected values.
+ * Only projects if valid heights are provided for both endpoints.
+ */
+export function projectMeasurementsToHorizontal(
+  measurements: { [key: string]: number },
+  corners: number,
+  heights: number[]
+): { [key: string]: number } {
+  if (!heights || heights.length < corners || heights.some(h => !h || h <= 0)) {
+    return measurements;
+  }
+
+  const projected: { [key: string]: number } = {};
+
+  for (const [key, value] of Object.entries(measurements)) {
+    if (!value || value <= 0) continue;
+
+    const iA = key.charCodeAt(0) - 65;
+    const iB = key.charCodeAt(1) - 65;
+
+    if (iA >= 0 && iA < corners && iB >= 0 && iB < corners) {
+      const hA = heights[iA];
+      const hB = heights[iB];
+      if (hA > 0 && hB > 0) {
+        const horiz = projectToHorizontal(value, hA, hB);
+        projected[key] = horiz > 0 ? horiz : value;
+      } else {
+        projected[key] = value;
+      }
+    } else {
+      projected[key] = value;
+    }
+  }
+
+  return projected;
+}
+
+export interface ShapeConfidenceResult {
+  percentage: number;
+  bdDeviation: number;
+  expectedBD: number;
+  measuredBD: number;
+  status: 'excellent' | 'good' | 'warning' | 'error' | 'pending';
+  message: string;
+  impossibleMeasurements: string[];
+}
+
+/**
+ * Compute shape confidence by cross-validating the BD verification diagonal
+ * against the shape reconstructed from fan diagonals.
+ */
+export function computeShapeConfidence(
+  measurements: { [key: string]: number },
+  corners: number,
+  heights?: number[]
+): ShapeConfidenceResult {
+  const pending: ShapeConfidenceResult = {
+    percentage: 0, bdDeviation: 0, expectedBD: 0, measuredBD: 0,
+    status: 'pending', message: 'Enter all required measurements to see accuracy',
+    impossibleMeasurements: []
+  };
+
+  if (corners < 4) return { ...pending, percentage: 100, status: 'excellent', message: 'Triangle is fully defined by edge lengths' };
+
+  const impossibleMeasurements: string[] = [];
+  if (heights && heights.length >= corners && heights.every(h => h > 0)) {
+    for (const [key, value] of Object.entries(measurements)) {
+      if (!value || value <= 0) continue;
+      const iA = key.charCodeAt(0) - 65;
+      const iB = key.charCodeAt(1) - 65;
+      if (iA >= 0 && iA < corners && iB >= 0 && iB < corners) {
+        if (!isPhysicallyPossible(value, heights[iA], heights[iB])) {
+          impossibleMeasurements.push(key);
+        }
+      }
+    }
+  }
+
+  if (impossibleMeasurements.length > 0) {
+    return {
+      percentage: 0, bdDeviation: 0, expectedBD: 0, measuredBD: 0,
+      status: 'error',
+      message: `Measurement${impossibleMeasurements.length > 1 ? 's' : ''} ${impossibleMeasurements.join(', ')} cannot be shorter than the height difference between endpoints`,
+      impossibleMeasurements
+    };
+  }
+
+  const measuredBD = measurements['BD'] || 0;
+  if (!measuredBD) return { ...pending, impossibleMeasurements: [] };
+
+  const hasHeights = heights && heights.length >= corners && heights.every(h => h > 0);
+  const projMeasurements = hasHeights
+    ? projectMeasurementsToHorizontal(measurements, corners, heights)
+    : measurements;
+
+  if (!hasRequiredMeasurements(projMeasurements, corners)) {
+    return { ...pending, impossibleMeasurements: [] };
+  }
+
+  const points = reconstructPolygonRaw(projMeasurements, corners);
+  if (!points) {
+    return {
+      percentage: 0, bdDeviation: 0, expectedBD: measuredBD, measuredBD,
+      status: 'error', message: 'Shape could not be reconstructed from your measurements. Please re-check values.',
+      impossibleMeasurements: []
+    };
+  }
+
+  const B = points[1];
+  const D = points[3];
+  const horizontalBD = Math.sqrt((B.x - D.x) ** 2 + (B.y - D.y) ** 2);
+
+  let expectedBD3D: number;
+  if (hasHeights) {
+    const heightDiffBD = Math.abs(heights[1] - heights[3]);
+    expectedBD3D = Math.sqrt(horizontalBD * horizontalBD + heightDiffBD * heightDiffBD);
+  } else {
+    expectedBD3D = horizontalBD;
+  }
+
+  const deviation = Math.abs(measuredBD - expectedBD3D) / expectedBD3D * 100;
+  const percentage = Math.max(0, Math.min(100, 100 - deviation * 10));
+
+  let status: ShapeConfidenceResult['status'];
+  let message: string;
+  if (percentage >= 95) {
+    status = 'excellent';
+    message = 'Your measurements are consistent and the shape is well-defined';
+  } else if (percentage >= 85) {
+    status = 'good';
+    message = 'Your measurements are consistent with minor variation';
+  } else if (percentage >= 70) {
+    status = 'warning';
+    message = 'Your verification measurement (B to D) differs from expected. Please double-check your measurements.';
+  } else {
+    status = 'error';
+    message = `Your measurements appear inconsistent. Expected B to D: ~${Math.round(expectedBD3D)}mm, Measured: ${Math.round(measuredBD)}mm`;
+  }
+
+  return { percentage, bdDeviation: deviation, expectedBD: expectedBD3D, measuredBD, status, message, impossibleMeasurements: [] };
 }
 
 export function areHeightsProvided(heights: number[], corners: number): boolean {
@@ -395,13 +554,13 @@ export function getDiagonalKeysForCorners(corners: number): string[] {
   if (corners === 4) {
     diagonals.push('AC', 'BD');
   } else if (corners === 5) {
-    diagonals.push('AC', 'AD', 'CE', 'BD', 'BE');
+    diagonals.push('AC', 'AD', 'BD');
   } else if (corners === 6) {
-    diagonals.push('AC', 'AD', 'AE', 'BD', 'BE', 'BF', 'CE', 'CF', 'DF');
+    diagonals.push('AC', 'AD', 'AE', 'BD');
   } else if (corners === 7) {
-    diagonals.push('AC', 'AD', 'AE', 'AF', 'BD', 'BE', 'BF', 'BG', 'CE', 'CF', 'CG', 'DF', 'DG', 'EG');
+    diagonals.push('AC', 'AD', 'AE', 'AF', 'BD');
   } else if (corners === 8) {
-    diagonals.push('AC', 'AD', 'AE', 'AF', 'AG', 'BD', 'BE', 'BF', 'BG', 'BH', 'CE', 'CF', 'CG', 'CH', 'DF', 'DG', 'DH', 'EG', 'EH', 'FH');
+    diagonals.push('AC', 'AD', 'AE', 'AF', 'AG', 'BD');
   }
 
   return diagonals;
@@ -496,27 +655,25 @@ export function getNextRequiredDiagonals(
   corners: number
 ): string[] {
   if (corners === 4) {
-    if (!measurements['AC'] && !measurements['BD']) return ['AC'];
-    return [];
+    const needed: string[] = [];
+    if (!measurements['AC']) needed.push('AC');
+    if (!measurements['BD']) needed.push('BD');
+    return needed;
   }
   if (corners === 5) {
     const needed: string[] = [];
     if (!measurements['AC']) needed.push('AC');
     if (!measurements['AD']) needed.push('AD');
-    if (needed.length > 0) return needed;
-    const hasThird = measurements['CE'] || measurements['BD'] || measurements['BE'];
-    if (!hasThird) return ['CE'];
-    return [];
+    if (!measurements['BD']) needed.push('BD');
+    return needed;
   }
   if (corners === 6) {
     const needed: string[] = [];
     if (!measurements['AC']) needed.push('AC');
     if (!measurements['AD']) needed.push('AD');
     if (!measurements['AE']) needed.push('AE');
-    if (needed.length > 0) return needed;
-    const hasFourth = measurements['BD'] || measurements['BE'] || measurements['BF'] || measurements['CE'] || measurements['CF'] || measurements['DF'];
-    if (!hasFourth) return ['CE'];
-    return [];
+    if (!measurements['BD']) needed.push('BD');
+    return needed;
   }
   if (corners === 7) {
     const needed: string[] = [];
@@ -524,6 +681,7 @@ export function getNextRequiredDiagonals(
     if (!measurements['AD']) needed.push('AD');
     if (!measurements['AE']) needed.push('AE');
     if (!measurements['AF']) needed.push('AF');
+    if (!measurements['BD']) needed.push('BD');
     return needed;
   }
   if (corners === 8) {
@@ -533,6 +691,7 @@ export function getNextRequiredDiagonals(
     if (!measurements['AE']) needed.push('AE');
     if (!measurements['AF']) needed.push('AF');
     if (!measurements['AG']) needed.push('AG');
+    if (!measurements['BD']) needed.push('BD');
     return needed;
   }
   return [];
@@ -1199,27 +1358,32 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
  * @param corners Number of corners (3, 4, 5, or 6)
  * @returns Area in square meters
  */
-export function calculatePolygonArea(measurements: { [key: string]: number }, corners: number): number {
+export function calculatePolygonArea(measurements: { [key: string]: number }, corners: number, heights?: number[]): number {
   if (corners < 3 || corners > 8) return 0;
+
+  // Project measurements to horizontal if heights available
+  const m = (heights && heights.length >= corners && heights.every(h => h > 0))
+    ? projectMeasurementsToHorizontal(measurements, corners, heights)
+    : measurements;
 
   let totalAreaMm2 = 0;
 
   if (corners === 3) {
     // Triangle: use sides AB, BC, CA
-    const AB = measurements['AB'] || 0;
-    const BC = measurements['BC'] || 0;
-    const CA = measurements['CA'] || 0;
+    const AB = m['AB'] || 0;
+    const BC = m['BC'] || 0;
+    const CA = m['CA'] || 0;
 
     if (AB > 0 && BC > 0 && CA > 0) {
       totalAreaMm2 = calculateTriangleArea(AB, BC, CA);
     }
   } else if (corners === 4) {
     // Quadrilateral: triangulate into ABC and ACD using diagonal AC
-    const AB = measurements['AB'] || 0;
-    const BC = measurements['BC'] || 0;
-    const CD = measurements['CD'] || 0;
-    const DA = measurements['DA'] || 0;
-    const AC = measurements['AC'] || 0;
+    const AB = m['AB'] || 0;
+    const BC = m['BC'] || 0;
+    const CD = m['CD'] || 0;
+    const DA = m['DA'] || 0;
+    const AC = m['AC'] || 0;
 
     if (AB > 0 && BC > 0 && AC > 0) {
       totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
@@ -1229,14 +1393,14 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
     }
   } else if (corners === 5) {
     // Pentagon: triangulate into ABC, ACD, ADE using diagonals AC and AD
-    const AB = measurements['AB'] || 0;
-    const BC = measurements['BC'] || 0;
-    const CD = measurements['CD'] || 0;
-    const DE = measurements['DE'] || 0;
-    const EA = measurements['EA'] || 0;
-    const AC = measurements['AC'] || 0;
-    const AD = measurements['AD'] || 0;
-    
+    const AB = m['AB'] || 0;
+    const BC = m['BC'] || 0;
+    const CD = m['CD'] || 0;
+    const DE = m['DE'] || 0;
+    const EA = m['EA'] || 0;
+    const AC = m['AC'] || 0;
+    const AD = m['AD'] || 0;
+
     if (AB > 0 && BC > 0 && AC > 0) {
       totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
     }
@@ -1248,16 +1412,16 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
     }
   } else if (corners === 6) {
     // Hexagon: triangulate into ABC, ACD, ADE, AEF using diagonals AC, AD, AE
-    const AB = measurements['AB'] || 0;
-    const BC = measurements['BC'] || 0;
-    const CD = measurements['CD'] || 0;
-    const DE = measurements['DE'] || 0;
-    const EF = measurements['EF'] || 0;
-    const FA = measurements['FA'] || 0;
-    const AC = measurements['AC'] || 0;
-    const AD = measurements['AD'] || 0;
-    const AE = measurements['AE'] || 0;
-    
+    const AB = m['AB'] || 0;
+    const BC = m['BC'] || 0;
+    const CD = m['CD'] || 0;
+    const DE = m['DE'] || 0;
+    const EF = m['EF'] || 0;
+    const FA = m['FA'] || 0;
+    const AC = m['AC'] || 0;
+    const AD = m['AD'] || 0;
+    const AE = m['AE'] || 0;
+
     if (AB > 0 && BC > 0 && AC > 0) {
       totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
     }
@@ -1271,17 +1435,17 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
       totalAreaMm2 += calculateTriangleArea(AE, EF, FA);
     }
   } else if (corners === 7) {
-    const AB = measurements['AB'] || 0;
-    const BC = measurements['BC'] || 0;
-    const CD = measurements['CD'] || 0;
-    const DE = measurements['DE'] || 0;
-    const EF = measurements['EF'] || 0;
-    const FG = measurements['FG'] || 0;
-    const GA = measurements['GA'] || 0;
-    const AC = measurements['AC'] || 0;
-    const AD = measurements['AD'] || 0;
-    const AE = measurements['AE'] || 0;
-    const AF = measurements['AF'] || 0;
+    const AB = m['AB'] || 0;
+    const BC = m['BC'] || 0;
+    const CD = m['CD'] || 0;
+    const DE = m['DE'] || 0;
+    const EF = m['EF'] || 0;
+    const FG = m['FG'] || 0;
+    const GA = m['GA'] || 0;
+    const AC = m['AC'] || 0;
+    const AD = m['AD'] || 0;
+    const AE = m['AE'] || 0;
+    const AF = m['AF'] || 0;
 
     if (AB > 0 && BC > 0 && AC > 0) totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
     if (AC > 0 && CD > 0 && AD > 0) totalAreaMm2 += calculateTriangleArea(AC, CD, AD);
@@ -1289,19 +1453,19 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
     if (AE > 0 && EF > 0 && AF > 0) totalAreaMm2 += calculateTriangleArea(AE, EF, AF);
     if (AF > 0 && FG > 0 && GA > 0) totalAreaMm2 += calculateTriangleArea(AF, FG, GA);
   } else if (corners === 8) {
-    const AB = measurements['AB'] || 0;
-    const BC = measurements['BC'] || 0;
-    const CD = measurements['CD'] || 0;
-    const DE = measurements['DE'] || 0;
-    const EF = measurements['EF'] || 0;
-    const FG = measurements['FG'] || 0;
-    const GH = measurements['GH'] || 0;
-    const HA = measurements['HA'] || 0;
-    const AC = measurements['AC'] || 0;
-    const AD = measurements['AD'] || 0;
-    const AE = measurements['AE'] || 0;
-    const AF = measurements['AF'] || 0;
-    const AG = measurements['AG'] || 0;
+    const AB = m['AB'] || 0;
+    const BC = m['BC'] || 0;
+    const CD = m['CD'] || 0;
+    const DE = m['DE'] || 0;
+    const EF = m['EF'] || 0;
+    const FG = m['FG'] || 0;
+    const GH = m['GH'] || 0;
+    const HA = m['HA'] || 0;
+    const AC = m['AC'] || 0;
+    const AD = m['AD'] || 0;
+    const AE = m['AE'] || 0;
+    const AF = m['AF'] || 0;
+    const AG = m['AG'] || 0;
 
     if (AB > 0 && BC > 0 && AC > 0) totalAreaMm2 += calculateTriangleArea(AB, BC, AC);
     if (AC > 0 && CD > 0 && AD > 0) totalAreaMm2 += calculateTriangleArea(AC, CD, AD);
@@ -1531,32 +1695,19 @@ export function hasRequiredMeasurements(
   if (corners === 3) {
     return !!(measurements['AB'] && measurements['BC'] && measurements['CA']);
   } else if (corners === 4) {
-    // For 4 corners, we need all edges
-    return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA']);
+    return !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DA'] && measurements['AC']);
   } else if (corners === 5) {
-    // For 5 corners we need all edges + AC + AD + at least one of (CE, BD, BE)
-    // AC places C from A,B. AD places D from A,C. The third diagonal constrains E.
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EA']);
-    const hasAC = !!measurements['AC'];
-    const hasAD = !!measurements['AD'];
-    const hasThirdDiag = !!(measurements['CE'] || measurements['BD'] || measurements['BE']);
-    return edges && hasAC && hasAD && hasThirdDiag;
+    return edges && !!measurements['AC'] && !!measurements['AD'];
   } else if (corners === 6) {
-    // For 6 corners we need all edges + AC + AD + AE + at least one of (BD, BE, BF, CE, CF, DF)
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FA']);
-    const hasAC = !!measurements['AC'];
-    const hasAD = !!measurements['AD'];
-    const hasAE = !!measurements['AE'];
-    const hasFourthDiag = !!(measurements['BD'] || measurements['BE'] || measurements['BF'] || measurements['CE'] || measurements['CF'] || measurements['DF']);
-    return edges && hasAC && hasAD && hasAE && hasFourthDiag;
+    return edges && !!measurements['AC'] && !!measurements['AD'] && !!measurements['AE'];
   } else if (corners === 7) {
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GA']);
-    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF']);
-    return edges && minDiagonals;
+    return edges && !!measurements['AC'] && !!measurements['AD'] && !!measurements['AE'] && !!measurements['AF'];
   } else if (corners === 8) {
     const edges = !!(measurements['AB'] && measurements['BC'] && measurements['CD'] && measurements['DE'] && measurements['EF'] && measurements['FG'] && measurements['GH'] && measurements['HA']);
-    const minDiagonals = !!(measurements['AC'] && measurements['AD'] && measurements['AE'] && measurements['AF'] && measurements['AG']);
-    return edges && minDiagonals;
+    return edges && !!measurements['AC'] && !!measurements['AD'] && !!measurements['AE'] && !!measurements['AF'] && !!measurements['AG'];
   }
   return false;
 }
@@ -1568,20 +1719,26 @@ export function reconstructPolygonFromMeasurements(
   measurements: { [key: string]: number },
   corners: number,
   canvasWidth: number = 600,
-  canvasHeight: number = 600
+  canvasHeight: number = 600,
+  heights?: number[]
 ): Point[] | null {
+  // Project measurements to horizontal if heights are provided
+  const projMeasurements = (heights && heights.length >= corners && heights.every(h => h > 0))
+    ? projectMeasurementsToHorizontal(measurements, corners, heights)
+    : measurements;
+
   // Check if we have required measurements
-  if (!hasRequiredMeasurements(measurements, corners)) {
+  if (!hasRequiredMeasurements(projMeasurements, corners)) {
     console.log('Reconstruction skipped: missing required measurements', {
       corners,
-      measurements: Object.keys(measurements),
-      hasRequired: hasRequiredMeasurements(measurements, corners)
+      measurements: Object.keys(projMeasurements),
+      hasRequired: hasRequiredMeasurements(projMeasurements, corners)
     });
     return null;
   }
 
   // Validate geometry first
-  const validation = validatePolygonGeometry(measurements, corners);
+  const validation = validatePolygonGeometry(projMeasurements, corners);
   if (!validation.isValid) {
     console.warn('Reconstruction failed: geometry validation errors', {
       corners,
@@ -1590,13 +1747,16 @@ export function reconstructPolygonFromMeasurements(
     return null;
   }
 
+  // Use projected measurements for reconstruction
+  const m = projMeasurements;
+
   let points: Point[] = [];
 
   if (corners === 3) {
     // Reconstruct triangle
-    const AB = measurements['AB'];
-    const BC = measurements['BC'];
-    const CA = measurements['CA'];
+    const AB = m['AB'];
+    const BC = m['BC'];
+    const CA = m['CA'];
 
     // Place A at origin
     const A: Point = { x: 0, y: 0 };
@@ -1612,12 +1772,12 @@ export function reconstructPolygonFromMeasurements(
 
   } else if (corners === 4) {
     // Reconstruct quadrilateral
-    const AB = measurements['AB'];
-    const BC = measurements['BC'];
-    const CD = measurements['CD'];
-    const DA = measurements['DA'];
-    const AC = measurements['AC'];
-    const BD = measurements['BD'];
+    const AB = m['AB'];
+    const BC = m['BC'];
+    const CD = m['CD'];
+    const DA = m['DA'];
+    const AC = m['AC'];
+    const BD = m['BD'];
 
     console.log('4-corner reconstruction:', {
       hasAC: !!AC,
@@ -1679,16 +1839,16 @@ export function reconstructPolygonFromMeasurements(
     points = [A, B, C, D];
 
   } else if (corners === 5) {
-    const AB = measurements['AB'];
-    const BC = measurements['BC'];
-    const CD = measurements['CD'];
-    const DE = measurements['DE'];
-    const EA = measurements['EA'];
-    const AC = measurements['AC'];
-    const AD = measurements['AD'];
-    const BD = measurements['BD'];
-    const BE = measurements['BE'];
-    const CE = measurements['CE'];
+    const AB = m['AB'];
+    const BC = m['BC'];
+    const CD = m['CD'];
+    const DE = m['DE'];
+    const EA = m['EA'];
+    const AC = m['AC'];
+    const AD = m['AD'];
+    const BD = m['BD'];
+    const BE = m['BE'];
+    const CE = m['CE'];
 
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
@@ -1765,21 +1925,21 @@ export function reconstructPolygonFromMeasurements(
     }
 
   } else if (corners === 6) {
-    const AB = measurements['AB'];
-    const BC = measurements['BC'];
-    const CD = measurements['CD'];
-    const DE = measurements['DE'];
-    const EF = measurements['EF'];
-    const FA = measurements['FA'];
-    const AC = measurements['AC'];
-    const AD = measurements['AD'];
-    const AE = measurements['AE'];
-    const BD = measurements['BD'];
-    const BE = measurements['BE'];
-    const BF = measurements['BF'];
-    const CE = measurements['CE'];
-    const CF = measurements['CF'];
-    const DF = measurements['DF'];
+    const AB = m['AB'];
+    const BC = m['BC'];
+    const CD = m['CD'];
+    const DE = m['DE'];
+    const EF = m['EF'];
+    const FA = m['FA'];
+    const AC = m['AC'];
+    const AD = m['AD'];
+    const AE = m['AE'];
+    const BD = m['BD'];
+    const BE = m['BE'];
+    const BF = m['BF'];
+    const CE = m['CE'];
+    const CF = m['CF'];
+    const DF = m['DF'];
 
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
@@ -1842,17 +2002,17 @@ export function reconstructPolygonFromMeasurements(
     }
 
   } else if (corners === 7) {
-    const AB = measurements['AB'];
-    const BC = measurements['BC'];
-    const CD = measurements['CD'];
-    const DE = measurements['DE'];
-    const EF = measurements['EF'];
-    const FG = measurements['FG'];
-    const GA = measurements['GA'];
-    const AC = measurements['AC'];
-    const AD = measurements['AD'];
-    const AE = measurements['AE'];
-    const AF = measurements['AF'];
+    const AB = m['AB'];
+    const BC = m['BC'];
+    const CD = m['CD'];
+    const DE = m['DE'];
+    const EF = m['EF'];
+    const FG = m['FG'];
+    const GA = m['GA'];
+    const AC = m['AC'];
+    const AD = m['AD'];
+    const AE = m['AE'];
+    const AF = m['AF'];
 
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
@@ -1885,19 +2045,19 @@ export function reconstructPolygonFromMeasurements(
     if (!isSimplePolygon(points)) return null;
 
   } else if (corners === 8) {
-    const AB = measurements['AB'];
-    const BC = measurements['BC'];
-    const CD = measurements['CD'];
-    const DE = measurements['DE'];
-    const EF = measurements['EF'];
-    const FG = measurements['FG'];
-    const GH = measurements['GH'];
-    const HA = measurements['HA'];
-    const AC = measurements['AC'];
-    const AD = measurements['AD'];
-    const AE = measurements['AE'];
-    const AF = measurements['AF'];
-    const AG = measurements['AG'];
+    const AB = m['AB'];
+    const BC = m['BC'];
+    const CD = m['CD'];
+    const DE = m['DE'];
+    const EF = m['EF'];
+    const FG = m['FG'];
+    const GH = m['GH'];
+    const HA = m['HA'];
+    const AC = m['AC'];
+    const AD = m['AD'];
+    const AE = m['AE'];
+    const AF = m['AF'];
+    const AG = m['AG'];
 
     const A: Point = { x: 0, y: 0 };
     const B: Point = { x: AB, y: 0 };
@@ -1937,4 +2097,179 @@ export function reconstructPolygonFromMeasurements(
 
   // Scale and center the polygon to fit canvas
   return scalePolygonToCanvas(points, canvasWidth, canvasHeight);
+}
+
+/**
+ * Reconstruct polygon without scaling - returns raw coordinates in mm.
+ * Used for confidence scoring and 3D position computation.
+ */
+function reconstructPolygonRaw(
+  measurements: { [key: string]: number },
+  corners: number
+): Point[] | null {
+  if (!hasRequiredMeasurements(measurements, corners)) return null;
+
+  const validation = validatePolygonGeometry(measurements, corners);
+  if (!validation.isValid) return null;
+
+  let points: Point[] = [];
+
+  if (corners === 3) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CA = measurements['CA'];
+    const A: Point = { x: 0, y: 0 };
+    const B: Point = { x: AB, y: 0 };
+    const C = trilateratePoint(A, B, CA, BC);
+    if (!C) return null;
+    points = [A, B, C];
+  } else if (corners === 4) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DA = measurements['DA'];
+    const AC = measurements['AC'] || 0;
+    const BD = measurements['BD'] || 0;
+    const A: Point = { x: 0, y: 0 };
+    const B: Point = { x: AB, y: 0 };
+    let C: Point | null = null;
+    if (AC > 0) {
+      C = trilateratePoint(A, B, AC, BC);
+    }
+    if (!C) return null;
+    let D: Point | null = null;
+    if (BD > 0) {
+      const dCands = trilateratePointBothSides(B, C, BD, CD);
+      if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    }
+    if (!D) {
+      const dCands = trilateratePointBothSides(A, C, DA, CD);
+      if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    }
+    if (!D) return null;
+    points = [A, B, C, D];
+  } else if (corners === 5) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EA = measurements['EA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const A: Point = { x: 0, y: 0 };
+    const B: Point = { x: AB, y: 0 };
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+    const dCands = trilateratePointBothSides(A, C, AD, CD);
+    let D: Point | null = null;
+    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (!D) return null;
+    const eCands = trilateratePointBothSides(A, D, EA, DE);
+    let E: Point | null = null;
+    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
+    if (!E) return null;
+    points = [A, B, C, D, E];
+  } else if (corners === 6) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EF = measurements['EF'];
+    const FA = measurements['FA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const AE = measurements['AE'];
+    const A: Point = { x: 0, y: 0 };
+    const B: Point = { x: AB, y: 0 };
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+    const dCands = trilateratePointBothSides(A, C, AD, CD);
+    let D: Point | null = null;
+    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (!D) return null;
+    const eCands = trilateratePointBothSides(A, D, AE, DE);
+    let E: Point | null = null;
+    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
+    if (!E) return null;
+    const fCands = trilateratePointBothSides(A, E, FA, EF);
+    let F: Point | null = null;
+    if (fCands) F = pickValidPoint(fCands, [A, B, C, D, E], null);
+    if (!F) return null;
+    points = [A, B, C, D, E, F];
+  } else if (corners === 7) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EF = measurements['EF'];
+    const FG = measurements['FG'];
+    const GA = measurements['GA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const AE = measurements['AE'];
+    const AF = measurements['AF'];
+    const A: Point = { x: 0, y: 0 };
+    const B: Point = { x: AB, y: 0 };
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+    const dCands = trilateratePointBothSides(A, C, AD, CD);
+    let D: Point | null = null;
+    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (!D) return null;
+    const eCands = trilateratePointBothSides(A, D, AE, DE);
+    let E: Point | null = null;
+    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
+    if (!E) return null;
+    const fCands = trilateratePointBothSides(A, E, AF, EF);
+    let F: Point | null = null;
+    if (fCands) F = pickValidPoint(fCands, [A, B, C, D, E], null);
+    if (!F) return null;
+    const gCands = trilateratePointBothSides(A, F, GA, FG);
+    let G: Point | null = null;
+    if (gCands) G = pickValidPoint(gCands, [A, B, C, D, E, F], null);
+    if (!G) return null;
+    points = [A, B, C, D, E, F, G];
+  } else if (corners === 8) {
+    const AB = measurements['AB'];
+    const BC = measurements['BC'];
+    const CD = measurements['CD'];
+    const DE = measurements['DE'];
+    const EF = measurements['EF'];
+    const FG = measurements['FG'];
+    const GH = measurements['GH'];
+    const HA = measurements['HA'];
+    const AC = measurements['AC'];
+    const AD = measurements['AD'];
+    const AE = measurements['AE'];
+    const AF = measurements['AF'];
+    const AG = measurements['AG'];
+    const A: Point = { x: 0, y: 0 };
+    const B: Point = { x: AB, y: 0 };
+    const C = trilateratePoint(A, B, AC, BC);
+    if (!C) return null;
+    const dCands = trilateratePointBothSides(A, C, AD, CD);
+    let D: Point | null = null;
+    if (dCands) D = pickValidPoint(dCands, [A, B, C], null);
+    if (!D) return null;
+    const eCands = trilateratePointBothSides(A, D, AE, DE);
+    let E: Point | null = null;
+    if (eCands) E = pickValidPoint(eCands, [A, B, C, D], null);
+    if (!E) return null;
+    const fCands = trilateratePointBothSides(A, E, AF, EF);
+    let F: Point | null = null;
+    if (fCands) F = pickValidPoint(fCands, [A, B, C, D, E], null);
+    if (!F) return null;
+    const gCands = trilateratePointBothSides(A, F, AG, FG);
+    let G: Point | null = null;
+    if (gCands) G = pickValidPoint(gCands, [A, B, C, D, E, F], null);
+    if (!G) return null;
+    const hCands = trilateratePointBothSides(A, G, HA, GH);
+    let H: Point | null = null;
+    if (hCands) H = pickValidPoint(hCands, [A, B, C, D, E, F, G], null);
+    if (!H) return null;
+    points = [A, B, C, D, E, F, G, H];
+  }
+
+  if (!isSimplePolygon(points)) return null;
+  return points;
 }

@@ -944,7 +944,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
 
   const svgPoints = useMemo(() => {
     if (hasRequiredMeasurements(config.measurements, config.corners)) {
-      const reconstructed = reconstructPolygonFromMeasurements(config.measurements, config.corners);
+      const reconstructed = reconstructPolygonFromMeasurements(config.measurements, config.corners, undefined, undefined, config.fixingHeights);
       if (reconstructed) return reconstructed;
     }
     return config.points;

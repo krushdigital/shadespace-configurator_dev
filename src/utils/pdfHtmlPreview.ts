@@ -6,7 +6,7 @@ import {
   sanitizeCustomHtml,
 } from './pdfBlocks';
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { getDiagonalKeysForCorners } from './geometry';
+import { getDiagonalKeysForCorners, computeShapeConfidence, projectMeasurementsToHorizontal } from './geometry';
 
 export interface PdfTemplateConfig {
   brand: {
@@ -251,6 +251,33 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       }
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">Corner A</span><span class="val">2400mm, post</span></div>`;
+    }
+    case 'shapeVerification': {
+      if (cfgData && cfgData.measurements && corners >= 4) {
+        const heights = cfgData.fixingHeights as number[] | undefined;
+        const confidence = computeShapeConfidence(cfgData.measurements, corners, heights);
+        const rows: string[] = [];
+        rows.push(`<div class="row"><span class="muted">Shape Accuracy</span><span class="val">${Math.round(confidence.percentage)}% (${confidence.status})</span></div>`);
+        if (confidence.measuredBD > 0) {
+          rows.push(`<div class="row"><span class="muted">Measured B-D</span><span class="val">${formatMeasurementPreview(confidence.measuredBD, unit)}</span></div>`);
+          rows.push(`<div class="row"><span class="muted">Expected B-D</span><span class="val">${formatMeasurementPreview(confidence.expectedBD, unit)}</span></div>`);
+          rows.push(`<div class="row"><span class="muted">BD Deviation</span><span class="val">${confidence.bdDeviation.toFixed(1)}%</span></div>`);
+        }
+        if (heights && heights.length >= corners && heights.every(h => h > 0)) {
+          const projected = projectMeasurementsToHorizontal(cfgData.measurements, corners, heights);
+          rows.push(`<div style="font-weight:700;color:${cfg.brand.accentDark};font-size:12px;margin:10px 0 4px;">Projected Horizontal Distances</div>`);
+          for (let i = 0; i < corners; i++) {
+            const next = (i + 1) % corners;
+            const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + next)}`;
+            if (projected[key]) rows.push(`<div class="row"><span class="muted">Edge ${key}</span><span class="val">${formatMeasurementPreview(projected[key], unit)}</span></div>`);
+          }
+          for (const key of getDiagonalKeysForCorners(corners)) {
+            if (projected[key]) rows.push(`<div class="row"><span class="muted">Diag ${key}</span><span class="val">${formatMeasurementPreview(projected[key], unit)}</span></div>`);
+          }
+        }
+        return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
+      }
+      return `<h2>${escapeHtml(title)}</h2><div class="row"><span class="muted">N/A for this shape</span></div>`;
     }
     case 'hardwareBreakdown': {
       const hwMode: 'standard' | 'manual' | 'none' =

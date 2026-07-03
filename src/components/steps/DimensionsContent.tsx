@@ -7,9 +7,9 @@ import { Input } from '../ui/Input';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { toast } from 'react-toastify';
@@ -370,7 +370,8 @@ export function DimensionsContent({
           config.measurements,
           config.corners,
           600,
-          600
+          600,
+          config.fixingHeights
         );
 
         // If reconstruction succeeded, update the points and store as last valid
@@ -408,7 +409,8 @@ export function DimensionsContent({
         config.measurements,
         config.corners,
         600,
-        600
+        600,
+        config.fixingHeights
       );
 
       if (reconstructedPoints && reconstructedPoints.length === config.corners) {
@@ -432,7 +434,8 @@ export function DimensionsContent({
           config.measurements,
           config.corners,
           600,
-          600
+          600,
+          config.fixingHeights
         );
 
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {
@@ -877,11 +880,19 @@ export function DimensionsContent({
                       const isSuccess = hasValidValue && !hasError;
                       const neededDiags = isApproximate ? getNextRequiredDiagonals(config.measurements, config.corners) : [];
                       const isNeeded = neededDiags.includes(key);
+                      const isVerificationDiag = key === 'BD' && config.corners >= 5;
 
-                      // Generate label from key (e.g., 'AC' -> 'Diagonal A → C')
-                      const baseLabel = config.measurementOption === 'adjust'
-                        ? `Space Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
-                        : `Shade Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
+                      // Generate label from key
+                      let baseLabel: string;
+                      if (isVerificationDiag) {
+                        baseLabel = config.measurementOption === 'adjust'
+                          ? `Verification: ${key.charAt(0)} → ${key.charAt(1)} (Cross-Check)`
+                          : `Verification: ${key.charAt(0)} → ${key.charAt(1)} (Cross-Check)`;
+                      } else {
+                        baseLabel = config.measurementOption === 'adjust'
+                          ? `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
+                          : `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
+                      }
                       const label = isNeeded && !hasValidValue
                         ? `${baseLabel} — needed for exact shape`
                         : baseLabel;
@@ -965,6 +976,60 @@ export function DimensionsContent({
             </div>
           </Card>
         </div>
+
+        {/* Shape Confidence Score */}
+        {config.corners >= 4 && (() => {
+          const confidence = computeShapeConfidence(
+            config.measurements,
+            config.corners,
+            config.fixingHeights
+          );
+          if (confidence.status === 'pending') return null;
+          const colorMap = {
+            excellent: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', icon: 'text-emerald-600', bar: 'bg-emerald-500' },
+            good: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', icon: 'text-blue-600', bar: 'bg-blue-500' },
+            warning: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', icon: 'text-amber-600', bar: 'bg-amber-500' },
+            error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: 'text-red-600', bar: 'bg-red-500' },
+            pending: { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', icon: 'text-slate-400', bar: 'bg-slate-300' }
+          };
+          const colors = colorMap[confidence.status];
+          return (
+            <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl border ${colors.bg} ${colors.border}`}>
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  {confidence.status === 'excellent' || confidence.status === 'good' ? (
+                    <CheckCircle className={`w-5 h-5 sm:w-6 sm:h-6 ${colors.icon}`} />
+                  ) : (
+                    <AlertTriangle className={`w-5 h-5 sm:w-6 sm:h-6 ${colors.icon}`} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-sm sm:text-base font-semibold ${colors.text}`}>
+                      Shape Accuracy: {Math.round(confidence.percentage)}%
+                    </span>
+                  </div>
+                  <p className={`text-xs sm:text-sm ${colors.text} opacity-80`}>
+                    {confidence.message}
+                  </p>
+                  {confidence.status !== 'pending' && confidence.measuredBD > 0 && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="flex-1 h-1.5 rounded-full bg-white/50 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${colors.bar}`}
+                          style={{ width: `${Math.min(100, confidence.percentage)}%` }}
+                        />
+                      </div>
+                      <span className={`text-[10px] sm:text-xs ${colors.text} opacity-70 flex-shrink-0`}>
+                        BD deviation: {confidence.bdDeviation.toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Heights and Anchor Points Section - Shown based on corner count and measurement option */}
         {heightRequirement !== 'none' && (
