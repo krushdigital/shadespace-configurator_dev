@@ -873,101 +873,114 @@ export function DimensionsContent({
                       </span>
                     </Tooltip>
                   </div>
-                  <div className="space-y-2">
-                    {getDiagonalKeysForCorners(config.corners).map((key) => {
-                      const hasValidValue = config.measurements[key] && config.measurements[key] > 0;
-                      const hasError = validationErrors[key];
-                      const isSuccess = hasValidValue && !hasError;
+                  <div className="space-y-3">
+                    {(() => {
+                      const allDiagKeys = getDiagonalKeysForCorners(config.corners);
                       const neededDiags = isApproximate ? getNextRequiredDiagonals(config.measurements, config.corners) : [];
-                      const isNeeded = neededDiags.includes(key);
-                      const isVerificationDiag = key === 'BD' && config.corners >= 5;
 
-                      // Generate label from key
-                      let baseLabel: string;
-                      if (isVerificationDiag) {
-                        baseLabel = config.measurementOption === 'adjust'
-                          ? `Verification: ${key.charAt(0)} → ${key.charAt(1)} (Cross-Check)`
-                          : `Verification: ${key.charAt(0)} → ${key.charAt(1)} (Cross-Check)`;
-                      } else {
-                        baseLabel = config.measurementOption === 'adjust'
-                          ? `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
-                          : `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
+                      // Group diagonals by source vertex (first character)
+                      const groups: { source: string; keys: string[] }[] = [];
+                      for (const key of allDiagKeys) {
+                        const source = key.charAt(0);
+                        const existing = groups.find(g => g.source === source);
+                        if (existing) {
+                          existing.keys.push(key);
+                        } else {
+                          groups.push({ source, keys: [key] });
+                        }
                       }
-                      const label = isNeeded && !hasValidValue
-                        ? `${baseLabel} — needed for exact shape`
-                        : baseLabel;
-                      
-                      return (
-                        <div key={key}>
-                            <DualImperialInput
-                             value={config.measurements[key]
-                               ? convertMmToUnit(config.measurements[key], config.unit)
-                               : 0}
-                              onChange={(value) => {
-                                if (value === 0) {
-                                  const newMeasurements = { ...config.measurements };
-                                  delete newMeasurements[key];
-                                  updateConfig({ measurements: newMeasurements });
 
-                                  // Clear validation errors and typo suggestions for this field
-                                  if (setValidationErrors && setTypoSuggestions) {
-                                    const newErrors = { ...validationErrors };
-                                    const newSuggestions = { ...typoSuggestions };
-                                    delete newErrors[key];
-                                    delete newSuggestions[key];
-                                    setValidationErrors(newErrors);
-                                    setTypoSuggestions(newSuggestions);
-                                  }
-                                } else {
-                                  updateMeasurement(key, String(value));
-                                }
-                              }}
-                              onFocus={() => {
-                                setHighlightedMeasurement?.(key);
-                                setActiveEditField(key);
-                              }}
-                              onBlur={() => {
-                                setHighlightedMeasurement?.(null);
-                                setActiveEditField((curr) => (curr === key ? null : curr));
-                              }}
-                              unit={config.unit}
-                              className={`text-sm sm:text-base`}
-                              error={validationErrors[key]}
-                              errorKey={key}
-                              isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
-                              label={label}
-                              secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
-                              showConversion={true}
-                              allowFormatSwitch={true}
-                            />
+                      return groups.map((group) => (
+                        <div key={group.source} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                            From corner {group.source}
+                          </p>
+                          <div className="space-y-2">
+                            {group.keys.map((key) => {
+                              const hasValidValue = config.measurements[key] && config.measurements[key] > 0;
+                              const hasError = validationErrors[key];
+                              const isNeeded = neededDiags.includes(key);
 
-                          {/* Typo Warning */}
-                          {typoSuggestions[key] && (
-                            <div className="mt-1.5 p-2 sm:mt-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                              <div className="flex flex-col gap-2">
-                                <p className="text-sm text-amber-800 w-full">
-                                  <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[key], config.unit)}?
-                                </p>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => applyTypoCorrection(key)}
-                                    className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
-                                  >
-                                    Correct
-                                  </button>
-                                  <button
-                                    onClick={() => dismissTypoSuggestion?.(key)}
-                                    className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
-                                  >
-                                    Dismiss
-                                  </button>
+                              const baseLabel = config.measurementOption === 'adjust'
+                                ? `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
+                                : `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
+                              const label = isNeeded && !hasValidValue
+                                ? `${baseLabel} — needed for exact shape`
+                                : baseLabel;
+
+                              return (
+                                <div key={key}>
+                                  <DualImperialInput
+                                    value={config.measurements[key]
+                                      ? convertMmToUnit(config.measurements[key], config.unit)
+                                      : 0}
+                                    onChange={(value) => {
+                                      if (value === 0) {
+                                        const newMeasurements = { ...config.measurements };
+                                        delete newMeasurements[key];
+                                        updateConfig({ measurements: newMeasurements });
+
+                                        if (setValidationErrors && setTypoSuggestions) {
+                                          const newErrors = { ...validationErrors };
+                                          const newSuggestions = { ...typoSuggestions };
+                                          delete newErrors[key];
+                                          delete newSuggestions[key];
+                                          setValidationErrors(newErrors);
+                                          setTypoSuggestions(newSuggestions);
+                                        }
+                                      } else {
+                                        updateMeasurement(key, String(value));
+                                      }
+                                    }}
+                                    onFocus={() => {
+                                      setHighlightedMeasurement?.(key);
+                                      setActiveEditField(key);
+                                    }}
+                                    onBlur={() => {
+                                      setHighlightedMeasurement?.(null);
+                                      setActiveEditField((curr) => (curr === key ? null : curr));
+                                    }}
+                                    unit={config.unit}
+                                    className={`text-sm sm:text-base`}
+                                    error={validationErrors[key]}
+                                    errorKey={key}
+                                    isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
+                                    label={label}
+                                    secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
+                                    showConversion={true}
+                                    allowFormatSwitch={true}
+                                  />
+
+                                  {typoSuggestions[key] && (
+                                    <div className="mt-1.5 p-2 sm:mt-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                      <div className="flex flex-col gap-2">
+                                        <p className="text-sm text-amber-800 w-full">
+                                          <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[key], config.unit)}?
+                                        </p>
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={() => applyTypoCorrection(key)}
+                                            className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
+                                          >
+                                            Correct
+                                          </button>
+                                          <button
+                                            onClick={() => dismissTypoSuggestion?.(key)}
+                                            className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
+                                          >
+                                            Dismiss
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </div>
-                          )}
+                              );
+                            })}
+                          </div>
                         </div>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
                 </div>
                 </>

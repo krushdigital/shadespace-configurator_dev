@@ -93,10 +93,10 @@ function formatAreaDual(mm2: number): string {
 function getDiagonalKeysForCorners(corners: number): string[] {
   if (corners <= 3) return [];
   if (corners === 4) return ["AC", "BD"];
-  if (corners === 5) return ["AC", "AD", "BD"];
-  if (corners === 6) return ["AC", "AD", "AE", "BD"];
-  if (corners === 7) return ["AC", "AD", "AE", "AF", "BD"];
-  if (corners === 8) return ["AC", "AD", "AE", "AF", "AG", "BD"];
+  if (corners === 5) return ["AC", "AD", "BD", "BE", "CE"];
+  if (corners === 6) return ["AC", "AD", "AE", "BD", "BE", "BF", "CE", "CF", "DF"];
+  if (corners === 7) return ["AC", "BD", "CE", "DF", "EG", "AF", "BG"];
+  if (corners === 8) return ["AC", "BD", "CE", "DF", "EG", "FH", "AG", "BH"];
   return [];
 }
 
