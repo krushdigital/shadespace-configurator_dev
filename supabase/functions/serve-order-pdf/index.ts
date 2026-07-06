@@ -69,13 +69,34 @@ function formatArea(mm2: number, unit: "metric" | "imperial"): string {
   return `${(mm2 / 1000000).toFixed(2)} m\u00B2`;
 }
 
+function formatImperialValue(mm: number): string {
+  const inches = mm * 0.0393701;
+  if (inches >= 12) {
+    const feet = Math.floor(inches / 12);
+    const rem = inches % 12;
+    return parseFloat(rem.toFixed(1)) > 0 ? `${feet}'${rem.toFixed(1)}"` : `${feet}'`;
+  }
+  return `${inches.toFixed(1)}"`;
+}
+
+function formatMeasurementDual(mm: number): string {
+  if (!mm || !isFinite(mm)) return "Not provided";
+  return `${Math.round(mm)}mm (${formatImperialValue(mm)})`;
+}
+
+function formatAreaDual(mm2: number): string {
+  const m2 = mm2 / 1000000;
+  const sqft = mm2 * (0.0393701 * 0.0393701) / 144;
+  return `${m2.toFixed(2)} m\u00B2 (${sqft.toFixed(1)} ft\u00B2)`;
+}
+
 function getDiagonalKeysForCorners(corners: number): string[] {
-  if (corners <= 3) return ["AC"];
+  if (corners <= 3) return [];
   if (corners === 4) return ["AC", "BD"];
-  if (corners === 5) return ["AC", "BD", "CE", "DA", "EB"];
-  if (corners === 6) return ["AC", "BD", "CE", "DF", "EA", "FB"];
-  if (corners === 7) return ["AC", "BD", "CE", "DF", "EG", "FA", "GB"];
-  if (corners === 8) return ["AC", "BD", "CE", "DF", "EG", "FH", "GA", "HB"];
+  if (corners === 5) return ["AC", "AD", "BD", "BE", "CE"];
+  if (corners === 6) return ["AC", "AD", "AE", "BD", "BE", "BF", "CE", "CF", "DF"];
+  if (corners === 7) return ["AC", "BD", "CE", "DF", "EG", "AF", "BG"];
+  if (corners === 8) return ["AC", "BD", "CE", "DF", "EG", "FH", "AG", "BH"];
   return [];
 }
 
@@ -468,6 +489,7 @@ function renderBlockToPdf(
   live: LiveData,
   xOffset = MARGIN_LEFT,
   areaWidth = CONTENT_WIDTH,
+  fulfilment = false,
 ) {
   const p = block.props || {};
   const title = (p.title as string) || "";
@@ -480,6 +502,8 @@ function renderBlockToPdf(
   const corners = (cfgData?.corners as number) ?? 4;
   const unit: "metric" | "imperial" = (cfgData?.unit as string) === "imperial" ? "imperial" : "metric";
   const measurements = (cfgData?.measurements || {}) as Record<string, number>;
+  const fmtM = (mm: number) => fulfilment ? formatMeasurementDual(mm) : formatMeasurement(mm, unit);
+  const fmtA = (mm2: number) => fulfilment ? formatAreaDual(mm2) : formatArea(mm2, unit);
 
   switch (block.type) {
     case "quoteMeta": {
@@ -542,8 +566,8 @@ function renderBlockToPdf(
       if (isRowVisible(block, "fabricMaterial")) r.drawRowCol("Fabric Material", fabricLabel, xOffset, areaWidth);
       if (isRowVisible(block, "fabricColor")) r.drawRowCol("Fabric Color", fabricColor, xOffset, areaWidth);
       if (isRowVisible(block, "corners")) r.drawRowCol("Corners", String(corners), xOffset, areaWidth);
-      if (isRowVisible(block, "totalArea")) r.drawRowCol("Total Area", formatArea(((calc?.area as number) || 12.5) * 1000000, unit), xOffset, areaWidth);
-      if (isRowVisible(block, "edgePerimeter")) r.drawRowCol("Edge Perimeter", formatMeasurement(perimeterMm, unit), xOffset, areaWidth);
+      if (isRowVisible(block, "totalArea")) r.drawRowCol("Total Area", fmtA(((calc?.area as number) || 12.5) * 1000000), xOffset, areaWidth);
+      if (isRowVisible(block, "edgePerimeter")) r.drawRowCol("Edge Perimeter", fmtM(perimeterMm), xOffset, areaWidth);
       if (isRowVisible(block, "edgeReinforcement")) r.drawRowCol("Edge Reinforcement", edgeType, xOffset, areaWidth);
       if (isRowVisible(block, "thread")) r.drawRowCol("Thread", "Sewn with SolarFix PTFE thread", xOffset, areaWidth);
       if (isRowVisible(block, "fabricationMethod")) r.drawRowCol("Fabrication Method", fabricationMethod, xOffset, areaWidth);
@@ -557,12 +581,12 @@ function renderBlockToPdf(
         const next = (i + 1) % corners;
         const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + next)}`;
         const mm = measurements[key];
-        if (mm) r.drawRowCol(`Edge ${key.charAt(0)} to ${key.charAt(1)}`, formatMeasurement(mm, unit), xOffset, areaWidth);
+        if (mm) r.drawRowCol(`Edge ${key.charAt(0)} to ${key.charAt(1)}`, fmtM(mm), xOffset, areaWidth);
       }
       const diagKeys = getDiagonalKeysForCorners(corners);
       for (const key of diagKeys) {
         const mm = measurements[key];
-        if (mm) r.drawRowCol(`Diagonal ${key.charAt(0)} to ${key.charAt(1)}`, formatMeasurement(mm, unit), xOffset, areaWidth);
+        if (mm) r.drawRowCol(`Diagonal ${key.charAt(0)} to ${key.charAt(1)}`, fmtM(mm), xOffset, areaWidth);
       }
       r.addSpacer();
       break;
@@ -578,7 +602,7 @@ function renderBlockToPdf(
         const h = fixingHeights[i] || 0;
         const t = fixingTypes[i] || "post";
         const o = eyeOrientations[i] || "horizontal";
-        r.drawRowCol(`Corner ${letter}`, `${formatMeasurement(h, unit)}, ${t}, ${o} eye`, xOffset, areaWidth);
+        r.drawRowCol(`Corner ${letter}`, `${fmtM(h)}, ${t}, ${o} eye`, xOffset, areaWidth);
       }
       r.addSpacer();
       break;
@@ -669,7 +693,7 @@ function renderBlockToPdf(
     case "billOfMaterials": {
       const heading = title || "Bill of Materials";
       r.drawSectionTitleCol(heading, xOffset, areaWidth);
-      r.drawRowCol(`${fabricLabel} - ${fabricColor} (${formatArea(((calc?.area as number) || 12.5) * 1000000, unit)})`, formatCurrency(total - 70, currency), xOffset, areaWidth);
+      r.drawRowCol(`${fabricLabel} - ${fabricColor} (${fmtA(((calc?.area as number) || 12.5) * 1000000)})`, formatCurrency(total - 70, currency), xOffset, areaWidth);
       r.drawRowCol("Edge reinforcement", "Included", xOffset, areaWidth);
       r.drawRowCol(`Hardware Tensioning Kit (${corners}-corner pack)`, "Included", xOffset, areaWidth);
       r.drawRowCol("Total (all-inclusive)", formatCurrency(total, currency), xOffset, areaWidth);
@@ -875,7 +899,7 @@ Deno.serve(async (req: Request) => {
           }
           continue;
         }
-        renderBlockToPdf(renderer, block, brand, live, MARGIN_LEFT, CONTENT_WIDTH);
+        renderBlockToPdf(renderer, block, brand, live, MARGIN_LEFT, CONTENT_WIDTH, resolvedType === "fulfilment");
       } else {
         // Render left and right columns side by side
         const savedY = renderer.getY();
@@ -891,7 +915,7 @@ Deno.serve(async (req: Request) => {
               await renderer.addImage(imgUrl, COL_WIDTH - 4, 50, leftX, COL_WIDTH);
             }
           } else {
-            renderBlockToPdf(renderer, block, brand, live, leftX, COL_WIDTH);
+            renderBlockToPdf(renderer, block, brand, live, leftX, COL_WIDTH, resolvedType === "fulfilment");
           }
         }
         const afterLeftY = renderer.getY();
@@ -908,7 +932,7 @@ Deno.serve(async (req: Request) => {
               await renderer.addImage(imgUrl, COL_WIDTH - 4, 50, rightX, COL_WIDTH);
             }
           } else {
-            renderBlockToPdf(renderer, block, brand, live, rightX, COL_WIDTH);
+            renderBlockToPdf(renderer, block, brand, live, rightX, COL_WIDTH, resolvedType === "fulfilment");
           }
         }
         const afterRightY = renderer.getY();

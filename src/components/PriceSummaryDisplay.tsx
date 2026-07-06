@@ -31,6 +31,7 @@ interface PriceSummaryDisplayProps {
   loading?: boolean;
   fabrics?: Fabric[];
   isEmailMode?: boolean;
+  adminMode?: boolean;
 }
 
 export function PriceSummaryDisplay({
@@ -44,6 +45,7 @@ export function PriceSummaryDisplay({
   loading = false,
   fabrics,
   isEmailMode = false,
+  adminMode = false,
 }: PriceSummaryDisplayProps) {
   const FABRICS = fabrics && fabrics.length > 0 ? fabrics : FALLBACK_FABRICS;
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
@@ -270,10 +272,12 @@ export function PriceSummaryDisplay({
                 content={
                   <div className="text-slate-700">
                     <p className="font-semibold mb-1">
-                      {isEmailMode ? 'Save & Email PDF Quote' : 'Save Your Progress'}
+                      {adminMode ? 'Save Quote' : isEmailMode ? 'Save & Email PDF Quote' : 'Save Your Progress'}
                     </p>
                     <p className="text-sm text-slate-600">
-                      {isEmailMode
+                      {adminMode
+                        ? 'Save this configuration and get a shareable link and PDF for your customer.'
+                        : isEmailMode
                         ? 'Save your configuration and receive a detailed PDF quote with pricing via email.'
                         : 'Save your configuration and return anytime within 30 days to continue.'}
                     </p>
@@ -296,15 +300,15 @@ export function PriceSummaryDisplay({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                     </svg>
                   )}
-                  <span>{isEmailMode ? 'Save & Email Quote' : 'Save Progress'}</span>
+                  <span>{adminMode ? 'Save Quote' : isEmailMode ? 'Save & Email Quote' : 'Save Progress'}</span>
                 </Button>
               </Tooltip>
               <p className="text-xs text-center text-slate-500 mt-2">
-                {isEmailMode ? 'Your price is locked for 30 days' : 'Return anytime to continue where you left off'}
+                {adminMode ? 'Get a share link and PDF for your customer' : isEmailMode ? 'Your price is locked for 30 days' : 'Return anytime to continue where you left off'}
               </p>
 
-              {/* Add to Cart button - Show when all acknowledgments are checked */}
-              {allAcknowledgmentsChecked && handleAddToCart && (
+              {/* Add to Cart button - Show when all acknowledgments are checked (hidden in admin mode) */}
+              {!adminMode && allAcknowledgmentsChecked && handleAddToCart && (
                 <div className="mt-4">
                   <Button
                     onClick={() => handleAddToCart()}

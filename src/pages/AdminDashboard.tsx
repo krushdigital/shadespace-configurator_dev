@@ -20,13 +20,14 @@ import { MyDesignsAnalytics } from '../components/admin/MyDesignsAnalytics';
 import type { AdminProfile } from '../hooks/useAdminProfile';
 import { useTabPermissions } from '../hooks/useTabPermissions';
 import { UserManagement } from '../components/admin/UserManagement';
+import { AdminQuoteBuilder } from '../components/admin/AdminQuoteBuilder';
 
 interface AdminDashboardProps {
   onLogout: () => void;
   profile: AdminProfile;
 }
 
-type TabType = 'overview' | 'quotes' | 'events' | 'funnel' | 'fabrics' | 'hardware' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'pdf' | 'team';
+type TabType = 'overview' | 'quotes' | 'quote-builder' | 'events' | 'funnel' | 'fabrics' | 'hardware' | 'pricing' | 'base-pricing' | 'exports' | 'exclusions' | 'email' | 'pdf' | 'team';
 
 const detectTimezone = (): string => {
   try {
@@ -58,6 +59,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
   const allTabs: { id: TabType; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'quotes', label: 'Saved Quotes' },
+    { id: 'quote-builder', label: 'Quote Builder' },
     { id: 'events', label: 'User Events' },
     { id: 'funnel', label: 'Funnel & Insights' },
     { id: 'fabrics', label: 'Fabrics & Colors' },
@@ -180,6 +182,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
         )}
 
         {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+
+        {activeTab === 'quote-builder' && <AdminQuoteBuilder profile={profile} />}
 
         {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
 

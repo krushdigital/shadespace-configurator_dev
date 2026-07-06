@@ -301,8 +301,8 @@ export const PdfStudio: React.FC = () => {
     };
   }, [dataSource, selectedQuote]);
   const previewHtml = useMemo(
-    () => buildQuotePreviewHtml(config, blocks, liveData),
-    [config, blocks, liveData],
+    () => buildQuotePreviewHtml(config, blocks, liveData, { fulfilment: templateType === 'fulfilment' }),
+    [config, blocks, liveData, templateType],
   );
 
   const renderPdfPreview = async () => {

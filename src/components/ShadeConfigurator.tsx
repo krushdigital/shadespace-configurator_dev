@@ -29,6 +29,7 @@ import { alignStorefrontToCurrency, cartCurrencyMismatches, clearCart } from '..
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
+import { AdminSaveQuoteModal } from './admin/AdminSaveQuoteModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
 import { generateDefaultQuoteName } from '../utils/quoteNaming';
@@ -41,8 +42,17 @@ import { supabase } from '../lib/supabase';
 import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { Box, Layers } from 'lucide-react';
 import { canRender3D, Device3DTier } from '../utils/canRender3D';
+import type { AdminProfile } from '../hooks/useAdminProfile';
 
 const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
+
+export interface ShadeConfiguratorProps {
+  adminMode?: boolean;
+  adminProfile?: AdminProfile | null;
+  onAdminSaveComplete?: (quoteId: string, accessToken: string, reference: string) => void;
+  initialQuoteId?: string | null;
+  initialQuoteToken?: string | null;
+}
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -68,7 +78,7 @@ const INITIAL_STATE: ConfiguratorState = {
   hasManuallyAdjustedShape: false
 };
 
-export function ShadeConfigurator() {
+export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSaveComplete, initialQuoteId, initialQuoteToken }: ShadeConfiguratorProps = {}) {
   const [config, setConfig] = useState<ConfiguratorState>(INITIAL_STATE);
   const [openStep, setOpenStep] = useState<number>(0);
   const [desktopViewMode, setDesktopViewMode] = useState<'plan' | '3d'>('plan');
@@ -375,6 +385,51 @@ export function ShadeConfigurator() {
     loadQuoteFromUrl();
   }, []);
 
+  // Admin mode: load quote from props instead of URL
+  useEffect(() => {
+    if (!adminMode || !initialQuoteId || !initialQuoteToken) return;
+
+    const loadAdminQuote = async () => {
+      setIsLoadingQuote(true);
+      try {
+        const quote = await getQuoteById(initialQuoteId, initialQuoteToken);
+        setConfig(quote.config_data);
+        setQuoteReference(quote.quote_reference);
+        setSavedQuoteId(initialQuoteId);
+        setSavedAccessToken(initialQuoteToken);
+
+        if (
+          quote.pricing_status === 'locked' &&
+          typeof quote.locked_total === 'number' &&
+          quote.locked_total > 0 &&
+          quote.locked_total_currency
+        ) {
+          setLockedQuote({
+            total: quote.locked_total,
+            currency: quote.locked_total_currency,
+            baseNzd: quote.locked_total_base_nzd ?? null,
+            fxRate: quote.locked_fx_rate ?? null,
+            marketMarkup: quote.locked_market_markup ?? null,
+            zonosDhlMarkup: quote.locked_zonos_dhl_markup ?? null,
+            quoteId: quote.id,
+            quoteReference: quote.quote_reference,
+            lockedAt: quote.locked_at ?? null,
+          });
+        }
+
+        applyPricingSnapshot(quote);
+        const resumeStep = quote.current_step ?? 6;
+        setOpenStep(resumeStep);
+      } catch (err) {
+        console.error('Failed to load quote for admin:', err);
+      } finally {
+        setIsLoadingQuote(false);
+      }
+    };
+
+    loadAdminQuote();
+  }, [adminMode, initialQuoteId, initialQuoteToken]);
+
 
   useEffect(() => {
     if (isLoadingQuote || quoteReference) return;
@@ -386,13 +441,14 @@ export function ShadeConfigurator() {
   }, [isLoadingQuote, quoteReference]);
 
   useEffect(() => {
+    if (adminMode) return;
     if (!pendingAutoAddToCart || isLoadingQuote || !quoteReference) return;
     setPendingAutoAddToCart(false);
     const timer = setTimeout(() => {
       handleAddToCartFromConfigurator();
     }, 500);
     return () => clearTimeout(timer);
-  }, [pendingAutoAddToCart, isLoadingQuote, quoteReference]);
+  }, [pendingAutoAddToCart, isLoadingQuote, quoteReference, adminMode]);
 
   const updateConfig = (updates: Partial<ConfiguratorState>) => {
     setConfig(prev => ({ ...prev, ...updates }));
@@ -2236,7 +2292,8 @@ export function ShadeConfigurator() {
           config.measurements,
           config.corners,
           600,
-          600
+          600,
+          config.fixingHeights
         );
 
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {
@@ -2438,6 +2495,7 @@ export function ShadeConfigurator() {
                     mobileViewMode={mobileViewMode}
                     onMobileViewModeChange={setMobileViewMode}
                     pricingSettingsMap={activePricingMap}
+                    adminMode={adminMode}
                   />
                 </AccordionStep>
               );
@@ -2566,6 +2624,7 @@ export function ShadeConfigurator() {
                 loading={loading}
                 fabrics={FABRICS}
                 isEmailMode={openStep === 6 && hasAllEdgeMeasurements}
+                adminMode={adminMode}
               />
             </div>
           )}
@@ -2580,53 +2639,98 @@ export function ShadeConfigurator() {
       </div>
 
       {/* Unified Save Modal */}
-      <UnifiedSaveModal
-        isOpen={showUnifiedSaveModal}
-        onClose={() => setShowUnifiedSaveModal(false)}
-        config={config}
-        calculations={calculations}
-        currentStep={openStep}
-        totalSteps={7}
-        shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
-        pricingSnapshot={pricingSettingsMap}
-        existingQuoteId={savedQuoteId}
-        existingAccessToken={savedAccessToken}
-        onQuoteCreated={(ref, id, token) => {
-          setQuoteReference(ref);
-          setSavedQuoteId(id);
-          setSavedAccessToken(token);
-        }}
-        onSaveComplete={() => setLoadedPricingSnapshot(null)}
-        onCustomerDetailsCaptured={setCapturedCustomerDetails}
-        onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
-        onEmailPDFQuote={handleEmailPDFQuote}
-        getCanvasImageUrl={async () => {
-          const svgElement = canvasRef.current?.getSVGElement?.();
-          if (!svgElement) return null;
-          try {
-            const blob = await convertSvgToPng(svgElement, 600, 500);
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-            return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
-          } catch (err) {
-            console.warn('Failed to capture diagram for saved quote:', err);
-            return null;
-          }
-        }}
-        getCanvasImage3DUrl={async () => {
-          try {
-            const screenshot = await viewer3DRef.current?.capture3DScreenshot();
-            if (!screenshot) return null;
-            const blob = await fetch(screenshot).then(r => r.blob());
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
-            return await uploadToQuoteAssets(blob, filename);
-          } catch (err) {
-            console.warn('Failed to capture 3D for saved quote:', err);
-            return null;
-          }
-        }}
-      />
+      {adminMode ? (
+        <AdminSaveQuoteModal
+          isOpen={showUnifiedSaveModal}
+          onClose={() => setShowUnifiedSaveModal(false)}
+          config={config}
+          calculations={calculations}
+          adminProfile={adminProfile!}
+          pricingSnapshot={pricingSettingsMap}
+          existingQuoteId={savedQuoteId}
+          existingAccessToken={savedAccessToken}
+          onQuoteCreated={(ref, id, token) => {
+            setQuoteReference(ref);
+            setSavedQuoteId(id);
+            setSavedAccessToken(token);
+            onAdminSaveComplete?.(id, token, ref);
+          }}
+          getCanvasImageUrl={async () => {
+            const svgElement = canvasRef.current?.getSVGElement?.();
+            if (!svgElement) return null;
+            try {
+              const blob = await convertSvgToPng(svgElement, 600, 500);
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture diagram for saved quote:', err);
+              return null;
+            }
+          }}
+          getCanvasImage3DUrl={async () => {
+            try {
+              const screenshot = await viewer3DRef.current?.capture3DScreenshot();
+              if (!screenshot) return null;
+              const blob = await fetch(screenshot).then(r => r.blob());
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture 3D for saved quote:', err);
+              return null;
+            }
+          }}
+        />
+      ) : (
+        <UnifiedSaveModal
+          isOpen={showUnifiedSaveModal}
+          onClose={() => setShowUnifiedSaveModal(false)}
+          config={config}
+          calculations={calculations}
+          currentStep={openStep}
+          totalSteps={7}
+          shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
+          pricingSnapshot={pricingSettingsMap}
+          existingQuoteId={savedQuoteId}
+          existingAccessToken={savedAccessToken}
+          onQuoteCreated={(ref, id, token) => {
+            setQuoteReference(ref);
+            setSavedQuoteId(id);
+            setSavedAccessToken(token);
+          }}
+          onSaveComplete={() => setLoadedPricingSnapshot(null)}
+          onCustomerDetailsCaptured={setCapturedCustomerDetails}
+          onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
+          onEmailPDFQuote={handleEmailPDFQuote}
+          getCanvasImageUrl={async () => {
+            const svgElement = canvasRef.current?.getSVGElement?.();
+            if (!svgElement) return null;
+            try {
+              const blob = await convertSvgToPng(svgElement, 600, 500);
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture diagram for saved quote:', err);
+              return null;
+            }
+          }}
+          getCanvasImage3DUrl={async () => {
+            try {
+              const screenshot = await viewer3DRef.current?.capture3DScreenshot();
+              if (!screenshot) return null;
+              const blob = await fetch(screenshot).then(r => r.blob());
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture 3D for saved quote:', err);
+              return null;
+            }
+          }}
+        />
+      )}
     </>
   );
 }

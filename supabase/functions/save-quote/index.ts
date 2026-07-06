@@ -388,6 +388,9 @@ async function handlePost(
     canvasImageUrl,
     canvasImage3DUrl,
     status: requestedStatus,
+    createdByAdminId,
+    salesRepName,
+    createdVia,
   } = body;
 
   if (!config || !calculations) {
@@ -467,6 +470,9 @@ async function handlePost(
     customer_country: customerCountry,
     customer_country_code: customerCountryCode,
     marketing_opt_in: !!email,
+    ...(createdByAdminId ? { created_by_admin_id: createdByAdminId } : {}),
+    ...(salesRepName ? { sales_rep_name: salesRepName } : {}),
+    ...(createdVia ? { created_via: createdVia } : {}),
   };
 
   const { data: inserted, error: insertErr } = await supabase

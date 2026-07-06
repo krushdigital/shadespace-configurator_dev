@@ -56,6 +56,7 @@ export interface BlockPdfOptions {
   threeDImageDataUrl?: string;
   returnBlob?: boolean;
   isEmailSummary?: boolean;
+  fulfilment?: boolean;
 }
 
 const DEFAULT_LOGO_URL = 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Logo-horizontal-color_3x_8d83ab71-75cc-4486-8cf3-b510cdb69aa7.png?v=1728339550';
@@ -157,7 +158,7 @@ export async function generatePdfFromBlocks(
   }
 
   const live = buildLiveData(config, calculations, options.customer, diagramDataUrl, options.threeDImageDataUrl);
-  const html = buildQuotePreviewHtml(cfg, blocks, live, { pageMode: true });
+  const html = buildQuotePreviewHtml(cfg, blocks, live, { pageMode: true, fulfilment: options.fulfilment });
 
   return renderQuotePdfFromHtml(html, {
     paper: cfg.paper,

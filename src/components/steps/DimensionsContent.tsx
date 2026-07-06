@@ -7,9 +7,9 @@ import { Input } from '../ui/Input';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { toast } from 'react-toastify';
@@ -370,7 +370,8 @@ export function DimensionsContent({
           config.measurements,
           config.corners,
           600,
-          600
+          600,
+          config.fixingHeights
         );
 
         // If reconstruction succeeded, update the points and store as last valid
@@ -408,7 +409,8 @@ export function DimensionsContent({
         config.measurements,
         config.corners,
         600,
-        600
+        600,
+        config.fixingHeights
       );
 
       if (reconstructedPoints && reconstructedPoints.length === config.corners) {
@@ -432,7 +434,8 @@ export function DimensionsContent({
           config.measurements,
           config.corners,
           600,
-          600
+          600,
+          config.fixingHeights
         );
 
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {
@@ -870,93 +873,114 @@ export function DimensionsContent({
                       </span>
                     </Tooltip>
                   </div>
-                  <div className="space-y-2">
-                    {getDiagonalKeysForCorners(config.corners).map((key) => {
-                      const hasValidValue = config.measurements[key] && config.measurements[key] > 0;
-                      const hasError = validationErrors[key];
-                      const isSuccess = hasValidValue && !hasError;
+                  <div className="space-y-3">
+                    {(() => {
+                      const allDiagKeys = getDiagonalKeysForCorners(config.corners);
                       const neededDiags = isApproximate ? getNextRequiredDiagonals(config.measurements, config.corners) : [];
-                      const isNeeded = neededDiags.includes(key);
 
-                      // Generate label from key (e.g., 'AC' -> 'Diagonal A → C')
-                      const baseLabel = config.measurementOption === 'adjust'
-                        ? `Space Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
-                        : `Shade Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
-                      const label = isNeeded && !hasValidValue
-                        ? `${baseLabel} — needed for exact shape`
-                        : baseLabel;
-                      
-                      return (
-                        <div key={key}>
-                            <DualImperialInput
-                             value={config.measurements[key]
-                               ? convertMmToUnit(config.measurements[key], config.unit)
-                               : 0}
-                              onChange={(value) => {
-                                if (value === 0) {
-                                  const newMeasurements = { ...config.measurements };
-                                  delete newMeasurements[key];
-                                  updateConfig({ measurements: newMeasurements });
+                      // Group diagonals by source vertex (first character)
+                      const groups: { source: string; keys: string[] }[] = [];
+                      for (const key of allDiagKeys) {
+                        const source = key.charAt(0);
+                        const existing = groups.find(g => g.source === source);
+                        if (existing) {
+                          existing.keys.push(key);
+                        } else {
+                          groups.push({ source, keys: [key] });
+                        }
+                      }
 
-                                  // Clear validation errors and typo suggestions for this field
-                                  if (setValidationErrors && setTypoSuggestions) {
-                                    const newErrors = { ...validationErrors };
-                                    const newSuggestions = { ...typoSuggestions };
-                                    delete newErrors[key];
-                                    delete newSuggestions[key];
-                                    setValidationErrors(newErrors);
-                                    setTypoSuggestions(newSuggestions);
-                                  }
-                                } else {
-                                  updateMeasurement(key, String(value));
-                                }
-                              }}
-                              onFocus={() => {
-                                setHighlightedMeasurement?.(key);
-                                setActiveEditField(key);
-                              }}
-                              onBlur={() => {
-                                setHighlightedMeasurement?.(null);
-                                setActiveEditField((curr) => (curr === key ? null : curr));
-                              }}
-                              unit={config.unit}
-                              className={`text-sm sm:text-base`}
-                              error={validationErrors[key]}
-                              errorKey={key}
-                              isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
-                              label={label}
-                              secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
-                              showConversion={true}
-                              allowFormatSwitch={true}
-                            />
+                      return groups.map((group) => (
+                        <div key={group.source} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                            From corner {group.source}
+                          </p>
+                          <div className="space-y-2">
+                            {group.keys.map((key) => {
+                              const hasValidValue = config.measurements[key] && config.measurements[key] > 0;
+                              const hasError = validationErrors[key];
+                              const isNeeded = neededDiags.includes(key);
 
-                          {/* Typo Warning */}
-                          {typoSuggestions[key] && (
-                            <div className="mt-1.5 p-2 sm:mt-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                              <div className="flex flex-col gap-2">
-                                <p className="text-sm text-amber-800 w-full">
-                                  <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[key], config.unit)}?
-                                </p>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => applyTypoCorrection(key)}
-                                    className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
-                                  >
-                                    Correct
-                                  </button>
-                                  <button
-                                    onClick={() => dismissTypoSuggestion?.(key)}
-                                    className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
-                                  >
-                                    Dismiss
-                                  </button>
+                              const baseLabel = config.measurementOption === 'adjust'
+                                ? `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Between Fixing Points)`
+                                : `Diagonal ${key.charAt(0)} → ${key.charAt(1)} (Finished Sail)`;
+                              const label = isNeeded && !hasValidValue
+                                ? `${baseLabel} — needed for exact shape`
+                                : baseLabel;
+
+                              return (
+                                <div key={key}>
+                                  <DualImperialInput
+                                    value={config.measurements[key]
+                                      ? convertMmToUnit(config.measurements[key], config.unit)
+                                      : 0}
+                                    onChange={(value) => {
+                                      if (value === 0) {
+                                        const newMeasurements = { ...config.measurements };
+                                        delete newMeasurements[key];
+                                        updateConfig({ measurements: newMeasurements });
+
+                                        if (setValidationErrors && setTypoSuggestions) {
+                                          const newErrors = { ...validationErrors };
+                                          const newSuggestions = { ...typoSuggestions };
+                                          delete newErrors[key];
+                                          delete newSuggestions[key];
+                                          setValidationErrors(newErrors);
+                                          setTypoSuggestions(newSuggestions);
+                                        }
+                                      } else {
+                                        updateMeasurement(key, String(value));
+                                      }
+                                    }}
+                                    onFocus={() => {
+                                      setHighlightedMeasurement?.(key);
+                                      setActiveEditField(key);
+                                    }}
+                                    onBlur={() => {
+                                      setHighlightedMeasurement?.(null);
+                                      setActiveEditField((curr) => (curr === key ? null : curr));
+                                    }}
+                                    unit={config.unit}
+                                    className={`text-sm sm:text-base`}
+                                    error={validationErrors[key]}
+                                    errorKey={key}
+                                    isSuccess={!!(config.measurements[key] && config.measurements[key] > 0 && !validationErrors[key])}
+                                    label={label}
+                                    secondaryValue={config.measurements[key] ? formatSecondaryUnit(config.measurements[key], config.unit) : ''}
+                                    showConversion={true}
+                                    allowFormatSwitch={true}
+                                  />
+
+                                  {typoSuggestions[key] && (
+                                    <div className="mt-1.5 p-2 sm:mt-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                      <div className="flex flex-col gap-2">
+                                        <p className="text-sm text-amber-800 w-full">
+                                          <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[key], config.unit)}?
+                                        </p>
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={() => applyTypoCorrection(key)}
+                                            className="px-3 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 transition-colors"
+                                          >
+                                            Correct
+                                          </button>
+                                          <button
+                                            onClick={() => dismissTypoSuggestion?.(key)}
+                                            className="px-3 py-1 bg-white border border-amber-600 text-amber-800 text-sm rounded hover:bg-amber-50 transition-colors"
+                                          >
+                                            Dismiss
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
-                              </div>
-                            </div>
-                          )}
+                              );
+                            })}
+                          </div>
                         </div>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
                 </div>
                 </>
@@ -965,6 +989,60 @@ export function DimensionsContent({
             </div>
           </Card>
         </div>
+
+        {/* Shape Confidence Score */}
+        {config.corners >= 4 && (() => {
+          const confidence = computeShapeConfidence(
+            config.measurements,
+            config.corners,
+            config.fixingHeights
+          );
+          if (confidence.status === 'pending') return null;
+          const colorMap = {
+            excellent: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', icon: 'text-emerald-600', bar: 'bg-emerald-500' },
+            good: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', icon: 'text-blue-600', bar: 'bg-blue-500' },
+            warning: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', icon: 'text-amber-600', bar: 'bg-amber-500' },
+            error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: 'text-red-600', bar: 'bg-red-500' },
+            pending: { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', icon: 'text-slate-400', bar: 'bg-slate-300' }
+          };
+          const colors = colorMap[confidence.status];
+          return (
+            <div className={`mt-4 sm:mt-6 p-3 sm:p-4 rounded-xl border ${colors.bg} ${colors.border}`}>
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0">
+                  {confidence.status === 'excellent' || confidence.status === 'good' ? (
+                    <CheckCircle className={`w-5 h-5 sm:w-6 sm:h-6 ${colors.icon}`} />
+                  ) : (
+                    <AlertTriangle className={`w-5 h-5 sm:w-6 sm:h-6 ${colors.icon}`} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-sm sm:text-base font-semibold ${colors.text}`}>
+                      Shape Accuracy: {Math.round(confidence.percentage)}%
+                    </span>
+                  </div>
+                  <p className={`text-xs sm:text-sm ${colors.text} opacity-80`}>
+                    {confidence.message}
+                  </p>
+                  {confidence.status !== 'pending' && confidence.measuredBD > 0 && (
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="flex-1 h-1.5 rounded-full bg-white/50 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${colors.bar}`}
+                          style={{ width: `${Math.min(100, confidence.percentage)}%` }}
+                        />
+                      </div>
+                      <span className={`text-[10px] sm:text-xs ${colors.text} opacity-70 flex-shrink-0`}>
+                        BD deviation: {confidence.bdDeviation.toFixed(1)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Heights and Anchor Points Section - Shown based on corner count and measurement option */}
         {heightRequirement !== 'none' && (
