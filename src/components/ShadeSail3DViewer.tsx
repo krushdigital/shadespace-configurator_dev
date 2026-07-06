@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { ConfiguratorState, Point } from '../types';
 import { getFabricHexColor } from '../utils/fabricColorMap';
 import { reconstructPolygonFromMeasurements, hasRequiredMeasurements } from '../utils/geometry';
+import { buildSolvedFabricGeometry } from '../utils/fabricSolver';
 
 interface ShadeSail3DViewerProps {
   config: ConfiguratorState;
@@ -517,96 +518,8 @@ function buildFabricGeometry(
     return geometry;
   }
 
-  // Generic n-gon (5+ corners): radial rings with half-step offset and wide corner suppression
-  const vertices: number[] = [];
-  const indices: number[] = [];
-  const segsPerEdge = Math.ceil(res / n);
-  const vertsPerRing = n * segsPerEdge;
-
-  const ngonNormals: THREE.Vector3[] = [];
-  for (let i = 0; i < n; i++) {
-    ngonNormals.push(computeEdgeInwardNormal(corners3D[i], corners3D[(i + 1) % n], centroid));
-  }
-
-  // Centroid vertex (index 0)
-  vertices.push(centroid.x, centroid.y, centroid.z);
-
-  for (let ring = 1; ring <= res; ring++) {
-    const t = ring / res;
-    const smoothT = t * t * (3 - 2 * t);
-
-    for (let i = 0; i < n; i++) {
-      const next = (i + 1) % n;
-      for (let s = 0; s < segsPerEdge; s++) {
-        // Half-step offset: vertices never sit exactly at corners, eliminating sector boundary gaps
-        const edgeT = (s + 0.5) / segsPerEdge;
-
-        // Interior point: lerp from centroid toward the straight edge position
-        const edgePtStraight = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
-        const interiorPt = new THREE.Vector3().lerpVectors(centroid, edgePtStraight, smoothT);
-
-        let pt: THREE.Vector3;
-
-        // Edge curve only applied on outer 15% of rings (smoothT > 0.85)
-        if (smoothT > 0.85) {
-          // Angular distance to nearest corner: 0 at corners, 0.5 at mid-edge
-          const angularDist = Math.min(edgeT, 1 - edgeT);
-
-          // Wide suppression: edge curves only active in center 40% of each sector
-          // Quadratic ramp from 0 (at corner) to 1 (at 30%+ from corner)
-          const cornerSuppressionZone = 0.3;
-          const edgeCurveWeight = angularDist < cornerSuppressionZone
-            ? (angularDist / cornerSuppressionZone) * (angularDist / cornerSuppressionZone)
-            : 1;
-
-          // Radial blend: 0 at smoothT=0.85, 1 at smoothT=1.0
-          const radialBlend = (smoothT - 0.85) / 0.15;
-
-          const totalWeight = edgeCurveWeight * radialBlend;
-
-          if (totalWeight > 0.001) {
-            const edgePt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT, ngonNormals[i]);
-            const edgePtScaled = new THREE.Vector3().lerpVectors(centroid, edgePt, smoothT);
-            pt = new THREE.Vector3().lerpVectors(interiorPt, edgePtScaled, totalWeight);
-          } else {
-            pt = interiorPt;
-          }
-        } else {
-          pt = interiorPt;
-        }
-
-        // Sag: peaks at center, zero at edges
-        const distFromEdge = 1 - smoothT;
-        const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
-        pt.y -= sag * centroid.y * 0.4;
-
-        vertices.push(pt.x, pt.y, pt.z);
-      }
-    }
-  }
-
-  // Indices: center fan (ring 0 -> ring 1)
-  for (let s = 0; s < vertsPerRing; s++) {
-    const next = (s + 1) % vertsPerRing;
-    indices.push(0, 1 + s, 1 + next);
-  }
-
-  // Indices: ring-to-ring quads
-  for (let ring = 1; ring < res; ring++) {
-    const ringStart = 1 + (ring - 1) * vertsPerRing;
-    const nextRingStart = 1 + ring * vertsPerRing;
-    for (let s = 0; s < vertsPerRing; s++) {
-      const next = (s + 1) % vertsPerRing;
-      indices.push(ringStart + s, nextRingStart + s, nextRingStart + next);
-      indices.push(ringStart + s, nextRingStart + next, ringStart + next);
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
+  // Generic n-gon (5+ corners): XPBD physics-based cloth solver
+  return buildSolvedFabricGeometry(corners3D, subdivisions);
 }
 
 function FabricMesh({ corners3D, color, onClick, onPointerMissed }: { corners3D: THREE.Vector3[]; color: string; onClick?: () => void; onPointerMissed?: () => void }) {
