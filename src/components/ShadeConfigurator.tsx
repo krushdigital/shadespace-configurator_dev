@@ -41,7 +41,7 @@ import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
 import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { Box, Layers } from 'lucide-react';
-import { canRender3D, Device3DTier } from '../utils/canRender3D';
+import { canRender3D, Device3DTier, supports3DForCorners } from '../utils/canRender3D';
 import type { AdminProfile } from '../hooks/useAdminProfile';
 
 const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
@@ -88,6 +88,16 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 1024);
   const [device3DTier, setDevice3DTier] = useState<Device3DTier>(() => canRender3D());
   const [mobileViewMode, setMobileViewMode] = useState<'plan' | '3d'>('plan');
+  // Once the user picks a view, stop auto-applying the 3D default (their choice sticks).
+  const hasUserChosenView = useRef(false);
+  const handleDesktopViewModeChange = (mode: 'plan' | '3d') => {
+    hasUserChosenView.current = true;
+    setDesktopViewMode(mode);
+  };
+  const handleMobileViewModeChange = (mode: 'plan' | '3d') => {
+    hasUserChosenView.current = true;
+    setMobileViewMode(mode);
+  };
   const reviewContentRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false)
   const { showToast } = useToast();
@@ -197,6 +207,18 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
+
+  // Default the measurement guide to 3D for 3/4-corner sails, and force Plan for
+  // 5+ corners (where 3D is temporarily unavailable). A manual toggle sticks.
+  useEffect(() => {
+    if (!supports3DForCorners(config.corners)) {
+      setDesktopViewMode('plan');
+      setMobileViewMode('plan');
+    } else if (!hasUserChosenView.current) {
+      setDesktopViewMode('3d');
+      setMobileViewMode(device3DTier !== 'none' ? '3d' : 'plan');
+    }
+  }, [config.corners, device3DTier]);
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
@@ -2485,7 +2507,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     onSaveQuote={handleSaveQuote}
                     quoteReference={quoteReference}
                     viewMode={index === 6 ? desktopViewMode : undefined}
-                    onViewModeChange={index === 6 ? setDesktopViewMode : undefined}
+                    onViewModeChange={index === 6 ? handleDesktopViewModeChange : undefined}
                     navigateToHeights={index === 4 ? navigateToHeights : undefined}
                     setNavigateToHeights={index === 4 ? setNavigateToHeights : undefined}
                     navigateToDiagonals={index === 4 ? navigateToDiagonals : undefined}
@@ -2493,7 +2515,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     onHeightsSectionChange={index === 4 ? setIsHeightsSectionOpen : undefined}
                     device3DTier={device3DTier}
                     mobileViewMode={mobileViewMode}
-                    onMobileViewModeChange={setMobileViewMode}
+                    onMobileViewModeChange={handleMobileViewModeChange}
                     pricingSettingsMap={activePricingMap}
                     adminMode={adminMode}
                   />
@@ -2509,6 +2531,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
             const desktopProvidedDiagonals = desktopDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
             const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals && desktopMinDiagonals > 0;
+            const desktop3DAvailable = supports3DForCorners(config.corners);
+            const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
 
             return (
               <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-24 lg:self-start z-10 max-h-[calc(100vh-7rem)] overflow-y-auto">
@@ -2516,39 +2540,41 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   <h4 className="text-lg font-semibold text-slate-900">
                     {openStep === 5 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
                   </h4>
-                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                    <button
-                      onClick={() => setDesktopViewMode('plan')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        desktopViewMode === 'plan'
-                          ? 'bg-white shadow-sm text-slate-900'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      <Layers className="w-4 h-4" />
-                      Plan
-                    </button>
-                    <button
-                      onClick={() => setDesktopViewMode('3d')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                        desktopViewMode === '3d'
-                          ? 'bg-white shadow-sm text-slate-900'
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      <Box className="w-4 h-4" />
-                      3D
-                    </button>
-                  </div>
+                  {desktop3DAvailable && (
+                    <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                      <button
+                        onClick={() => handleDesktopViewModeChange('plan')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                          effectiveDesktopView === 'plan'
+                            ? 'bg-white shadow-sm text-slate-900'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        <Layers className="w-4 h-4" />
+                        Plan
+                      </button>
+                      <button
+                        onClick={() => handleDesktopViewModeChange('3d')}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                          effectiveDesktopView === '3d'
+                            ? 'bg-white shadow-sm text-slate-900'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        <Box className="w-4 h-4" />
+                        3D
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {openStep === 5 && desktopViewMode === 'plan' && (
+                {openStep === 5 && effectiveDesktopView === 'plan' && (
                   <p className="text-sm text-slate-600 mb-3">
                     Hover over a corner below to preview which corner on the sail you are configuring.
                   </p>
                 )}
 
-                {desktopViewMode === 'plan' ? (
+                {effectiveDesktopView === 'plan' ? (
                   openStep === 4 ? (
                     <div>
                       <ShapeCanvas
