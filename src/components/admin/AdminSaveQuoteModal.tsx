@@ -8,6 +8,8 @@ import { addQuoteToken } from '../../utils/tokenManager';
 import { useToast } from '../ui/ToastProvider';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import type { AdminProfile } from '../../hooks/useAdminProfile';
+import { generatePdfFromBlocks, CustomerDetails } from '../../utils/pdfGenerator';
+import { loadActivePdfTemplate } from '../../utils/activePdfTemplate';
 import {
   generateDefaultQuoteName,
   sanitizeQuoteName,
@@ -62,6 +64,7 @@ export function AdminSaveQuoteModal({
     accessToken: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const { showToast } = useToast();
   useBodyScrollLock(isOpen);
 
@@ -131,6 +134,33 @@ export function AdminSaveQuoteModal({
       setTimeout(() => setCopied(false), 2000);
     } catch {
       showToast('Failed to copy link', 'error');
+    }
+  };
+
+  const handleGeneratePdf = async () => {
+    if (!savedQuote) return;
+    try {
+      setGeneratingPdf(true);
+      const customerDetails: CustomerDetails = {
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+        email: email || undefined,
+        quoteName: savedQuote.quoteName,
+        customerReference: customerReference || undefined,
+        quoteUrl: savedQuote.url,
+      };
+      const template = await loadActivePdfTemplate();
+      await generatePdfFromBlocks(config, calculations, template.blocks, {
+        layout: template.layout,
+        chrome: template.chrome,
+        customer: customerDetails,
+        isEmailSummary: false,
+      });
+      showToast('PDF downloaded', 'success');
+    } catch (err) {
+      showToast('Failed to generate PDF', 'error');
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -287,10 +317,14 @@ export function AdminSaveQuoteModal({
                   <Link2 className="w-4 h-4 mr-2" />
                   {copied ? 'Copied!' : 'Copy Link'}
                 </Button>
-                <Button onClick={handleClose} className="flex-1">
-                  Done
+                <Button variant="outline" onClick={handleGeneratePdf} disabled={generatingPdf} className="flex-1">
+                  <FileText className="w-4 h-4 mr-2" />
+                  {generatingPdf ? 'Generating...' : 'Download PDF'}
                 </Button>
               </div>
+              <Button onClick={handleClose} className="w-full">
+                Done
+              </Button>
             </div>
           )}
         </div>

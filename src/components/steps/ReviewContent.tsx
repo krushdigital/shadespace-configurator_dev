@@ -45,6 +45,7 @@ interface ReviewContentProps {
   viewMode?: 'plan' | '3d';
   onViewModeChange?: (mode: 'plan' | '3d') => void;
   device3DTier?: 'high' | 'low' | 'none';
+  adminMode?: boolean;
 }
 
 export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
@@ -71,6 +72,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   viewMode: externalViewMode,
   onViewModeChange,
   device3DTier = 'none',
+  adminMode = false,
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [internalViewMode, setInternalViewMode] = useState<'plan' | '3d'>('plan');
@@ -1504,7 +1506,7 @@ console.log('✌️result --->', result);
           )}
 
           {/* Save & Email Quote button - Full width (mobile - review step) */}
-          {isMobile && onSaveQuote && (
+          {!adminMode && isMobile && onSaveQuote && (
             <Button
               variant="outline"
               size="lg"
@@ -1521,7 +1523,8 @@ console.log('✌️result --->', result);
             </Button>
           )}
 
-          {/* Add to Cart button - Full width */}
+          {/* Add to Cart button - Full width (hidden in admin mode) */}
+          {!adminMode && (
           <Button
             ref={addToCartButtonRef}
             size={isMobile ? "lg" : "md"}
@@ -1553,6 +1556,18 @@ console.log('✌️result --->', result);
               </div>
             )}
           </Button>
+          )}
+
+          {/* Admin mode: Save Quote button */}
+          {adminMode && onSaveQuote && (
+            <Button
+              size="md"
+              onClick={onSaveQuote}
+              className="w-full"
+            >
+              SAVE QUOTE - {formatCurrency(calculations.totalPrice, config.currency)}
+            </Button>
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { ConfiguratorState, ShadeCalculations } from '../types';
+import { getAdminAuthHeaders } from './adminAuth';
 
 // Route save-quote calls through the Shopify App Proxy so the browser never
 // makes direct Supabase DNS requests (avoids ERR_NAME_NOT_RESOLVED / CORS).
@@ -320,10 +321,15 @@ export async function saveQuoteAsAdmin(
     canvasImage3DUrl?: string | null;
   }
 ): Promise<SavedQuote> {
-  const response = await fetch(SAVE_QUOTE_URL, {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/save-quote`;
+  const authHeaders = await getAdminAuthHeaders();
+
+  const response = await fetch(edgeFunctionUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders,
     },
     body: JSON.stringify({
       config,

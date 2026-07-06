@@ -60,6 +60,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('active');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -99,11 +100,11 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
 
   useEffect(() => {
     setPage(0);
-  }, [dateRange, statusFilter, excludeInternal]);
+  }, [dateRange, statusFilter, sourceFilter, excludeInternal]);
 
   useEffect(() => {
     fetchQuotes();
-  }, [dateRange, statusFilter, excludeInternal, debouncedSearch, page]);
+  }, [dateRange, statusFilter, sourceFilter, excludeInternal, debouncedSearch, page]);
 
   const buildQueryParams = useCallback((searchTerm: string) => {
     const params: string[] = [
@@ -123,13 +124,19 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       params.push('is_excluded=eq.false');
     }
 
+    if (sourceFilter === 'admin') {
+      params.push('created_via=eq.admin_quote_builder');
+    } else if (sourceFilter === 'customer') {
+      params.push('created_via=eq.customer');
+    }
+
     if (searchTerm) {
       const encoded = encodeURIComponent(`*${searchTerm}*`);
       params.push(`or=(quote_name.ilike.${encoded},quote_reference.ilike.${encoded},customer_email.ilike.${encoded},customer_reference.ilike.${encoded},customer_first_name.ilike.${encoded},customer_last_name.ilike.${encoded},sales_rep_name.ilike.${encoded})`);
     }
 
     return params;
-  }, [dateRange, statusFilter, excludeInternal]);
+  }, [dateRange, statusFilter, sourceFilter, excludeInternal]);
 
   const fetchQuotes = async () => {
     try {
@@ -580,6 +587,11 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
               <option value="in_progress">In Progress</option>
               <option value="checkout_pending">Checkout Pending</option>
               <option value="expired">Expired</option>
+            </select>
+            <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="border border-gray-300 rounded px-3 py-2 text-sm">
+              <option value="all">All Sources</option>
+              <option value="admin">Admin Created</option>
+              <option value="customer">Customer Created</option>
             </select>
             <button
               onClick={() => setGroupByThread(!groupByThread)}
