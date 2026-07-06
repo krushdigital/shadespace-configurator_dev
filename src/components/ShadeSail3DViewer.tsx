@@ -517,64 +517,57 @@ function buildFabricGeometry(
     return geometry;
   }
 
-  // Generic n-gon (5+ corners): polar grid with shared corner vertices and smooth blending
+  // Generic n-gon (5+ corners): radial rings with smoothstep + edge blending matching tri/quad pattern
   const vertices: number[] = [];
   const indices: number[] = [];
-  const rings = res;
   const segsPerEdge = Math.ceil(res / n);
   const vertsPerRing = n * segsPerEdge;
+  const cornerRadius = 3 / res;
 
   const ngonNormals: THREE.Vector3[] = [];
   for (let i = 0; i < n; i++) {
     ngonNormals.push(computeEdgeInwardNormal(corners3D[i], corners3D[(i + 1) % n], centroid));
   }
 
-  // Helper: compute angular distance to nearest corner (0 at corner, 1 at mid-edge)
-  function angularCornerProximity(edgeT: number): number {
-    const distToStart = edgeT;
-    const distToEnd = 1 - edgeT;
-    const minDist = Math.min(distToStart, distToEnd);
-    return Math.min(minDist * 2, 1);
-  }
-
   // Centroid vertex (index 0)
   vertices.push(centroid.x, centroid.y, centroid.z);
 
-  // Generate ring vertices
-  for (let ring = 1; ring <= rings; ring++) {
-    const radialT = ring / rings;
+  for (let ring = 1; ring <= res; ring++) {
+    const t = ring / res;
+    const smoothT = t * t * (3 - 2 * t);
+    const distFromEdge = 1 - smoothT;
+
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
-        const cornerProx = angularCornerProximity(edgeT);
 
-        // Interior point via polar interpolation from centroid to edge
+        // Interior point: lerp from centroid to straight edge point using smoothT
         const edgePtStraight = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
-        const interiorPt = new THREE.Vector3().lerpVectors(centroid, edgePtStraight, radialT);
+        const interiorPt = new THREE.Vector3().lerpVectors(centroid, edgePtStraight, smoothT);
 
-        // Edge curve point (with inward tension)
-        const edgePtCurved = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT, ngonNormals[i]);
-        const edgePtOnRing = new THREE.Vector3().lerpVectors(centroid, edgePtCurved, radialT);
+        let pt: THREE.Vector3;
 
-        // Blend edge curve in only near the outer boundary
-        const edgeBlendZone = 0.3;
-        const edgeInfluence = radialT > (1 - edgeBlendZone)
-          ? (radialT - (1 - edgeBlendZone)) / edgeBlendZone
-          : 0;
+        if (distFromEdge < 0.25) {
+          // Near the edge: blend between curved edge point and interior point
+          const edgePt = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT, ngonNormals[i]);
+          // Scale the edge curve point radially (it lives on the boundary; project inward)
+          const edgePtScaled = new THREE.Vector3().lerpVectors(centroid, edgePt, smoothT);
 
-        // Suppress edge curve influence near corners to prevent crease formation
-        const cornerSuppression = cornerProx < 0.15
-          ? cornerProx / 0.15
-          : 1;
-        const effectiveEdgeBlend = edgeInfluence * cornerSuppression;
+          // Corner distance: parametric distance to nearest polygon corner
+          const cornerDist = Math.min(
+            Math.sqrt(edgeT * edgeT + (1 - smoothT) * (1 - smoothT)),
+            Math.sqrt((1 - edgeT) * (1 - edgeT) + (1 - smoothT) * (1 - smoothT))
+          );
+          const cornerBlendSuppression = cornerDist < cornerRadius ? cornerDist / cornerRadius : 1;
+          const blend = (distFromEdge / 0.25) * cornerBlendSuppression;
+          pt = new THREE.Vector3().lerpVectors(edgePtScaled, interiorPt, blend);
+        } else {
+          pt = interiorPt;
+        }
 
-        const pt = new THREE.Vector3().lerpVectors(interiorPt, edgePtOnRing, effectiveEdgeBlend);
-
-        // Sag: max at mid-edge, zero at corners, scales with radial position
-        const sagRadial = radialT * (1 - radialT * 0.3);
-        const sagAngular = Math.sin(cornerProx * Math.PI * 0.5);
-        const sag = sagFactor * sagRadial * sagAngular;
+        // Sag: identical formula to tri/quad cases
+        const sag = sagFactor * distFromEdge * (1 - distFromEdge * 0.3);
         pt.y -= sag * centroid.y * 0.4;
 
         vertices.push(pt.x, pt.y, pt.z);
@@ -589,7 +582,7 @@ function buildFabricGeometry(
   }
 
   // Indices: ring-to-ring quads
-  for (let ring = 1; ring < rings; ring++) {
+  for (let ring = 1; ring < res; ring++) {
     const ringStart = 1 + (ring - 1) * vertsPerRing;
     const nextRingStart = 1 + ring * vertsPerRing;
     for (let s = 0; s < vertsPerRing; s++) {
