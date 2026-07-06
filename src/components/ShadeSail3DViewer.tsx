@@ -517,45 +517,79 @@ function buildFabricGeometry(
     return geometry;
   }
 
-  // Generic n-gon (5+ corners): radial rings with smoothstep
+  // Generic n-gon (5+ corners): polar grid with shared corner vertices and smooth blending
   const vertices: number[] = [];
   const indices: number[] = [];
+  const rings = res;
   const segsPerEdge = Math.ceil(res / n);
   const vertsPerRing = n * segsPerEdge;
+
   const ngonNormals: THREE.Vector3[] = [];
   for (let i = 0; i < n; i++) {
     ngonNormals.push(computeEdgeInwardNormal(corners3D[i], corners3D[(i + 1) % n], centroid));
   }
+
+  // Helper: compute angular distance to nearest corner (0 at corner, 1 at mid-edge)
+  function angularCornerProximity(edgeT: number): number {
+    const distToStart = edgeT;
+    const distToEnd = 1 - edgeT;
+    const minDist = Math.min(distToStart, distToEnd);
+    return Math.min(minDist * 2, 1);
+  }
+
+  // Centroid vertex (index 0)
   vertices.push(centroid.x, centroid.y, centroid.z);
-  for (let ring = 1; ring <= res; ring++) {
-    const t = ring / res;
-    const smoothT = t * t * (3 - 2 * t);
+
+  // Generate ring vertices
+  for (let ring = 1; ring <= rings; ring++) {
+    const radialT = ring / rings;
     for (let i = 0; i < n; i++) {
       const next = (i + 1) % n;
       for (let s = 0; s < segsPerEdge; s++) {
         const edgeT = s / segsPerEdge;
-        let edgePoint: THREE.Vector3;
-        if (smoothT > 0.85) {
-          edgePoint = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT, ngonNormals[i]);
-          const straightPt = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
-          const blend = (smoothT - 0.85) / 0.15;
-          edgePoint = new THREE.Vector3().lerpVectors(straightPt, edgePoint, blend);
-        } else {
-          edgePoint = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
-        }
-        const point = new THREE.Vector3().lerpVectors(centroid, edgePoint, smoothT);
-        const distFromEdge = 1 - smoothT;
-        const sag = sagFactor * (1 - distFromEdge) * distFromEdge;
-        point.y -= sag * centroid.y * 0.3;
-        vertices.push(point.x, point.y, point.z);
+        const cornerProx = angularCornerProximity(edgeT);
+
+        // Interior point via polar interpolation from centroid to edge
+        const edgePtStraight = new THREE.Vector3().lerpVectors(corners3D[i], corners3D[next], edgeT);
+        const interiorPt = new THREE.Vector3().lerpVectors(centroid, edgePtStraight, radialT);
+
+        // Edge curve point (with inward tension)
+        const edgePtCurved = computeEdgeCurvePoint(corners3D[i], corners3D[next], centroid, edgeT, ngonNormals[i]);
+        const edgePtOnRing = new THREE.Vector3().lerpVectors(centroid, edgePtCurved, radialT);
+
+        // Blend edge curve in only near the outer boundary
+        const edgeBlendZone = 0.3;
+        const edgeInfluence = radialT > (1 - edgeBlendZone)
+          ? (radialT - (1 - edgeBlendZone)) / edgeBlendZone
+          : 0;
+
+        // Suppress edge curve influence near corners to prevent crease formation
+        const cornerSuppression = cornerProx < 0.15
+          ? cornerProx / 0.15
+          : 1;
+        const effectiveEdgeBlend = edgeInfluence * cornerSuppression;
+
+        const pt = new THREE.Vector3().lerpVectors(interiorPt, edgePtOnRing, effectiveEdgeBlend);
+
+        // Sag: max at mid-edge, zero at corners, scales with radial position
+        const sagRadial = radialT * (1 - radialT * 0.3);
+        const sagAngular = Math.sin(cornerProx * Math.PI * 0.5);
+        const sag = sagFactor * sagRadial * sagAngular;
+        pt.y -= sag * centroid.y * 0.4;
+
+        vertices.push(pt.x, pt.y, pt.z);
       }
     }
   }
+
+  // Indices: center fan (ring 0 -> ring 1)
   for (let s = 0; s < vertsPerRing; s++) {
     const next = (s + 1) % vertsPerRing;
     indices.push(0, 1 + s, 1 + next);
   }
-  for (let ring = 1; ring < res; ring++) {
+
+  // Indices: ring-to-ring quads
+  for (let ring = 1; ring < rings; ring++) {
     const ringStart = 1 + (ring - 1) * vertsPerRing;
     const nextRingStart = 1 + ring * vertsPerRing;
     for (let s = 0; s < vertsPerRing; s++) {
@@ -564,6 +598,7 @@ function buildFabricGeometry(
       indices.push(ringStart + s, nextRingStart + next, ringStart + next);
     }
   }
+
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
   geometry.setIndex(indices);
