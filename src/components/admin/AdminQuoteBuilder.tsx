@@ -114,7 +114,7 @@ export const AdminQuoteBuilder: React.FC<AdminQuoteBuilderProps> = ({ profile })
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
         <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Shade Sail Configurator</h3>
