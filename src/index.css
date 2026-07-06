@@ -8,6 +8,33 @@
   border: none;
 }
 
+/* Reset form elements within app to prevent Shopify theme styles from overriding Tailwind.
+   Shopify themes apply global input styles (border, background, shadow, padding) that conflict
+   with Tailwind utility classes. This baseline reset lets Tailwind utilities take full control. */
+#SHADE_SPACE input,
+#SHADE_SPACE select,
+#SHADE_SPACE textarea,
+#CONFIGURATOR_ROOT input,
+#CONFIGURATOR_ROOT select,
+#CONFIGURATOR_ROOT textarea {
+  border: 0 solid transparent;
+  background-color: transparent;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  outline: none;
+  border-radius: 0;
+  line-height: inherit;
+  min-height: 0;
+  max-width: none;
+  width: 100%;
+}
+
 /* Account for fixed website header when scrolling */
 html {
   scroll-padding-top: 100px;
