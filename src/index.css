@@ -28,6 +28,12 @@
   height: auto !important;
   line-height: normal !important;
   letter-spacing: normal !important;
+  /* Force a solid border style so Tailwind's border-width/-radius/-color utilities
+     render. Tailwind sets width/radius/color (all !important via important: true) but
+     NOT border-style, which comes from Preflight's non-important `*` base rule and is
+     overridden by host (Shopify) `input { border: none }`. Fields without a border-*
+     width utility have width 0, so this stays invisible for them. */
+  border-style: solid !important;
 }
 
 /* Account for fixed website header when scrolling */
