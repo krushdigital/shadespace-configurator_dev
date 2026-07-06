@@ -29,6 +29,7 @@ import { alignStorefrontToCurrency, cartCurrencyMismatches, clearCart } from '..
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
+import { AdminSaveQuoteModal } from './admin/AdminSaveQuoteModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
 import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
 import { generateDefaultQuoteName } from '../utils/quoteNaming';
@@ -41,8 +42,15 @@ import { supabase } from '../lib/supabase';
 import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { Box, Layers } from 'lucide-react';
 import { canRender3D, Device3DTier } from '../utils/canRender3D';
+import type { AdminProfile } from '../hooks/useAdminProfile';
 
 const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
+
+export interface ShadeConfiguratorProps {
+  adminMode?: boolean;
+  adminProfile?: AdminProfile | null;
+  onAdminSaveComplete?: (quoteId: string, accessToken: string, reference: string) => void;
+}
 
 const INITIAL_STATE: ConfiguratorState = {
   step: 0,
@@ -68,7 +76,7 @@ const INITIAL_STATE: ConfiguratorState = {
   hasManuallyAdjustedShape: false
 };
 
-export function ShadeConfigurator() {
+export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSaveComplete }: ShadeConfiguratorProps = {}) {
   const [config, setConfig] = useState<ConfiguratorState>(INITIAL_STATE);
   const [openStep, setOpenStep] = useState<number>(0);
   const [desktopViewMode, setDesktopViewMode] = useState<'plan' | '3d'>('plan');
@@ -2581,53 +2589,98 @@ export function ShadeConfigurator() {
       </div>
 
       {/* Unified Save Modal */}
-      <UnifiedSaveModal
-        isOpen={showUnifiedSaveModal}
-        onClose={() => setShowUnifiedSaveModal(false)}
-        config={config}
-        calculations={calculations}
-        currentStep={openStep}
-        totalSteps={7}
-        shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
-        pricingSnapshot={pricingSettingsMap}
-        existingQuoteId={savedQuoteId}
-        existingAccessToken={savedAccessToken}
-        onQuoteCreated={(ref, id, token) => {
-          setQuoteReference(ref);
-          setSavedQuoteId(id);
-          setSavedAccessToken(token);
-        }}
-        onSaveComplete={() => setLoadedPricingSnapshot(null)}
-        onCustomerDetailsCaptured={setCapturedCustomerDetails}
-        onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
-        onEmailPDFQuote={handleEmailPDFQuote}
-        getCanvasImageUrl={async () => {
-          const svgElement = canvasRef.current?.getSVGElement?.();
-          if (!svgElement) return null;
-          try {
-            const blob = await convertSvgToPng(svgElement, 600, 500);
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-            return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
-          } catch (err) {
-            console.warn('Failed to capture diagram for saved quote:', err);
-            return null;
-          }
-        }}
-        getCanvasImage3DUrl={async () => {
-          try {
-            const screenshot = await viewer3DRef.current?.capture3DScreenshot();
-            if (!screenshot) return null;
-            const blob = await fetch(screenshot).then(r => r.blob());
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
-            return await uploadToQuoteAssets(blob, filename);
-          } catch (err) {
-            console.warn('Failed to capture 3D for saved quote:', err);
-            return null;
-          }
-        }}
-      />
+      {adminMode ? (
+        <AdminSaveQuoteModal
+          isOpen={showUnifiedSaveModal}
+          onClose={() => setShowUnifiedSaveModal(false)}
+          config={config}
+          calculations={calculations}
+          adminProfile={adminProfile!}
+          pricingSnapshot={pricingSettingsMap}
+          existingQuoteId={savedQuoteId}
+          existingAccessToken={savedAccessToken}
+          onQuoteCreated={(ref, id, token) => {
+            setQuoteReference(ref);
+            setSavedQuoteId(id);
+            setSavedAccessToken(token);
+            onAdminSaveComplete?.(id, token, ref);
+          }}
+          getCanvasImageUrl={async () => {
+            const svgElement = canvasRef.current?.getSVGElement?.();
+            if (!svgElement) return null;
+            try {
+              const blob = await convertSvgToPng(svgElement, 600, 500);
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture diagram for saved quote:', err);
+              return null;
+            }
+          }}
+          getCanvasImage3DUrl={async () => {
+            try {
+              const screenshot = await viewer3DRef.current?.capture3DScreenshot();
+              if (!screenshot) return null;
+              const blob = await fetch(screenshot).then(r => r.blob());
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture 3D for saved quote:', err);
+              return null;
+            }
+          }}
+        />
+      ) : (
+        <UnifiedSaveModal
+          isOpen={showUnifiedSaveModal}
+          onClose={() => setShowUnifiedSaveModal(false)}
+          config={config}
+          calculations={calculations}
+          currentStep={openStep}
+          totalSteps={7}
+          shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
+          pricingSnapshot={pricingSettingsMap}
+          existingQuoteId={savedQuoteId}
+          existingAccessToken={savedAccessToken}
+          onQuoteCreated={(ref, id, token) => {
+            setQuoteReference(ref);
+            setSavedQuoteId(id);
+            setSavedAccessToken(token);
+          }}
+          onSaveComplete={() => setLoadedPricingSnapshot(null)}
+          onCustomerDetailsCaptured={setCapturedCustomerDetails}
+          onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
+          onEmailPDFQuote={handleEmailPDFQuote}
+          getCanvasImageUrl={async () => {
+            const svgElement = canvasRef.current?.getSVGElement?.();
+            if (!svgElement) return null;
+            try {
+              const blob = await convertSvgToPng(svgElement, 600, 500);
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture diagram for saved quote:', err);
+              return null;
+            }
+          }}
+          getCanvasImage3DUrl={async () => {
+            try {
+              const screenshot = await viewer3DRef.current?.capture3DScreenshot();
+              if (!screenshot) return null;
+              const blob = await fetch(screenshot).then(r => r.blob());
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              const filename = `shade-sail-3d-${config.corners}corner-${timestamp}.png`;
+              return await uploadToQuoteAssets(blob, filename);
+            } catch (err) {
+              console.warn('Failed to capture 3D for saved quote:', err);
+              return null;
+            }
+          }}
+        />
+      )}
     </>
   );
 }

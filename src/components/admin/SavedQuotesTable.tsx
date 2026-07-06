@@ -38,6 +38,8 @@ interface Quote {
   diagram_3d_public_url: string | null;
   quote_thread_id: string | null;
   is_thread_primary: boolean;
+  sales_rep_name: string | null;
+  created_via: string | null;
 }
 
 interface ThreadGroup {
@@ -48,7 +50,7 @@ interface ThreadGroup {
 }
 
 const PAGE_SIZE = 50;
-const SELECT_FIELDS = 'id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at,diagram_3d_public_url,quote_thread_id,is_thread_primary';
+const SELECT_FIELDS = 'id,quote_reference,quote_name,customer_email,customer_reference,customer_first_name,customer_last_name,customer_ip,customer_country,customer_country_code,is_excluded,status,created_at,access_token,calculations_data,config_data,current_step,total_steps,shopify_order_id,shopify_order_number,purchased_at,diagram_3d_public_url,quote_thread_id,is_thread_primary,sales_rep_name,created_via';
 
 export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInternal?: boolean; timezone?: string }> = ({ dateRange, excludeInternal, timezone = 'UTC' }) => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -123,7 +125,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
 
     if (searchTerm) {
       const encoded = encodeURIComponent(`*${searchTerm}*`);
-      params.push(`or=(quote_name.ilike.${encoded},quote_reference.ilike.${encoded},customer_email.ilike.${encoded},customer_reference.ilike.${encoded},customer_first_name.ilike.${encoded},customer_last_name.ilike.${encoded})`);
+      params.push(`or=(quote_name.ilike.${encoded},quote_reference.ilike.${encoded},customer_email.ilike.${encoded},customer_reference.ilike.${encoded},customer_first_name.ilike.${encoded},customer_last_name.ilike.${encoded},sales_rep_name.ilike.${encoded})`);
     }
 
     return params;
@@ -603,6 +605,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                 <th className="px-3 pb-3 text-sm font-semibold text-gray-700">Status</th>
                 <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Total Price</th>
                 <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Created</th>
+                <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Sales Rep</th>
                 <th className="px-3 pb-3 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
               </tr>
             </thead>
@@ -649,6 +652,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                         {formatCurrency(group.primary.calculations_data?.totalPrice ?? 0, group.primary.config_data?.currency ?? 'NZD')}
                       </td>
                       <td className="px-3 py-4 whitespace-nowrap"><DateCell dateString={group.primary.created_at} /></td>
+                      <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-600">{group.primary.sales_rep_name || <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-4 whitespace-nowrap">
                         <div className="flex gap-2">
                           <Button onClick={() => handleDownloadPDF(group.primary)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === group.primary.id}>
@@ -677,6 +681,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                           {formatCurrency(sec.calculations_data?.totalPrice ?? 0, sec.config_data?.currency ?? 'NZD')}
                         </td>
                         <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap"><DateCell dateString={sec.created_at} /></td>
+                        <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">{sec.sales_rep_name || <span className="text-gray-300">—</span>}</td>
                         <td className="px-3 py-3 whitespace-nowrap">
                           <Button onClick={() => setSelectedQuote(sec)} size="sm" variant="outline" className="text-xs">View</Button>
                         </td>
@@ -713,6 +718,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                       {formatCurrency(quote.calculations_data?.totalPrice ?? 0, quote.config_data?.currency ?? 'NZD')}
                     </td>
                     <td className="px-3 py-4 whitespace-nowrap"><DateCell dateString={quote.created_at} /></td>
+                    <td className="px-3 py-4 whitespace-nowrap text-xs text-gray-600">{quote.sales_rep_name || <span className="text-gray-300">—</span>}</td>
                     <td className="px-3 py-4 whitespace-nowrap">
                       <div className="flex gap-2">
                         <Button onClick={() => handleDownloadPDF(quote)} size="sm" variant="outline" className="text-xs" disabled={generatingPdf === quote.id}>
@@ -797,6 +803,12 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
                 <label className="text-sm font-medium text-gray-600">Created</label>
                 <p className="text-gray-900">{formatDate(selectedQuote.created_at).datePart} {formatDate(selectedQuote.created_at).timePart}</p>
               </div>
+              {selectedQuote.sales_rep_name && (
+                <div>
+                  <label className="text-sm font-medium text-gray-600">Sales Rep</label>
+                  <p className="text-gray-900">{selectedQuote.sales_rep_name}</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-gray-600">Step Progress</label>
                 <p className="text-gray-900">
