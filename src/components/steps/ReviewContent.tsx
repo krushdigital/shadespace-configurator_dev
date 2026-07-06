@@ -10,6 +10,7 @@ import { AccordionItem } from '../ui/AccordionItem';
 import { useFabricCatalog } from '../../hooks/useFabricCatalog';
 import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided, computeShapeConfidence } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
+import { supports3DForCorners } from '../../utils/canRender3D';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
 import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
 import { StandardPackPreview } from '../StandardPackPreview';
@@ -76,7 +77,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [internalViewMode, setInternalViewMode] = useState<'plan' | '3d'>('plan');
-  const reviewViewMode = externalViewMode ?? internalViewMode;
+  const rawReviewViewMode = externalViewMode ?? internalViewMode;
+  const review3DAvailable = supports3DForCorners(config.corners);
+  const reviewViewMode = review3DAvailable ? rawReviewViewMode : 'plan';
   const setReviewViewMode = onViewModeChange ?? setInternalViewMode;
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
   const [buttonShake, setButtonShake] = useState(false);
@@ -946,7 +949,7 @@ console.log('✌️result --->', result);
                 <h4 className="text-lg font-semibold text-slate-900">
                   Shade Sail Preview
                 </h4>
-                {(!isMobile || device3DTier !== 'none') && (
+                {review3DAvailable && (!isMobile || device3DTier !== 'none') && (
                   <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                     <button
                       onClick={() => setReviewViewMode('plan')}

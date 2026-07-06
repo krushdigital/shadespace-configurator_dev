@@ -21,6 +21,7 @@ import {
   setStoredUnitPreference
 } from '../../utils/unitAutoSelection';
 import { analytics } from '../../utils/analytics';
+import { supports3DForCorners } from '../../utils/canRender3D';
 import { getUserCurrencyInfo } from '../../utils/currencyFormatter';
 
 
@@ -525,7 +526,8 @@ export function DimensionsContent({
         const mobileMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
         const mobileProvidedDiagonals = mobileDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
         const mobileHasEnoughDiagonals = mobileProvidedDiagonals >= mobileMinDiagonals && mobileMinDiagonals > 0;
-        const show3DToggle = device3DTier !== 'none';
+        const show3DToggle = device3DTier !== 'none' && supports3DForCorners(config.corners);
+        const mobile3DView = mobileViewMode === '3d' && supports3DForCorners(config.corners);
 
         return (
           <div className="mb-4 sm:mb-6">
@@ -566,7 +568,7 @@ export function DimensionsContent({
               )}
             </div>
 
-            {mobileViewMode === '3d' ? (
+            {mobile3DView ? (
               <div className="h-[350px] sm:h-[450px] overflow-hidden rounded-lg">
                 <Suspense fallback={
                   <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
