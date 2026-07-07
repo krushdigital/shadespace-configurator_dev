@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
   const ip = getClientIp(req);
   if (!ip) {
     return new Response(
-      JSON.stringify({ error: "no_ip", country: null, countryCode: null, currency: null }),
+      JSON.stringify({ error: "no_ip", country: null, countryCode: null, currency: null, ip: null }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -88,7 +88,7 @@ Deno.serve(async (req: Request) => {
     const countryCode = cached.country.toUpperCase();
     const currency = cached.currency?.toUpperCase() || COUNTRY_TO_CURRENCY[countryCode] || "USD";
     return new Response(
-      JSON.stringify({ countryCode, currency, cached: true }),
+      JSON.stringify({ countryCode, currency, ip, cached: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
   const geo = await resolveCountry(ip);
   if (!geo) {
     return new Response(
-      JSON.stringify({ error: "geo_failed", countryCode: null, currency: null }),
+      JSON.stringify({ error: "geo_failed", countryCode: null, currency: null, ip }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
     );
 
   return new Response(
-    JSON.stringify({ countryCode, currency, cached: false }),
+    JSON.stringify({ countryCode, currency, ip, cached: false }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 });

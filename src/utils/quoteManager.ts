@@ -1,5 +1,6 @@
 import { ConfiguratorState, ShadeCalculations } from '../types';
 import { getAdminAuthHeaders } from './adminAuth';
+import { getIpDetectionCache } from './currencySync';
 
 // Route save-quote calls through the Shopify App Proxy so the browser never
 // makes direct Supabase DNS requests (avoids ERR_NAME_NOT_RESOLVED / CORS).
@@ -87,6 +88,7 @@ export async function saveQuote(
       lastName: lastName || null,
       canvasImageUrl: canvasImageUrl || null,
       canvasImage3DUrl: canvasImage3DUrl || null,
+      clientIp: getIpDetectionCache()?.ip || null,
       ...(status ? { status } : {}),
     }),
   });
@@ -203,6 +205,7 @@ export async function updateQuote(
       lastName: options?.lastName || null,
       canvasImageUrl: options?.canvasImageUrl || null,
       canvasImage3DUrl: options?.canvasImage3DUrl || null,
+      clientIp: getIpDetectionCache()?.ip || null,
       status: options?.status || null,
     }),
   });
