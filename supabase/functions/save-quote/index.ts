@@ -39,6 +39,39 @@ function getClientIp(req: Request): string | null {
   return null;
 }
 
+function isValidPublicIp(ip: unknown): ip is string {
+  if (typeof ip !== "string") return false;
+  const v = ip.trim();
+  if (!v) return false;
+  const ipv4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  const m = v.match(ipv4);
+  if (m) {
+    const octets = m.slice(1).map(Number);
+    if (octets.some((o) => o > 255)) return false;
+    if (octets[0] === 10) return false;
+    if (octets[0] === 127) return false;
+    if (octets[0] === 192 && octets[1] === 168) return false;
+    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) return false;
+    if (octets[0] === 169 && octets[1] === 254) return false;
+    return true;
+  }
+  // Basic IPv6 sanity check (exclude loopback / link-local)
+  if (v.includes(":")) {
+    if (v === "::1") return false;
+    if (v.toLowerCase().startsWith("fe80:")) return false;
+    return /^[0-9a-fA-F:]+$/.test(v);
+  }
+  return false;
+}
+
+// Prefer a browser-supplied client IP (captured via a direct call to
+// detect-country) over the request header, since save-quote is reached
+// through the Shopify App Proxy and the header reflects the proxy hop.
+function resolveClientIp(bodyIp: unknown, req: Request): string | null {
+  if (isValidPublicIp(bodyIp)) return bodyIp.trim();
+  return getClientIp(req);
+}
+
 async function resolveCountry(ip: string): Promise<{ country: string; countryCode: string } | null> {
   try {
     const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode`, {
@@ -391,6 +424,7 @@ async function handlePost(
     createdByAdminId,
     salesRepName,
     createdVia,
+    clientIp: bodyClientIp,
   } = body;
 
   if (!config || !calculations) {
@@ -430,7 +464,7 @@ async function handlePost(
   const lockedCurrency = config.currency || null;
 
   // Extract client IP and resolve country (non-blocking)
-  const clientIp = getClientIp(req);
+  const clientIp = resolveClientIp(bodyClientIp, req);
   let customerCountry: string | null = null;
   let customerCountryCode: string | null = null;
   if (clientIp) {
@@ -579,6 +613,7 @@ async function handlePut(
     canvasImageUrl,
     canvasImage3DUrl,
     status: requestedStatus,
+    clientIp: bodyClientIp,
   } = body;
 
   if (!id || !token) {
@@ -617,7 +652,7 @@ async function handlePut(
   const lockedCurrency = config.currency || null;
 
   // Resolve IP/country on update too
-  const clientIp = getClientIp(req);
+  const clientIp = resolveClientIp(bodyClientIp, req);
   let customerCountry: string | null = null;
   let customerCountryCode: string | null = null;
   if (clientIp) {

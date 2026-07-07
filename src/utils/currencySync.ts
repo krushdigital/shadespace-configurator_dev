@@ -9,6 +9,7 @@ type CurrencyMapping = {
 type IpDetection = {
   countryCode: string | null;
   currency: string | null;
+  ip: string | null;
 };
 
 let mappingCache: CurrencyMapping[] | null = null;
@@ -26,7 +27,7 @@ export function detectCountryFromIp(): Promise<IpDetection> {
 
   const url = import.meta.env.VITE_SUPABASE_URL;
   if (!url) {
-    ipDetectionCache = { countryCode: null, currency: null };
+    ipDetectionCache = { countryCode: null, currency: null, ip: null };
     return Promise.resolve(ipDetectionCache);
   }
 
@@ -40,16 +41,17 @@ export function detectCountryFromIp(): Promise<IpDetection> {
     },
     signal: AbortSignal.timeout(4000),
   })
-    .then((res) => (res.ok ? res.json() : { countryCode: null, currency: null }))
-    .then((data: { countryCode?: string | null; currency?: string | null }) => {
+    .then((res) => (res.ok ? res.json() : { countryCode: null, currency: null, ip: null }))
+    .then((data: { countryCode?: string | null; currency?: string | null; ip?: string | null }) => {
       ipDetectionCache = {
         countryCode: data.countryCode?.toUpperCase() || null,
         currency: data.currency?.toUpperCase() || null,
+        ip: data.ip || null,
       };
       return ipDetectionCache;
     })
     .catch(() => {
-      ipDetectionCache = { countryCode: null, currency: null };
+      ipDetectionCache = { countryCode: null, currency: null, ip: null };
       return ipDetectionCache;
     });
 
