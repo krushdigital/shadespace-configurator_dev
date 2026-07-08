@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { getPortalRoot } from '../utils/appScope';
 import { Package, X } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import type { HardwareItem, HardwarePack } from '../hooks/useHardwareCatalog';
@@ -154,7 +155,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
         >
           {content}
         </div>,
-        document.body,
+        getPortalRoot(),
       )}
       {open && content && isMobile && createPortal(
         <div data-lenis-prevent className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/50 p-0" onClick={handleClose}>
@@ -164,7 +165,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
             </div>
           </div>
         </div>,
-        document.body,
+        getPortalRoot(),
       )}
     </>
   );

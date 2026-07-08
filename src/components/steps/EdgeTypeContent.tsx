@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getPortalRoot } from '../../utils/appScope';
 import { X, ZoomIn } from 'lucide-react';
 import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
@@ -324,7 +325,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             </p>
           </div>
         </div>,
-        document.body
+        getPortalRoot()
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { getPortalRoot } from '../../utils/appScope';
 
 interface TooltipProps {
   content: React.ReactNode;
@@ -243,7 +244,7 @@ export function Tooltip({ content, children, className = '', onOpen, fullWidth =
         </div>
       )}
     </div>,
-    document.body
+    getPortalRoot()
   ) : null;
 
   return (
