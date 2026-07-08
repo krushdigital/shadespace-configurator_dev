@@ -1479,6 +1479,32 @@ export function hasRequiredMeasurements(
 }
 
 /**
+ * Whether we have enough measurements to draw a shape at all (even an
+ * approximate one). Triangles and quadrilaterals can be reconstructed from
+ * edges alone (quads approximately, refining once a diagonal is added), while
+ * 5-8 sided shapes need diagonals for the solver to place every vertex.
+ */
+export function canReconstructShape(
+  measurements: { [key: string]: number },
+  corners: number
+): boolean {
+  if (corners < 3 || corners > 8) return false;
+
+  // All edges are required for any reconstruction
+  for (let i = 0; i < corners; i++) {
+    const next = (i + 1) % corners;
+    const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + next)}`;
+    if (!measurements[key] || measurements[key] <= 0) return false;
+  }
+
+  // Triangles and quads can be drawn from edges only.
+  if (corners <= 4) return true;
+
+  // 5+ sided shapes still need their diagonals to be solvable.
+  return hasRequiredMeasurements(measurements, corners);
+}
+
+/**
  * Reconstruct polygon from edge and diagonal measurements
  */
 export function reconstructPolygonFromMeasurements(
@@ -1493,12 +1519,12 @@ export function reconstructPolygonFromMeasurements(
     ? projectMeasurementsToHorizontal(measurements, corners, heights)
     : measurements;
 
-  // Check if we have required measurements
-  if (!hasRequiredMeasurements(projMeasurements, corners)) {
+  // Check if we have enough measurements to draw a shape
+  if (!canReconstructShape(projMeasurements, corners)) {
     console.log('Reconstruction skipped: missing required measurements', {
       corners,
       measurements: Object.keys(projMeasurements),
-      hasRequired: hasRequiredMeasurements(projMeasurements, corners)
+      canReconstruct: canReconstructShape(projMeasurements, corners)
     });
     return null;
   }
