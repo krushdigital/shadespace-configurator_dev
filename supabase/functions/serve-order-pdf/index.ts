@@ -374,7 +374,13 @@ class PdfRenderer {
       if (!resp.ok) return;
       const contentType = resp.headers.get("content-type") || "image/png";
       const buffer = await resp.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      const chunk = 8192;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+      }
+      const base64 = btoa(binary);
       const dataUri = `data:${contentType};base64,${base64}`;
       const format = contentType.includes("png") ? "PNG" : "JPEG";
       const w = Math.min(maxW, areaW);
@@ -385,6 +391,108 @@ class PdfRenderer {
     } catch {
       // Skip image on failure
     }
+  }
+
+  // Vector-draws the 2D plan view from the quote's corner points so a diagram
+  // is always available even when no captured image was stored.
+  drawPlanDiagram(cfgData: Record<string, unknown> | null, xOffset: number, areaWidth: number, boxH: number, fulfilment: boolean) {
+    const pts = (cfgData?.points as Array<{ x: number; y: number }> | undefined) || [];
+    if (pts.length < 3) return;
+    const corners = Number(cfgData?.corners) || pts.length;
+    const unit: "metric" | "imperial" = (cfgData?.unit as string) === "imperial" ? "imperial" : "metric";
+    const measurements = (cfgData?.measurements || {}) as Record<string, number>;
+    const fmtM = (mm: number) => fulfilment ? formatMeasurementDual(mm) : formatMeasurement(mm, unit);
+
+    this.checkPageBreak(boxH + 4);
+    const startY = this.y;
+    const pad = 10;
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const spanX = Math.max(1, maxX - minX), spanY = Math.max(1, maxY - minY);
+    const availW = areaWidth - 2 * pad, availH = boxH - 2 * pad;
+    const scale = Math.min(availW / spanX, availH / spanY);
+    const drawnW = spanX * scale, drawnH = spanY * scale;
+    const originX = xOffset + (areaWidth - drawnW) / 2;
+    const originY = startY + pad + (availH - drawnH) / 2;
+    const mapped = pts.map((p) => ({ X: originX + (p.x - minX) * scale, Y: originY + (p.y - minY) * scale }));
+    const cX = mapped.reduce((s, p) => s + p.X, 0) / mapped.length;
+    const cY = mapped.reduce((s, p) => s + p.Y, 0) / mapped.length;
+
+    // Filled sail body
+    const first = mapped[0];
+    const deltas: number[][] = [];
+    for (let i = 1; i < mapped.length; i++) {
+      deltas.push([mapped[i].X - mapped[i - 1].X, mapped[i].Y - mapped[i - 1].Y]);
+    }
+    this.setFillColor("#E8F5CC");
+    this.pdf.lines(deltas, first.X, first.Y, [1, 1], "F", true);
+
+    // Edges
+    for (let i = 0; i < corners; i++) {
+      const from = mapped[i], to = mapped[(i + 1) % corners];
+      if (!from || !to) continue;
+      const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + ((i + 1) % corners))}`;
+      if (measurements[key]) {
+        this.setDrawColor("#059669");
+        this.pdf.setLineWidth(0.8);
+        this.pdf.setLineDashPattern([], 0);
+      } else {
+        this.setDrawColor("#94A3B8");
+        this.pdf.setLineWidth(0.5);
+        this.pdf.setLineDashPattern([1.2, 1.2], 0);
+      }
+      this.pdf.line(from.X, from.Y, to.X, to.Y);
+    }
+    this.pdf.setLineDashPattern([], 0);
+
+    // Diagonals
+    const diagKeys = getDiagonalKeysForCorners(corners);
+    for (const key of diagKeys) {
+      const from = mapped[key.charCodeAt(0) - 65], to = mapped[key.charCodeAt(1) - 65];
+      if (!from || !to) continue;
+      this.setDrawColor(measurements[key] ? "#10B981" : "#F59E0B");
+      this.pdf.setLineWidth(0.4);
+      this.pdf.setLineDashPattern([1.5, 1.2], 0);
+      this.pdf.line(from.X, from.Y, to.X, to.Y);
+    }
+    this.pdf.setLineDashPattern([], 0);
+
+    // Corner dots and letters
+    for (let i = 0; i < corners; i++) {
+      const p = mapped[i];
+      if (!p) continue;
+      this.setFillColor("#01312D");
+      this.pdf.circle(p.X, p.Y, 1.1, "F");
+      const dx = p.X - cX, dy = p.Y - cY;
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      this.pdf.setFont("helvetica", "bold");
+      this.pdf.setFontSize(7);
+      this.setColor("#01312D");
+      this.pdf.text(String.fromCharCode(65 + i), p.X + (dx / len) * 4 - 1, p.Y + (dy / len) * 4 + 1);
+    }
+
+    // Edge measurement labels
+    this.pdf.setFont("helvetica", "normal");
+    this.pdf.setFontSize(6.5);
+    for (let i = 0; i < corners; i++) {
+      const from = mapped[i], to = mapped[(i + 1) % corners];
+      if (!from || !to) continue;
+      const key = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + ((i + 1) % corners))}`;
+      const val = measurements[key];
+      const label = val ? fmtM(val) : key;
+      const mx = (from.X + to.X) / 2, my = (from.Y + to.Y) / 2;
+      let px = -(to.Y - from.Y), py = to.X - from.X;
+      const pl = Math.sqrt(px * px + py * py) || 1;
+      px /= pl; py /= pl;
+      const dir = px * (cX - mx) + py * (cY - my) > 0 ? -1 : 1;
+      const tx = mx + px * 4 * dir, ty = my + py * 4 * dir;
+      this.setColor(val ? "#059669" : "#64748B");
+      this.pdf.text(label, tx - this.pdf.getTextWidth(label) / 2, ty + 1);
+    }
+
+    this.y = startY + boxH + 4;
   }
 
   drawSectionTitleCol(title: string, xOffset: number, width: number) {
@@ -873,19 +981,24 @@ Deno.serve(async (req: Request) => {
         if (block.type === "diagramImage") {
           const hasPlain = live.diagram_public_url;
           const has3d = live.diagram_3d_url;
-          if (hasPlain || has3d) {
+          const points = (live.config_data?.points as unknown[] | undefined) || [];
+          const canDraw2D = !!hasPlain || points.length >= 3;
+          if (canDraw2D || has3d) {
             renderer.drawSectionTitleCol((block.props?.title as string) || "Shade Sail Diagram", MARGIN_LEFT, CONTENT_WIDTH);
-            if (hasPlain && has3d) {
+            const isFulfilment = resolvedType === "fulfilment";
+            if (canDraw2D && has3d) {
               const imgW = Math.min(75, COL_WIDTH);
               const savedY = renderer.getY();
-              await renderer.addImage(hasPlain, imgW, 55, leftX, COL_WIDTH);
+              if (hasPlain) await renderer.addImage(hasPlain, imgW, 55, leftX, COL_WIDTH);
+              else renderer.drawPlanDiagram(live.config_data, leftX, COL_WIDTH, 55, isFulfilment);
               const afterLeft = renderer.getY();
               renderer.setY(savedY);
               await renderer.addImage(has3d, imgW, 55, rightX, COL_WIDTH);
               const afterRight = renderer.getY();
               renderer.setY(Math.max(afterLeft, afterRight));
-            } else if (hasPlain) {
-              await renderer.addImage(hasPlain, 80, 60, MARGIN_LEFT, CONTENT_WIDTH);
+            } else if (canDraw2D) {
+              if (hasPlain) await renderer.addImage(hasPlain, 80, 60, MARGIN_LEFT, CONTENT_WIDTH);
+              else renderer.drawPlanDiagram(live.config_data, MARGIN_LEFT, CONTENT_WIDTH, 70, isFulfilment);
             } else if (has3d) {
               await renderer.addImage(has3d, 80, 60, MARGIN_LEFT, CONTENT_WIDTH);
             }
@@ -910,9 +1023,13 @@ Deno.serve(async (req: Request) => {
           renderer.setDensity(density);
           if (block.type === "diagramImage" || block.type === "diagram3D") {
             const imgUrl = block.type === "diagram3D" ? live.diagram_3d_url : (live.diagram_public_url || live.diagram_3d_url);
+            const points = (live.config_data?.points as unknown[] | undefined) || [];
             if (imgUrl) {
               renderer.drawSectionTitleCol((block.props?.title as string) || "Diagram", leftX, COL_WIDTH);
               await renderer.addImage(imgUrl, COL_WIDTH - 4, 50, leftX, COL_WIDTH);
+            } else if (block.type !== "diagram3D" && points.length >= 3) {
+              renderer.drawSectionTitleCol((block.props?.title as string) || "Diagram", leftX, COL_WIDTH);
+              renderer.drawPlanDiagram(live.config_data, leftX, COL_WIDTH, 50, resolvedType === "fulfilment");
             }
           } else {
             renderBlockToPdf(renderer, block, brand, live, leftX, COL_WIDTH, resolvedType === "fulfilment");
@@ -927,9 +1044,13 @@ Deno.serve(async (req: Request) => {
           renderer.setDensity(density);
           if (block.type === "diagramImage" || block.type === "diagram3D") {
             const imgUrl = block.type === "diagram3D" ? live.diagram_3d_url : (live.diagram_public_url || live.diagram_3d_url);
+            const points = (live.config_data?.points as unknown[] | undefined) || [];
             if (imgUrl) {
               renderer.drawSectionTitleCol((block.props?.title as string) || "Diagram", rightX, COL_WIDTH);
               await renderer.addImage(imgUrl, COL_WIDTH - 4, 50, rightX, COL_WIDTH);
+            } else if (block.type !== "diagram3D" && points.length >= 3) {
+              renderer.drawSectionTitleCol((block.props?.title as string) || "Diagram", rightX, COL_WIDTH);
+              renderer.drawPlanDiagram(live.config_data, rightX, COL_WIDTH, 50, resolvedType === "fulfilment");
             }
           } else {
             renderBlockToPdf(renderer, block, brand, live, rightX, COL_WIDTH, resolvedType === "fulfilment");
