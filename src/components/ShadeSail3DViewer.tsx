@@ -4,7 +4,7 @@ import { OrbitControls, Environment, Html, Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { ConfiguratorState, Point } from '../types';
 import { getFabricHexColor } from '../utils/fabricColorMap';
-import { reconstructPolygonFromMeasurements, hasRequiredMeasurements } from '../utils/geometry';
+import { reconstructPolygonFromMeasurements, canReconstructShape } from '../utils/geometry';
 import { buildSolvedFabricGeometry } from '../utils/fabricSolver';
 
 interface ShadeSail3DViewerProps {
@@ -894,7 +894,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
   const [showOverlays, setShowOverlays] = useState(true);
 
   const svgPoints = useMemo(() => {
-    if (hasRequiredMeasurements(config.measurements, config.corners)) {
+    if (canReconstructShape(config.measurements, config.corners)) {
       const reconstructed = reconstructPolygonFromMeasurements(config.measurements, config.corners, undefined, undefined, config.fixingHeights);
       if (reconstructed) return reconstructed;
     }

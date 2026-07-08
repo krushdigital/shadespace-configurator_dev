@@ -7,7 +7,7 @@ import { Input } from '../ui/Input';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, hasRequiredMeasurements, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence } from '../../utils/geometry';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -337,8 +337,8 @@ export function DimensionsContent({
 
     // Debounce the reconstruction to avoid excessive calculations
     const timer = setTimeout(() => {
-      // Check if we have all required measurements
-      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+      // Check if we have enough measurements to draw a shape
+      if (canReconstructShape(config.measurements, config.corners)) {
         // Validate geometry first
         const validation = validatePolygonGeometry(config.measurements, config.corners);
 
@@ -391,7 +391,7 @@ export function DimensionsContent({
         } else {
           console.log('Reconstruction failed or returned null - preserving last valid shape:', {
             corners: config.corners,
-            requiredMeasurements: hasRequiredMeasurements(config.measurements, config.corners),
+            canReconstruct: canReconstructShape(config.measurements, config.corners),
             reconstructedPoints
           });
           // Keep the last valid points
@@ -405,7 +405,7 @@ export function DimensionsContent({
 
   // Handler to reset shape to measurements
   const handleResetToMeasurements = useCallback(() => {
-    if (hasRequiredMeasurements(config.measurements, config.corners)) {
+    if (canReconstructShape(config.measurements, config.corners)) {
       const reconstructedPoints = reconstructPolygonFromMeasurements(
         config.measurements,
         config.corners,
@@ -429,7 +429,7 @@ export function DimensionsContent({
       // Switching to Automatic mode - always allow the switch
       updateConfig({ hasManuallyAdjustedShape: false });
 
-      if (hasRequiredMeasurements(config.measurements, config.corners)) {
+      if (canReconstructShape(config.measurements, config.corners)) {
         // If all measurements are present, reconstruct the shape
         const reconstructedPoints = reconstructPolygonFromMeasurements(
           config.measurements,

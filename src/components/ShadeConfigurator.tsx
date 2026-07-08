@@ -18,7 +18,7 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, EdgeType } from '../types';
 import { useFabricCatalog } from '../hooks/useFabricCatalog';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, hasRequiredMeasurements, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, canReconstructShape, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy } from '../utils/geometry';
 import { generatePdfFromBlocks, CustomerDetails } from '../utils/pdfGenerator';
 import { loadActivePdfTemplate } from '../utils/activePdfTemplate';
 import { ShapeCanvas } from './ShapeCanvas';
@@ -2308,8 +2308,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       // Switching to Automatic mode - always allow the switch
       updateConfig({ hasManuallyAdjustedShape: false });
 
-      if (hasRequiredMeasurements(config.measurements, config.corners)) {
-        // If all measurements are present, reconstruct the shape
+      if (canReconstructShape(config.measurements, config.corners)) {
+        // If we have enough measurements, reconstruct the shape
         const reconstructedPoints = reconstructPolygonFromMeasurements(
           config.measurements,
           config.corners,
