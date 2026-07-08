@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getPortalRoot } from '../utils/appScope';
 import { X, Search, Minus, Plus, Wrench, Info } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../utils/currencyFormatter';
@@ -318,7 +319,7 @@ export function HardwareSelectionModal({
             </div>
             <div className="mt-3 text-lg font-bold text-[#D97706]">{formatCurrency(toDisplayPrice(hoverItem), currency)}</div>
           </div>,
-          document.body
+          getPortalRoot()
         )}
 
         {detailItem && typeof document !== 'undefined' && createPortal(
@@ -392,7 +393,7 @@ export function HardwareSelectionModal({
               </div>
             </div>
           </div>,
-          document.body
+          getPortalRoot()
         )}
 
         <div className="border-t border-slate-100 bg-slate-50 px-5 py-3">
@@ -418,6 +419,6 @@ export function HardwareSelectionModal({
         </div>
       </div>
     </div>,
-    document.body
+    getPortalRoot()
   );
 }

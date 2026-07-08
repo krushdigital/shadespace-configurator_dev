@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { getPortalRoot } from '../utils/appScope';
 import { X, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, Check, GitCompare } from 'lucide-react';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useLenisPrevent } from '../hooks/useLenisPrevent';
@@ -147,7 +148,7 @@ export function FabricComparison({ fabrics, open, onClose, initialFabricId, onSe
         ) : null}
       </div>
     </div>,
-    document.body,
+    getPortalRoot(),
   );
 }
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { getPortalRoot } from '../../utils/appScope';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
@@ -332,5 +333,5 @@ export function AdminSaveQuoteModal({
     </div>
   );
 
-  return createPortal(content, document.body);
+  return createPortal(content, getPortalRoot());
 }
