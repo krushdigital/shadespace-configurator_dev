@@ -340,7 +340,7 @@ export async function saveQuoteAsAdmin(
       email: options?.email || null,
       quoteName: options?.quoteName || null,
       customerReference: options?.customerReference || null,
-      currentStep: 7,
+      currentStep: 6,
       totalSteps: 7,
       pricingSnapshot: options?.pricingSnapshot ?? null,
       firstName: options?.firstName || null,

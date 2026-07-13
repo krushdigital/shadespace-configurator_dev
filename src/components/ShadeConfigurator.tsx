@@ -355,7 +355,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
         applyPricingSnapshot(quote);
 
-        const resumeStep = quote.current_step ?? 4;
+        const reviewStep = steps.length - 1;
+        const isFinishedQuote = quote.status === 'quote_ready' || quote.status === 'purchased';
+        const resumeStep = isFinishedQuote
+          ? reviewStep
+          : Math.min(Math.max(quote.current_step ?? 4, 0), reviewStep);
         setOpenStep(resumeStep);
 
         analytics.quoteLoadSuccess({
@@ -440,7 +444,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         }
 
         applyPricingSnapshot(quote);
-        const resumeStep = quote.current_step ?? 6;
+        const reviewStep = steps.length - 1;
+        const resumeStep = Math.min(Math.max(quote.current_step ?? reviewStep, 0), reviewStep);
         setOpenStep(resumeStep);
       } catch (err) {
         console.error('Failed to load quote for admin:', err);
