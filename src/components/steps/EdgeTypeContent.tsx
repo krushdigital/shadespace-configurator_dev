@@ -33,19 +33,19 @@ const EDGE_OPTIONS = [
     label: 'Cabled Edge',
     description: 'Premium cable edge reinforecment.',
     longDescription: 'Experience superior durability and a sleek finish with our Cabled Edge reinforcement. A marine-grade stainless steel cable is expertly integrated along the entire perimeter of the shade sail, allowing for precise tensioning during installation. Each corner features uniquely styled stainless steel D-rings, which not only securely house the cable but also contribute to an exceptionally professional appearance and enormous structural strength.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.png?v=1778472343'
+    imageUrl: '/images/Wire_Edge%20copy.webp'
   },
   {
     id: 'webbing',
     label: 'Webbing Reinforced',
     description: 'Robust reinforcement with webbing tape. Easiest to install.',
     longDescription: 'Our webbing-reinforced design incorporates a unique method, utilizing an exceptionally strong 48mm (2-inch) polyester webbing expertly integrated within the hemline. This webbing is meticulously pre-set and pre-sewn, ensuring optimal tension is achieved effortlessly once the sail is fully stretched into position. This innovative approach guarantees a hassle-free on-site installation: simply tension from each fixing point and enjoy your perfectly taut shade sail.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge_Config.jpg?v=1779842113'
+    imageUrl: '/images/Webbing_Edge_Config%20copy.webp'
   }
 ];
 
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
-  const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string; rotate?: boolean } | null>(null);
+  const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string } | null>(null);
 
   useBodyScrollLock(!!enlargedImage);
 
@@ -120,17 +120,13 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                     <img
                       src={edge.imageUrl}
                       alt={`${edge.label} example`}
-                      className={
-                        edge.id === 'cabled'
-                          ? 'absolute left-1/2 top-1/2 w-[56.25%] h-[177.78%] -translate-x-1/2 -translate-y-1/2 rotate-90 object-cover transition-transform duration-300 group-hover:scale-[1.02]'
-                          : 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]'
-                      }
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                     />
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setEnlargedImage({ url: edge.imageUrl, label: edge.label, rotate: edge.id === 'cabled' });
+                        setEnlargedImage({ url: edge.imageUrl, label: edge.label });
                       }}
                       className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312D] shadow-sm hover:bg-white hover:text-[#307C31] transition-colors focus:outline-none focus:ring-2 focus:ring-[#307C31]"
                       aria-label={`Enlarge ${edge.label} image`}
@@ -322,11 +318,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             <img
               src={enlargedImage.url}
               alt={`${enlargedImage.label} - enlarged view`}
-              className={
-                enlargedImage.rotate
-                  ? 'mx-auto block w-auto max-h-[80vw] max-w-[85vh] object-contain rotate-90 rounded-lg shadow-2xl bg-white'
-                  : 'w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white'
-              }
+              className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white"
             />
             <p className="mt-3 text-center text-white font-semibold text-lg">
               {enlargedImage.label}
