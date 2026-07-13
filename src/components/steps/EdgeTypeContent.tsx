@@ -45,7 +45,7 @@ const EDGE_OPTIONS = [
 ];
 
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
-  const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string } | null>(null);
+  const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string; rotate?: boolean } | null>(null);
 
   useBodyScrollLock(!!enlargedImage);
 
@@ -120,13 +120,17 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                     <img
                       src={edge.imageUrl}
                       alt={`${edge.label} example`}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      className={
+                        edge.id === 'cabled'
+                          ? 'absolute left-1/2 top-1/2 w-[56.25%] h-[177.78%] -translate-x-1/2 -translate-y-1/2 rotate-90 object-cover transition-transform duration-300 group-hover:scale-[1.02]'
+                          : 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]'
+                      }
                     />
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setEnlargedImage({ url: edge.imageUrl, label: edge.label });
+                        setEnlargedImage({ url: edge.imageUrl, label: edge.label, rotate: edge.id === 'cabled' });
                       }}
                       className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312D] shadow-sm hover:bg-white hover:text-[#307C31] transition-colors focus:outline-none focus:ring-2 focus:ring-[#307C31]"
                       aria-label={`Enlarge ${edge.label} image`}
@@ -318,7 +322,11 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             <img
               src={enlargedImage.url}
               alt={`${enlargedImage.label} - enlarged view`}
-              className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white"
+              className={
+                enlargedImage.rotate
+                  ? 'mx-auto block w-auto max-h-[80vw] max-w-[85vh] object-contain rotate-90 rounded-lg shadow-2xl bg-white'
+                  : 'w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white'
+              }
             />
             <p className="mt-3 text-center text-white font-semibold text-lg">
               {enlargedImage.label}
