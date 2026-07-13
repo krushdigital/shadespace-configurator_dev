@@ -8,6 +8,7 @@ import { saveQuoteAsAdmin, updateQuote, generateQuoteUrl } from '../../utils/quo
 import { addQuoteToken } from '../../utils/tokenManager';
 import { useToast } from '../ui/ToastProvider';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useLenisPrevent } from '../../hooks/useLenisPrevent';
 import type { AdminProfile } from '../../hooks/useAdminProfile';
 import { generatePdfFromBlocks, CustomerDetails } from '../../utils/pdfGenerator';
 import { loadActivePdfTemplate } from '../../utils/activePdfTemplate';
@@ -68,6 +69,7 @@ export function AdminSaveQuoteModal({
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const { showToast } = useToast();
   useBodyScrollLock(isOpen);
+  const lenisRef = useLenisPrevent<HTMLDivElement>(isOpen);
 
   if (!isOpen) return null;
 
@@ -182,7 +184,7 @@ export function AdminSaveQuoteModal({
     : '';
 
   const content = (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+    <div ref={lenisRef} className="fixed inset-0 z-[9999] flex items-center justify-center" onWheel={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}>
       <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">

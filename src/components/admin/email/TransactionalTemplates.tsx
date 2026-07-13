@@ -658,7 +658,7 @@ export const TransactionalTemplates: React.FC<TransactionalTemplatesProps> = ({ 
       </div>
 
       {drawerSend && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-stretch justify-end" onClick={() => setDrawerSend(null)}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-stretch justify-end" onClick={() => setDrawerSend(null)} onWheel={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}>
           <div className="bg-white w-full max-w-xl h-full overflow-auto overscroll-contain shadow-xl" onClick={e => e.stopPropagation()}>
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <div>

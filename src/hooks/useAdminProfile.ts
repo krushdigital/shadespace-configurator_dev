@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 export interface AdminProfile {
@@ -15,10 +15,13 @@ export function useAdminProfile() {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [unauthorised, setUnauthorised] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const loadedUserIdRef = useRef<string | null>(null);
+
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) { setProfile(null); setUnauthorised(false); setLoading(false); return; }
+    if (!session?.user) { loadedUserIdRef.current = null; setProfile(null); setUnauthorised(false); setLoading(false); return; }
+    loadedUserIdRef.current = session.user.id;
 
     const { data } = await supabase.from('admin_users')
       .select('id, email, full_name, role, status, auth_user_id')
@@ -51,8 +54,10 @@ export function useAdminProfile() {
 
   useEffect(() => {
     load();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      (async () => { await load(); })();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const nextUserId = session?.user?.id ?? null;
+      if (nextUserId === loadedUserIdRef.current) return;
+      (async () => { await load(false); })();
     });
     return () => subscription.unsubscribe();
   }, [load]);

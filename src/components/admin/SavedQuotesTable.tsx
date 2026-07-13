@@ -59,7 +59,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('active');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [quoteToDelete, setQuoteToDelete] = useState<Quote | null>(null);
@@ -779,7 +779,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       </Card>
 
       {selectedQuote && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedQuote(null)}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setSelectedQuote(null)} onWheel={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}>
           <Card className="max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start p-8 pb-4 flex-shrink-0">
               <div>
@@ -1013,7 +1013,7 @@ export const SavedQuotesTable: React.FC<SavedQuotesTableProps & { excludeInterna
       )}
 
       {quoteToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setQuoteToDelete(null)}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={() => setQuoteToDelete(null)} onWheel={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}>
           <Card className="max-w-md w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-start p-6 pb-0 flex-shrink-0">
               <h2 className="text-xl font-bold text-gray-900">Confirm Delete</h2>
