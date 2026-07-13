@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SavedQuotesTable } from '../components/admin/SavedQuotesTable';
@@ -39,6 +39,18 @@ const detectTimezone = (): string => {
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profile }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabType>>(() => new Set<TabType>(['overview']));
+
+  useEffect(() => {
+    setVisitedTabs((prev) => (prev.has(activeTab) ? prev : new Set(prev).add(activeTab)));
+  }, [activeTab]);
+
+  const keep = (id: TabType, node: React.ReactNode) =>
+    visitedTabs.has(id) ? (
+      <div key={id} style={{ display: activeTab === id ? undefined : 'none' }}>
+        {node}
+      </div>
+    ) : null;
   const [showChangePassword, setShowChangePassword] = useState(false);
   const { isTabAllowed, permissions, refresh: refreshPermissions } = useTabPermissions();
   const [excludeInternal, setExcludeInternal] = useState(() => {
@@ -173,44 +185,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
           </div>
         </Card>
 
-        {activeTab === 'overview' && (
+        {keep('overview', (
           <div className="space-y-6">
             <AnalyticsSummary dateRange={dateRange} excludeInternal={excludeInternal} />
             <EventsChart dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />
             <MyDesignsAnalytics dateRange={dateRange} excludeInternal={excludeInternal} />
           </div>
-        )}
+        ))}
 
-        {activeTab === 'quotes' && <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+        {keep('quotes', <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />)}
 
-        {activeTab === 'quote-builder' && <AdminQuoteBuilder profile={profile} />}
+        {keep('quote-builder', <AdminQuoteBuilder profile={profile} />)}
 
-        {activeTab === 'events' && <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+        {keep('events', <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />)}
 
-        {activeTab === 'funnel' && <FunnelAnalysis dateRange={dateRange} excludeInternal={excludeInternal} />}
+        {keep('funnel', <FunnelAnalysis dateRange={dateRange} excludeInternal={excludeInternal} />)}
 
-        {activeTab === 'fabrics' && <FabricColorManager />}
+        {keep('fabrics', <FabricColorManager />)}
 
-        {activeTab === 'hardware' && (
+        {keep('hardware', (
           <div className="space-y-6">
             <HardwareSyncCard />
             <HardwareCatalogManager />
           </div>
-        )}
+        ))}
 
-        {activeTab === 'pricing' && <PricingManager />}
+        {keep('pricing', <PricingManager />)}
 
-        {activeTab === 'base-pricing' && <BasePricingManager />}
+        {keep('base-pricing', <BasePricingManager />)}
 
-        {activeTab === 'exports' && <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />}
+        {keep('exports', <DataExport dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />)}
 
-        {activeTab === 'email' && <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} isSuperAdmin={profile.role === 'super_admin'} onOpenPdfStudio={() => setActiveTab('pdf')} />}
+        {keep('email', <EmailStudio dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} isSuperAdmin={profile.role === 'super_admin'} onOpenPdfStudio={() => setActiveTab('pdf')} />)}
 
-        {activeTab === 'pdf' && <PdfStudio />}
+        {keep('pdf', <PdfStudio />)}
 
-        {activeTab === 'team' && <UserManagement currentProfile={profile} tabPermissions={permissions} onPermissionsChange={refreshPermissions} />}
+        {keep('team', <UserManagement currentProfile={profile} tabPermissions={permissions} onPermissionsChange={refreshPermissions} />)}
 
-        {activeTab === 'exclusions' && <ExclusionManager />}
+        {keep('exclusions', <ExclusionManager />)}
       </div>
 
       {showChangePassword && (

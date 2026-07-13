@@ -69,7 +69,7 @@ export const SendersManager: React.FC<{ senders: EmailSender[]; onRefresh: () =>
       </div>
 
       {editing && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditing(null)}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setEditing(null)} onWheel={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}>
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] flex flex-col overscroll-contain" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
               <h3 className="text-lg font-bold">{editing.id ? 'Edit sender' : 'New sender'}</h3>

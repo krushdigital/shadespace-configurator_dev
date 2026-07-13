@@ -180,7 +180,7 @@ export const UserManagement: React.FC<Props> = ({ currentProfile, tabPermissions
       )}
 
       {showInvite && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(false)}>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowInvite(false)} onWheel={e => e.stopPropagation()} onTouchMove={e => e.stopPropagation()}>
           <Card className="max-w-md w-full max-h-[90vh] flex flex-col" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-5 pb-3">
               <h3 className="text-lg font-bold">Invite a new admin</h3>
