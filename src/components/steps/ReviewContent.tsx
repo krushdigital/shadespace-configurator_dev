@@ -16,6 +16,7 @@ import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice } from '../../
 import { StandardPackPreview } from '../StandardPackPreview';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
 import { Box, Layers } from 'lucide-react';
+import { renderSailPngBlob } from '../../utils/renderSvgOffscreen';
 
 const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
 
@@ -256,65 +257,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     height?: number;
   }
 
-  const convertSvgToPng = async (
-    svgElement: SVGSVGElement,
-    width?: number,
-    height?: number
-  ): Promise<Blob> => {
-    return new Promise<Blob>((resolve, reject) => {
-      try {
-        // Serialize SVG to string
-        const svgString: string = new XMLSerializer().serializeToString(svgElement);
-
-        // Create a blob from the SVG string
-        const svgBlob: Blob = new Blob([svgString], { type: 'image/svg+xml' });
-        const svgUrl: string = URL.createObjectURL(svgBlob);
-
-        // Create an image element
-        const img: HTMLImageElement = new Image();
-        img.onload = function () {
-          // Create a canvas with the desired dimensions
-          const canvas: HTMLCanvasElement = document.createElement('canvas');
-          canvas.width = width || img.width;
-          canvas.height = height || img.height;
-
-          // Draw the image on the canvas
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            // Convert canvas to PNG
-            const pngUrl: string = canvas.toDataURL('image/png');
-
-            // Clean up
-            URL.revokeObjectURL(svgUrl);
-
-            // Convert data URL to blob
-            fetch(pngUrl)
-              .then(res => res.blob())
-              .then((blob: Blob) => {
-                resolve(blob);
-              })
-              .catch(error => reject(error));
-          } else {
-            URL.revokeObjectURL(svgUrl);
-            reject(new Error('Failed to get canvas context'));
-          }
-        };
-
-        img.onerror = function () {
-          URL.revokeObjectURL(svgUrl);
-          reject(new Error('Failed to load SVG image'));
-        };
-
-        img.src = svgUrl;
-      } catch (error) {
-        reject(error as Error);
-      }
-    });
-  };
-
-
    const uploadImageToShopify = async (blob: Blob, filename: string): Promise<string | null> => {
     try {
       const formData = new FormData();
@@ -444,14 +386,13 @@ console.log('✌️result --->', result);
     } else {
       setShowValidationFeedback(false);
 
-      // Get the SVG element
-      const svgElement = canvasRef.current?.getSVGElement();
+      // Render the rich configurator diagram (ShadeSVGCore) so the order's
+      // technical drawing matches the in-app quote PDF.
       let canvasImageUrl = null;
 
-      if (svgElement) {
-        try {
-          const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
-
+      try {
+        const canvasImageBlob = await renderSailPngBlob(config, 800, 800);
+        if (canvasImageBlob) {
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
 
@@ -460,9 +401,9 @@ console.log('✌️result --->', result);
           if (!canvasImageUrl) {
             console.warn('Failed to upload canvas image to Shopify, proceeding without image');
           }
-        } catch (error) {
-          console.error('Error processing canvas image:', error);
         }
+      } catch (error) {
+        console.error('Error processing canvas image:', error);
       }
 
       // FIXED: Properly calculate edge measurements
