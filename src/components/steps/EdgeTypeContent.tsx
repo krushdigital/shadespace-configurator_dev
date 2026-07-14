@@ -33,14 +33,14 @@ const EDGE_OPTIONS = [
     label: 'Cabled Edge',
     description: 'Premium cable edge reinforecment.',
     longDescription: 'Experience superior durability and a sleek finish with our Cabled Edge reinforcement. A marine-grade stainless steel cable is expertly integrated along the entire perimeter of the shade sail, allowing for precise tensioning during installation. Each corner features uniquely styled stainless steel D-rings, which not only securely house the cable but also contribute to an exceptionally professional appearance and enormous structural strength.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.png?v=1778472343'
+    imageUrl: '/images/Wire_Edge%20copy.webp'
   },
   {
     id: 'webbing',
     label: 'Webbing Reinforced',
     description: 'Robust reinforcement with webbing tape. Easiest to install.',
     longDescription: 'Our webbing-reinforced design incorporates a unique method, utilizing an exceptionally strong 48mm (2-inch) polyester webbing expertly integrated within the hemline. This webbing is meticulously pre-set and pre-sewn, ensuring optimal tension is achieved effortlessly once the sail is fully stretched into position. This innovative approach guarantees a hassle-free on-site installation: simply tension from each fixing point and enjoy your perfectly taut shade sail.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge_Config.jpg?v=1779842113'
+    imageUrl: '/images/Webbing_Edge_Config%20copy.webp'
   }
 ];
 
