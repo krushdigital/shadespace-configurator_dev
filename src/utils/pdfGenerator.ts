@@ -1,5 +1,4 @@
 import { ConfiguratorState, ShadeCalculations } from '../types';
-import { captureSvgToBase64Png } from './svgCapture';
 import { renderSailSvgOffscreen } from './renderSvgOffscreen';
 import { PdfBlock } from './pdfBlocks';
 import {
@@ -52,7 +51,6 @@ export interface BlockPdfOptions {
   layout?: PdfLayoutOptions;
   chrome?: PdfTemplateChrome;
   customer?: CustomerDetails;
-  svgElement?: SVGElement;
   threeDImageDataUrl?: string;
   returnBlob?: boolean;
   isEmailSummary?: boolean;
@@ -141,15 +139,10 @@ export async function generatePdfFromBlocks(
 ): Promise<string | void> {
   const cfg = buildTemplateConfig(options.chrome || {}, options.layout);
 
+  // Always render the rich ShadeSVGCore diagram so every PDF matches the
+  // in-app configurator quote PDF.
   let diagramDataUrl: string | undefined;
-  if (options.svgElement) {
-    try {
-      diagramDataUrl = await captureSvgToBase64Png(options.svgElement as SVGSVGElement, 800, 800);
-    } catch {
-      // ignore
-    }
-  }
-  if (!diagramDataUrl && config.points && config.points.length >= 3) {
+  if (config.points && config.points.length >= 3) {
     try {
       diagramDataUrl = await renderSailSvgOffscreen(config, 800, 800);
     } catch {

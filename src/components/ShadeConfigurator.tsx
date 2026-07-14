@@ -40,6 +40,7 @@ import { eventTrackers } from '../utils/eventTracker';
 import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
 import { uploadToQuoteAssets } from '../utils/storageUpload';
+import { renderSailPngBlob } from '../utils/renderSvgOffscreen';
 import { Box, Layers } from 'lucide-react';
 import { canRender3D, Device3DTier, supports3DForCorners } from '../utils/canRender3D';
 import type { AdminProfile } from '../hooks/useAdminProfile';
@@ -502,8 +503,6 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     quoteUrl?: string
   ): Promise<string | void> => {
     try {
-      const svgElement = canvasRef.current?.getSVGElement?.();
-
       let threeDImageDataUrl: string | undefined;
       try {
         const screenshot = await viewer3DRef.current?.capture3DScreenshot();
@@ -524,7 +523,6 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         layout: template.layout,
         chrome: template.chrome,
         customer: customerDetails,
-        svgElement,
         threeDImageDataUrl,
         isEmailSummary: true,
       });
@@ -548,64 +546,6 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       showToast(`Failed to generate PDF: ${errorMessage}`, 'error');
       return undefined;
     }
-  };
-
-  const convertSvgToPng = async (
-    svgElement: SVGSVGElement,
-    width?: number,
-    height?: number
-  ): Promise<Blob> => {
-    return new Promise<Blob>((resolve, reject) => {
-      try {
-        // Serialize SVG to string
-        const svgString: string = new XMLSerializer().serializeToString(svgElement);
-
-        // Create a blob from the SVG string
-        const svgBlob: Blob = new Blob([svgString], { type: 'image/svg+xml' });
-        const svgUrl: string = URL.createObjectURL(svgBlob);
-
-        // Create an image element
-        const img: HTMLImageElement = new Image();
-        img.onload = function () {
-          // Create a canvas with the desired dimensions
-          const canvas: HTMLCanvasElement = document.createElement('canvas');
-          canvas.width = width || img.width;
-          canvas.height = height || img.height;
-
-          // Draw the image on the canvas
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            // Convert canvas to PNG
-            const pngUrl: string = canvas.toDataURL('image/png');
-
-            // Clean up
-            URL.revokeObjectURL(svgUrl);
-
-            // Convert data URL to blob
-            fetch(pngUrl)
-              .then(res => res.blob())
-              .then((blob: Blob) => {
-                resolve(blob);
-              })
-              .catch(error => reject(error));
-          } else {
-            URL.revokeObjectURL(svgUrl);
-            reject(new Error('Failed to get canvas context'));
-          }
-        };
-
-        img.onerror = function () {
-          URL.revokeObjectURL(svgUrl);
-          reject(new Error('Failed to load SVG image'));
-        };
-
-        img.src = svgUrl;
-      } catch (error) {
-        reject(error as Error);
-      }
-    });
   };
 
 
@@ -697,23 +637,23 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   ): Promise<boolean> => {
     try {
 
-      // Get the SVG element and upload preview
-      const svgElement = canvasRef.current?.getSVGElement();
+      // Render the rich configurator diagram (ShadeSVGCore) so the stored
+      // diagram matches the in-app quote PDF, emailed quote, and fulfilment PDF.
       let canvasImageUrl = null;
       let canvasImage3DUrl = null;
 
-      if (svgElement) {
-        try {
-          const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
+      try {
+        const canvasImageBlob = await renderSailPngBlob(config, 800, 800);
+        if (canvasImageBlob) {
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
           canvasImageUrl = await uploadToQuoteAssets(canvasImageBlob, filename);
           if (!canvasImageUrl) {
             canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
           }
-        } catch (error) {
-          console.error('Error processing canvas image:', error);
         }
+      } catch (error) {
+        console.error('Error processing canvas image:', error);
       }
 
       // Capture 3D screenshot
@@ -1675,23 +1615,23 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     setLoadingStep({ text: 'Starting order process...', progress: 10 });
 
     try {
-      // First, get the canvas image URL
-      const svgElement = canvasRef.current?.getSVGElement?.();
+      // First, render the rich configurator diagram (ShadeSVGCore) so the
+      // technical drawing on the Shopify order matches the in-app quote PDF.
       let canvasImageUrl = null;
 
-      if (svgElement) {
-        try {
-          setLoadingStep({ text: 'Generating technical drawing...', progress: 20 });
-          const canvasImageBlob = await convertSvgToPng(svgElement, 600, 500);
+      try {
+        setLoadingStep({ text: 'Generating technical drawing...', progress: 20 });
+        const canvasImageBlob = await renderSailPngBlob(config, 800, 800);
+        if (canvasImageBlob) {
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
           const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
           canvasImageUrl = await uploadToQuoteAssets(canvasImageBlob, filename);
           if (!canvasImageUrl) {
             canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
           }
-        } catch (error) {
-          console.error('Error processing canvas image:', error);
         }
+      } catch (error) {
+        console.error('Error processing canvas image:', error);
       }
 
       // Capture 3D screenshot for checkout save
@@ -2687,10 +2627,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             onAdminSaveComplete?.(id, token, ref);
           }}
           getCanvasImageUrl={async () => {
-            const svgElement = canvasRef.current?.getSVGElement?.();
-            if (!svgElement) return null;
             try {
-              const blob = await convertSvgToPng(svgElement, 600, 500);
+              const blob = await renderSailPngBlob(config, 800, 800);
+              if (!blob) return null;
               const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
               const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
               return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);
@@ -2735,10 +2674,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
           onEmailPDFQuote={handleEmailPDFQuote}
           getCanvasImageUrl={async () => {
-            const svgElement = canvasRef.current?.getSVGElement?.();
-            if (!svgElement) return null;
             try {
-              const blob = await convertSvgToPng(svgElement, 600, 500);
+              const blob = await renderSailPngBlob(config, 800, 800);
+              if (!blob) return null;
               const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
               const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
               return await uploadToQuoteAssets(blob, filename) || await uploadImageToShopify(blob, filename);

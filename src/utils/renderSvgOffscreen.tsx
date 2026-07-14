@@ -95,3 +95,26 @@ export async function renderSailSvgOffscreen(
     }, 1000);
   });
 }
+
+/**
+ * Render the rich ShadeSVGCore sail diagram offscreen and return it as an
+ * uploadable PNG Blob. This is the single source of truth for every diagram
+ * that leaves the app (stored diagram_public_url, emailed quote PDF, Shopify
+ * fulfilment PDF) so they all match the in-app configurator quote PDF.
+ * Returns null when the config has no usable shape or rendering fails.
+ */
+export async function renderSailPngBlob(
+  config: ConfiguratorState,
+  width: number = 800,
+  height: number = 800
+): Promise<Blob | null> {
+  if (!config.points || config.points.length < 3) return null;
+  try {
+    const dataUrl = await renderSailSvgOffscreen(config, width, height);
+    const res = await fetch(dataUrl);
+    return await res.blob();
+  } catch (err) {
+    console.warn('[renderSailPngBlob] failed to render sail diagram:', err);
+    return null;
+  }
+}
