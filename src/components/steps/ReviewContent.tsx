@@ -15,7 +15,7 @@ import { ConfigurationChecklist, ConfigurationChecklistRef } from '../Configurat
 import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
 import { StandardPackPreview } from '../StandardPackPreview';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
-import { Box, Layers } from 'lucide-react';
+import { Box, Layers, Check } from 'lucide-react';
 import { renderSailPngBlob } from '../../utils/renderSvgOffscreen';
 
 const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
@@ -1353,11 +1353,27 @@ console.log('✌️result --->', result);
             }`}>
               <input
                 type="checkbox"
-                className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
+                className="peer sr-only"
                 checked={agreedToAcknowledgments}
                 onChange={onToggleAgreement}
                 required
               />
+              <span
+                aria-hidden="true"
+                className="mt-0.5 flex-shrink-0 inline-flex items-center justify-center peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-emerald-500"
+                style={{
+                  width: isMobile ? 20 : 24,
+                  height: isMobile ? 20 : 24,
+                  borderRadius: 4,
+                  boxSizing: 'border-box',
+                  border: `2px solid ${agreedToAcknowledgments ? '#10b981' : '#94a3b8'}`,
+                  backgroundColor: agreedToAcknowledgments ? '#10b981' : '#ffffff',
+                }}
+              >
+                {agreedToAcknowledgments && (
+                  <Check size={isMobile ? 14 : 16} strokeWidth={3} color="#ffffff" />
+                )}
+              </span>
               <span className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold ${
                 agreedToAcknowledgments
                   ? 'text-emerald-800'
@@ -1374,13 +1390,21 @@ console.log('✌️result --->', result);
             {/* Conditional Height Disclaimer - Only show if heights not provided AND measurementOption is 'adjust' */}
             {config.corners !== 3 && config.measurementOption === 'adjust' && !config.heightsProvidedByUser && (
               <div className={`flex items-start gap-2 ${isMobile ? '' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
-                <input
-                  type="checkbox"
-                  className="acknowledgment-checkbox mt-0.5 flex-shrink-0"
-                  checked={true}
-                  readOnly
-                  disabled
-                />
+                <span
+                  aria-hidden="true"
+                  className="mt-0.5 flex-shrink-0 inline-flex items-center justify-center"
+                  style={{
+                    width: isMobile ? 20 : 24,
+                    height: isMobile ? 20 : 24,
+                    borderRadius: 4,
+                    boxSizing: 'border-box',
+                    border: '2px solid #10b981',
+                    backgroundColor: '#10b981',
+                    opacity: 0.7,
+                  }}
+                >
+                  <Check size={isMobile ? 14 : 16} strokeWidth={3} color="#ffffff" />
+                </span>
                 <div className="flex-1">
                   <div className="flex flex-col gap-2">
                     <span className="text-slate-700">
