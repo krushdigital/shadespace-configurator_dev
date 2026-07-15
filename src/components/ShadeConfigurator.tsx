@@ -217,7 +217,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       setMobileViewMode('plan');
     } else if (!hasUserChosenView.current) {
       setDesktopViewMode('3d');
-      setMobileViewMode(device3DTier !== 'none' ? '3d' : 'plan');
+      setMobileViewMode('plan');
     }
   }, [config.corners, device3DTier]);
 
