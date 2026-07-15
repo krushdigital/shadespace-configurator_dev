@@ -28,9 +28,11 @@ import Delaunator from 'delaunator';
 /** Inward plan curvature of each edge, as a fraction of edge length (real sails: 5–8%). */
 const CATENARY_SCALLOP = 0.07;
 /** Vertical dip of the edge cable at mid-edge, as a fraction of edge length. */
-const EDGE_VERTICAL_SAG = 0.012;
+const EDGE_VERTICAL_SAG = 0.005;
 /** Centre sag of the membrane as a fraction of the sail span. 0 = pure minimal surface (taut). */
-const SAG_RATIO = 0.02; // tensioned sails are taut — keep this small
+const SAG_RATIO = 0.006; // tensioned sails are taut — keep this small
+/** In-plane mesh smoothing passes (evens out triangle quality → smooth shading). */
+const PLAN_SMOOTH_PASSES = 4;
 /** SOR over-relaxation factor (1 = Gauss–Seidel; 1.8 converges ~10x faster). */
 const SOR_OMEGA = 1.8;
 const SOLVER_ITERATIONS = 400;
@@ -39,15 +41,6 @@ const CONVERGENCE_EPS = 1e-5;
 interface P2 { x: number; z: number }
 
 // ─── 2D helpers ─────────────────────────────────────────────────────────────
-function signedArea(pts: P2[]): number {
-  let a = 0;
-  for (let i = 0; i < pts.length; i++) {
-    const j = (i + 1) % pts.length;
-    a += pts[i].x * pts[j].z - pts[j].x * pts[i].z;
-  }
-  return a / 2;
-}
-
 function pointInPolygon(px: number, pz: number, poly: P2[]): boolean {
   let inside = false;
   for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -84,9 +77,11 @@ export function buildSolvedFabricGeometry(
   const n = corners3D.length;
   if (n < 3) return null;
 
-  // 1. Plan polygon + winding
+  // 1. Plan polygon + centroid (used to orient edge normals inward — winding-agnostic)
   const plan: P2[] = corners3D.map(c => ({ x: c.x, z: c.z }));
-  const ccw = signedArea(plan) > 0;
+  let cenX = 0, cenZ = 0;
+  for (const p of plan) { cenX += p.x; cenZ += p.z; }
+  cenX /= n; cenZ /= n;
 
   // Characteristic size
   let maxDim = 0;
@@ -106,11 +101,13 @@ export function buildSolvedFabricGeometry(
     const B = corners3D[(i + 1) % n];
     const ex = B.x - A.x, ez = B.z - A.z;
     const edgeLen = Math.hypot(ex, ez) || 1e-6;
-    // Inward perpendicular (depends on winding)
-    let nx = ccw ? ez : -ez;
-    let nz = ccw ? -ex : ex;
+    // Inward perpendicular — oriented toward the polygon centroid, so it is
+    // guaranteed to point INTO the sail regardless of winding order.
+    let nx = -ez, nz = ex;
     const nl = Math.hypot(nx, nz) || 1;
     nx /= nl; nz /= nl;
+    const midX = A.x + ex * 0.5, midZ = A.z + ez * 0.5;
+    if (nx * (cenX - midX) + nz * (cenZ - midZ) < 0) { nx = -nx; nz = -nz; }
 
     const scallop = CATENARY_SCALLOP * edgeLen;
     const vSag = EDGE_VERTICAL_SAG * edgeLen;
@@ -174,6 +171,24 @@ export function buildSolvedFabricGeometry(
     neighbors[c].add(a); neighbors[c].add(b);
   }
   const neighborArr: number[][] = neighbors.map(s => Array.from(s));
+
+  // 5b. In-plane Laplacian smoothing of INTERIOR points (boundary stays fixed).
+  //     Evens out triangle shapes where the grid meets the curved boundary,
+  //     which removes shading artifacts / faint crease lines.
+  for (let pass = 0; pass < PLAN_SMOOTH_PASSES; pass++) {
+    for (let i = 0; i < numPts; i++) {
+      if (fixedY[i] !== null) continue; // boundary fixed
+      const nb = neighborArr[i];
+      if (nb.length < 3) continue;
+      let ax = 0, az = 0;
+      for (let k = 0; k < nb.length; k++) {
+        ax += points2D[2 * nb[k]];
+        az += points2D[2 * nb[k] + 1];
+      }
+      points2D[2 * i] = ax / nb.length;
+      points2D[2 * i + 1] = az / nb.length;
+    }
+  }
 
   // 6. Solve Poisson: y_i = mean(y_neighbors) - load   (SOR iteration)
   //    Initial guess: inverse-distance-weighted corner heights (fast convergence)
