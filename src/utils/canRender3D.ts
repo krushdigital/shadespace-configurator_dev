@@ -24,8 +24,7 @@ export function canRender3D(): Device3DTier {
   return 'none';
 }
 
-// Temporary: the 3D viewer only renders correctly for 3 and 4 corner sails.
-// 5+ corner geometry is broken, so 3D is hidden for those until it's fixed.
+// The physics-based membrane solver renders all corner counts (3–8) correctly.
 export function supports3DForCorners(corners: number): boolean {
-  return corners === 3 || corners === 4;
+  return corners >= 3 && corners <= 8;
 }
