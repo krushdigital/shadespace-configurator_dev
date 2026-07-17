@@ -36,6 +36,7 @@ import { generateDefaultQuoteName } from '../utils/quoteNaming';
 import { PricingSetting } from '../hooks/usePricingSettings';
 import { addQuoteToken } from '../utils/tokenManager';
 import { analytics } from '../utils/analytics';
+import { reportClientError } from '../utils/errorReporter';
 import { eventTrackers } from '../utils/eventTracker';
 import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
@@ -393,6 +394,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         showToast(statusMessage, quote.status === 'purchased' ? 'info' : 'success');
       } catch (error: any) {
         console.error('Failed to load quote:', error);
+
+        reportClientError({
+          message: error?.message || 'Quote load failed',
+          stack: error?.stack ?? null,
+          source: 'quote_load',
+        });
 
         analytics.quoteLoadFailed({
           quote_id: quoteData.id,

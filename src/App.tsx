@@ -9,9 +9,19 @@ import './index.css';
 
 type AppRoute = 'configurator' | 'admin' | 'setup-password';
 
+function resolveConfiguratorRoot(): HTMLElement | null {
+  return (
+    document.querySelector<HTMLElement>('#CONFIGURATOR_ROOT') ||
+    document.querySelector<HTMLElement>('#SHADESAIL_ROOT')
+  );
+}
+
 const App = () => {
   const [currency, setCurrency] = useState(null)
   const [route, setRoute] = useState<AppRoute>('configurator');
+  const [configuratorRoot, setConfiguratorRoot] = useState<HTMLElement | null>(
+    () => resolveConfiguratorRoot()
+  );
 
   useEffect(() => {
     installLocalizationFormInterceptor();
@@ -41,7 +51,28 @@ const App = () => {
     }
   }, []);
 
-  const configuratorRoot = document.querySelector("#CONFIGURATOR_ROOT");
+  // Shopify themes may inject the container after React first mounts. Resolve
+  // the portal target reactively so a late-appearing #CONFIGURATOR_ROOT still
+  // renders instead of leaving a blank screen.
+  useEffect(() => {
+    if (configuratorRoot && document.body.contains(configuratorRoot)) return;
+
+    const found = resolveConfiguratorRoot();
+    if (found) {
+      setConfiguratorRoot(found);
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      const el = resolveConfiguratorRoot();
+      if (el) {
+        setConfiguratorRoot(el);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [configuratorRoot]);
 
   return (
     <>

@@ -9,6 +9,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     minify: 'esbuild',
+    target: ['es2015', 'safari11', 'chrome64', 'firefox60', 'edge79'],
     lib: {
       entry: path.resolve(__dirname, 'src/shopify/my-designs-entry.tsx'),
       name: 'ShadeSpaceMyDesigns',
