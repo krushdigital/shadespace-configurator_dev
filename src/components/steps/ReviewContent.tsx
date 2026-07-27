@@ -1343,7 +1343,6 @@ console.log('✌️result --->', result);
             Your sail is made to your measurements, so let's get this right together.
           </p>
           <div className={`${isMobile ? 'space-y-2 text-xs' : 'space-y-4 text-sm'}`}>
-            <DeliveryEstimate />
             <ul className={`${isMobile ? 'space-y-1.5 pl-5' : 'space-y-2 pl-6'} list-disc text-slate-700 marker:text-slate-400`}>
               <li>{isMobile ? 'Measurements are point-to-point and checked. We check again before cutting.' : "My measurements are point-to-point and I've checked them. Our team checks them again before anything is cut, and we'll contact you if something looks off."}</li>
               <li>
