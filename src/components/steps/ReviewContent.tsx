@@ -5,6 +5,7 @@ import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Tooltip } from '../ui/Tooltip';
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
+import { DeliveryEstimate } from '../DeliveryEstimate';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { AccordionItem } from '../ui/AccordionItem';
 import { useFabricCatalog } from '../../hooks/useFabricCatalog';
@@ -1079,6 +1080,7 @@ console.log('✌️result --->', result);
                       <span className="font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
                     </div>
                   </div>
+                  <DeliveryEstimate className="mt-3" />
                 </Card>
               </div>
             </AccordionItem>
@@ -1295,6 +1297,7 @@ console.log('✌️result --->', result);
               </div>
             </div>
             <p className="text-xs text-white/90 font-medium">Includes express freight, taxes & duties (to your door)</p>
+            <DeliveryEstimate className="mt-3" />
           </Card>
         )}
 
@@ -1330,19 +1333,39 @@ console.log('✌️result --->', result);
                 ? '!border-red-500 bg-red-50 hover:!border-red-600 shadow-md'
                 : 'bg-slate-50 border-slate-200'
             } `}>
-          <h4 className={`${isMobile ? 'text-sm' : 'text-lg'} font-semibold text-slate-900 ${isMobile ? 'mb-2' : 'mb-4'}`}>
-            {isMobile ? 'Confirm Understanding' : 'Important Acknowledgments'}
+          <h4 className={`${isMobile ? 'text-sm' : 'text-lg'} font-semibold text-slate-900 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+            Before we cut your fabric
             {allAcknowledgmentsChecked && (
               <span className="ml-2 text-emerald-600">✓</span>
             )}
           </h4>
+          <p className={`${isMobile ? 'text-xs mb-2' : 'text-sm mb-4'} text-slate-600`}>
+            Your sail is made to your measurements, so let's get this right together.
+          </p>
           <div className={`${isMobile ? 'space-y-2 text-xs' : 'space-y-4 text-sm'}`}>
+            <DeliveryEstimate />
             <ul className={`${isMobile ? 'space-y-1.5 pl-5' : 'space-y-2 pl-6'} list-disc text-slate-700 marker:text-slate-400`}>
-              <li>{isMobile ? 'Custom made - no returns/exchanges' : 'I understand this shade sail is custom manufactured and cannot be returned or exchanged.'}</li>
-              <li>{isMobile ? 'Measurements are accurate' : 'I confirm all measurements provided are accurate and verified on-site.'}</li>
-              <li>{isMobile ? 'Installation not included' : 'I acknowledge installation is not included and I am responsible for proper installation.'}</li>
-              <li>{isMobile ? 'Structural adequacy is my responsibility' : 'I understand structural adequacy of fixing points is my responsibility.'}</li>
+              <li>{isMobile ? 'Measurements are point-to-point and checked. We check again before cutting.' : "My measurements are point-to-point and I've checked them. Our team checks them again before anything is cut, and we'll contact you if something looks off."}</li>
+              <li>
+                {isMobile ? 'Fixing points are in place and sound. Not sure? ' : 'My fixing points are in place and structurally sound. Not sure? '}
+                <a
+                  href="https://shadespace.com/pages/contact"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-[#307C31] underline hover:text-[#01312D]"
+                >
+                  Talk to us first
+                </a>
+                {isMobile ? '' : " — we'd rather have that conversation now than after."}
+              </li>
+              <li>{isMobile ? "Made for me, can't be resold or returned — backed by our Fit Guarantee." : "I understand this is made for me and can't be resold, which is why it isn't returnable — and why we back it with our Fit Guarantee."}</li>
+              <li>{isMobile ? "I'm arranging my own installation (step-by-step guide included)." : "I'm arranging my own installation. Our step-by-step guide is included; most customers do it themselves in an afternoon."}</li>
             </ul>
+            <div className={`rounded-lg border border-emerald-200 bg-emerald-50 ${isMobile ? 'p-2' : 'p-3'}`}>
+              <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-emerald-900 leading-relaxed`}>
+                <span className="font-semibold">Our promise:</span> if we make it and it doesn't fit the space you measured, we'll make you another one free — and you keep the first one.
+              </p>
+            </div>
 
             <label className={`flex items-start gap-3 cursor-pointer ${isMobile ? 'mt-3 p-2' : 'mt-4 p-3'} rounded-lg border-2 transition-colors ${
               agreedToAcknowledgments
