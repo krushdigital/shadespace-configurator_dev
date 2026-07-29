@@ -6,6 +6,7 @@ import { Tooltip } from './ui/Tooltip';
 import { FABRICS as FALLBACK_FABRICS } from '../data/fabrics';
 import { formatCurrency } from '../utils/currencyFormatter';
 import { useHardwareCatalog, getDefaultPack } from '../hooks/useHardwareCatalog';
+import { DeliveryEstimate } from './DeliveryEstimate';
 
 function stripHardwareSize(name: string): string {
   return name.replace(/\s+SS\s+316-\d+mm$/i, '').replace(/\s+-\s*\d+mm$/i, '');
@@ -151,6 +152,8 @@ export function PriceSummaryDisplay({
               </div>
             )}
           </div>
+
+          {!isMobile && <DeliveryEstimate />}
 
           <div className="space-y-4 border-t border-slate-200 pt-4">
             {(config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none')) === 'standard' ? (

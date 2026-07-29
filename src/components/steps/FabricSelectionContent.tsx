@@ -170,7 +170,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                             <h4 className="font-bold text-[#01312D] mb-2">
                               {fabric.label}
                             </h4>
-                            <div className="grid grid-cols-2 gap-3 mb-3 p-3 bg-[#F3FFE3] rounded-lg">
+                            <div className={`grid ${fabric.id === 'monotec370' ? 'grid-cols-3' : 'grid-cols-2'} gap-3 mb-3 p-3 bg-[#F3FFE3] rounded-lg`}>
                               <div>
                                 <div className="text-xs text-[#01312D]/60 mb-1">Weight</div>
                                 <div className="font-semibold text-[#01312D]">{fabric.weightPerSqm} g/m²</div>
@@ -188,6 +188,12 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                   </a>
                                 </div>
                               </div>
+                              {fabric.id === 'monotec370' && (
+                                <div>
+                                  <div className="text-xs text-[#01312D]/60 mb-1">Wind rating</div>
+                                  <div className="font-semibold text-[#01312D]">85 mph</div>
+                                </div>
+                              )}
                             </div>
                             <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
                               {fabric.detailedDescription}
@@ -281,6 +287,16 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                           isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'
                         }`}>{fabric.weightPerSqm} g/m²</div>
                       </div>
+                      {fabric.id === 'monotec370' && (
+                        <div className="min-w-0 text-center">
+                          <div className={`text-[10px] mb-0.5 ${
+                            isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'
+                          }`}>Wind rating</div>
+                          <div className={`font-semibold text-xs lg:text-[13px] whitespace-nowrap ${
+                            isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'
+                          }`}>85 mph</div>
+                        </div>
+                      )}
                       <div className="min-w-0 text-right">
                         <div className={`text-[10px] mb-0.5 ${
                           isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'

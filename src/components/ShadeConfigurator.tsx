@@ -31,7 +31,7 @@ import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { AdminSaveQuoteModal } from './admin/AdminSaveQuoteModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
-import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
+import { getQuoteFromUrl, getQuoteById, updateQuote, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
 import { generateDefaultQuoteName } from '../utils/quoteNaming';
 import { PricingSetting } from '../hooks/usePricingSettings';
 import { addQuoteToken } from '../utils/tokenManager';
@@ -917,12 +917,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         quote_reference: quoteReference || '',
         agreed_at: new Date().toISOString(),
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent || '' : '',
-        statements_version: 'v1-2026-05',
+        statements_version: 'v2-2026-07',
         statements_snapshot: [
-          'I understand this shade sail is custom manufactured and cannot be returned or exchanged.',
-          'I confirm all measurements provided are accurate and verified on-site.',
-          'I acknowledge installation is not included and I am responsible for proper installation.',
-          'I understand structural adequacy of fixing points is my responsibility.',
+          'My measurements are point-to-point and I have checked them. Our team checks them again before anything is cut, and we will contact you if something looks off.',
+          'My fixing points are in place and structurally sound.',
+          'I understand this is made for me and cannot be resold, which is why it is not returnable — and why we back it with our Fit Guarantee.',
+          'I am arranging my own installation. A step-by-step guide is included.',
         ],
       });
     } catch {
@@ -1158,6 +1158,16 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       console.log('Auto-saved quote for checkout:', autoResult.reference);
     } catch (autoSaveErr) {
       console.error('Auto-save for checkout failed (non-blocking):', autoSaveErr);
+    }
+  } else if (quoteParams) {
+    try {
+      setLoadingStep({ text: 'Preparing order details...', progress: 15 });
+      await updateQuote(quoteParams.id, quoteParams.token, config, calculations, {
+        status: 'checkout_pending',
+      });
+      console.log('Updated existing quote config for checkout:', autoSavedRef);
+    } catch (updateErr) {
+      console.error('Quote config update for checkout failed (non-blocking):', updateErr);
     }
   }
 
