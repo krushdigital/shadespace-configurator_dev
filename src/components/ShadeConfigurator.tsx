@@ -31,7 +31,7 @@ import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { AdminSaveQuoteModal } from './admin/AdminSaveQuoteModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
-import { getQuoteFromUrl, getQuoteById, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
+import { getQuoteFromUrl, getQuoteById, updateQuote, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
 import { generateDefaultQuoteName } from '../utils/quoteNaming';
 import { PricingSetting } from '../hooks/usePricingSettings';
 import { addQuoteToken } from '../utils/tokenManager';
@@ -1158,6 +1158,16 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       console.log('Auto-saved quote for checkout:', autoResult.reference);
     } catch (autoSaveErr) {
       console.error('Auto-save for checkout failed (non-blocking):', autoSaveErr);
+    }
+  } else if (quoteParams) {
+    try {
+      setLoadingStep({ text: 'Preparing order details...', progress: 15 });
+      await updateQuote(quoteParams.id, quoteParams.token, config, calculations, {
+        status: 'checkout_pending',
+      });
+      console.log('Updated existing quote config for checkout:', autoSavedRef);
+    } catch (updateErr) {
+      console.error('Quote config update for checkout failed (non-blocking):', updateErr);
     }
   }
 
