@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useMemo, useRef, useState, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Environment, Html, Sky } from '@react-three/drei';
 import * as THREE from 'three';
@@ -27,6 +27,10 @@ const FIXING_POINT_OFFSET = 0.2;
 
 interface SceneProps extends ShadeSail3DViewerProps {
   isMobile: boolean;
+  externalShowLabels?: boolean;
+  externalShowGrid?: boolean;
+  cameraPreset?: string | null;
+  onCameraPresetApplied?: () => void;
 }
 
 function getCornerLabel(index: number): string {
@@ -889,9 +893,90 @@ function HeightIndicators({ corners3D, highlightedCorner }: { corners3D: THREE.V
   );
 }
 
-function Scene({ config, highlightedMeasurement, highlightedCorner, activeSection, isMobile }: SceneProps) {
+function CameraPresetController({
+  controlsRef,
+  corners3D,
+  centroid,
+  preset,
+  onApplied,
+}: {
+  controlsRef: React.RefObject<any>;
+  corners3D: THREE.Vector3[];
+  centroid: THREE.Vector3;
+  preset: string | null;
+  onApplied?: () => void;
+}) {
+  const { camera } = useThree();
+  const animRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!preset || corners3D.length < 3) return;
+
+    const target = centroid.clone();
+    target.y = centroid.y * 0.5;
+
+    const bounds = corners3D.reduce(
+      (acc, c) => {
+        acc.maxSpan = Math.max(acc.maxSpan, Math.abs(c.x - centroid.x), Math.abs(c.z - centroid.z));
+        return acc;
+      },
+      { maxSpan: 2 }
+    );
+    const dist = Math.max(bounds.maxSpan * 3, 6);
+
+    let newPos: THREE.Vector3;
+    switch (preset) {
+      case 'front':
+        newPos = new THREE.Vector3(target.x, target.y + dist * 0.3, target.z + dist);
+        break;
+      case 'side':
+        newPos = new THREE.Vector3(target.x + dist, target.y + dist * 0.3, target.z);
+        break;
+      case 'top':
+        newPos = new THREE.Vector3(target.x, target.y + dist * 1.2, target.z + 0.01);
+        break;
+      case 'perspective':
+      default:
+        newPos = new THREE.Vector3(target.x + dist * 0.7, target.y + dist * 0.5, target.z + dist * 0.7);
+        break;
+    }
+
+    const startPos = camera.position.clone();
+    const startTime = performance.now();
+    const duration = 600;
+
+    const animate = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      camera.position.lerpVectors(startPos, newPos, ease);
+      camera.lookAt(target);
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(target);
+        controlsRef.current.update();
+      }
+      if (t < 1) {
+        animRef.current = requestAnimationFrame(animate);
+      } else {
+        onApplied?.();
+      }
+    };
+
+    if (animRef.current) cancelAnimationFrame(animRef.current);
+    animRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [preset, corners3D, centroid, camera, controlsRef, onApplied]);
+
+  return null;
+}
+
+function Scene({ config, highlightedMeasurement, highlightedCorner, activeSection, isMobile, externalShowLabels, externalShowGrid, cameraPreset, onCameraPresetApplied }: SceneProps) {
   const controlsRef = useRef<any>(null);
   const [showOverlays, setShowOverlays] = useState(true);
+  const showLabels = externalShowLabels !== undefined ? externalShowLabels : showOverlays;
+  const showGrid = externalShowGrid !== undefined ? externalShowGrid : true;
 
   const svgPoints = useMemo(() => {
     if (canReconstructShape(config.measurements, config.corners)) {
@@ -964,7 +1049,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
       <hemisphereLight args={['#87ceeb', '#d4cfc6', 0.3]} />
 
       <GroundPlane />
-      <GridLines />
+      {showGrid && <GridLines />}
 
       {corners3D.map((top, i) => {
         const base = new THREE.Vector3(top.x, 0, top.z);
@@ -1007,7 +1092,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
 
       <FabricMesh corners3D={sailAttachPoints} color={fabricColor} onClick={() => setShowOverlays(true)} onPointerMissed={() => setShowOverlays(false)} />
 
-      {showOverlays && (
+      {showLabels && (
         <DimensionOverlay
           config={config}
           fixingPointPositions={fixingPointPositions}
@@ -1016,7 +1101,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
         />
       )}
 
-      {showOverlays && highlightedMeasurement && (
+      {showLabels && highlightedMeasurement && (
         <DimensionHighlight
           highlightedMeasurement={highlightedMeasurement}
           measurementOption={config.measurementOption as 'adjust' | 'exact'}
@@ -1026,14 +1111,14 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
         />
       )}
 
-      {showOverlays && activeSection === 'heights' && (
+      {showLabels && activeSection === 'heights' && (
         <HeightIndicators
           corners3D={fixingPointPositions}
           highlightedCorner={highlightedCorner}
         />
       )}
 
-      {showOverlays && poleTopPositions.map((pos, i) => (
+      {showLabels && poleTopPositions.map((pos, i) => (
         <CornerLabel
           key={i}
           position={pos}
@@ -1044,6 +1129,13 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
       ))}
 
       <CameraFramer corners3D={corners3D} centroid={centroid} />
+      <CameraPresetController
+        controlsRef={controlsRef}
+        corners3D={corners3D}
+        centroid={centroid}
+        preset={cameraPreset || null}
+        onApplied={onCameraPresetApplied}
+      />
 
       <OrbitControls
         ref={controlsRef}
@@ -1150,4 +1242,5 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
   }
 );
 
+export { Scene as __Scene };
 export default ShadeSail3DViewer;

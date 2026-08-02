@@ -42,11 +42,12 @@ import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
 import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { renderSailPngBlob } from '../utils/renderSvgOffscreen';
-import { Box, Layers } from 'lucide-react';
+import { Box, Layers, Maximize2 } from 'lucide-react';
 import { canRender3D, Device3DTier, supports3DForCorners } from '../utils/canRender3D';
 import type { AdminProfile } from '../hooks/useAdminProfile';
 
 const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
+const Expanded3DViewerModal = lazy(() => import('./Expanded3DViewerModal'));
 
 export interface ShadeConfiguratorProps {
   adminMode?: boolean;
@@ -164,6 +165,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const canvasRef = useRef<any>(null);
   // 3D viewer ref for screenshot capture
   const viewer3DRef = useRef<{ capture3DScreenshot: () => Promise<string | null> }>(null);
+  const [is3DExpanded, setIs3DExpanded] = useState(false);
 
   const { settingsMap: pricingSettingsMap } = usePricingSettings();
   const { data: basePricingData } = useBasePricing();
@@ -2576,7 +2578,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     />
                   )
                 ) : (
-                  <div className="h-[calc(100vh-12rem)]">
+                  <div className="h-[calc(100vh-12rem)] relative group/viewer3d">
                     <Suspense fallback={
                       <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
                         <div className="text-center">
@@ -2593,6 +2595,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         activeSection={openStep === 5 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
                       />
                     </Suspense>
+                    <button
+                      onClick={() => setIs3DExpanded(true)}
+                      className="absolute bottom-3 right-3 p-2 bg-white/90 hover:bg-white rounded-lg shadow-md border border-slate-200/80 text-slate-500 hover:text-slate-700 transition-all duration-150 sm:opacity-0 sm:group-hover/viewer3d:opacity-100 sm:focus:opacity-100 z-10"
+                      title="Expand 3D viewer"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
               </div>
@@ -2716,6 +2725,19 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             }
           }}
         />
+      )}
+
+      {is3DExpanded && (
+        <Suspense fallback={null}>
+          <Expanded3DViewerModal
+            isOpen={is3DExpanded}
+            onClose={() => setIs3DExpanded(false)}
+            config={config}
+            highlightedMeasurement={highlightedMeasurement}
+            highlightedCorner={highlightedCorner}
+            activeSection={openStep === 5 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+          />
+        </Suspense>
       )}
     </>
   );
