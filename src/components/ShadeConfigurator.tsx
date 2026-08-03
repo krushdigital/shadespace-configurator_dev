@@ -2045,6 +2045,27 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             errors[edgeKey] = 'Measurement required';
           }
         }
+
+        // Validate attachment types:
+        // - For 5+ corners: always required
+        // - For 4 corners: required only if user has opened heights section (heightsProvidedByUser is set)
+        {
+          const attachmentRequired = config.corners >= 5 || (config.corners === 4 && config.heightsProvidedByUser);
+          if (attachmentRequired) {
+            for (let i = 0; i < config.corners; i++) {
+              const fixingType = config.fixingTypes?.[i];
+              if (fixingType !== 'post' && fixingType !== 'building') {
+                errors[`attachmentType_${i}`] = 'Please select Post or Building';
+              }
+            }
+
+            // If attachment type errors exist and heights section is not open, force it open
+            const hasAttachmentErrors = Object.keys(errors).some(k => k.startsWith('attachmentType_'));
+            if (hasAttachmentErrors && !isHeightsSectionOpen) {
+              setNavigateToHeights(true);
+            }
+          }
+        }
         break;
       case 5: // Hardware Selection
         if (config.hardwareSelectionMode === 'manual') {
@@ -2070,13 +2091,22 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     if (Object.keys(errors).length > 0 || hasUnacknowledgedTypos) {
       setValidationErrors(errors);
 
+      // Determine if we need extra delay for heights section expansion
+      const hasAttachmentErrors = Object.keys(errors).some(k => k.startsWith('attachmentType_'));
+      const needsHeightsExpansion = hasAttachmentErrors && !isHeightsSectionOpen;
+
       // Prioritize scrolling to typo suggestions first, then other errors
       if (hasUnacknowledgedTypos) {
         const firstTypoKey = unacknowledgedTypos[0];
         scrollToErrorField(firstTypoKey, true);
       } else if (Object.keys(errors).length > 0) {
         const firstErrorKey = Object.keys(errors)[0];
-        scrollToErrorField(firstErrorKey, false);
+        // If the first error is an attachment type and section needs expanding, use longer delay
+        if (needsHeightsExpansion && firstErrorKey.startsWith('attachmentType_')) {
+          setTimeout(() => scrollToErrorField(firstErrorKey, false), 500);
+        } else {
+          scrollToErrorField(firstErrorKey, false);
+        }
       }
 
       return; // Don't proceed to next step
