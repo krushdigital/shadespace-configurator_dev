@@ -2300,16 +2300,89 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     // Convert measurements from base unit (meters/feet) to mm
     const toMm = data.unit === 'imperial' ? 304.8 : 1000;
 
-    const measurements: { [key: string]: number } = {};
-    for (const edge of data.edges) {
-      measurements[edge.label] = edge.value * toMm;
+    // Generate the expected edge keys for this corner count
+    const cornerLabels = 'ABCDEFGH'.slice(0, corners);
+    const expectedEdgeKeys: string[] = [];
+    for (let i = 0; i < corners; i++) {
+      expectedEdgeKeys.push(cornerLabels[i] + cornerLabels[(i + 1) % corners]);
     }
-    for (const diag of data.diagonals) {
-      measurements[diag.label] = diag.value * toMm;
+    const expectedDiagKeys = getDiagonalKeysForCorners(corners);
+
+    // Classify all measurements using geometric rule:
+    // For shade sails, diagonals are always longer than edges.
+    // Pool all values, sort, and assign smallest N to edges, rest to diagonals.
+    const allValues = [
+      ...data.edges.map(e => ({ value: e.value, origLabel: e.label, origType: 'edge' as const })),
+      ...data.diagonals.map(d => ({ value: d.value, origLabel: d.label, origType: 'diagonal' as const })),
+    ];
+
+    // Sort by value ascending - smallest values are edges, largest are diagonals
+    allValues.sort((a, b) => a.value - b.value);
+
+    const measurements: { [key: string]: number } = {};
+
+    if (allValues.length >= corners) {
+      // Take the N smallest as edges (in their original clockwise order from AI)
+      // First, separate using the geometric rule
+      const edgePool = allValues.slice(0, corners);
+      const diagPool = allValues.slice(corners);
+
+      // For edge ordering: use the AI's original clockwise order for edge values
+      // The AI returns edges in clockwise order (position 1, 2, 3, etc.)
+      // Find which of the original AI edges ended up in our edge pool
+      const aiEdgeOrder = data.edges.map(e => e.value);
+      const aiDiagValues = data.diagonals.map(d => d.value);
+
+      // Match edge values back to their clockwise position
+      // Strategy: the edge pool values should be assigned to edge keys in
+      // the same relative order the AI originally provided them
+      const edgeValues = edgePool.map(e => e.value);
+
+      // Try to preserve AI's clockwise ordering by matching original positions
+      const orderedEdgeValues: number[] = [];
+      const usedIndices = new Set<number>();
+
+      // For each expected edge position, find the best matching value
+      // from the AI's original edge array (preserving clockwise order)
+      for (let pos = 0; pos < corners; pos++) {
+        if (pos < aiEdgeOrder.length) {
+          // Check if this AI edge value is in our edge pool
+          const aiVal = aiEdgeOrder[pos];
+          const poolIdx = edgeValues.findIndex((v, i) => !usedIndices.has(i) && Math.abs(v - aiVal) < 0.001);
+          if (poolIdx >= 0) {
+            orderedEdgeValues.push(edgeValues[poolIdx]);
+            usedIndices.add(poolIdx);
+          }
+        }
+      }
+      // Add any remaining edge pool values that weren't matched
+      for (let i = 0; i < edgeValues.length; i++) {
+        if (!usedIndices.has(i)) {
+          orderedEdgeValues.push(edgeValues[i]);
+        }
+      }
+
+      // Assign edges to their positional keys (AB, BC, CD, DA, etc.)
+      for (let i = 0; i < Math.min(orderedEdgeValues.length, expectedEdgeKeys.length); i++) {
+        measurements[expectedEdgeKeys[i]] = orderedEdgeValues[i] * toMm;
+      }
+
+      // Assign diagonals to diagonal keys in order
+      for (let i = 0; i < Math.min(diagPool.length, expectedDiagKeys.length); i++) {
+        measurements[expectedDiagKeys[i]] = diagPool[i].value * toMm;
+      }
+    } else {
+      // Not enough measurements to fill all edges - just assign what we have
+      // Use edge values for edges, diagonal values for diagonals (trust AI classification)
+      for (let i = 0; i < Math.min(data.edges.length, expectedEdgeKeys.length); i++) {
+        measurements[expectedEdgeKeys[i]] = data.edges[i].value * toMm;
+      }
+      for (let i = 0; i < Math.min(data.diagonals.length, expectedDiagKeys.length); i++) {
+        measurements[expectedDiagKeys[i]] = data.diagonals[i].value * toMm;
+      }
     }
 
     const fixingHeights: number[] = Array(corners).fill(undefined);
-    const cornerLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
     for (const h of data.heights) {
       const idx = cornerLabels.indexOf(h.corner.toUpperCase());
       if (idx >= 0 && idx < corners) {

@@ -23,6 +23,7 @@ export function SketchUploadModal({ open, onClose, onApply }: SketchUploadModalP
   const [error, setError] = useState<string | null>(null);
   const [parsedData, setParsedData] = useState<ParsedSketchData | null>(null);
   const [showLongWait, setShowLongWait] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const longWaitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -31,8 +32,12 @@ export function SketchUploadModal({ open, onClose, onApply }: SketchUploadModalP
     setError(null);
     setParsedData(null);
     setShowLongWait(false);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
     if (longWaitTimerRef.current) clearTimeout(longWaitTimerRef.current);
-  }, []);
+  }, [previewUrl]);
 
   const handleClose = () => {
     reset();
@@ -50,6 +55,14 @@ export function SketchUploadModal({ open, onClose, onApply }: SketchUploadModalP
     if (!isAcceptedFile(file)) {
       setError('Please upload a JPG, PNG, or PDF file.');
       return;
+    }
+
+    // Create preview URL for the file
+    if (file.type !== 'application/pdf') {
+      const objUrl = URL.createObjectURL(file);
+      setPreviewUrl(objUrl);
+    } else {
+      setPreviewUrl(null);
     }
 
     setStage('processing');
@@ -166,7 +179,7 @@ export function SketchUploadModal({ open, onClose, onApply }: SketchUploadModalP
           )}
 
           {stage === 'processing' && (
-            <ProcessingStage showLongWait={showLongWait} onCancel={handleClose} />
+            <ProcessingStage showLongWait={showLongWait} onCancel={handleClose} previewUrl={previewUrl} />
           )}
 
           {stage === 'review' && parsedData && (
@@ -258,19 +271,34 @@ function UploadStage({
 }
 
 // --- Processing Stage ---
-function ProcessingStage({ showLongWait, onCancel }: { showLongWait: boolean; onCancel: () => void }) {
+function ProcessingStage({ showLongWait, onCancel, previewUrl }: { showLongWait: boolean; onCancel: () => void; previewUrl: string | null }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 space-y-6">
-      <div className="relative">
-        <div className="w-16 h-16 rounded-full bg-[#307C31]/10 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-[#307C31] animate-spin" />
+    <div className="flex flex-col items-center justify-center py-8 space-y-5">
+      {previewUrl && (
+        <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+          <img
+            src={previewUrl}
+            alt="Your uploaded sketch"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-[#307C31] animate-spin" />
+          </div>
         </div>
-      </div>
+      )}
+      {!previewUrl && (
+        <div className="relative">
+          <div className="w-16 h-16 rounded-full bg-[#307C31]/10 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-[#307C31] animate-spin" />
+          </div>
+        </div>
+      )}
       <div className="text-center space-y-2">
         <p className="text-lg font-medium text-[#01312D]">Reading your sketch...</p>
-        <p className="text-sm text-slate-500">This usually takes 10–20 seconds</p>
+        <p className="text-sm text-slate-500">This usually takes 10-20 seconds</p>
         {showLongWait && (
-          <p className="text-sm text-slate-500 animate-fade-in">Still working — almost there</p>
+          <p className="text-sm text-slate-500 animate-fade-in">Still working -- almost there</p>
         )}
       </div>
       <button
