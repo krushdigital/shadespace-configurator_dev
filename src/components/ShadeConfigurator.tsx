@@ -2420,15 +2420,14 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       }
     }
 
-    // Advance to the Dimensions step (index 4 in the steps array)
-    const dimensionsStepIndex = 4;
+    // Advance to the Measurement Options step (index 3) so user can choose manufacturing interpretation
+    const measurementOptionsStepIndex = 3;
 
-    // Apply all data in one batch
+    // Apply all data in one batch - don't pre-select measurementOption so user chooses on step 3
     updateConfig({
-      step: dimensionsStepIndex,
+      step: measurementOptionsStepIndex,
       corners,
       unit: data.unit,
-      measurementOption: 'exact',
       points,
       measurements,
       fixingHeights,
@@ -2441,7 +2440,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       hasManuallyAdjustedShape: false,
     });
 
-    setOpenStep(dimensionsStepIndex);
+    setOpenStep(measurementOptionsStepIndex);
     setSketchAppliedBanner(true);
   };
 
