@@ -44,6 +44,7 @@ import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { renderSailPngBlob } from '../utils/renderSvgOffscreen';
 import { Box, Layers, Maximize2 } from 'lucide-react';
 import { canRender3D, Device3DTier, supports3DForCorners } from '../utils/canRender3D';
+import { ParsedSketchData } from '../utils/sketchParser';
 import type { AdminProfile } from '../hooks/useAdminProfile';
 
 const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
@@ -2266,6 +2267,83 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     setShowUnifiedSaveModal(true);
   };
 
+  // Handle sketch upload apply - fills configurator with AI-extracted data and advances
+  const handleSketchApply = (data: ParsedSketchData) => {
+    const corners = data.corners;
+
+    // Generate default polygon points (same logic as CornersContent)
+    const centerX = 300;
+    const centerY = 300;
+    const radius = 160;
+    let points: { x: number; y: number }[] = [];
+
+    if (corners === 5) {
+      points = [
+        { x: 156, y: 180 }, { x: 300, y: 140 }, { x: 444, y: 180 },
+        { x: 420, y: 420 }, { x: 180, y: 420 }
+      ];
+    } else if (corners === 6) {
+      points = [
+        { x: 156, y: 156 }, { x: 300, y: 140 }, { x: 444, y: 156 },
+        { x: 444, y: 444 }, { x: 300, y: 460 }, { x: 156, y: 444 }
+      ];
+    } else {
+      for (let i = 0; i < corners; i++) {
+        const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
+        points.push({
+          x: Math.round(centerX + radius * Math.cos(angle)),
+          y: Math.round(centerY + radius * Math.sin(angle)),
+        });
+      }
+    }
+
+    // Convert measurements from base unit (meters/feet) to mm
+    const toMm = data.unit === 'imperial' ? 304.8 : 1000;
+
+    const measurements: { [key: string]: number } = {};
+    for (const edge of data.edges) {
+      measurements[edge.label] = edge.value * toMm;
+    }
+    for (const diag of data.diagonals) {
+      measurements[diag.label] = diag.value * toMm;
+    }
+
+    const fixingHeights: number[] = Array(corners).fill(undefined);
+    const cornerLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    for (const h of data.heights) {
+      const idx = cornerLabels.indexOf(h.corner.toUpperCase());
+      if (idx >= 0 && idx < corners) {
+        fixingHeights[idx] = h.value * toMm;
+      }
+    }
+
+    // Advance to the Dimensions step (index 4 in the steps array)
+    const dimensionsStepIndex = 4;
+
+    // Apply all data in one batch
+    updateConfig({
+      step: dimensionsStepIndex,
+      corners,
+      unit: data.unit,
+      measurementOption: 'exact',
+      points,
+      measurements,
+      fixingHeights,
+      fixingTypes: Array(corners).fill(''),
+      eyeOrientations: Array(corners).fill(''),
+      attachmentTypes: Array(corners).fill(''),
+      fixingPointsInstalled: undefined,
+      diagonalsInitiallyProvided: data.diagonals.length > 0 ? true : undefined,
+      heightsProvidedByUser: data.heights.length > 0 ? true : undefined,
+      hasManuallyAdjustedShape: false,
+    });
+
+    setOpenStep(dimensionsStepIndex);
+    setSketchAppliedBanner(true);
+  };
+
+  const [sketchAppliedBanner, setSketchAppliedBanner] = useState(false);
+
   // Handle toggle between Auto and Manual mode
   const handleToggleMode = (isAutomatic: boolean) => {
     if (isAutomatic) {
@@ -2434,6 +2512,19 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   selection={selection}
                   onToggle={() => toggleStep(index)}
                 >
+                  {index === 4 && sketchAppliedBanner && isOpen && (
+                    <div className="mx-6 mt-4 mb-0 flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-emerald-800">Your sketch measurements have been applied. Please review them below, then continue.</p>
+                      <button onClick={() => setSketchAppliedBanner(false)} className="ml-auto text-emerald-600 hover:text-emerald-800 p-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                   <StepComponent
                     config={config}
                     updateConfig={updateConfig}
@@ -2469,6 +2560,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     setLoading={setLoading}
                     setShowLoadingOverlay={setShowLoadingOverlay}
                     onSaveQuote={handleSaveQuote}
+                    onSketchApply={index === 2 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
                     viewMode={index === 6 ? desktopViewMode : undefined}
                     onViewModeChange={index === 6 ? handleDesktopViewModeChange : undefined}
