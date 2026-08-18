@@ -1,5 +1,77 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  trackQuoteRequested,
+  trackProgressSaved,
+  subscribeToMarketing,
+} from "./klaviyo.ts";
+
+// Public page the configurator is embedded on — used to build resume links
+// for Klaviyo follow-up emails.
+const CONFIGURATOR_PAGE_URL = "https://shadespace.com/pages/shade-sail-configurator";
+
+function buildResumeUrl(quoteId: string, accessToken: string): string {
+  return `${CONFIGURATOR_PAGE_URL}?quote=${encodeURIComponent(quoteId)}&token=${encodeURIComponent(accessToken)}&_ab=0&_fd=0`;
+}
+
+/**
+ * Notify Klaviyo about a quote save (non-blocking, never throws).
+ * - quote_ready / completed  -> "Quote Requested" (triggers the follow-up flow)
+ * - in_progress              -> "Configurator Progress Saved" (analytics only)
+ * - checkout_pending / admin-created quotes -> nothing
+ */
+async function notifyKlaviyo(opts: {
+  status: string;
+  email: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  quoteReference: string | null;
+  quoteId: string;
+  accessToken: string | null;
+  quoteName?: string | null;
+  totalPrice?: number | null;
+  currency?: string | null;
+  config?: Record<string, unknown> | null;
+  currentStep?: number | null;
+  marketingOptIn: boolean;
+  isAdminCreated: boolean;
+}): Promise<void> {
+  try {
+    if (!opts.email || !opts.quoteReference || opts.isAdminCreated) return;
+    if (opts.status === "checkout_pending") return;
+
+    const cfg = (opts.config || {}) as Record<string, unknown>;
+    const base = {
+      email: opts.email,
+      firstName: opts.firstName || null,
+      lastName: opts.lastName || null,
+      quoteReference: opts.quoteReference,
+      quoteId: opts.quoteId,
+      quoteName: opts.quoteName || null,
+      totalPrice: opts.totalPrice ?? null,
+      currency: opts.currency || null,
+      corners: typeof cfg.corners === "number" ? (cfg.corners as number) : null,
+      fabricType: typeof cfg.fabricType === "string" ? (cfg.fabricType as string) : null,
+      fabricColor: typeof cfg.fabricColor === "string" ? (cfg.fabricColor as string) : null,
+      status: opts.status,
+      resumeUrl: opts.accessToken
+        ? buildResumeUrl(opts.quoteId, opts.accessToken)
+        : null,
+    };
+
+    if (opts.status === "quote_ready" || opts.status === "completed") {
+      await trackQuoteRequested(base);
+    } else if (opts.status === "in_progress") {
+      await trackProgressSaved({ ...base, currentStep: opts.currentStep ?? null });
+    }
+
+    if (opts.marketingOptIn) {
+      await subscribeToMarketing(opts.email);
+    }
+  } catch (err) {
+    console.error("[klaviyo] notifyKlaviyo failed (non-blocking):", err);
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -425,6 +497,7 @@ async function handlePost(
     salesRepName,
     createdVia,
     clientIp: bodyClientIp,
+    marketingOptIn,
   } = body;
 
   if (!config || !calculations) {
@@ -503,7 +576,9 @@ async function handlePost(
     customer_ip: clientIp,
     customer_country: customerCountry,
     customer_country_code: customerCountryCode,
-    marketing_opt_in: !!email,
+    // Explicit consent from the form checkbox when provided; falls back to
+    // the legacy implicit behaviour (email present = opted in).
+    marketing_opt_in: typeof marketingOptIn === "boolean" ? marketingOptIn : !!email,
     ...(createdByAdminId ? { created_by_admin_id: createdByAdminId } : {}),
     ...(salesRepName ? { sales_rep_name: salesRepName } : {}),
     ...(createdVia ? { created_via: createdVia } : {}),
@@ -572,6 +647,25 @@ async function handlePost(
     }
   }
 
+  // Klaviyo: fire "Quote Requested" for quote_ready saves so the marketing
+  // follow-up flow takes over. Non-blocking, never throws.
+  await notifyKlaviyo({
+    status: initialStatus,
+    email: email || null,
+    firstName: firstName || null,
+    lastName: lastName || null,
+    quoteReference: reference,
+    quoteId: inserted.id,
+    accessToken,
+    quoteName: finalQuoteName,
+    totalPrice: lockedTotal,
+    currency: lockedCurrency,
+    config,
+    currentStep: currentStep ?? null,
+    marketingOptIn: typeof marketingOptIn === "boolean" ? marketingOptIn : !!email,
+    isAdminCreated: !!createdByAdminId || createdVia === "admin_quote_builder",
+  });
+
   return jsonResponse({
     success: true,
     quote: {
@@ -614,6 +708,7 @@ async function handlePut(
     canvasImage3DUrl,
     status: requestedStatus,
     clientIp: bodyClientIp,
+    marketingOptIn,
   } = body;
 
   if (!id || !token) {
@@ -689,6 +784,9 @@ async function handlePut(
   if (finalStatus) {
     updatePayload.status = finalStatus;
   }
+  if (typeof marketingOptIn === "boolean") {
+    updatePayload.marketing_opt_in = marketingOptIn;
+  }
   if (clientIp) {
     updatePayload.customer_ip = clientIp;
   }
@@ -730,6 +828,28 @@ async function handlePut(
   } catch (threadErr) {
     console.warn("Thread recalculation failed (non-blocking):", threadErr);
   }
+
+  // Klaviyo: fire on updates too (e.g. resumed quote re-saved as quote_ready,
+  // or an email added to an existing quote). unique_id dedup on Klaviyo's side
+  // makes repeat fires for the same quote harmless.
+  const klaviyoEmail = email || existing.customer_email || null;
+  const effectiveStatus = finalStatus || existing.status || "quote_ready";
+  await notifyKlaviyo({
+    status: effectiveStatus,
+    email: klaviyoEmail,
+    firstName: firstName || null,
+    lastName: lastName || null,
+    quoteReference: existing.quote_reference,
+    quoteId: existing.id,
+    accessToken: token,
+    quoteName: finalQuoteName,
+    totalPrice: lockedTotal,
+    currency: lockedCurrency,
+    config,
+    currentStep: currentStep ?? null,
+    marketingOptIn: typeof marketingOptIn === "boolean" ? marketingOptIn : false,
+    isAdminCreated: false,
+  });
 
   return jsonResponse({
     success: true,

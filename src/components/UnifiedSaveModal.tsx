@@ -83,6 +83,7 @@ export function UnifiedSaveModal({
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [quoteName, setQuoteName] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -185,6 +186,7 @@ export function UnifiedSaveModal({
             canvasImageUrl: capturedCanvasUrl,
             canvasImage3DUrl: capturedCanvas3DUrl,
             status: isEmailMode ? 'quote_ready' : 'in_progress',
+            marketingOptIn,
           })
         : await saveQuote(
             config,
@@ -199,7 +201,8 @@ export function UnifiedSaveModal({
             lastName.trim(),
             capturedCanvasUrl,
             capturedCanvas3DUrl,
-            isEmailMode ? undefined : 'in_progress'
+            isEmailMode ? undefined : 'in_progress',
+            marketingOptIn
           );
 
       console.log('Save quote result:', result);
@@ -357,6 +360,7 @@ export function UnifiedSaveModal({
             canvasImageUrl: capturedCanvasUrl,
             canvasImage3DUrl: capturedCanvas3DUrl,
             status: 'quote_ready',
+            marketingOptIn,
           })
         : await saveQuote(
             config,
@@ -370,7 +374,9 @@ export function UnifiedSaveModal({
             firstName.trim(),
             lastName.trim(),
             capturedCanvasUrl,
-            capturedCanvas3DUrl
+            capturedCanvas3DUrl,
+            undefined,
+            marketingOptIn
           );
 
       const quoteUrl = generateQuoteUrl(result.id, result.accessToken);
@@ -518,6 +524,7 @@ export function UnifiedSaveModal({
     setFirstName('');
     setLastName('');
     setEmail('');
+    setMarketingOptIn(true);
     setQuoteName('');
     setCustomerReference('');
     setSavedQuote(null);
@@ -607,7 +614,17 @@ export function UnifiedSaveModal({
                     placeholder="your@email.com"
                     className="w-full"
                   />
-                  <p className="text-[11px] text-slate-500 mt-1.5">By saving, you'll receive helpful updates about your shade sail configuration. Unsubscribe any time from the link in the email.</p>
+                  <label className="flex items-start gap-2 mt-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={marketingOptIn}
+                      onChange={(e) => setMarketingOptIn(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#307C31] accent-[#307C31] focus:ring-[#BFF102]"
+                    />
+                    <span className="text-[11px] text-slate-500 leading-snug">
+                      Email me my quote plus planning tips and helpful updates from the Shade Space team. Unsubscribe any time.
+                    </span>
+                  </label>
                 </div>
 
                 <div>

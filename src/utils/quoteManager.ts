@@ -68,7 +68,8 @@ export async function saveQuote(
   lastName?: string,
   canvasImageUrl?: string | null,
   canvasImage3DUrl?: string | null,
-  status?: string
+  status?: string,
+  marketingOptIn?: boolean
 ): Promise<SavedQuote> {
   const response = await fetch(SAVE_QUOTE_URL, {
     method: 'POST',
@@ -90,6 +91,7 @@ export async function saveQuote(
       canvasImage3DUrl: canvasImage3DUrl || null,
       clientIp: getIpDetectionCache()?.ip || null,
       ...(status ? { status } : {}),
+      ...(typeof marketingOptIn === 'boolean' ? { marketingOptIn } : {}),
     }),
   });
 
@@ -183,6 +185,7 @@ export async function updateQuote(
     canvasImageUrl?: string | null;
     canvasImage3DUrl?: string | null;
     status?: string;
+    marketingOptIn?: boolean;
   }
 ): Promise<SavedQuote> {
   const response = await fetch(SAVE_QUOTE_URL, {
@@ -207,6 +210,9 @@ export async function updateQuote(
       canvasImage3DUrl: options?.canvasImage3DUrl || null,
       clientIp: getIpDetectionCache()?.ip || null,
       status: options?.status || null,
+      ...(typeof options?.marketingOptIn === 'boolean'
+        ? { marketingOptIn: options.marketingOptIn }
+        : {}),
     }),
   });
 
