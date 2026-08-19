@@ -44,6 +44,7 @@ import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { renderSailPngBlob } from '../utils/renderSvgOffscreen';
 import { Box, Layers, Maximize2 } from 'lucide-react';
 import { canRender3D, Device3DTier, supports3DForCorners } from '../utils/canRender3D';
+import { ParsedSketchData } from '../utils/sketchParser';
 import type { AdminProfile } from '../hooks/useAdminProfile';
 
 const ShadeSail3DViewer = lazy(() => import('./ShadeSail3DViewer'));
@@ -2044,6 +2045,27 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             errors[edgeKey] = 'Measurement required';
           }
         }
+
+        // Validate attachment types:
+        // - For 5+ corners: always required
+        // - For 4 corners: required only if user has opened heights section (heightsProvidedByUser is set)
+        {
+          const attachmentRequired = config.corners >= 5 || (config.corners === 4 && config.heightsProvidedByUser);
+          if (attachmentRequired) {
+            for (let i = 0; i < config.corners; i++) {
+              const fixingType = config.fixingTypes?.[i];
+              if (fixingType !== 'post' && fixingType !== 'building') {
+                errors[`attachmentType_${i}`] = 'Please select Post or Building';
+              }
+            }
+
+            // If attachment type errors exist and heights section is not open, force it open
+            const hasAttachmentErrors = Object.keys(errors).some(k => k.startsWith('attachmentType_'));
+            if (hasAttachmentErrors && !isHeightsSectionOpen) {
+              setNavigateToHeights(true);
+            }
+          }
+        }
         break;
       case 5: // Hardware Selection
         if (config.hardwareSelectionMode === 'manual') {
@@ -2069,13 +2091,22 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     if (Object.keys(errors).length > 0 || hasUnacknowledgedTypos) {
       setValidationErrors(errors);
 
+      // Determine if we need extra delay for heights section expansion
+      const hasAttachmentErrors = Object.keys(errors).some(k => k.startsWith('attachmentType_'));
+      const needsHeightsExpansion = hasAttachmentErrors && !isHeightsSectionOpen;
+
       // Prioritize scrolling to typo suggestions first, then other errors
       if (hasUnacknowledgedTypos) {
         const firstTypoKey = unacknowledgedTypos[0];
         scrollToErrorField(firstTypoKey, true);
       } else if (Object.keys(errors).length > 0) {
         const firstErrorKey = Object.keys(errors)[0];
-        scrollToErrorField(firstErrorKey, false);
+        // If the first error is an attachment type and section needs expanding, use longer delay
+        if (needsHeightsExpansion && firstErrorKey.startsWith('attachmentType_')) {
+          setTimeout(() => scrollToErrorField(firstErrorKey, false), 500);
+        } else {
+          scrollToErrorField(firstErrorKey, false);
+        }
       }
 
       return; // Don't proceed to next step
@@ -2266,6 +2297,155 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     setShowUnifiedSaveModal(true);
   };
 
+  // Handle sketch upload apply - fills configurator with AI-extracted data and advances
+  const handleSketchApply = (data: ParsedSketchData) => {
+    const corners = data.corners;
+
+    // Generate default polygon points (same logic as CornersContent)
+    const centerX = 300;
+    const centerY = 300;
+    const radius = 160;
+    let points: { x: number; y: number }[] = [];
+
+    if (corners === 5) {
+      points = [
+        { x: 156, y: 180 }, { x: 300, y: 140 }, { x: 444, y: 180 },
+        { x: 420, y: 420 }, { x: 180, y: 420 }
+      ];
+    } else if (corners === 6) {
+      points = [
+        { x: 156, y: 156 }, { x: 300, y: 140 }, { x: 444, y: 156 },
+        { x: 444, y: 444 }, { x: 300, y: 460 }, { x: 156, y: 444 }
+      ];
+    } else {
+      for (let i = 0; i < corners; i++) {
+        const angle = (i * 2 * Math.PI) / corners - Math.PI / 2;
+        points.push({
+          x: Math.round(centerX + radius * Math.cos(angle)),
+          y: Math.round(centerY + radius * Math.sin(angle)),
+        });
+      }
+    }
+
+    // Convert measurements from base unit (meters/feet) to mm
+    const toMm = data.unit === 'imperial' ? 304.8 : 1000;
+
+    // Generate the expected edge keys for this corner count
+    const cornerLabels = 'ABCDEFGH'.slice(0, corners);
+    const expectedEdgeKeys: string[] = [];
+    for (let i = 0; i < corners; i++) {
+      expectedEdgeKeys.push(cornerLabels[i] + cornerLabels[(i + 1) % corners]);
+    }
+    const expectedDiagKeys = getDiagonalKeysForCorners(corners);
+
+    // Classify all measurements using geometric rule:
+    // For shade sails, diagonals are always longer than edges.
+    // Pool all values, sort, and assign smallest N to edges, rest to diagonals.
+    const allValues = [
+      ...data.edges.map(e => ({ value: e.value, origLabel: e.label, origType: 'edge' as const })),
+      ...data.diagonals.map(d => ({ value: d.value, origLabel: d.label, origType: 'diagonal' as const })),
+    ];
+
+    // Sort by value ascending - smallest values are edges, largest are diagonals
+    allValues.sort((a, b) => a.value - b.value);
+
+    const measurements: { [key: string]: number } = {};
+
+    if (allValues.length >= corners) {
+      // Take the N smallest as edges (in their original clockwise order from AI)
+      // First, separate using the geometric rule
+      const edgePool = allValues.slice(0, corners);
+      const diagPool = allValues.slice(corners);
+
+      // For edge ordering: use the AI's original clockwise order for edge values
+      // The AI returns edges in clockwise order (position 1, 2, 3, etc.)
+      // Find which of the original AI edges ended up in our edge pool
+      const aiEdgeOrder = data.edges.map(e => e.value);
+      const aiDiagValues = data.diagonals.map(d => d.value);
+
+      // Match edge values back to their clockwise position
+      // Strategy: the edge pool values should be assigned to edge keys in
+      // the same relative order the AI originally provided them
+      const edgeValues = edgePool.map(e => e.value);
+
+      // Try to preserve AI's clockwise ordering by matching original positions
+      const orderedEdgeValues: number[] = [];
+      const usedIndices = new Set<number>();
+
+      // For each expected edge position, find the best matching value
+      // from the AI's original edge array (preserving clockwise order)
+      for (let pos = 0; pos < corners; pos++) {
+        if (pos < aiEdgeOrder.length) {
+          // Check if this AI edge value is in our edge pool
+          const aiVal = aiEdgeOrder[pos];
+          const poolIdx = edgeValues.findIndex((v, i) => !usedIndices.has(i) && Math.abs(v - aiVal) < 0.001);
+          if (poolIdx >= 0) {
+            orderedEdgeValues.push(edgeValues[poolIdx]);
+            usedIndices.add(poolIdx);
+          }
+        }
+      }
+      // Add any remaining edge pool values that weren't matched
+      for (let i = 0; i < edgeValues.length; i++) {
+        if (!usedIndices.has(i)) {
+          orderedEdgeValues.push(edgeValues[i]);
+        }
+      }
+
+      // Assign edges to their positional keys (AB, BC, CD, DA, etc.)
+      for (let i = 0; i < Math.min(orderedEdgeValues.length, expectedEdgeKeys.length); i++) {
+        measurements[expectedEdgeKeys[i]] = orderedEdgeValues[i] * toMm;
+      }
+
+      // Assign diagonals to diagonal keys in order
+      for (let i = 0; i < Math.min(diagPool.length, expectedDiagKeys.length); i++) {
+        measurements[expectedDiagKeys[i]] = diagPool[i].value * toMm;
+      }
+    } else {
+      // Not enough measurements to fill all edges - just assign what we have
+      // Use edge values for edges, diagonal values for diagonals (trust AI classification)
+      for (let i = 0; i < Math.min(data.edges.length, expectedEdgeKeys.length); i++) {
+        measurements[expectedEdgeKeys[i]] = data.edges[i].value * toMm;
+      }
+      for (let i = 0; i < Math.min(data.diagonals.length, expectedDiagKeys.length); i++) {
+        measurements[expectedDiagKeys[i]] = data.diagonals[i].value * toMm;
+      }
+    }
+
+    const fixingHeights: number[] = Array(corners).fill(undefined);
+    for (const h of data.heights) {
+      const idx = cornerLabels.indexOf(h.corner.toUpperCase());
+      if (idx >= 0 && idx < corners) {
+        fixingHeights[idx] = h.value * toMm;
+      }
+    }
+
+    // Advance to the Measurement Options step (index 3) so user can choose manufacturing interpretation
+    const measurementOptionsStepIndex = 3;
+
+    // Apply all data in one batch - don't pre-select measurementOption so user chooses on step 3
+    updateConfig({
+      step: measurementOptionsStepIndex,
+      corners,
+      unit: data.unit,
+      points,
+      measurements,
+      fixingHeights,
+      fixingTypes: Array(corners).fill(''),
+      eyeOrientations: Array(corners).fill(''),
+      attachmentTypes: Array(corners).fill(''),
+      fixingPointsInstalled: undefined,
+      diagonalsInitiallyProvided: data.diagonals.length > 0 ? true : undefined,
+      heightsProvidedByUser: data.heights.length > 0 ? true : undefined,
+      hasManuallyAdjustedShape: false,
+    });
+
+    setOpenStep(measurementOptionsStepIndex);
+    setSketchAppliedBanner(true);
+  };
+
+  const [sketchAppliedBanner, setSketchAppliedBanner] = useState(false);
+
   // Handle toggle between Auto and Manual mode
   const handleToggleMode = (isAutomatic: boolean) => {
     if (isAutomatic) {
@@ -2434,6 +2614,19 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   selection={selection}
                   onToggle={() => toggleStep(index)}
                 >
+                  {index === 4 && sketchAppliedBanner && isOpen && (
+                    <div className="mx-6 mt-4 mb-0 flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-sm text-emerald-800">Your sketch measurements have been applied. Please review them below, then continue.</p>
+                      <button onClick={() => setSketchAppliedBanner(false)} className="ml-auto text-emerald-600 hover:text-emerald-800 p-1">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                   <StepComponent
                     config={config}
                     updateConfig={updateConfig}
@@ -2469,6 +2662,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     setLoading={setLoading}
                     setShowLoadingOverlay={setShowLoadingOverlay}
                     onSaveQuote={handleSaveQuote}
+                    onSketchApply={index === 2 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
                     viewMode={index === 6 ? desktopViewMode : undefined}
                     onViewModeChange={index === 6 ? handleDesktopViewModeChange : undefined}

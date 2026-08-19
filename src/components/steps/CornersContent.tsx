@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
+import { Triangle, Square, Pentagon, Hexagon, Octagon, Upload } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
+import { SketchUploadModal } from '../SketchUploadModal';
+import { ParsedSketchData } from '../../utils/sketchParser';
 
 interface CornersContentProps {
   config: ConfiguratorState;
@@ -15,6 +17,7 @@ interface CornersContentProps {
   showBackButton?: boolean;
   isStepOpen?: boolean;
   onSaveQuote?: () => void;
+  onSketchApply?: (data: ParsedSketchData) => void;
   mobileGuidance?: {
     isGuidanceActive: boolean;
     currentHighlightTarget: string | null;
@@ -33,7 +36,8 @@ const SHAPE_OPTIONS = [
   { corners: 8, label: '8 Fixing Points', icon: Octagon, description: 'Maximum coverage layout' }
 ];
 
-export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, mobileGuidance }: CornersContentProps) {
+export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, onSketchApply, mobileGuidance }: CornersContentProps) {
+  const [showSketchModal, setShowSketchModal] = useState(false);
   React.useEffect(() => {
     console.log('[Corners] Effect triggered', {
       isGuidanceActive: mobileGuidance?.isGuidanceActive,
@@ -158,6 +162,53 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
 
   return (
     <div className="p-6">
+      {/* Sketch Upload Card */}
+      {onSketchApply && (
+        <div className="mb-6">
+          <div
+            onClick={() => setShowSketchModal(true)}
+            className="group cursor-pointer border-2 border-dashed border-[#307C31]/40 hover:border-[#307C31] bg-[#307C31]/5 hover:bg-[#307C31]/10 rounded-xl p-5 transition-all duration-200"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-[#307C31]/15 flex items-center justify-center flex-shrink-0 group-hover:bg-[#307C31]/25 transition-colors">
+                <Upload className="w-6 h-6 text-[#307C31]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#01312D]">
+                  Already have a sketch with measurements?
+                </p>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Upload your shade sail sketch and we'll fill in the dimensions for you
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                <span className="inline-flex items-center px-3 py-1.5 bg-[#307C31] text-white text-xs font-semibold rounded-lg group-hover:bg-[#256325] transition-colors">
+                  Upload Sketch
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Or select your shape below</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+        </div>
+      )}
+
+      {/* Sketch Upload Modal */}
+      {onSketchApply && (
+        <SketchUploadModal
+          open={showSketchModal}
+          onClose={() => setShowSketchModal(false)}
+          onApply={(data) => {
+            setShowSketchModal(false);
+            onSketchApply(data);
+          }}
+        />
+      )}
+
       <div className="mb-6">
         {showHint && !config.corners && (
           <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">

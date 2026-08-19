@@ -256,9 +256,23 @@ export function DimensionsContent({
     }
     newTypes[index] = type;
     updateConfig({ fixingTypes: newTypes, heightsProvidedByUser: true });
+
+    // Clear validation error for this attachment type
+    if (setValidationErrors && validationErrors[`attachmentType_${index}`]) {
+      const newErrors = { ...validationErrors };
+      delete newErrors[`attachmentType_${index}`];
+      setValidationErrors(newErrors);
+    }
   };
 
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
+
+  // Auto-open heights section for 5+ corners (required)
+  React.useEffect(() => {
+    if (heightRequirement === 'required-at-checkout' && !showHeightsSection) {
+      setShowHeightsSection(true);
+    }
+  }, [heightRequirement]);
 
   // Handle navigation to heights section
   React.useEffect(() => {
@@ -1186,12 +1200,17 @@ export function DimensionsContent({
                                   </span>
                                 </Tooltip>
                               </div>
-                              <div className="flex flex-col gap-1.5">
+                              <div
+                                className="flex flex-col gap-1.5"
+                                {...(validationErrors[`attachmentType_${index}`] ? { 'data-error': `attachmentType_${index}` } : {})}
+                              >
                                 <button
                                   onClick={() => updateFixingType(index, 'post')}
                                   className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'post'
                                       ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      : validationErrors[`attachmentType_${index}`]
+                                      ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-400'
                                       : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
                                   }`}
                                 >
@@ -1202,11 +1221,16 @@ export function DimensionsContent({
                                   className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'building'
                                       ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      : validationErrors[`attachmentType_${index}`]
+                                      ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-400'
                                       : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
                                   }`}
                                 >
                                   Building
                                 </button>
+                                {validationErrors[`attachmentType_${index}`] && (
+                                  <p className="text-[10px] text-red-600 mt-0.5">{validationErrors[`attachmentType_${index}`]}</p>
+                                )}
                               </div>
                             </div>
                           </div>

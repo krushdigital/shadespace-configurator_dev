@@ -9,7 +9,8 @@ const corsHeaders = {
 };
 
 const BATCH_SIZE = 20;
-const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes (reduced from 10)
+const RESEND_TIMEOUT_MS = 15_000; // 15-second timeout per Resend API call
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -22,14 +23,16 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // 1. Recover stale "sending" items (stuck for > 10 min without a resend ID)
+    // 1. Recover stale "sending" items (stuck without a resend ID)
     const staleCutoff = new Date(Date.now() - STALE_THRESHOLD_MS).toISOString();
-    await supabase
+    const { data: staleItems } = await supabase
       .from("email_queue")
       .update({ status: "pending" })
       .eq("status", "sending")
       .is("resend_message_id", null)
-      .lt("scheduled_at", staleCutoff);
+      .lt("scheduled_at", staleCutoff)
+      .select("id");
+    const recoveredCount = staleItems?.length ?? 0;
 
     // 2. Skip queue items whose automation or template is paused
     const { data: pausedAutomations } = await supabase
@@ -48,7 +51,6 @@ Deno.serve(async (req: Request) => {
         .in("status", ["pending", "sending"]);
     }
 
-    // Also skip items whose template is inactive
     const { data: pausedTemplates } = await supabase
       .from("email_templates")
       .select("id")
@@ -78,17 +80,18 @@ Deno.serve(async (req: Request) => {
 
     if (fetchErr) throw fetchErr;
     if (!pendingItems || pendingItems.length === 0) {
-      return jsonResponse({ sent: 0, failed: 0, pending_count: 0 });
+      return jsonResponse({ sent: 0, failed: 0, recovered: recoveredCount, pending_count: 0 });
     }
 
-    // Mark batch as "sending"
+    // Mark batch as "sending" one-by-one so a crash doesn't strand the whole batch
+    // (We still mark them up-front so another concurrent invocation doesn't double-pick them)
     const batchIds = pendingItems.map((i: { id: string }) => i.id);
     await supabase
       .from("email_queue")
       .update({ status: "sending" })
       .in("id", batchIds);
 
-    // Load templates and senders for rendering
+    // Pre-load templates and senders for the batch
     const templateIds = [
       ...new Set(pendingItems.map((i: { template_id: string }) => i.template_id).filter(Boolean)),
     ];
@@ -132,10 +135,13 @@ Deno.serve(async (req: Request) => {
         } | undefined;
 
         if (!template || !sender) {
-          await supabase
-            .from("email_queue")
-            .update({ status: "failed", error: "Missing template or sender" })
-            .eq("id", item.id);
+          await markFailed(supabase, item.id, "Missing template or sender");
+          failed++;
+          continue;
+        }
+
+        if (!resendApiKey) {
+          await markFailed(supabase, item.id, "RESEND_API_KEY not configured");
           failed++;
           continue;
         }
@@ -144,7 +150,6 @@ Deno.serve(async (req: Request) => {
         let subject = item.subject_snapshot || template.subject;
         let html = item.html_snapshot || template.html_body;
 
-        // If no snapshot, fetch quote data for variable substitution
         if (!item.subject_snapshot && item.quote_id) {
           const { data: quote } = await supabase
             .from("saved_quotes")
@@ -155,7 +160,6 @@ Deno.serve(async (req: Request) => {
             .maybeSingle();
 
           if (quote) {
-            // Build resume URL using the correct storefront domain for the quote's currency
             const quoteCurrency = quote.config_data?.currency || "AUD";
             let domain = "www.shadespace.com.au";
             if (quoteCurrency !== "AUD" && quoteCurrency !== "NZD") {
@@ -184,48 +188,52 @@ Deno.serve(async (req: Request) => {
         const unsubLink = `${Deno.env.get("SUPABASE_URL")}/functions/v1/email-unsubscribe?email=${encodeURIComponent(item.recipient_email)}`;
         html = html.replaceAll("{{unsubscribe_url}}", unsubLink);
 
-        // Always substitute sender_first_name (doesn't depend on quote)
         const senderFirstName = sender.first_name || sender.from_name.split(" ")[0] || "";
         subject = subject.replaceAll("{{sender_first_name}}", senderFirstName);
         html = html.replaceAll("{{sender_first_name}}", senderFirstName);
 
-        // Send via Resend
-        const resendRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: `${sender.from_name} <${sender.from_email}>`,
-            to: [item.recipient_email],
-            reply_to: sender.reply_to || undefined,
-            subject,
-            html,
+        // Send via Resend with a timeout to prevent hanging
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), RESEND_TIMEOUT_MS);
+
+        let resendRes: Response;
+        try {
+          resendRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
             headers: {
-              "List-Unsubscribe": `<${unsubLink}>`,
+              Authorization: `Bearer ${resendApiKey}`,
+              "Content-Type": "application/json",
             },
-          }),
-        });
+            body: JSON.stringify({
+              from: `${sender.from_name} <${sender.from_email}>`,
+              to: [item.recipient_email],
+              reply_to: sender.reply_to || undefined,
+              subject,
+              html,
+              headers: {
+                "List-Unsubscribe": `<${unsubLink}>`,
+              },
+            }),
+            signal: controller.signal,
+          });
+        } catch (fetchErr) {
+          clearTimeout(timeout);
+          const msg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          await markFailed(supabase, item.id, `Resend fetch error: ${msg}`, item.recipient_email, item.automation_id);
+          failed++;
+          continue;
+        }
+        clearTimeout(timeout);
 
         if (!resendRes.ok) {
           const errBody = await resendRes.text();
-          await supabase
-            .from("email_queue")
-            .update({
-              status: "failed",
-              error: `Resend ${resendRes.status}: ${errBody}`,
-            })
-            .eq("id", item.id);
-
-          // Log to failures table
-          await supabase.from("email_send_failures").insert({
-            queue_id: item.id,
-            recipient_email: item.recipient_email,
-            error_code: String(resendRes.status),
-            error_message: errBody,
-            automation_id: item.automation_id,
-          });
+          await markFailed(
+            supabase,
+            item.id,
+            `Resend ${resendRes.status}: ${errBody}`,
+            item.recipient_email,
+            item.automation_id
+          );
           failed++;
           continue;
         }
@@ -243,7 +251,6 @@ Deno.serve(async (req: Request) => {
           })
           .eq("id", item.id);
 
-        // Log sent event
         await supabase.from("email_events").insert({
           queue_id: item.id,
           event_type: "sent",
@@ -252,13 +259,9 @@ Deno.serve(async (req: Request) => {
 
         sent++;
       } catch (itemErr) {
-        await supabase
-          .from("email_queue")
-          .update({
-            status: "failed",
-            error: itemErr instanceof Error ? itemErr.message : String(itemErr),
-          })
-          .eq("id", item.id);
+        // Catch-all: no matter what goes wrong with this individual item, mark it failed and continue
+        const msg = itemErr instanceof Error ? itemErr.message : String(itemErr);
+        await markFailed(supabase, item.id, msg).catch(() => {});
         failed++;
       }
     }
@@ -272,6 +275,7 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({
       sent,
       failed,
+      recovered: recoveredCount,
       pending_count: remainingPending ?? 0,
     });
   } catch (err) {
@@ -281,6 +285,29 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+async function markFailed(
+  supabase: ReturnType<typeof createClient>,
+  queueId: string,
+  error: string,
+  recipientEmail?: string,
+  automationId?: string | null
+) {
+  await supabase
+    .from("email_queue")
+    .update({ status: "failed", error })
+    .eq("id", queueId);
+
+  if (recipientEmail) {
+    await supabase.from("email_send_failures").insert({
+      queue_id: queueId,
+      recipient_email: recipientEmail,
+      error_code: "PROCESS_ERROR",
+      error_message: error,
+      automation_id: automationId ?? null,
+    }).catch(() => {});
+  }
+}
 
 function jsonResponse(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {

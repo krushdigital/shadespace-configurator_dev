@@ -141,7 +141,7 @@ export const EmailAnalytics: React.FC<Props> = ({ dateRange, timezone = 'UTC' })
                   <td className="px-4 py-2 text-xs text-gray-700">{fmtDate(q.sent_at)}</td>
                   <td className="px-4 py-2 text-xs">{q.recipient_email}</td>
                   <td className="px-4 py-2 text-xs">{templates.find(t => t.id === q.template_id)?.name || '-'}</td>
-                  <td className="px-4 py-2 text-xs">{automations.find(a => a.id === q.automation_id)?.name || 'test'}</td>
+                  <td className="px-4 py-2 text-xs">{automations.find(a => a.id === q.automation_id)?.name || 'Direct send'}</td>
                   <td className="px-4 py-2 text-xs">{senders.find(s => s.id === q.sender_id)?.from_name || '-'}</td>
                   <td className="px-4 py-2 text-xs">
                     <span className={`px-2 py-0.5 rounded ${q.status === 'sent' ? 'bg-green-50 text-green-700' : q.status === 'failed' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
