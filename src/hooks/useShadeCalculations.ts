@@ -69,7 +69,7 @@ export function useShadeCalculations(
 
     const perimeterM = perimeterMM / 1000;
     const adjustedPerimeter = Math.round(perimeterM / 0.5) * 0.5;
-    const area = calculatePolygonArea(config.measurements, config.corners, config.fixingHeights);
+    const area = calculatePolygonArea(config.measurements, config.corners, config.fixingHeights, config.points);
     const edgeType = config.edgeType as 'webbing' | 'cabled';
 
     let webbingWidth: number;
