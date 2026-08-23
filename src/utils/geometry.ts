@@ -713,6 +713,65 @@ export function getNextRequiredDiagonals(
 }
 
 /**
+ * Calculate the area of a polygon from its vertex coordinates using the
+ * Shoelace formula. Returns area in the same units squared as the input
+ * coordinates (canvas units² if points are from the SVG canvas).
+ */
+function shoelaceArea(points: { x: number; y: number }[]): number {
+  const n = points.length;
+  if (n < 3) return 0;
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const curr = points[i];
+    const next = points[(i + 1) % n];
+    sum += curr.x * next.y - next.x * curr.y;
+  }
+  return Math.abs(sum) / 2;
+}
+
+/**
+ * Compute area in m² from canvas points + known edge measurements.
+ * Uses Shoelace on the canvas shape, then scales by the ratio of
+ * real edge lengths (mm) to canvas edge lengths (px).
+ */
+function areaFromPointsScaled(
+  points: { x: number; y: number }[],
+  measurements: { [key: string]: number },
+  corners: number
+): number {
+  const edgeKeys = getEdgeKeys(corners);
+  let totalRealMm = 0;
+  let totalCanvasPx = 0;
+
+  for (let i = 0; i < corners; i++) {
+    const key = edgeKeys[i];
+    const realMm = measurements[key] || 0;
+    if (realMm <= 0) continue;
+    const p1 = points[i];
+    const p2 = points[(i + 1) % corners];
+    const canvasDist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+    if (canvasDist <= 0) continue;
+    totalRealMm += realMm;
+    totalCanvasPx += canvasDist;
+  }
+
+  if (totalCanvasPx === 0 || totalRealMm === 0) return 0;
+
+  const scale = totalRealMm / totalCanvasPx;
+  const canvasArea = shoelaceArea(points.slice(0, corners));
+  return (canvasArea * scale * scale) / 1_000_000;
+}
+
+function getEdgeKeys(corners: number): string[] {
+  const labels = ['A','B','C','D','E','F','G','H'];
+  const keys: string[] = [];
+  for (let i = 0; i < corners; i++) {
+    keys.push(labels[i] + labels[(i + 1) % corners]);
+  }
+  return keys;
+}
+
+/**
  * Calculate the area of a triangle using Heron's formula
  * @param a Side length in mm
  * @param b Side length in mm
@@ -1051,7 +1110,7 @@ export function validatePolygonGeometry(measurements: { [key: string]: number },
  * @param corners Number of corners (3, 4, 5, or 6)
  * @returns Area in square meters
  */
-export function calculatePolygonArea(measurements: { [key: string]: number }, corners: number, heights?: number[]): number {
+export function calculatePolygonArea(measurements: { [key: string]: number }, corners: number, heights?: number[], points?: { x: number; y: number }[]): number {
   if (corners < 3 || corners > 8) return 0;
 
   // Project measurements to horizontal if heights available
@@ -1168,7 +1227,22 @@ export function calculatePolygonArea(measurements: { [key: string]: number }, co
     if (AG > 0 && GH > 0 && HA > 0) totalAreaMm2 += calculateTriangleArea(AG, GH, HA);
   }
 
-  // Convert from mm² to m²
+  // If Heron's formula produced a valid area, use it
+  if (totalAreaMm2 > 0) {
+    return totalAreaMm2 / 1000000;
+  }
+
+  // Fallback: use Shoelace on canvas points scaled by edge measurements.
+  // This handles 7/8-corner shapes where diagonals are missing.
+  if (points && points.length >= corners) {
+    const activePoints = points.slice(0, corners);
+    const allPositioned = activePoints.some(p => p.x !== 0 || p.y !== 0);
+    if (allPositioned) {
+      const scaled = areaFromPointsScaled(activePoints, m, corners);
+      if (scaled > 0) return scaled;
+    }
+  }
+
   return totalAreaMm2 / 1000000;
 }
 
