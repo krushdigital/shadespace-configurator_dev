@@ -154,7 +154,7 @@ Deno.serve(async (req: Request) => {
           const { data: quote } = await supabase
             .from("saved_quotes")
             .select(
-              "quote_reference, customer_first_name, customer_last_name, customer_email, quote_name, config_data, access_token"
+              "quote_reference, customer_first_name, customer_last_name, customer_email, quote_name, config_data, calculations_data, access_token, locked_total"
             )
             .eq("id", item.quote_id)
             .maybeSingle();
@@ -167,6 +167,17 @@ Deno.serve(async (req: Request) => {
             }
             const resumeUrl = `https://${domain}/pages/custom-shade-sail-designer?quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}&_ab=0&_fd=0#quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}`;
 
+            const cfg = quote.config_data || {};
+            const calc = quote.calculations_data || {};
+            const corners = String(cfg.corners || cfg.numCorners || "");
+            const price = quote.locked_total
+              ? String(quote.locked_total)
+              : calc.totalPrice
+                ? String(calc.totalPrice)
+                : "";
+            const currency = cfg.currency || "AUD";
+            const area = calc.area ? String(calc.area) : "";
+
             const vars: Record<string, string> = {
               "{{first_name}}": quote.customer_first_name || "",
               "{{last_name}}": quote.customer_last_name || "",
@@ -176,6 +187,12 @@ Deno.serve(async (req: Request) => {
               "{{access_token}}": quote.access_token || "",
               "{{resume_url}}": resumeUrl,
               "{{sender_first_name}}": sender.first_name || sender.from_name.split(" ")[0] || "",
+              "{{fabric_type}}": cfg.fabricType || "",
+              "{{fabric_color}}": cfg.fabricColor || "",
+              "{{corners}}": corners,
+              "{{price}}": price,
+              "{{currency}}": currency,
+              "{{area}}": area,
             };
             for (const [key, val] of Object.entries(vars)) {
               subject = subject.replaceAll(key, val);
