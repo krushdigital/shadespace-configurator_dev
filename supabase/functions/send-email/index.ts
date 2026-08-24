@@ -106,7 +106,6 @@ function applyTemplateTransforms(
 function rewriteLinksForTracking(html: string, queueId: string, unsubUrl: string): string {
   return html.replace(/href="([^"]+)"/g, (_m, url) => {
     if (url.startsWith("mailto:") || url.includes("{{unsubscribe_url}}") || url === unsubUrl) return `href="${url}"`;
-    if (url.includes("/pages/shade-sail-configurator")) return `href="${url}"`;
     const encoded = encodeURIComponent(url);
     return `href="${SB_URL}/functions/v1/track-click?q=${queueId}&u=${encoded}"`;
   });
@@ -338,9 +337,7 @@ Deno.serve(async (req: Request) => {
     const subject = renderTemplate(effectiveSubject, ctx);
     const transformedBodyForSend = applyTemplateTransforms(template.html_body, template, sender);
     let html = renderTemplate(transformedBodyForSend, ctx);
-    if (!template.transactional) {
-      html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
-    }
+    html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
     const text = renderTemplate(template.text_body, ctx);
 
     const resolvedAttachments: Array<{ filename: string; content: string; type?: string }> = [];

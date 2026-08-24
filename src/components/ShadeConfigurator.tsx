@@ -31,7 +31,7 @@ import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { AdminSaveQuoteModal } from './admin/AdminSaveQuoteModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
-import { getQuoteFromUrl, getQuoteById, updateQuote, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, QuoteData } from '../utils/quoteManager';
+import { getQuoteFromUrl, getQuoteById, updateQuote, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, clearQuoteStash, QuoteData } from '../utils/quoteManager';
 import { generateDefaultQuoteName } from '../utils/quoteNaming';
 import { PricingSetting } from '../hooks/usePricingSettings';
 import { addQuoteToken } from '../utils/tokenManager';
@@ -366,6 +366,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           ? reviewStep
           : Math.min(Math.max(quote.current_step ?? 4, 0), reviewStep);
         setOpenStep(resumeStep);
+        clearQuoteStash();
 
         analytics.quoteLoadSuccess({
           quote_reference: quote.quote_reference,

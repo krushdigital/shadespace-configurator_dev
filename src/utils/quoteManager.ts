@@ -255,10 +255,48 @@ export function generateQuoteUrl(quoteId: string, accessToken: string): string {
   return `${url.toString()}#${fragment}`;
 }
 
+const QUOTE_STASH_KEY = 'ss_pending_quote';
+const QUOTE_STASH_TTL_MS = 120_000; // 2 minutes
+
+/**
+ * Stash quote params into localStorage so they survive Shopify redirects.
+ * Called as early as possible when params are detected.
+ */
+function stashQuoteParams(id: string, token: string): void {
+  try {
+    localStorage.setItem(QUOTE_STASH_KEY, JSON.stringify({ id, token, ts: Date.now() }));
+  } catch { /* storage full or unavailable */ }
+}
+
+/**
+ * Try to recover quote params from localStorage (within TTL).
+ */
+function unstashQuoteParams(): { id: string; token: string } | null {
+  try {
+    const raw = localStorage.getItem(QUOTE_STASH_KEY);
+    if (!raw) return null;
+    const { id, token, ts } = JSON.parse(raw);
+    if (!id || !token) return null;
+    if (Date.now() - ts > QUOTE_STASH_TTL_MS) {
+      localStorage.removeItem(QUOTE_STASH_KEY);
+      return null;
+    }
+    return { id, token };
+  } catch {
+    return null;
+  }
+}
+
+/** Clear the stashed quote params after a successful load. */
+export function clearQuoteStash(): void {
+  try { localStorage.removeItem(QUOTE_STASH_KEY); } catch { /* noop */ }
+}
+
 /**
  * Get quote ID and token from URL if present.
  * Checks query params first, then falls back to the hash fragment
- * (which survives Shopify geo-IP redirects that strip query strings).
+ * (which survives Shopify geo-IP redirects that strip query strings),
+ * then finally checks localStorage for params stashed before a redirect.
  */
 export function getQuoteFromUrl(): { id: string; token: string } | null {
   const urlParams = new URLSearchParams(window.location.search);
@@ -274,11 +312,16 @@ export function getQuoteFromUrl(): { id: string; token: string } | null {
     }
   }
 
-  if (!id || !token) {
-    return null;
+  if (id && token) {
+    stashQuoteParams(id, token);
+    return { id, token };
   }
 
-  return { id, token };
+  // Final fallback: recover from localStorage if Shopify stripped params during redirect
+  const stashed = unstashQuoteParams();
+  if (stashed) return stashed;
+
+  return null;
 }
 
 function formatExpirationDate(expiresAt: string): string {
