@@ -722,6 +722,15 @@ console.log('✌️result --->', result);
                     {config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge'}
                   </span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Shape:</span>
+                  <span className="font-medium text-slate-900">
+                    {config.shapeMode === 'fixed' && config.fixedShapeType
+                      ? `Fixed - ${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
+                      : `Custom (${config.corners} corners)`
+                    }
+                  </span>
+                </div>
                 {config.edgeType === 'webbing' && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Webbing Width:</span>

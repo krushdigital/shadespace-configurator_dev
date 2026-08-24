@@ -216,6 +216,13 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       if (isRowVisible(block, 'fabricMaterial')) sRows.push(`<div class="row"><span class="muted">Fabric Material</span><span class="val">${escapeHtml(fabricLabel)}</span></div>`);
       if (isRowVisible(block, 'fabricColor')) sRows.push(`<div class="row"><span class="muted">Fabric Color</span><span class="val">${escapeHtml(fabricColor)}</span></div>`);
       if (isRowVisible(block, 'corners')) sRows.push(`<div class="row"><span class="muted">Corners</span><span class="val">${corners}</span></div>`);
+      // Shape type
+      if (cfgData?.shapeMode === 'fixed' && cfgData?.fixedShapeType) {
+        const shapeLabels: Record<string, string> = { triangle: 'Triangle', 'right-angle-triangle': 'Right Angle Triangle', square: 'Square', rectangle: 'Rectangle' };
+        sRows.push(`<div class="row"><span class="muted">Shape</span><span class="val">Fixed - ${shapeLabels[cfgData.fixedShapeType] || cfgData.fixedShapeType}</span></div>`);
+      } else {
+        sRows.push(`<div class="row"><span class="muted">Shape</span><span class="val">Custom (${corners} corners)</span></div>`);
+      }
       if (isRowVisible(block, 'totalArea')) sRows.push(`<div class="row"><span class="muted">Total Area</span><span class="val">${fmtA((calc?.area || 12.5) * 1000000)}</span></div>`);
       if (isRowVisible(block, 'edgePerimeter')) sRows.push(`<div class="row"><span class="muted">Edge Perimeter</span><span class="val">${fmtM((calc?.perimeter || 14) * 1000)}</span></div>`);
       if (isRowVisible(block, 'edgeReinforcement')) sRows.push(`<div class="row"><span class="muted">Edge Reinforcement</span><span class="val">${edgeLabel}</span></div>`);

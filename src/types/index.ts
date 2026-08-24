@@ -3,6 +3,8 @@ export interface Point {
   y: number;
 }
 
+export type FixedShapeType = 'triangle' | 'right-angle-triangle' | 'square' | 'rectangle';
+
 export interface ConfiguratorState {
   step: number;
   fabricType: string;
@@ -26,6 +28,8 @@ export interface ConfiguratorState {
   hasManuallyAdjustedShape?: boolean;
   hardwareSelectionMode?: 'standard' | 'manual' | 'none';
   cornerHardware?: { [cornerIndex: number]: CornerHardwareLine[] };
+  shapeMode?: 'custom' | 'fixed';
+  fixedShapeType?: FixedShapeType | null;
 }
 
 export interface CornerHardwareLine {
