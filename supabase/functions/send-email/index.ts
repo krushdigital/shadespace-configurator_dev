@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || "";
 const BASE_URL = Deno.env.get("EMAIL_APP_BASE_URL") || "https://shadespace.com";
-const CONFIGURATOR_URL = Deno.env.get("CONFIGURATOR_URL") || `${BASE_URL}/pages/custom-shade-sail-designer`;
+const CONFIGURATOR_URL = Deno.env.get("CONFIGURATOR_URL") || `${BASE_URL}/pages/shade-sail-configurator`;
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -25,7 +25,7 @@ const CURRENCY_DOMAIN_MAP: Record<string, string> = {
 function buildResumeUrl(id?: string, token?: string, currency?: string): string | null {
   if (!id || !token) return null;
   const domain = (currency && CURRENCY_DOMAIN_MAP[currency.toUpperCase()]) || new URL(BASE_URL).hostname;
-  const base = `https://${domain}/pages/custom-shade-sail-designer`;
+  const base = `https://${domain}/pages/shade-sail-configurator`;
   const url = new URL(base);
   url.searchParams.set("quote", id);
   url.searchParams.set("token", token);

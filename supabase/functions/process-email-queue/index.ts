@@ -165,7 +165,7 @@ Deno.serve(async (req: Request) => {
             if (quoteCurrency !== "AUD" && quoteCurrency !== "NZD") {
               domain = "www.shadespace.com";
             }
-            const directUrl = `https://${domain}/pages/custom-shade-sail-designer?quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}&_ab=0&_fd=0#quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}`;
+            const directUrl = `https://${domain}/pages/shade-sail-configurator?quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}&_ab=0&_fd=0#quote=${encodeURIComponent(item.quote_id)}&token=${encodeURIComponent(quote.access_token)}`;
             const sbUrl = Deno.env.get("SUPABASE_URL");
             const resumeUrl = `${sbUrl}/functions/v1/track-click?q=${encodeURIComponent(item.id)}&u=${encodeURIComponent(directUrl)}`;
 
