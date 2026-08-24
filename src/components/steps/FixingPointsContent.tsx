@@ -124,19 +124,6 @@ export function FixingPointsContent({
 
   const getCornerLabel = (index: number) => String.fromCharCode(65 + index);
 
-  const isStepComplete = () => {
-    // Check if all heights are valid (not undefined, not null, and greater than 0)
-    const allHeightsValid = config.fixingHeights.length === config.corners &&
-      config.fixingHeights.every(height =>
-        height !== undefined && height !== null && height > 0
-      );
-
-    // Check if all types are selected (not empty string)
-    const allTypesValid = config.fixingTypes?.length === config.corners &&
-      config.fixingTypes?.every(type => type === 'post' || type === 'building');
-
-    return allHeightsValid && allTypesValid;
-  };
 
   return (
     <div className="p-6">
@@ -378,37 +365,8 @@ export function FixingPointsContent({
 
       <div className="flex flex-col gap-4 pt-4 border-t border-[#307C31]/30 w-full">
         {(() => {
-          const complete = isStepComplete();
-          const hasUnacknowledgedTypos = Object.keys(typoSuggestions).length > 0;
-
-          const missingHeights = config.fixingHeights.filter(h => h === undefined || h === null || h <= 0).length;
-          const missingTypes = (config.fixingTypes?.filter(t => t !== 'post' && t !== 'building') || []).length;
-
-          const totalMissing = missingHeights + missingTypes;
-
           return (
             <>
-              {!complete && (
-                <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                  {hasUnacknowledgedTypos ? (
-                    <span className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-amber-500" />
-                      <span>Please review and address the height warnings above</span>
-                    </span>
-                  ) : totalMissing > 0 ? (
-                    <span className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-slate-500" />
-                      <span>
-                        {missingHeights > 0 && `${missingHeights} height${missingHeights !== 1 ? 's' : ''}`}
-                        {missingHeights > 0 && missingTypes > 0 && ', '}
-                        {missingTypes > 0 && `${missingTypes} attachment type${missingTypes !== 1 ? 's' : ''}`}
-                        {' '}required to continue
-                      </span>
-                    </span>
-                  ) : null}
-                </div>
-              )}
-
               {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
               <div className="flex sm:hidden flex-col gap-3">
                 <div className="flex gap-3">
@@ -432,7 +390,7 @@ export function FixingPointsContent({
                 <Button
                   onClick={onNext}
                   size="md"
-                  className={`w-full py-4 sm:py-2 ${!complete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="w-full py-4 sm:py-2"
                 >
                   Continue to {nextStepTitle}
                 </Button>
@@ -459,7 +417,7 @@ export function FixingPointsContent({
                 <Button
                   onClick={onNext}
                   size="md"
-                  className={`flex-1 ${!complete ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className="flex-1"
                 >
                   Continue to {nextStepTitle}
                 </Button>
