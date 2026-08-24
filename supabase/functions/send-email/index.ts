@@ -25,7 +25,7 @@ const CURRENCY_DOMAIN_MAP: Record<string, string> = {
 function buildResumeUrl(id?: string, token?: string, currency?: string): string | null {
   if (!id || !token) return null;
   const domain = (currency && CURRENCY_DOMAIN_MAP[currency.toUpperCase()]) || new URL(BASE_URL).hostname;
-  const base = `https://${domain}/pages/shade-sail-configurator`;
+  const base = `https://${domain}/pages/custom-shade-sail-designer`;
   const url = new URL(base);
   url.searchParams.set("quote", id);
   url.searchParams.set("token", token);
@@ -106,7 +106,6 @@ function applyTemplateTransforms(
 function rewriteLinksForTracking(html: string, queueId: string, unsubUrl: string): string {
   return html.replace(/href="([^"]+)"/g, (_m, url) => {
     if (url.startsWith("mailto:") || url.includes("{{unsubscribe_url}}") || url === unsubUrl) return `href="${url}"`;
-    if (url.includes("/pages/shade-sail-configurator")) return `href="${url}"`;
     const encoded = encodeURIComponent(url);
     return `href="${SB_URL}/functions/v1/track-click?q=${queueId}&u=${encoded}"`;
   });
@@ -338,9 +337,7 @@ Deno.serve(async (req: Request) => {
     const subject = renderTemplate(effectiveSubject, ctx);
     const transformedBodyForSend = applyTemplateTransforms(template.html_body, template, sender);
     let html = renderTemplate(transformedBodyForSend, ctx);
-    if (!template.transactional) {
-      html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
-    }
+    html = rewriteLinksForTracking(html, queueRow.id, unsubUrl);
     const text = renderTemplate(template.text_body, ctx);
 
     const resolvedAttachments: Array<{ filename: string; content: string; type?: string }> = [];
