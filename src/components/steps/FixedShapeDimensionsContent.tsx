@@ -108,7 +108,8 @@ export function FixedShapeDimensionsContent({
   isMobile,
   device3DTier,
 }: FixedShapeDimensionsContentProps) {
-  const shape = config.fixedShapeType!;
+  const shape = config.fixedShapeType;
+  if (!shape) return null;
   const unit = config.unit || 'metric';
   const [viewMode, setViewMode] = useState<'plan' | '3d'>('plan');
 
@@ -321,7 +322,7 @@ export function FixedShapeDimensionsContent({
               Back
             </Button>
           )}
-          <SaveProgressButton onSaveQuote={onSaveQuote} />
+          {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} />}
         </div>
         <Button
           onClick={onNext}

@@ -2520,12 +2520,14 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       }
     }
 
-    // Advance to the Measurement Options step (index 3) so user can choose manufacturing interpretation
-    const measurementOptionsStepIndex = 3;
+    // Advance to the Measurement Options step (index 4) so user can choose manufacturing interpretation
+    const measurementOptionsStepIndex = 4;
 
     // Apply all data in one batch - don't pre-select measurementOption so user chooses on step 3
     updateConfig({
       step: measurementOptionsStepIndex,
+      shapeMode: 'custom',
+      fixedShapeType: null,
       corners,
       unit: data.unit,
       points,
@@ -2677,7 +2679,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           {/* Accordion Steps */}
           <div className={`space-y-2 min-h-0 ${(openStep === 5 || openStep === 6 || openStep === 7)
             ? 'lg:col-span-2'
-            : 'lg:col-span-2'
+            : 'lg:col-span-3'
             }`}>
             {steps.map((step, index) => {
               const StepComponent = step.component;

@@ -273,7 +273,7 @@ export function FixedShapeHardwareContent({
               Back
             </Button>
           )}
-          <SaveProgressButton onSaveQuote={onSaveQuote} />
+          {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} />}
         </div>
         <Button onClick={handleContinue} className="text-sm">
           Continue{nextStepTitle ? ` → ${nextStepTitle}` : ''}

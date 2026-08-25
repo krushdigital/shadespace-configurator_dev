@@ -186,7 +186,7 @@ export function ShapeTypeContent({
               Back
             </Button>
           )}
-          <SaveProgressButton onSaveQuote={onSaveQuote} />
+          {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} />}
         </div>
         <Button
           onClick={onNext}
