@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice, getLivePackPrice, HardwareItem, HardwarePack } from '../../hooks/useHardwareCatalog';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { EXCHANGE_RATES } from '../../data/pricing';
-import { Package, Plus, Minus, Info, X, Check } from 'lucide-react';
+import { Package, Plus, Minus, Info, X, CheckCircle2 } from 'lucide-react';
 import { PricingSetting } from '../../hooks/usePricingSettings';
 
 interface FixedShapeHardwareContentProps {
@@ -23,6 +23,8 @@ interface FixedShapeHardwareContentProps {
 interface HardwareSelection {
   [catalogId: string]: number;
 }
+
+type SelectionMode = 'pack' | 'items' | 'none' | null;
 
 function HardwareItemModal({ item, currency, exchangeRate, onClose }: { item: HardwareItem; currency: string; exchangeRate: number; onClose: () => void }) {
   const price = getLiveHardwarePrice(item, currency, exchangeRate);
@@ -63,8 +65,12 @@ export function FixedShapeHardwareContent({
   pricingSettingsMap,
 }: FixedShapeHardwareContentProps) {
   const { items: catalogItems, packs, loading } = useHardwareCatalog();
+  const [mode, setMode] = useState<SelectionMode>(() => {
+    if (config.hardwareSelectionMode === 'none') return 'none';
+    if (config.cornerHardware && Object.values(config.cornerHardware).some(l => l.length > 0)) return 'items';
+    return null;
+  });
   const [selections, setSelections] = useState<HardwareSelection>(() => {
-    // Initialize from existing cornerHardware if present
     const existing: HardwareSelection = {};
     if (config.cornerHardware) {
       Object.values(config.cornerHardware).forEach(lines => {
@@ -80,18 +86,53 @@ export function FixedShapeHardwareContent({
   const currency = config.currency || 'NZD';
   const exchangeRate = EXCHANGE_RATES[currency] || 1;
 
-  // Filter items suitable for the edge type
   const edgeType = config.edgeType || 'webbing';
-  const relevantItems = catalogItems.filter(item =>
-    item.edge_types.includes(edgeType) && !item.admin_hidden && item.is_active !== false
-  ).sort((a, b) => {
-    if (a.is_featured && !b.is_featured) return -1;
-    if (!a.is_featured && b.is_featured) return 1;
-    return a.display_order - b.display_order;
-  }).slice(0, 12);
 
-  // Find a suitable pack
+  // Additional individual items (admin-curated, visible, active)
+  const additionalItems = useMemo(() =>
+    catalogItems.filter(item =>
+      item.edge_types.includes(edgeType) && !item.admin_hidden && item.is_active !== false
+    ).sort((a, b) => {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+      return a.display_order - b.display_order;
+    }).slice(0, 12),
+    [catalogItems, edgeType]
+  );
+
+  // Find recommended pack
   const suggestedPack = getDefaultPack(packs, edgeType, config.corners);
+
+  const handleSelectPack = () => {
+    if (mode === 'pack') {
+      // Deselect pack
+      setMode(null);
+      setSelections({});
+    } else if (suggestedPack) {
+      setMode('pack');
+      const newSelections: HardwareSelection = {};
+      suggestedPack.items.forEach(pi => {
+        newSelections[pi.catalog_id] = (newSelections[pi.catalog_id] || 0) + pi.qty;
+      });
+      setSelections(newSelections);
+    }
+  };
+
+  const handleToggleItem = (itemId: string) => {
+    const currentQty = selections[itemId] || 0;
+    if (currentQty > 0) {
+      // Deselect
+      setSelections(prev => {
+        const updated = { ...prev };
+        delete updated[itemId];
+        return updated;
+      });
+    } else {
+      // Select with qty 1
+      setSelections(prev => ({ ...prev, [itemId]: 1 }));
+      if (mode !== 'items' && mode !== 'pack') setMode('items');
+    }
+  };
 
   const handleQtyChange = (catalogId: string, delta: number) => {
     setSelections(prev => {
@@ -107,22 +148,16 @@ export function FixedShapeHardwareContent({
     });
   };
 
-  const handleSelectPack = (pack: HardwarePack) => {
-    const newSelections: HardwareSelection = {};
-    pack.items.forEach(pi => {
-      newSelections[pi.catalog_id] = (newSelections[pi.catalog_id] || 0) + pi.qty;
-    });
-    setSelections(newSelections);
+  const handleContinueWithout = () => {
+    setMode('none');
+    setSelections({});
   };
 
-  // Sync selections back to config on continue
   const handleContinue = () => {
-    // Convert flat selections into per-corner hardware format
     const entries = Object.entries(selections).filter(([, qty]) => qty > 0);
-    if (entries.length === 0) {
+    if (entries.length === 0 || mode === 'none') {
       updateConfig({ hardwareSelectionMode: 'none', cornerHardware: undefined });
     } else {
-      // For fixed shapes, assign all hardware to corner 0 as a flat list
       const lines = entries.map(([catalogId, qty]) => {
         const item = catalogItems.find(i => i.id === catalogId);
         return {
@@ -135,7 +170,6 @@ export function FixedShapeHardwareContent({
           livePriceCurrency: currency,
         };
       });
-      // Distribute evenly across corners for pricing compatibility
       const cornerHardware: { [cornerIndex: number]: typeof lines } = {};
       for (let i = 0; i < config.corners; i++) {
         cornerHardware[i] = i === 0 ? lines : [];
@@ -163,102 +197,158 @@ export function FixedShapeHardwareContent({
     <div className="p-6 space-y-6">
       <div>
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Hardware (Optional)</h3>
-        <p className="text-sm text-gray-500 mt-1">Add mounting hardware to your order. You can skip this step if you already have hardware.</p>
+        <p className="text-sm text-gray-500 mt-1">Add mounting hardware to your order, or continue without if you already have your own.</p>
       </div>
 
-      {/* Suggested pack */}
+      {/* Hardware Pack Card - fully clickable */}
       {suggestedPack && (
-        <div className="p-4 rounded-xl border-2 border-blue-100 bg-blue-50/50">
+        <button
+          type="button"
+          onClick={handleSelectPack}
+          className={`w-full text-left rounded-xl border-2 p-4 transition-all duration-200 ${
+            mode === 'pack'
+              ? 'border-[#307C31] bg-[#307C31]/5 shadow-sm'
+              : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
+          }`}
+        >
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="w-5 h-5 text-blue-700" />
+            <div className={`p-2 rounded-lg ${mode === 'pack' ? 'bg-[#307C31]/10' : 'bg-gray-100'}`}>
+              <Package className={`w-5 h-5 ${mode === 'pack' ? 'text-[#307C31]' : 'text-gray-500'}`} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-900 text-sm">{suggestedPack.name}</span>
-                <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded font-medium">Recommended</span>
+                <span className="px-1.5 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded font-medium">Recommended</span>
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">Complete kit for your {config.fixedShapeType?.replace('-', ' ')} shade sail</p>
+              <p className="text-xs text-gray-500 mt-0.5">Complete tensioning kit for your {config.fixedShapeType?.replace('-', ' ')} shade sail</p>
+              {/* Pack contents summary */}
+              <div className="mt-2 text-xs text-gray-600">
+                {suggestedPack.items.map((pi, idx) => {
+                  const item = catalogItems.find(i => i.id === pi.catalog_id);
+                  return item ? (
+                    <span key={pi.catalog_id}>
+                      {idx > 0 && ' · '}
+                      {pi.qty}x {item.name}
+                    </span>
+                  ) : null;
+                })}
+              </div>
               {(() => {
                 const packPrice = getLivePackPrice(suggestedPack, currency, exchangeRate);
                 return packPrice ? (
-                  <p className="text-sm font-bold text-gray-900 mt-1">{formatCurrency(packPrice, currency)}</p>
+                  <p className="text-sm font-bold text-gray-900 mt-2">{formatCurrency(packPrice, currency)}</p>
                 ) : null;
               })()}
             </div>
-            <Button
-              variant="outline"
-              onClick={() => handleSelectPack(suggestedPack)}
-              className="text-xs flex-shrink-0"
-            >
-              <Check className="w-3.5 h-3.5 mr-1" />
-              Select Pack
-            </Button>
+            {mode === 'pack' && <CheckCircle2 className="h-5 w-5 text-[#307C31] flex-shrink-0 mt-0.5" />}
+          </div>
+        </button>
+      )}
+
+      {/* Additional Individual Items */}
+      {additionalItems.length > 0 && (
+        <div className="space-y-2">
+          <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Additional Items</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {additionalItems.map(item => {
+              const qty = selections[item.id] || 0;
+              const isSelected = qty > 0;
+              const price = getLiveHardwarePrice(item, currency, exchangeRate);
+              return (
+                <div
+                  key={item.id}
+                  className={`relative rounded-lg border-2 transition-all duration-150 ${
+                    isSelected ? 'border-[#307C31] bg-[#307C31]/5' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {/* Clickable card area */}
+                  <button
+                    type="button"
+                    onClick={() => handleToggleItem(item.id)}
+                    className="w-full text-left p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.image_url ? (
+                        <img src={item.image_url} alt={item.name} className="w-12 h-12 object-contain rounded bg-gray-50 flex-shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Package className="w-5 h-5 text-gray-400" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{item.short_description}</p>
+                        <p className="text-sm font-semibold text-gray-800 mt-0.5">{formatCurrency(price, currency)}</p>
+                      </div>
+                      {isSelected && <CheckCircle2 className="h-5 w-5 text-[#307C31] flex-shrink-0" />}
+                    </div>
+                  </button>
+
+                  {/* Quantity controls + info (shown when selected) */}
+                  {isSelected && (
+                    <div className="flex items-center justify-between px-3 pb-3 pt-0">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setDetailItem(item); }}
+                        className="text-xs text-gray-500 hover:text-[#307C31] flex items-center gap-1"
+                      >
+                        <Info className="w-3.5 h-3.5" />
+                        Details
+                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleQtyChange(item.id, -1); }}
+                          disabled={qty <= 1}
+                          className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-5 text-center text-sm font-semibold text-[#307C31]">{qty}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleQtyChange(item.id, 1); }}
+                          className="w-6 h-6 flex items-center justify-center rounded-full border border-[#307C31] text-[#307C31] hover:bg-[#307C31]/10"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Info button (when not selected) */}
+                  {!isSelected && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setDetailItem(item); }}
+                      className="absolute top-3 right-3 p-1 text-gray-400 hover:text-[#307C31]"
+                      title="More info"
+                    >
+                      <Info className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Individual items grid */}
-      <div className="space-y-2">
-        <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Or select individual items</h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {relevantItems.map(item => {
-            const qty = selections[item.id] || 0;
-            const price = getLiveHardwarePrice(item, currency, exchangeRate);
-            return (
-              <div
-                key={item.id}
-                className={`relative p-3 rounded-lg border-2 transition-all ${
-                  qty > 0 ? 'border-blue-400 bg-blue-50/30' : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="w-12 h-12 object-contain rounded bg-gray-50 flex-shrink-0" />
-                  ) : (
-                    <div className="w-12 h-12 rounded bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Package className="w-5 h-5 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{item.short_description}</p>
-                    <p className="text-sm font-semibold text-gray-800 mt-0.5">{formatCurrency(price, currency)}</p>
-                  </div>
-                  <button
-                    onClick={() => setDetailItem(item)}
-                    className="p-1 text-gray-400 hover:text-blue-600 flex-shrink-0"
-                    title="More info"
-                  >
-                    <Info className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Quantity controls */}
-                <div className="flex items-center justify-end gap-2 mt-2">
-                  <button
-                    onClick={() => handleQtyChange(item.id, -1)}
-                    disabled={qty === 0}
-                    className="w-7 h-7 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className={`w-6 text-center text-sm font-semibold ${qty > 0 ? 'text-blue-700' : 'text-gray-400'}`}>{qty}</span>
-                  <button
-                    onClick={() => handleQtyChange(item.id, 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full border border-blue-400 text-blue-600 hover:bg-blue-50"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* Continue without hardware */}
+      <button
+        type="button"
+        onClick={handleContinueWithout}
+        className={`w-full text-center py-3 rounded-lg border-2 text-sm font-medium transition-all ${
+          mode === 'none'
+            ? 'border-gray-400 bg-gray-50 text-gray-700'
+            : 'border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700'
+        }`}
+      >
+        {mode === 'none' ? 'Continuing without hardware' : 'Continue without hardware'}
+      </button>
 
       {/* Total hardware cost */}
-      {totalHardwarePrice > 0 && (
+      {totalHardwarePrice > 0 && mode !== 'none' && (
         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
           <span className="text-sm font-medium text-gray-700">Hardware total</span>
           <span className="text-base font-bold text-gray-900">{formatCurrency(totalHardwarePrice, currency)}</span>
