@@ -321,6 +321,15 @@ console.log('✌️result --->', result);
           onPrev({ navigateToHeights: true });
           return;
         }
+        // 3b. Check attachment types (required at checkout for 5+ corners, or 4 corners with heights provided)
+        else if (
+          (config.corners >= 5 || (config.corners === 4 && config.heightsProvidedByUser)) &&
+          config.fixingTypes &&
+          Array.from({ length: config.corners }, (_, i) => config.fixingTypes?.[i]).some(t => t !== 'post' && t !== 'building')
+        ) {
+          onPrev({ navigateToHeights: true });
+          return;
+        }
         // 4. Check acknowledgments
         else if (!allAcknowledgmentsChecked) {
           targetElement = acknowledgementsCardRef.current;

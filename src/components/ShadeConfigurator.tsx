@@ -977,9 +977,20 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const heightIsRequiredForCheckout = isHeightRequiredForCheckout(config.corners, config.measurementOption);
   const allHeightsProvided = areHeightsProvided(config.fixingHeights, config.corners);
 
+  // Check if attachment types are required and all provided for checkout
+  const allAttachmentTypesProvided = useMemo(() => {
+    const attachmentRequired = config.corners >= 5 || (config.corners === 4 && config.heightsProvidedByUser);
+    if (!attachmentRequired) return true;
+    for (let i = 0; i < config.corners; i++) {
+      if (config.fixingTypes?.[i] !== 'post' && config.fixingTypes?.[i] !== 'building') return false;
+    }
+    return true;
+  }, [config.corners, config.heightsProvidedByUser, config.fixingTypes]);
+
   const canAddToCart = allDiagonalsEntered &&
     allAcknowledgmentsChecked &&
-    (!heightIsRequiredForCheckout || allHeightsProvided);
+    (!heightIsRequiredForCheckout || allHeightsProvided) &&
+    allAttachmentTypesProvided;
 
   // Calculate if all edge measurements are complete
   const hasAllEdgeMeasurements = useMemo(() => {
@@ -2089,26 +2100,6 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           }
         }
 
-        // Validate attachment types:
-        // - For 5+ corners: always required
-        // - For 4 corners: required only if user has opened heights section (heightsProvidedByUser is set)
-        {
-          const attachmentRequired = config.corners >= 5 || (config.corners === 4 && config.heightsProvidedByUser);
-          if (attachmentRequired) {
-            for (let i = 0; i < config.corners; i++) {
-              const fixingType = config.fixingTypes?.[i];
-              if (fixingType !== 'post' && fixingType !== 'building') {
-                errors[`attachmentType_${i}`] = 'Please select Post or Building';
-              }
-            }
-
-            // If attachment type errors exist and heights section is not open, force it open
-            const hasAttachmentErrors = Object.keys(errors).some(k => k.startsWith('attachmentType_'));
-            if (hasAttachmentErrors && !isHeightsSectionOpen) {
-              setNavigateToHeights(true);
-            }
-          }
-        }
         break;
       case 6: // Fixed Dimensions
         {
@@ -2198,7 +2189,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
     setTimeout(() => {
       smoothScrollToStep(nextStepIndex);
-    }, isMobile ? 400 : 350);
+    }, (nextStepIndex === 9) ? (isMobile ? 600 : 500) : (isMobile ? 400 : 350));
   };
 
   const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
@@ -2675,7 +2666,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
         )}
 
-        <div className={`grid grid-cols-1 gap-8 ${(openStep === 5 || openStep === 7) ? 'lg:grid-cols-4' : (openStep === 9) ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-8 ${(openStep === 5 || openStep === 7) ? 'lg:grid-cols-4' : (openStep === 9) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
           <div className={`space-y-2 min-h-0 ${(openStep === 5 || openStep === 7)
             ? 'lg:col-span-2'
@@ -2908,7 +2899,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
           {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
           {(openStep === 9) && (
-            <div className="hidden lg:block lg:col-span-1 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
+            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <PriceSummaryDisplay
                 config={config}
                 calculations={calculations}

@@ -410,6 +410,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       {edgeMeasurements.map((measurement) => {
         const fromPoint = config.points[measurement.from];
         const toPoint = config.points[measurement.to];
+        if (!fromPoint || !toPoint) return null;
         const isHighlighted = highlightedMeasurement === measurement.key || editingMeasurementKey === measurement.key;
         const labelPosition = getEdgeLabelPosition(fromPoint, toPoint);
         
@@ -516,6 +517,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       {diagonalMeasurements.map((diagonal) => {
         const fromPoint = config.points[diagonal.from];
         const toPoint = config.points[diagonal.to];
+        if (!fromPoint || !toPoint) return null;
         const isHighlighted = highlightedMeasurement === diagonal.key || editingMeasurementKey === diagonal.key;
         const labelPosition = getEdgeLabelPosition(fromPoint, toPoint, compact ? 25 : (isMobile ? 45 : 30));
         
