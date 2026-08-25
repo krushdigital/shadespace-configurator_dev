@@ -112,7 +112,7 @@ export function ShapeTypeContent({
           <button
             onClick={() => {
               if (selectedMode !== 'fixed') {
-                handleSelectFixedShape(selectedFixedShape || 'rectangle');
+                updateConfig({ shapeMode: 'fixed', fixedShapeType: null });
               }
             }}
             className={`text-left p-4 rounded-xl border-2 transition-all duration-200 ${

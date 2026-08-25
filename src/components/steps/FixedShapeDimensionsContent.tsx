@@ -152,6 +152,9 @@ export function FixedShapeDimensionsContent({
       const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, edgeBMm || edgeAMm);
       const points = generateFixedShapePoints(shape, newMeasurements);
       updateConfig({ measurements: newMeasurements, points });
+    } else if (!config.points || config.points.length === 0) {
+      const defaultPoints = generateFixedShapePoints(shape, {});
+      updateConfig({ points: defaultPoints });
     }
   }, [shape]);
 

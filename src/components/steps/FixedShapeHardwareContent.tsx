@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
 import { Button } from '../ui/Button';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice, getLivePackPrice, HardwareItem } from '../../hooks/useHardwareCatalog';
+import { useHardwareCatalog, getDefaultPack, getLivePackPrice, HardwareItem } from '../../hooks/useHardwareCatalog';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
 import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
 import { formatCurrency } from '../../utils/currencyFormatter';
@@ -33,7 +33,7 @@ export function FixedShapeHardwareContent({
   onSaveQuote,
   pricingSettingsMap,
 }: FixedShapeHardwareContentProps) {
-  const { items: catalogItems, packs, loading } = useHardwareCatalog();
+  const { items: catalogItems, categories, packs, loading } = useHardwareCatalog();
   const [modalOpen, setModalOpen] = useState(false);
 
   const currency = config.currency || 'NZD';
@@ -59,17 +59,13 @@ export function FixedShapeHardwareContent({
     updateConfig(updates);
   };
 
-  const confirmSelection = (lines: CornerHardwareLine[], applyToAll: boolean) => {
+  const confirmSelection = (lines: CornerHardwareLine[], _applyToAll: boolean) => {
     const next: { [cornerIndex: number]: CornerHardwareLine[] } = {};
     for (let i = 0; i < config.corners; i++) {
       next[i] = lines.map(l => ({ ...l }));
     }
     updateConfig({ hardwareSelectionMode: 'manual', cornerHardware: next });
     setModalOpen(false);
-  };
-
-  const handleContinue = () => {
-    onNext?.();
   };
 
   const cornerHardware = config.cornerHardware || {};
@@ -152,7 +148,7 @@ export function FixedShapeHardwareContent({
         <button
           type="button"
           onClick={() => {
-            setMode('manual');
+            if (mode !== 'manual') setMode('manual');
             setModalOpen(true);
           }}
           className={`relative w-full rounded-xl border-2 p-4 text-left transition cursor-pointer ${
@@ -215,24 +211,24 @@ export function FixedShapeHardwareContent({
           )}
           {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} />}
         </div>
-        <Button onClick={handleContinue} className="text-sm">
+        <Button onClick={onNext} className="text-sm">
           Continue{nextStepTitle ? ` → ${nextStepTitle}` : ''}
         </Button>
       </div>
 
       {/* Hardware Selection Modal */}
-      {modalOpen && (
-        <HardwareSelectionModal
-          cornerIndex={0}
-          corners={config.corners}
-          edgeType={edgeType}
-          currency={currency}
-          existingLines={manualLines}
-          onConfirm={confirmSelection}
-          onClose={() => setModalOpen(false)}
-          pricingSettingsMap={pricingSettingsMap}
-        />
-      )}
+      <HardwareSelectionModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        cornerIndex={0}
+        totalCorners={config.corners}
+        items={catalogItems}
+        categories={categories}
+        initialSelection={manualLines}
+        onConfirm={confirmSelection}
+        currency={currency}
+        pricingSettingsMap={pricingSettingsMap}
+      />
     </div>
   );
 }
