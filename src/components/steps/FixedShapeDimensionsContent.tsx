@@ -3,9 +3,9 @@ import { ConfiguratorState, ShadeCalculations, FixedShapeType } from '../../type
 import { Button } from '../ui/Button';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, Info, RefreshCw } from 'lucide-react';
 import {
   getAlternativeUnit,
   getAlternativeUnitName,
@@ -147,7 +147,6 @@ export function FixedShapeDimensionsContent({
     updateConfig({ measurements: newMeasurements, points });
   }, [shape, unit, edgeAMm, updateConfig]);
 
-  // Recompute points when shape changes
   useEffect(() => {
     if (edgeAMm > 0) {
       const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, edgeBMm || edgeAMm);
@@ -158,25 +157,25 @@ export function FixedShapeDimensionsContent({
 
   const getEdgeALabel = () => {
     switch (shape) {
-      case 'triangle': return 'Edge Length';
-      case 'right-angle-triangle': return 'Edge A (base)';
-      case 'square': return 'Edge Length';
-      case 'rectangle': return 'Edge A (width)';
+      case 'triangle': return 'Space Edge A → B → C (all equal)';
+      case 'right-angle-triangle': return 'Space Edge A → B (base)';
+      case 'square': return 'Space Edge A → B → C → D (all equal)';
+      case 'rectangle': return 'Space Edge A → B (width)';
     }
   };
 
   const getEdgeBLabel = () => {
     switch (shape) {
-      case 'right-angle-triangle': return 'Edge B (height)';
-      case 'rectangle': return 'Edge B (depth)';
-      default: return 'Edge B';
+      case 'right-angle-triangle': return 'Space Edge B → C (height)';
+      case 'rectangle': return 'Space Edge B → C (depth)';
+      default: return 'Space Edge B → C';
     }
   };
 
   const getCalculatedLabel = () => {
     if (shape === 'right-angle-triangle' && edgeAMm > 0 && edgeBMm > 0) {
       const hyp = Math.sqrt(edgeAMm * edgeAMm + edgeBMm * edgeBMm);
-      return `Edge C (hypotenuse): ${formatMeasurement(hyp, unit)}`;
+      return `Edge C → A (hypotenuse): ${formatMeasurement(hyp, unit)}`;
     }
     return null;
   };
@@ -198,60 +197,81 @@ export function FixedShapeDimensionsContent({
   const show3D = device3DTier !== 'none' && supports3DForCorners(config.corners);
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Unit toggle */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Dimensions
-        </h3>
+    <div className="p-4 sm:p-6">
+      {/* Unit indicator bar - matching custom dimensions step */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#307C31] animate-pulse" />
+          <span className="text-sm font-medium text-slate-700">
+            Using {unit === 'imperial' ? 'Imperial (ft/in)' : 'Metric (mm)'}
+          </span>
+        </div>
         <button
           onClick={handleUnitChange}
-          className="text-xs font-medium text-blue-600 hover:text-blue-800 underline underline-offset-2"
+          className="text-sm text-[#307C31] hover:text-[#01312D] font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
         >
+          <RefreshCw className="w-3 h-3" />
           Switch to {alternativeUnitName}
         </button>
       </div>
 
-      {/* Shape preview */}
-      <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50" style={{ minHeight: 220 }}>
-        {show3D && (
-          <div className="absolute top-2 right-2 z-10 flex gap-1">
-            <button
-              onClick={() => setViewMode('plan')}
-              className={`px-2 py-1 text-xs rounded ${viewMode === 'plan' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border'}`}
-            >Plan</button>
-            <button
-              onClick={() => setViewMode('3d')}
-              className={`px-2 py-1 text-xs rounded ${viewMode === '3d' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border'}`}
-            >3D</button>
-          </div>
-        )}
-        {viewMode === 'plan' || !show3D ? (
-          <ShapeCanvas
-            config={config}
-            updateConfig={updateConfig}
-            readonly={true}
-            unit={unit}
-            isMobile={isMobile}
-          />
-        ) : (
-          <Suspense fallback={<div className="w-full h-[220px] flex items-center justify-center text-gray-400 text-sm">Loading 3D...</div>}>
-            <ShadeSail3DViewer
-              points={config.points}
-              fixingHeights={[]}
-              measurements={config.measurements}
-              corners={config.corners}
-              unit={unit}
-              fabricColor={config.fabricColor}
-            />
-          </Suspense>
-        )}
+      {/* Info box - matching custom dimensions step */}
+      <div className="flex gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl mb-6">
+        <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div>
+          <h5 className="text-base font-bold text-blue-900 mb-1">
+            Enter Your Desired Dimensions
+          </h5>
+          <p className="text-sm text-blue-800 leading-relaxed">
+            Enter the measurements <strong>between your fixing points</strong>. We'll calculate the perfect sail size to fit your space, accounting for fabric stretch and tensioning hardware.
+          </p>
+        </div>
       </div>
 
-      {/* Measurement inputs */}
+      {/* Mobile-only shape preview (desktop uses sticky sidebar) */}
+      {isMobile && (
+        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 mb-6" style={{ minHeight: 200 }}>
+          {show3D && (
+            <div className="absolute top-2 right-2 z-10 flex gap-1">
+              <button
+                onClick={() => setViewMode('plan')}
+                className={`px-2 py-1 text-xs rounded ${viewMode === 'plan' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border'}`}
+              >Plan</button>
+              <button
+                onClick={() => setViewMode('3d')}
+                className={`px-2 py-1 text-xs rounded ${viewMode === '3d' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border'}`}
+              >3D</button>
+            </div>
+          )}
+          {viewMode === 'plan' || !show3D ? (
+            <ShapeCanvas
+              config={config}
+              updateConfig={updateConfig}
+              readonly={true}
+              unit={unit}
+              isMobile={isMobile}
+            />
+          ) : (
+            <Suspense fallback={<div className="w-full h-[200px] flex items-center justify-center text-gray-400 text-sm">Loading 3D...</div>}>
+              <ShadeSail3DViewer
+                points={config.points}
+                fixingHeights={[]}
+                measurements={config.measurements}
+                corners={config.corners}
+                unit={unit}
+                fabricColor={config.fabricColor}
+              />
+            </Suspense>
+          )}
+        </div>
+      )}
+
+      {/* Measurement inputs - styled to match custom dimensions step */}
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">{getEdgeALabel()}</label>
+          <label className="block text-sm font-semibold text-slate-700 mb-2">{getEdgeALabel()}</label>
           {unit === 'imperial' ? (
             <DualImperialInput
               value={edgeADisplay}
@@ -260,20 +280,27 @@ export function FixedShapeDimensionsContent({
               error={!!validationErrors['AB']}
             />
           ) : (
-            <input
-              type="number"
-              value={edgeADisplay > 0 ? edgeADisplay : ''}
-              onChange={(e) => handleEdgeAChange(parseFloat(e.target.value) || 0)}
-              placeholder="Enter length in mm"
-              className={`w-full px-3 py-2.5 rounded-lg border ${validationErrors['AB'] ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm`}
-            />
+            <div className="relative">
+              <input
+                type="number"
+                value={edgeADisplay > 0 ? edgeADisplay : ''}
+                onChange={(e) => handleEdgeAChange(parseFloat(e.target.value) || 0)}
+                placeholder="Enter length in mm"
+                className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['AB'] ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
+              />
+              {edgeAMm > 0 && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                  {formatSecondaryUnit(edgeAMm, unit)}
+                </span>
+              )}
+            </div>
           )}
-          {validationErrors['AB'] && <p className="mt-1 text-xs text-red-600">{validationErrors['AB']}</p>}
+          {validationErrors['AB'] && <p className="mt-1.5 text-xs text-red-600 font-medium">{validationErrors['AB']}</p>}
         </div>
 
         {needsTwoInputs && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">{getEdgeBLabel()}</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">{getEdgeBLabel()}</label>
             {unit === 'imperial' ? (
               <DualImperialInput
                 value={edgeBDisplay}
@@ -282,23 +309,30 @@ export function FixedShapeDimensionsContent({
                 error={!!validationErrors['BC']}
               />
             ) : (
-              <input
-                type="number"
-                value={edgeBDisplay > 0 ? edgeBDisplay : ''}
-                onChange={(e) => handleEdgeBChange(parseFloat(e.target.value) || 0)}
-                placeholder="Enter length in mm"
-                className={`w-full px-3 py-2.5 rounded-lg border ${validationErrors['BC'] ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm`}
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  value={edgeBDisplay > 0 ? edgeBDisplay : ''}
+                  onChange={(e) => handleEdgeBChange(parseFloat(e.target.value) || 0)}
+                  placeholder="Enter length in mm"
+                  className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['BC'] ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
+                />
+                {edgeBMm > 0 && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                    {formatSecondaryUnit(edgeBMm, unit)}
+                  </span>
+                )}
+              </div>
             )}
-            {validationErrors['BC'] && <p className="mt-1 text-xs text-red-600">{validationErrors['BC']}</p>}
+            {validationErrors['BC'] && <p className="mt-1.5 text-xs text-red-600 font-medium">{validationErrors['BC']}</p>}
           </div>
         )}
 
         {/* Auto-calculated edge */}
         {getCalculatedLabel() && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
-            <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
-            <span className="text-sm text-blue-800">{getCalculatedLabel()}</span>
+          <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 rounded-xl border border-emerald-100">
+            <Info className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span className="text-sm font-medium text-emerald-800">{getCalculatedLabel()}</span>
           </div>
         )}
       </div>
@@ -306,14 +340,14 @@ export function FixedShapeDimensionsContent({
       {/* Switch to custom shape */}
       <button
         onClick={onSwitchToCustom}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-dashed border-gray-300 hover:border-emerald-400 hover:bg-emerald-50 text-sm text-gray-600 hover:text-emerald-700 transition-colors"
+        className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-200 hover:border-[#307C31] hover:bg-[#BFF102]/5 text-sm text-slate-600 hover:text-[#01312D] transition-all duration-200"
       >
         <ArrowRight className="w-4 h-4" />
-        {getCustomSwitchText()} <span className="font-medium">Switch to Custom Shape</span>
+        {getCustomSwitchText()} <span className="font-semibold">Switch to Custom Shape</span>
       </button>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+      {/* Navigation - matching custom dimensions step */}
+      <div className="flex items-center justify-between pt-5 mt-6 border-t border-slate-100">
         <div className="flex items-center gap-2">
           {showBackButton && (
             <Button variant="outline" onClick={onPrev} className="text-sm">

@@ -2666,9 +2666,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
         )}
 
-        <div className={`grid grid-cols-1 gap-8 ${(openStep === 5 || openStep === 7) ? 'lg:grid-cols-4' : (openStep === 9) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-8 ${(openStep === 5 || openStep === 6 || openStep === 7) ? 'lg:grid-cols-4' : (openStep === 9) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${(openStep === 5 || openStep === 7)
+          <div className={`space-y-2 min-h-0 ${(openStep === 5 || openStep === 6 || openStep === 7)
             ? 'lg:col-span-2'
             : (openStep === 9) ? 'lg:col-span-3' : 'lg:col-span-3'
             }`}>
@@ -2778,7 +2778,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {(openStep === 5 || openStep === 7) && !isMobile && (() => {
+          {(openStep === 5 || openStep === 6 || openStep === 7) && !isMobile && (() => {
             const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
             const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
             const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
