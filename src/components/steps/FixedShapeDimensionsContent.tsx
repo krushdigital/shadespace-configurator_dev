@@ -228,13 +228,11 @@ export function FixedShapeDimensionsContent({
         )}
         {viewMode === 'plan' || !show3D ? (
           <ShapeCanvas
-            points={config.points}
-            corners={config.corners}
-            measurements={config.measurements}
+            config={config}
+            updateConfig={updateConfig}
+            readonly={true}
             unit={unit}
-            interactive={false}
-            width={isMobile ? 320 : 440}
-            height={220}
+            isMobile={isMobile}
           />
         ) : (
           <Suspense fallback={<div className="w-full h-[220px] flex items-center justify-center text-gray-400 text-sm">Loading 3D...</div>}>
