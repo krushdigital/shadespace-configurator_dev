@@ -8,6 +8,7 @@ import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence } from '../../utils/geometry';
+import { formatCurrency } from '../../utils/currencyFormatter';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -356,13 +357,6 @@ export function DimensionsContent({
         // Validate geometry first
         const validation = validatePolygonGeometry(config.measurements, config.corners);
 
-        console.log('Running geometry validation:', {
-          corners: config.corners,
-          measurements: config.measurements,
-          isValid: validation.isValid,
-          errors: validation.errors
-        });
-
         if (!validation.isValid) {
           // Geometry is invalid - preserve last valid shape and show warnings
           const errorMessage = validation.errors[0] || 'Invalid measurements';
@@ -391,11 +385,6 @@ export function DimensionsContent({
 
         // If reconstruction succeeded, update the points and store as last valid
         if (reconstructedPoints && reconstructedPoints.length === config.corners) {
-          console.log('Auto-reconstructing shape from measurements:', {
-            corners: config.corners,
-            measurementKeys: Object.keys(config.measurements),
-            pointsCount: reconstructedPoints.length
-          });
           lastValidPointsRef.current = reconstructedPoints;
           if (config.corners === 3 && config.hasManuallyAdjustedShape) {
             updateConfig({ points: reconstructedPoints, hasManuallyAdjustedShape: false });
@@ -403,11 +392,6 @@ export function DimensionsContent({
             updateConfig({ points: reconstructedPoints });
           }
         } else {
-          console.log('Reconstruction failed or returned null - preserving last valid shape:', {
-            corners: config.corners,
-            canReconstruct: canReconstructShape(config.measurements, config.corners),
-            reconstructedPoints
-          });
           // Keep the last valid points
         }
       }
@@ -1290,6 +1274,12 @@ export function DimensionsContent({
 
           return (
             <>
+              {hasQuote && (
+                <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mb-3 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
+                  <span className="text-sm font-medium text-[#01312D]">Estimated total</span>
+                  <span className="text-lg font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
+                </div>
+              )}
               {shouldDisable && (
                 <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                   {hasUnacknowledgedTypos ? (

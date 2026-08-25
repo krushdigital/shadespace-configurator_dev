@@ -39,13 +39,7 @@ const SHAPE_OPTIONS = [
 export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, onSketchApply, mobileGuidance }: CornersContentProps) {
   const [showSketchModal, setShowSketchModal] = useState(false);
   React.useEffect(() => {
-    console.log('[Corners] Effect triggered', {
-      isGuidanceActive: mobileGuidance?.isGuidanceActive,
-      corners: config.corners
-    });
-
     if (mobileGuidance?.isGuidanceActive && config.corners >= 3) {
-      console.log('[Corners] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-corners', 400);
       mobileGuidance.setHighlightTarget('continue-button-corners');
     }

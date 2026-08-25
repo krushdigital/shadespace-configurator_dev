@@ -138,26 +138,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     return line.priceNzd * line.qty * hardwarePricing.exchangeRate;
   };
 
-  console.log({
-    config,
-    updateConfig,
-    calculations,
-    nextStepTitle,
-    showBackButton,
-    onPrev,
-    agreedToAcknowledgments,
-    onToggleAgreement,
-    handleAddToCart,
-    allDiagonalsEntered,
-    allAcknowledgmentsChecked,
-    canAddToCart,
-    hasAllEdgeMeasurements,
-    isMobile,
-    canvasRef,
-    loading,
-    setLoading,
-    setShowLoadingOverlay
-  });
+
 
 
 
@@ -275,7 +256,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
       }
 
       const result = await response.json();
-console.log('✌️result --->', result);
 
       if (result.success && result.url) {
         return result.url;

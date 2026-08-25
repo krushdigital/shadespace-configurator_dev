@@ -47,28 +47,14 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
   }, []);
 
   useEffect(() => {
-    console.log('[FabricSelection] Fabric type effect triggered', {
-      isGuidanceActive: mobileGuidance?.isGuidanceActive,
-      fabricType: config.fabricType,
-      fabricColor: config.fabricColor
-    });
-
     if (mobileGuidance?.isGuidanceActive && config.fabricType && !config.fabricColor) {
-      console.log('[FabricSelection] Guiding to color section');
       mobileGuidance.scrollToElement('color-selection', 400, 140, true);
       mobileGuidance.setHighlightTarget('color-selection');
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
   useEffect(() => {
-    console.log('[FabricSelection] Color effect triggered', {
-      isGuidanceActive: mobileGuidance?.isGuidanceActive,
-      fabricType: config.fabricType,
-      fabricColor: config.fabricColor
-    });
-
     if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
-      console.log('[FabricSelection] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-fabric', 400);
       mobileGuidance.setHighlightTarget('continue-button-fabric');
     }

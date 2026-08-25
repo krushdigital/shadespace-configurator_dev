@@ -318,6 +318,14 @@ export function HardwareContent({
         </div>
       )}
 
+      {/* Live total price preview */}
+      {calculations.totalPrice > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mt-4 mb-2 transition-all duration-300">
+          <span className="text-sm font-medium text-[#01312D]">Estimated total</span>
+          <span className="text-lg font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
+        </div>
+      )}
+
       <div className="pt-2">
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">

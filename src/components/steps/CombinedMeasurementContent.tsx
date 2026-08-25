@@ -68,28 +68,14 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
   }, []);
 
   React.useEffect(() => {
-    console.log('[CombinedMeasurement] Unit effect triggered', {
-      isGuidanceActive: mobileGuidance?.isGuidanceActive,
-      unit: config.unit,
-      measurementOption: config.measurementOption
-    });
-
     if (mobileGuidance?.isGuidanceActive && config.unit && !config.measurementOption) {
-      console.log('[CombinedMeasurement] Guiding to measurement option section');
       mobileGuidance.scrollToElement('measurement-option-section', 400);
       mobileGuidance.setHighlightTarget('measurement-option-section');
     }
   }, [config.unit, config.measurementOption, mobileGuidance?.isGuidanceActive]);
 
   React.useEffect(() => {
-    console.log('[CombinedMeasurement] Measurement option effect triggered', {
-      isGuidanceActive: mobileGuidance?.isGuidanceActive,
-      unit: config.unit,
-      measurementOption: config.measurementOption
-    });
-
     if (mobileGuidance?.isGuidanceActive && config.unit && config.measurementOption) {
-      console.log('[CombinedMeasurement] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-measurement', 400);
       mobileGuidance.setHighlightTarget('continue-button-measurement');
     }

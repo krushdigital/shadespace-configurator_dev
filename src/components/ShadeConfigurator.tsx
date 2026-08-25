@@ -3,11 +3,8 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { PriceSummaryDisplay } from './PriceSummaryDisplay';
 import { AccordionStep } from './AccordionStep';
-import { FabricSelectionContent } from './steps/FabricSelectionContent';
-import { EdgeTypeContent } from './steps/EdgeTypeContent';
-import { ShapeTypeContent } from './steps/ShapeTypeContent';
-import { CornersContent } from './steps/CornersContent';
-import { CombinedMeasurementContent } from './steps/CombinedMeasurementContent';
+import { MaterialFinishContent } from './steps/MaterialFinishContent';
+import { ShapeSizeContent } from './steps/ShapeSizeContent';
 import { DimensionsContent } from './steps/DimensionsContent';
 import { FixedShapeDimensionsContent } from './steps/FixedShapeDimensionsContent';
 import { FixedShapeHardwareContent } from './steps/FixedShapeHardwareContent';
@@ -371,7 +368,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         const isFinishedQuote = quote.status === 'quote_ready' || quote.status === 'purchased';
         const resumeStep = isFinishedQuote
           ? reviewStep
-          : Math.min(Math.max(quote.current_step ?? 4, 0), reviewStep);
+          : Math.min(Math.max(quote.current_step ?? 2, 0), reviewStep);
         setOpenStep(resumeStep);
         clearQuoteStash();
 
@@ -1016,7 +1013,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     if (!config.corners || !config.fabricType || !hasAllEdgeMeasurements) return;
 
     const isReady = config.corners === 3
-      ? hasAllEdgeMeasurements && openStep >= 6
+      ? hasAllEdgeMeasurements && openStep >= 2
       : allDiagonalsEntered;
 
     if (!isReady) return;
@@ -1863,15 +1860,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Helper function to check if a step should be skipped
   const shouldSkipStep = (step: number): boolean => {
     const isFixed = config.shapeMode === 'fixed';
-    const isCustom = config.shapeMode === 'custom';
     switch (step) {
-      case 3: // Fixing Points - custom only
-      case 4: // Measurement Options - custom only
-      case 5: // Dimensions (custom) - custom only
-      case 7: // Hardware (custom) - custom only
+      case 2: // Dimensions (custom) - custom only
+      case 4: // Hardware (custom) - custom only
         return isFixed;
-      case 6: // Fixed Dimensions - fixed only
-      case 8: // Fixed Hardware - fixed only
+      case 3: // Fixed Dimensions - fixed only
+      case 5: // Fixed Hardware - fixed only
         return !isFixed;
       default:
         return false;
@@ -1881,10 +1875,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Helper function to get the actual next step (accounting for skips)
   const getActualNextStep = (currentStep: number): number => {
     let nextStep = currentStep + 1;
-    while (nextStep <= 9 && shouldSkipStep(nextStep)) {
+    while (nextStep <= 6 && shouldSkipStep(nextStep)) {
       nextStep++;
     }
-    return Math.min(nextStep, 9);
+    return Math.min(nextStep, 6);
   };
 
   // Helper function to get the actual previous step (accounting for skips)
@@ -1909,43 +1903,28 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   const isStepComplete = (step: number): boolean => {
     switch (step) {
-      case 0: // Fabric & Color
-        return !!config.fabricType && !!config.fabricColor;
-      case 1: // Style (Edge Type)
-        return !!config.edgeType;
-      case 2: // Shape Type
-        return config.shapeMode === 'custom' || (config.shapeMode === 'fixed' && !!config.fixedShapeType);
-      case 3: // Number of Fixing Points (custom)
-        return config.corners >= 3 && config.corners <= 8;
-      case 4: // Measurement Options (Combined) (custom)
-        return (config.unit === 'metric' || config.unit === 'imperial') && (config.measurementOption === 'adjust' || config.measurementOption === 'exact');
-      case 5: // Dimensions (custom)
-        if (config.corners === 0) {
-          return false;
-        }
-
+      case 0: // Material & Finish
+        return !!config.fabricType && !!config.fabricColor && !!config.edgeType;
+      case 1: // Shape & Size
+        if (config.shapeMode === 'custom') return config.corners >= 3 && config.corners <= 8;
+        if (config.shapeMode === 'fixed') return !!config.fixedShapeType;
+        return false;
+      case 2: // Dimensions (custom)
+        if (config.corners === 0) return false;
         let edgeCount = 0;
         for (let i = 0; i < config.corners; i++) {
           const nextIndex = (i + 1) % config.corners;
           const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
           const measurement = config.measurements[edgeKey];
-          if (measurement && measurement > 0) {
-            edgeCount++;
-          }
+          if (measurement && measurement > 0) edgeCount++;
         }
-
-        const allEdgesProvided = edgeCount === config.corners;
-
-        // Heights are never required to complete this step - they can be added during review
-        return allEdgesProvided;
-      case 6: // Fixed Dimensions
+        return edgeCount === config.corners;
+      case 3: // Fixed Dimensions
         if (!config.fixedShapeType) return false;
         const needsTwo = config.fixedShapeType === 'right-angle-triangle' || config.fixedShapeType === 'rectangle';
-        if (needsTwo) {
-          return (config.measurements['AB'] || 0) > 0 && (config.measurements['BC'] || 0) > 0;
-        }
+        if (needsTwo) return (config.measurements['AB'] || 0) > 0 && (config.measurements['BC'] || 0) > 0;
         return (config.measurements['AB'] || 0) > 0;
-      case 7: // Hardware Selection (custom)
+      case 4: // Hardware Selection (custom)
         if (config.hardwareSelectionMode === 'manual') {
           const ch = config.cornerHardware || {};
           for (let i = 0; i < config.corners; i++) {
@@ -1954,9 +1933,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           return true;
         }
         return true;
-      case 8: // Fixed Hardware
-        return true; // Hardware is always optional for fixed shapes
-      case 9: // Review
+      case 5: // Fixed Hardware
+        return true;
+      case 6: // Review
         return true;
       default:
         return true;
@@ -2028,40 +2007,31 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     const suggestions: { [key: string]: number } = {};
 
     switch (openStep) {
-      case 0: // Fabric & Color
+      case 0: // Material & Finish
         if (!config.fabricType) {
           errors.fabricType = 'Please select a fabric type';
         }
         if (!config.fabricColor || config.fabricColor === '') {
           errors.fabricColor = 'Please select a fabric color';
         }
-        break;
-      case 1: // Style (Edge Type)
         if (!config.edgeType) {
           errors.edgeType = 'Please select an edge reinforcement type';
         }
         break;
-      case 2: // Shape Type
-        if (!config.shapeMode) {
+      case 1: // Shape & Size
+        if (config.shapeMode === 'custom') {
+          if (config.corners < 3 || config.corners > 8) {
+            errors.corners = 'Please select the number of fixing points (3-8)';
+          }
+        } else if (config.shapeMode === 'fixed') {
+          if (!config.fixedShapeType) {
+            errors.fixedShapeType = 'Please select a fixed shape';
+          }
+        } else {
           errors.shapeMode = 'Please select a shape type';
-        } else if (config.shapeMode === 'fixed' && !config.fixedShapeType) {
-          errors.fixedShapeType = 'Please select a fixed shape';
         }
         break;
-      case 3: // Number of Fixing Points (custom)
-        if (config.corners < 3 || config.corners > 8) {
-          errors.corners = 'Please select the number of fixing points (3-8)';
-        }
-        break;
-      case 4: // Measurement Options (custom)
-        if (!config.unit) {
-          errors.unit = 'Please select measurement units';
-        }
-        if (!config.measurementOption) {
-          errors.measurementOption = 'Please select a measurement option';
-        }
-        break;
-      case 5: // Dimensions (custom)
+      case 2: // Dimensions (custom)
         const requiredDiagonals = getDiagonalKeysForCorners(config.corners);
         const allDiagonalsProvided = requiredDiagonals.every(key =>
           config.measurements[key] && config.measurements[key] > 0
@@ -2104,7 +2074,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         }
 
         break;
-      case 6: // Fixed Dimensions
+      case 3: // Fixed Dimensions
         {
           const needsTwo = config.fixedShapeType === 'right-angle-triangle' || config.fixedShapeType === 'rectangle';
           if (!config.measurements['AB'] || config.measurements['AB'] <= 0) {
@@ -2115,7 +2085,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           }
         }
         break;
-      case 7: // Hardware Selection (custom)
+      case 4: // Hardware Selection (custom)
         if (config.hardwareSelectionMode === 'manual') {
           const ch = config.cornerHardware || {};
           for (let i = 0; i < config.corners; i++) {
@@ -2126,7 +2096,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           }
         }
         break;
-      case 8: // Fixed Hardware - always optional
+      case 5: // Fixed Hardware - always optional
         break;
     }
 
@@ -2162,8 +2132,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       return; // Don't proceed to next step
     }
 
-    // If fixed shape selected at step 2, auto-set unit and measurementOption since those steps are skipped
-    if (openStep === 2 && config.shapeMode === 'fixed') {
+    // If fixed shape selected at step 1, auto-set unit and measurementOption since those steps are skipped
+    if (openStep === 1 && config.shapeMode === 'fixed') {
       if (!config.unit) {
         const autoUnit = config.currency === 'USD' ? 'imperial' : 'metric';
         updateConfig({ unit: autoUnit, measurementOption: 'adjust' });
@@ -2175,7 +2145,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     // If no validation errors, proceed to next step
     const nextStepIndex = getActualNextStep(openStep);
 
-    const stepNames = ['Fabric & Color', 'Style', 'Shape Type', 'Fixing Points', 'Measurement Options', 'Dimensions', 'Fixed Dimensions', 'Hardware Selection', 'Fixed Hardware', 'Review & Purchase'];
+    const stepNames = ['Material & Finish', 'Shape & Size', 'Dimensions', 'Fixed Dimensions', 'Hardware', 'Fixed Hardware', 'Review & Purchase'];
     eventTrackers.stepChange(nextStepIndex, stepNames[nextStepIndex] || `Step ${nextStepIndex}`, 'forward', {
       fabricType: config.fabricType,
       fabricColor: config.fabricColor,
@@ -2192,12 +2162,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
     setTimeout(() => {
       smoothScrollToStep(nextStepIndex);
-    }, (nextStepIndex === 9) ? (isMobile ? 600 : 500) : (isMobile ? 400 : 350));
+    }, (nextStepIndex === 6) ? (isMobile ? 600 : 500) : (isMobile ? 400 : 350));
   };
 
   const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
     const wantsDimensions = options?.navigateToHeights || options?.navigateToDiagonals;
-    const prevStepIndex = wantsDimensions ? 5 : getActualPrevStep(openStep);
+    const prevStepIndex = wantsDimensions ? 2 : getActualPrevStep(openStep);
 
     // Auto-center shape when moving to previous step
     const centeredPoints = centerShape(config.points);
@@ -2240,49 +2210,36 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   const getStepSelection = (step: number): string => {
     switch (step) {
-      case 0: // Fabric & Color
+      case 0: // Material & Finish
         const fabric = FABRICS.find(f => f.id === config.fabricType);
         const colorText = config.fabricColor ? ` - ${config.fabricColor}` : '';
-        return fabric ? `${fabric.label}${colorText}` : 'Not selected';
-      case 1: // Style (Edge Type)
-        return config.edgeType === 'webbing' ? 'Webbing Reinforced' :
-          config.edgeType === 'cabled' ? 'Cabled Edge' : 'Not selected';
-      case 2: // Shape Type
-        if (config.shapeMode === 'custom') return 'Custom Shape';
+        const edgeText = config.edgeType === 'cabled' ? ', Cabled' : config.edgeType === 'webbing' ? ', Webbing' : '';
+        return fabric ? `${fabric.label}${colorText}${edgeText}` : 'Not selected';
+      case 1: // Shape & Size
+        if (config.shapeMode === 'custom') return config.corners ? `Custom - ${config.corners} points` : 'Custom Shape';
         if (config.shapeMode === 'fixed' && config.fixedShapeType) {
           const labels: Record<string, string> = { triangle: 'Triangle', 'right-angle-triangle': 'Right Angle Triangle', square: 'Square', rectangle: 'Rectangle' };
           return `Fixed - ${labels[config.fixedShapeType]}`;
         }
         return 'Not selected';
-      case 3: // Number of Fixing Points (custom)
-        return config.corners ? `${config.corners} fixing points` : 'Not selected';
-      case 4: // Measurement Options (custom)
-        const unitText = config.unit === 'metric' ? 'Metric' : config.unit === 'imperial' ? 'Imperial' : '';
-        const optionText = config.measurementOption === 'adjust' ? 'Adjust to fit' :
-          config.measurementOption === 'exact' ? 'Exact dimensions' : '';
-        if (unitText && optionText) {
-          return `${unitText}, ${optionText}`;
-        } else if (unitText || optionText) {
-          return unitText || optionText;
-        }
-        return 'Not selected';
-      case 5: // Dimensions (custom)
-        const measurementCount = Object.keys(config.measurements).length;
-        let edgeCount = 0;
-        for (let i = 0; i < config.corners; i++) {
-          const nextIndex = (i + 1) % config.corners;
-          const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-          if (config.measurements[edgeKey] && config.measurements[edgeKey] > 0) {
-            edgeCount++;
+      case 2: // Dimensions (custom)
+        {
+          let edgeCount = 0;
+          for (let i = 0; i < config.corners; i++) {
+            const nextIndex = (i + 1) % config.corners;
+            const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
+            if (config.measurements[edgeKey] && config.measurements[edgeKey] > 0) {
+              edgeCount++;
+            }
           }
+          return edgeCount === config.corners ? `${edgeCount} edge measurements entered` : `${edgeCount}/${config.corners} edges measured`;
         }
-        return edgeCount === config.corners ? `${edgeCount} edge measurements entered` : `${edgeCount}/${config.corners} edges measured`;
-      case 6: // Fixed Dimensions
+      case 3: // Fixed Dimensions
         if (config.fixedShapeType && config.measurements['AB'] > 0) {
           return `Dimensions entered`;
         }
         return 'Not entered';
-      case 7: // Hardware Selection (custom)
+      case 4: // Hardware Selection (custom)
         {
           const m = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
           if (m === 'manual') {
@@ -2293,12 +2250,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           if (m === 'none') return 'No hardware';
           return 'Standard hardware pack';
         }
-      case 8: // Fixed Hardware
+      case 5: // Fixed Hardware
         {
           const hasAny = config.cornerHardware && Object.values(config.cornerHardware).some(lines => lines.length > 0);
           return hasAny ? 'Hardware selected' : 'No hardware selected';
         }
-      case 9: // Review
+      case 6: // Review
         return 'Ready for purchase';
       default:
         return 'Not selected';
@@ -2308,53 +2265,30 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Define step titles for navigation with dynamic skipping
   const getNextStepTitle = (currentStep: number): string => {
     const stepSubtitles = [
-      'Fabric & Color',
-      'Style',
-      'Shape Type',
-      'Fixing Points',
-      'Measurement Options',
+      'Material & Finish',
+      'Shape & Size',
       'Dimensions',
       'Dimensions',
-      'Hardware Selection',
+      'Hardware',
       'Hardware',
       'see pricing'
     ];
-
     const actualNextStep = getActualNextStep(currentStep);
-
-    if (actualNextStep === 9) {
-      return 'see pricing';
-    }
-
+    if (actualNextStep === 6) return 'see pricing';
     return stepSubtitles[actualNextStep] || '';
   };
   const shouldShowBackButton = (currentStep: number) => currentStep > 0;
 
   const steps = [
     {
-      title: 'Fabric & Color',
-      subtitle: 'Select your preferred fabric type and color',
-      component: FabricSelectionContent
+      title: 'Material & Finish',
+      subtitle: 'Select fabric, color, and edge finish',
+      component: MaterialFinishContent
     },
     {
-      title: 'Style',
-      subtitle: 'Select edge reinforcement type',
-      component: EdgeTypeContent
-    },
-    {
-      title: 'What Shape?',
+      title: 'Shape & Size',
       subtitle: 'Choose your shade sail shape',
-      component: ShapeTypeContent
-    },
-    {
-      title: 'Number of Fixing Points',
-      subtitle: 'How many fixing points will your shade sail have?',
-      component: CornersContent
-    },
-    {
-      title: 'Measurement Options',
-      subtitle: 'Choose units and measurement handling',
-      component: CombinedMeasurementContent
+      component: ShapeSizeContent
     },
     {
       title: 'Dimensions',
@@ -2367,13 +2301,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       component: FixedShapeDimensionsContent
     },
     {
-      title: 'Hardware Selection',
+      title: 'Hardware',
       subtitle: 'Choose corner hardware',
       component: HardwareContent
     },
     {
       title: 'Hardware',
-      subtitle: 'Add mounting hardware (optional)',
+      subtitle: 'Add mounting hardware (recommended)',
       component: FixedShapeHardwareContent
     },
     {
@@ -2395,7 +2329,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const handleSketchApply = (data: ParsedSketchData) => {
     const corners = data.corners;
 
-    // Generate default polygon points (same logic as CornersContent)
+    // Generate default polygon points
     const centerX = 300;
     const centerY = 300;
     const radius = 160;
@@ -2514,12 +2448,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       }
     }
 
-    // Advance to the Measurement Options step (index 4) so user can choose manufacturing interpretation
-    const measurementOptionsStepIndex = 4;
+    // Advance to the Dimensions step (index 2) so user can review measurements
+    const measurementOptionsStepIndex = 2;
 
-    // Apply all data in one batch - don't pre-select measurementOption so user chooses on step 3
+    // Apply all data in one batch
     updateConfig({
-      step: measurementOptionsStepIndex,
+      step: 2,
+      measurementOption: 'adjust',
       shapeMode: 'custom',
       fixedShapeType: null,
       corners,
@@ -2669,11 +2604,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
         )}
 
-        <div className={`grid grid-cols-1 gap-8 ${(openStep === 5 || openStep === 6 || openStep === 7) ? 'lg:grid-cols-4' : (openStep === 9) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-8 ${(openStep === 2 || openStep === 3 || openStep === 4) ? 'lg:grid-cols-4' : (openStep === 6) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${(openStep === 5 || openStep === 6 || openStep === 7)
+          <div className={`space-y-2 min-h-0 ${(openStep === 2 || openStep === 3 || openStep === 4)
             ? 'lg:col-span-2'
-            : (openStep === 9) ? 'lg:col-span-3' : 'lg:col-span-3'
+            : (openStep === 6) ? 'lg:col-span-3' : 'lg:col-span-3'
             }`}>
             {steps.map((step, index) => {
               const StepComponent = step.component;
@@ -2706,7 +2641,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   selection={selection}
                   onToggle={() => toggleStep(index)}
                 >
-                  {index === 5 && sketchAppliedBanner && isOpen && (
+                  {index === 2 && sketchAppliedBanner && isOpen && (
                     <div className="mx-6 mt-4 mb-0 flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
                       <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2748,7 +2683,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     highlightedCorner={highlightedCorner}
                     setHighlightedCorner={setHighlightedCorner}
                     canvasRef={canvasRef}
-                    ref={index === 9 ? reviewContentRef : undefined}
+                    ref={index === 6 ? reviewContentRef : undefined}
                     fabrics={FABRICS}
                     loading={loading}
                     setLoading={setLoading}
@@ -2756,19 +2691,19 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     onSaveQuote={handleSaveQuote}
                     onSwitchToCustom={() => {
                       const corners = config.corners || (config.fixedShapeType === 'triangle' || config.fixedShapeType === 'right-angle-triangle' ? 3 : 4);
-                      updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust' });
-                      setOpenStep(3);
-                      setConfig(prev => ({ ...prev, step: Math.max(prev.step, 3) }));
+                      updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: 'standard' });
+                      setOpenStep(1);
+                      setConfig(prev => ({ ...prev, step: Math.max(prev.step, 1) }));
                     }}
-                    onSketchApply={index === 3 ? handleSketchApply : undefined}
+                    onSketchApply={index === 1 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
-                    viewMode={index === 9 ? desktopViewMode : undefined}
-                    onViewModeChange={index === 9 ? handleDesktopViewModeChange : undefined}
-                    navigateToHeights={index === 5 ? navigateToHeights : undefined}
-                    setNavigateToHeights={index === 5 ? setNavigateToHeights : undefined}
-                    navigateToDiagonals={index === 5 ? navigateToDiagonals : undefined}
-                    setNavigateToDiagonals={index === 5 ? setNavigateToDiagonals : undefined}
-                    onHeightsSectionChange={index === 5 ? setIsHeightsSectionOpen : undefined}
+                    viewMode={index === 6 ? desktopViewMode : undefined}
+                    onViewModeChange={index === 6 ? handleDesktopViewModeChange : undefined}
+                    navigateToHeights={index === 2 ? navigateToHeights : undefined}
+                    setNavigateToHeights={index === 2 ? setNavigateToHeights : undefined}
+                    navigateToDiagonals={index === 2 ? navigateToDiagonals : undefined}
+                    setNavigateToDiagonals={index === 2 ? setNavigateToDiagonals : undefined}
+                    onHeightsSectionChange={index === 2 ? setIsHeightsSectionOpen : undefined}
                     device3DTier={device3DTier}
                     mobileViewMode={mobileViewMode}
                     onMobileViewModeChange={handleMobileViewModeChange}
@@ -2781,7 +2716,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {(openStep === 5 || openStep === 6 || openStep === 7 || openStep === 8) && !isMobile && (() => {
+          {(openStep === 2 || openStep === 3 || openStep === 4) && !isMobile && (() => {
             const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
             const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
             const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
@@ -2794,7 +2729,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-24 lg:self-start z-10 max-h-[calc(100vh-7rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-slate-900">
-                    {openStep === 7 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
+                    {openStep === 4 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
                   </h4>
                   {desktop3DAvailable && (
                     <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
@@ -2824,14 +2759,14 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   )}
                 </div>
 
-                {openStep === 7 && effectiveDesktopView === 'plan' && (
+                {openStep === 4 && effectiveDesktopView === 'plan' && (
                   <p className="text-sm text-slate-600 mb-3">
                     Hover over a corner below to preview which corner on the sail you are configuring.
                   </p>
                 )}
 
                 {effectiveDesktopView === 'plan' ? (
-                  (openStep === 5 || openStep === 6) ? (
+                  (openStep === 2 || openStep === 3) ? (
                     <div>
                       <ShapeCanvas
                         config={config}
@@ -2884,7 +2819,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         config={config}
                         highlightedMeasurement={highlightedMeasurement}
                         highlightedCorner={highlightedCorner}
-                        activeSection={openStep === 7 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+                        activeSection={openStep === 4 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
                       />
                     </Suspense>
                     <button
@@ -2901,18 +2836,18 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           })()}
 
           {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
-          {(openStep === 9) && (
+          {(openStep === 6) && (
             <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <PriceSummaryDisplay
                 config={config}
                 calculations={calculations}
                 onSaveQuote={handleSaveQuote}
-                allAcknowledgmentsChecked={openStep === 9 ? allAcknowledgmentsChecked : false}
-                canAddToCart={openStep === 9 ? canAddToCart : false}
+                allAcknowledgmentsChecked={openStep === 6 ? allAcknowledgmentsChecked : false}
+                canAddToCart={openStep === 6 ? canAddToCart : false}
                 handleAddToCart={handleAddToCartFromConfigurator}
                 loading={loading}
                 fabrics={FABRICS}
-                isEmailMode={openStep === 9 && hasAllEdgeMeasurements}
+                isEmailMode={openStep === 6 && hasAllEdgeMeasurements}
                 adminMode={adminMode}
               />
             </div>
@@ -2978,7 +2913,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           calculations={calculations}
           currentStep={openStep}
           totalSteps={steps.filter((_, i) => !shouldSkipStep(i)).length}
-          shouldShowEmailOption={openStep === 9 && hasAllEdgeMeasurements}
+          shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
           pricingSnapshot={pricingSettingsMap}
           existingQuoteId={savedQuoteId}
           existingAccessToken={savedAccessToken}
@@ -3027,7 +2962,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             config={config}
             highlightedMeasurement={highlightedMeasurement}
             highlightedCorner={highlightedCorner}
-            activeSection={openStep === 7 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+            activeSection={openStep === 4 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
           />
         </Suspense>
       )}

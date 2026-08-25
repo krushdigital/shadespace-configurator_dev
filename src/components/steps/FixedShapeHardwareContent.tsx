@@ -83,9 +83,9 @@ export function FixedShapeHardwareContent({
   return (
     <div className="p-4 sm:p-6 space-y-4">
       <div>
-        <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Hardware (Optional)</h2>
+        <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Hardware (Recommended)</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Add mounting hardware to your order, or continue without if you already have your own.
+          Add mounting hardware to your order. Skip this if you already have your own.
         </p>
       </div>
 

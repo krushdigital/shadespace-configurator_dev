@@ -31,7 +31,7 @@ const EDGE_OPTIONS = [
   {
     id: 'cabled',
     label: 'Cabled Edge',
-    description: 'Premium cable edge reinforecment.',
+    description: 'Premium cable edge reinforcement.',
     longDescription: 'Experience superior durability and a sleek finish with our Cabled Edge reinforcement. A marine-grade stainless steel cable is expertly integrated along the entire perimeter of the shade sail, allowing for precise tensioning during installation. Each corner features uniquely styled stainless steel D-rings, which not only securely house the cable but also contribute to an exceptionally professional appearance and enormous structural strength.',
     imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.Configurator.webp?v=1784063875'
   },
@@ -61,13 +61,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
   }, [enlargedImage]);
 
   React.useEffect(() => {
-    console.log('[EdgeType] Effect triggered', {
-      isGuidanceActive: mobileGuidance?.isGuidanceActive,
-      edgeType: config.edgeType
-    });
-
     if (mobileGuidance?.isGuidanceActive && config.edgeType) {
-      console.log('[EdgeType] Guiding to continue button');
       mobileGuidance.scrollToElement('continue-button-edge', 400);
       mobileGuidance.setHighlightTarget('continue-button-edge');
     }

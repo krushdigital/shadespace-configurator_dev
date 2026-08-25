@@ -12,7 +12,7 @@ import {
   setStoredUnitPreference
 } from '../../utils/unitAutoSelection';
 import { analytics } from '../../utils/analytics';
-import { getUserCurrencyInfo } from '../../utils/currencyFormatter';
+import { getUserCurrencyInfo, formatCurrency } from '../../utils/currencyFormatter';
 import { supports3DForCorners } from '../../utils/canRender3D';
 
 const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
@@ -240,11 +240,11 @@ export function FixedShapeDimensionsContent({
             <div className="absolute top-2 right-2 z-10 flex gap-1">
               <button
                 onClick={() => setViewMode('plan')}
-                className={`px-2 py-1 text-xs rounded ${viewMode === 'plan' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border'}`}
+                className={`px-4 py-2.5 text-sm font-medium rounded-lg min-h-[44px] ${viewMode === 'plan' ? 'bg-[#01312D] text-white' : 'bg-white text-gray-600 border'}`}
               >Plan</button>
               <button
                 onClick={() => setViewMode('3d')}
-                className={`px-2 py-1 text-xs rounded ${viewMode === '3d' ? 'bg-gray-800 text-white' : 'bg-white text-gray-600 border'}`}
+                className={`px-4 py-2.5 text-sm font-medium rounded-lg min-h-[44px] ${viewMode === '3d' ? 'bg-[#01312D] text-white' : 'bg-white text-gray-600 border'}`}
               >3D</button>
             </div>
           )}
@@ -348,6 +348,14 @@ export function FixedShapeDimensionsContent({
         <ArrowRight className="w-4 h-4" />
         {getCustomSwitchText()} <span className="font-semibold">Switch to Custom Shape</span>
       </button>
+
+      {/* Live price preview */}
+      {isComplete && calculations.totalPrice > 0 && (
+        <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mt-6 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
+          <span className="text-sm font-medium text-[#01312D]">Estimated total</span>
+          <span className="text-lg font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
+        </div>
+      )}
 
       {/* Navigation - matching custom dimensions step */}
       <div className="flex items-center justify-between pt-5 mt-6 border-t border-slate-100">
