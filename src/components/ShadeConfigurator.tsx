@@ -220,15 +220,17 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   // Default the measurement guide to 3D for 3/4-corner sails, and force Plan for
   // 5+ corners (where 3D is temporarily unavailable). A manual toggle sticks.
+  // For fixed shapes, always default to 3D on their dimensions step.
   useEffect(() => {
     if (!supports3DForCorners(config.corners)) {
       setDesktopViewMode('plan');
       setMobileViewMode('plan');
     } else if (!hasUserChosenView.current) {
-      setDesktopViewMode('3d');
+      const isFixed = config.shapeMode === 'fixed';
+      setDesktopViewMode(isFixed || device3DTier !== 'none' ? '3d' : 'plan');
       setMobileViewMode('plan');
     }
-  }, [config.corners, device3DTier]);
+  }, [config.corners, device3DTier, config.shapeMode]);
 
   // Cleanup effect to prevent memory leaks
   useEffect(() => {
@@ -987,10 +989,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     return true;
   }, [config.corners, config.heightsProvidedByUser, config.fixingTypes]);
 
+  const isFixedShapeMode = config.shapeMode === 'fixed';
   const canAddToCart = allDiagonalsEntered &&
-    allAcknowledgmentsChecked &&
+    (isFixedShapeMode || allAcknowledgmentsChecked) &&
     (!heightIsRequiredForCheckout || allHeightsProvided) &&
-    allAttachmentTypesProvided;
+    (isFixedShapeMode || allAttachmentTypesProvided);
 
   // Calculate if all edge measurements are complete
   const hasAllEdgeMeasurements = useMemo(() => {
@@ -2778,7 +2781,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {(openStep === 5 || openStep === 6 || openStep === 7) && !isMobile && (() => {
+          {(openStep === 5 || openStep === 6 || openStep === 7 || openStep === 8) && !isMobile && (() => {
             const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
             const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
             const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;

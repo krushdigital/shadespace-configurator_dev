@@ -90,6 +90,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const addToCartButtonRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
 
+  const isFixedShape = config.shapeMode === 'fixed';
+
   const { fabrics: FABRICS } = useFabricCatalog();
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
   const selectedColor = selectedFabric?.colors.find(c => c.name === config.fabricColor);
@@ -562,8 +564,8 @@ console.log('✌️result --->', result);
         </div>
       )}
       <div className="space-y-6">
-        {/* Configuration Checklist - Desktop only at top */}
-        {!isMobile && (
+        {/* Configuration Checklist - Desktop only at top (hidden for fixed shapes) */}
+        {!isMobile && !isFixedShape && (
           <ConfigurationChecklist
             ref={checklistRef}
             config={config}
@@ -584,7 +586,7 @@ console.log('✌️result --->', result);
         )}
 
         {/* Shape Confidence Score */}
-        {config.corners >= 4 && allDiagonalsEntered && (() => {
+        {!isFixedShape && config.corners >= 4 && allDiagonalsEntered && (() => {
           const confidence = computeShapeConfidence(config.measurements, config.corners, config.fixingHeights);
           if (confidence.status === 'pending') return null;
           const statusColors: Record<string, string> = {
@@ -764,7 +766,7 @@ console.log('✌️result --->', result);
                 )}
                 <div className="flex justify-between">
                   <span className="text-slate-600">Thread:</span>
-                  <span className="font-medium text-slate-900">Sewn with SolarFix® PTFE thread</span>
+                  <span className="font-medium text-slate-900">SolarFix® PTFE</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Corners:</span>
@@ -979,8 +981,8 @@ console.log('✌️result --->', result);
 
           {/* Full-width sections below the two-column grid row */}
           <div className="lg:col-span-4 space-y-4">
-            {/* Hardware & Price Breakdown - Collapsible */}
-            <AccordionItem
+            {/* Hardware & Price Breakdown - Collapsible (hidden for fixed shapes) */}
+            {!isFixedShape && <AccordionItem
               defaultOpen={false}
               trigger={
                 <span className="flex items-center gap-2 text-sm font-semibold">
@@ -1101,7 +1103,7 @@ console.log('✌️result --->', result);
                   <DeliveryEstimate className="mt-3" />
                 </Card>
               </div>
-            </AccordionItem>
+            </AccordionItem>}
 
             {/* Precise Measurements Summary */}
             <div>
@@ -1141,7 +1143,7 @@ console.log('✌️result --->', result);
                         </div>
                       </div>
 
-                      {config.corners >= 4 && diagonalMeasurements.length > 0 && (
+                      {!isFixedShape && config.corners >= 4 && diagonalMeasurements.length > 0 && (
                         <div className="pt-2 border-t border-slate-200">
                           <h6 className="text-xs font-semibold text-slate-700 mb-2">Diagonals</h6>
                           <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
@@ -1201,7 +1203,7 @@ console.log('✌️result --->', result);
                         </div>
                       </div>
 
-                      {config.corners >= 4 && diagonalMeasurements.length > 0 && (
+                      {!isFixedShape && config.corners >= 4 && diagonalMeasurements.length > 0 && (
                         <div>
                           <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths</h6>
                           <div className="space-y-1 text-sm">
@@ -1340,8 +1342,8 @@ console.log('✌️result --->', result);
           />
         )}
 
-        {/* Important Acknowledgments - Full width on desktop */}
-        <Card
+        {/* Important Acknowledgments - Full width on desktop (hidden for fixed shapes) */}
+        {!isFixedShape && <Card
           ref={acknowledgementsCardRef}
           className={`${isMobile ? 'p-3 mt-4' : 'p-6 mt-6'} border-2 transition-all duration-300 ${allAcknowledgmentsChecked
             ? 'bg-emerald-50 border-emerald-200'
@@ -1485,7 +1487,7 @@ console.log('✌️result --->', result);
               </p>
             </div>
           )}
-        </Card>
+        </Card>}
 
         {/* Quality Assurance Note - Moved outside acknowledgments card */}
         {!isMobile && (
