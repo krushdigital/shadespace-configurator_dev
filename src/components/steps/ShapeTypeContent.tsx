@@ -67,6 +67,7 @@ export function ShapeTypeContent({
       shapeMode: 'fixed',
       fixedShapeType: shape,
       corners,
+      measurementOption: 'exact',
       ...(shapeChanged ? { measurements: {}, points: [] } : {}),
     });
   };

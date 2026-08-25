@@ -30,6 +30,8 @@ interface FixedShapeDimensionsContentProps {
   onSwitchToCustom?: () => void;
   isMobile?: boolean;
   device3DTier?: 'high' | 'low' | 'none';
+  setHighlightedMeasurement?: (measurement: string | null) => void;
+  highlightedMeasurement?: string | null;
 }
 
 function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: string]: number }): { x: number; y: number }[] {
@@ -107,6 +109,8 @@ export function FixedShapeDimensionsContent({
   onSwitchToCustom,
   isMobile,
   device3DTier,
+  setHighlightedMeasurement,
+  highlightedMeasurement,
 }: FixedShapeDimensionsContentProps) {
   const shape = config.fixedShapeType;
   if (!shape) return null;
@@ -160,18 +164,18 @@ export function FixedShapeDimensionsContent({
 
   const getEdgeALabel = () => {
     switch (shape) {
-      case 'triangle': return 'Space Edge A → B → C (all equal)';
-      case 'right-angle-triangle': return 'Space Edge A → B (base)';
-      case 'square': return 'Space Edge A → B → C → D (all equal)';
-      case 'rectangle': return 'Space Edge A → B (width)';
+      case 'triangle': return 'Sail Edge A → B → C (all equal)';
+      case 'right-angle-triangle': return 'Sail Edge A → B (base)';
+      case 'square': return 'Sail Edge A → B → C → D (all equal)';
+      case 'rectangle': return 'Sail Edge A → B (width)';
     }
   };
 
   const getEdgeBLabel = () => {
     switch (shape) {
-      case 'right-angle-triangle': return 'Space Edge B → C (height)';
-      case 'rectangle': return 'Space Edge B → C (depth)';
-      default: return 'Space Edge B → C';
+      case 'right-angle-triangle': return 'Sail Edge B → C (height)';
+      case 'rectangle': return 'Sail Edge B → C (depth)';
+      default: return 'Sail Edge B → C';
     }
   };
 
@@ -199,6 +203,8 @@ export function FixedShapeDimensionsContent({
 
   const show3D = device3DTier !== 'none' && supports3DForCorners(config.corners);
 
+  const sailPrice = calculations.totalPrice - (calculations.hardwareCost || 0);
+
   return (
     <div className="p-4 sm:p-6">
       {/* Unit indicator bar - matching custom dimensions step */}
@@ -218,17 +224,17 @@ export function FixedShapeDimensionsContent({
         </button>
       </div>
 
-      {/* Info box - matching custom dimensions step */}
+      {/* Info box */}
       <div className="flex gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl mb-6">
         <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <div>
           <h5 className="text-base font-bold text-blue-900 mb-1">
-            Enter Your Desired Dimensions
+            Enter Your Desired Sail Dimensions
           </h5>
           <p className="text-sm text-blue-800 leading-relaxed">
-            Enter the measurements <strong>between your fixing points</strong>. We'll calculate the perfect sail size to fit your space, accounting for fabric stretch and tensioning hardware.
+            Enter the <strong>finished sail measurements</strong>. These are the actual dimensions of the shade sail itself, not the distance between your fixing points.
           </p>
         </div>
       </div>
@@ -255,23 +261,22 @@ export function FixedShapeDimensionsContent({
               readonly={true}
               unit={unit}
               isMobile={isMobile}
+              measurementOption="exact"
+              highlightedMeasurement={highlightedMeasurement}
             />
           ) : (
             <Suspense fallback={<div className="w-full h-[200px] flex items-center justify-center text-gray-400 text-sm">Loading 3D...</div>}>
               <ShadeSail3DViewer
-                points={config.points}
-                fixingHeights={[]}
-                measurements={config.measurements}
-                corners={config.corners}
-                unit={unit}
-                fabricColor={config.fabricColor}
+                config={config}
+                highlightedMeasurement={highlightedMeasurement}
+                activeSection="dimensions"
               />
             </Suspense>
           )}
         </div>
       )}
 
-      {/* Measurement inputs - styled to match custom dimensions step */}
+      {/* Measurement inputs */}
       <div className="space-y-4">
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">{getEdgeALabel()}</label>
@@ -281,6 +286,8 @@ export function FixedShapeDimensionsContent({
               onChange={handleEdgeAChange}
               placeholder="Enter length"
               error={!!validationErrors['AB']}
+              onFocus={() => setHighlightedMeasurement?.('AB')}
+              onBlur={() => setHighlightedMeasurement?.(null)}
             />
           ) : (
             <div className="relative">
@@ -288,6 +295,8 @@ export function FixedShapeDimensionsContent({
                 type="number"
                 value={edgeADisplay > 0 ? edgeADisplay : ''}
                 onChange={(e) => handleEdgeAChange(parseFloat(e.target.value) || 0)}
+                onFocus={() => setHighlightedMeasurement?.('AB')}
+                onBlur={() => setHighlightedMeasurement?.(null)}
                 placeholder="Enter length in mm"
                 className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['AB'] ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
               />
@@ -310,6 +319,8 @@ export function FixedShapeDimensionsContent({
                 onChange={handleEdgeBChange}
                 placeholder="Enter length"
                 error={!!validationErrors['BC']}
+                onFocus={() => setHighlightedMeasurement?.('BC')}
+                onBlur={() => setHighlightedMeasurement?.(null)}
               />
             ) : (
               <div className="relative">
@@ -317,6 +328,8 @@ export function FixedShapeDimensionsContent({
                   type="number"
                   value={edgeBDisplay > 0 ? edgeBDisplay : ''}
                   onChange={(e) => handleEdgeBChange(parseFloat(e.target.value) || 0)}
+                  onFocus={() => setHighlightedMeasurement?.('BC')}
+                  onBlur={() => setHighlightedMeasurement?.(null)}
                   placeholder="Enter length in mm"
                   className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['BC'] ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
                 />
@@ -349,11 +362,11 @@ export function FixedShapeDimensionsContent({
         {getCustomSwitchText()} <span className="font-semibold">Switch to Custom Shape</span>
       </button>
 
-      {/* Live price preview */}
-      {isComplete && calculations.totalPrice > 0 && (
+      {/* Live price preview - sail only (hardware shown on next step) */}
+      {isComplete && sailPrice > 0 && (
         <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mt-6 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
-          <span className="text-sm font-medium text-[#01312D]">Estimated total</span>
-          <span className="text-lg font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
+          <span className="text-sm font-medium text-[#01312D]">Sail price estimate</span>
+          <span className="text-lg font-bold text-[#01312D]">{formatCurrency(sailPrice, config.currency)}</span>
         </div>
       )}
 

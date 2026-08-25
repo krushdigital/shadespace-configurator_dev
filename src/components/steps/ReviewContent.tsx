@@ -1097,7 +1097,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       </span>
                     </span>
                   }
-                  defaultOpen={false}
+                  defaultOpen={isFixedShape}
                 >
                   <Card className="p-3 mt-2">
                     <div className="space-y-3">
@@ -1149,7 +1149,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 </AccordionItem>
               ) : (
                 <AccordionItem
-                  defaultOpen={false}
+                  defaultOpen={isFixedShape}
                   trigger={
                     <span className="flex items-center gap-2 text-sm font-semibold">
                       <span>Precise Measurements</span>
@@ -1469,8 +1469,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           )}
         </Card>}
 
-        {/* Quality Assurance Note - Moved outside acknowledgments card */}
-        {!isMobile && (
+        {/* Quality Assurance Note - Moved outside acknowledgments card (not needed for fixed shapes) */}
+        {!isMobile && !isFixedShape && (
           <div className="mt-3 px-2">
             <p className="text-sm text-slate-600">
               <svg className="w-4 h-4 inline-block mr-1 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
