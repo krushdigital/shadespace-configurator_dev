@@ -2688,12 +2688,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     loading={loading}
                     setLoading={setLoading}
                     setShowLoadingOverlay={setShowLoadingOverlay}
-                    onSaveQuote={handleSaveQuote}
+                    onSaveQuote={index > 0 ? handleSaveQuote : undefined}
                     onSwitchToCustom={() => {
                       const corners = config.corners || (config.fixedShapeType === 'triangle' || config.fixedShapeType === 'right-angle-triangle' ? 3 : 4);
                       updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: 'standard' });
-                      setOpenStep(1);
-                      setConfig(prev => ({ ...prev, step: Math.max(prev.step, 1) }));
+                      setOpenStep(2);
+                      setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
                     }}
                     onSketchApply={index === 1 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}

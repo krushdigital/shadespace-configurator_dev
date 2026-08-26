@@ -5,7 +5,7 @@ import { Card } from '../ui/Card';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { SketchUploadModal } from '../SketchUploadModal';
 import { ParsedSketchData } from '../../utils/sketchParser';
-import { Triangle, Square, Pentagon, Hexagon, Octagon, Upload, Ruler, Info } from 'lucide-react';
+import { Triangle, Square, Pentagon, Hexagon, Octagon, Upload, Ruler, Info, HelpCircle } from 'lucide-react';
 
 interface ShapeSizeContentProps {
   config: ConfiguratorState;
@@ -447,7 +447,7 @@ export function ShapeSizeContent({
                 key={shape.id}
                 onClick={() => handleSelectFixedShape(shape.id)}
                 aria-label={`Select ${shape.label} shape`}
-                className={`p-3 rounded-lg border-2 transition-all duration-150 text-left h-[72px] ${
+                className={`relative p-3 rounded-lg border-2 transition-all duration-150 text-left h-[56px] ${
                   selectedFixedShape === shape.id
                     ? 'border-[#307C31] bg-[#307C31]/5 shadow-sm'
                     : fixedShapeError
@@ -462,14 +462,18 @@ export function ShapeSizeContent({
                       selectedFixedShape === shape.id ? 'text-[#307C31]' : fixedShapeError ? 'text-red-400' : 'text-[#307C31]/60'
                     }`}
                   />
-                  <div className="min-w-0">
-                    <span className={`text-sm font-medium block ${
-                      selectedFixedShape === shape.id ? 'text-[#01312D]' : 'text-gray-800'
-                    }`}>
-                      {shape.label}
+                  <span className={`text-sm font-medium ${
+                    selectedFixedShape === shape.id ? 'text-[#01312D]' : 'text-gray-800'
+                  }`}>
+                    {shape.label}
+                  </span>
+                  <span className="group/tip ml-auto flex-shrink-0 relative">
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                    <span className="pointer-events-none absolute bottom-full right-0 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg opacity-0 group-hover/tip:opacity-100 transition-opacity z-20">
+                      {shape.description}
+                      <span className="absolute top-full right-3 -mt-1 border-4 border-transparent border-t-gray-900" />
                     </span>
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">{shape.description}</p>
-                  </div>
+                  </span>
                 </div>
               </button>
             ))}
