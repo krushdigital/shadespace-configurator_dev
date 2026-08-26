@@ -139,23 +139,36 @@ export function FixedShapeDimensionsContent({
     const mm = Math.round(convertUnitToMm(value, unit));
     if (mm <= 0) return;
     const newMeasurements = computeFixedShapeMeasurements(shape, mm, edgeBMm || mm);
-    const points = generateFixedShapePoints(shape, newMeasurements);
-    updateConfig({ measurements: newMeasurements, points });
+    if (shape === 'rectangle' && mm > 0 && edgeBMm > 0) {
+      const points = generateFixedShapePoints(shape, newMeasurements);
+      updateConfig({ measurements: newMeasurements, points });
+    } else {
+      updateConfig({ measurements: newMeasurements });
+    }
   }, [shape, unit, edgeBMm, updateConfig]);
 
   const handleEdgeBChange = useCallback((value: number) => {
     const mm = Math.round(convertUnitToMm(value, unit));
     if (mm <= 0) return;
     const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm || mm, mm);
-    const points = generateFixedShapePoints(shape, newMeasurements);
-    updateConfig({ measurements: newMeasurements, points });
+    if (shape === 'rectangle' && edgeAMm > 0 && mm > 0) {
+      const points = generateFixedShapePoints(shape, newMeasurements);
+      updateConfig({ measurements: newMeasurements, points });
+    } else {
+      updateConfig({ measurements: newMeasurements });
+    }
   }, [shape, unit, edgeAMm, updateConfig]);
 
   useEffect(() => {
     if (edgeAMm > 0) {
       const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, edgeBMm || edgeAMm);
-      const points = generateFixedShapePoints(shape, newMeasurements);
-      updateConfig({ measurements: newMeasurements, points });
+      if (shape === 'rectangle' && edgeAMm > 0 && edgeBMm > 0) {
+        const points = generateFixedShapePoints(shape, newMeasurements);
+        updateConfig({ measurements: newMeasurements, points });
+      } else {
+        const defaultPoints = generateFixedShapePoints(shape, {});
+        updateConfig({ measurements: newMeasurements, points: defaultPoints });
+      }
     } else if (!config.points || config.points.length === 0) {
       const defaultPoints = generateFixedShapePoints(shape, {});
       updateConfig({ points: defaultPoints });

@@ -1301,8 +1301,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </Card>
         )}
 
-        {/* Configuration Checklist - Mobile only after price */}
-        {isMobile && (
+        {/* Configuration Checklist - Mobile only after price (hidden for fixed shapes) */}
+        {isMobile && !isFixedShape && (
           <ConfigurationChecklist
             ref={checklistRef}
             config={config}
