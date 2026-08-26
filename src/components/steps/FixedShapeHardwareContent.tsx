@@ -232,6 +232,7 @@ export function FixedShapeHardwareContent({
         onConfirm={confirmSelection}
         currency={currency}
         pricingSettingsMap={pricingSettingsMap}
+        isWholeKit
       />
     </div>
   );

@@ -22,6 +22,7 @@ interface HardwareSelectionModalProps {
   onConfirm: (selection: CornerHardwareLine[], applyToAll: boolean) => void;
   currency: string;
   pricingSettingsMap?: Record<string, PricingSetting>;
+  isWholeKit?: boolean;
 }
 
 interface DraftLine {
@@ -40,6 +41,7 @@ export function HardwareSelectionModal({
   onConfirm,
   currency,
   pricingSettingsMap,
+  isWholeKit,
 }: HardwareSelectionModalProps) {
   const [query, setQuery] = useState('');
   const [draft, setDraft] = useState<Map<string, DraftLine>>(new Map());
@@ -173,11 +175,11 @@ export function HardwareSelectionModal({
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#01312D] text-white font-bold">
-              {cornerLetter}
+              {isWholeKit ? <Wrench className="h-5 w-5" /> : cornerLetter}
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-bold text-slate-900">Corner {cornerLetter} Hardware</h2>
-              <p className="text-xs text-slate-500">Select hardware items for this corner</p>
+              <h2 className="text-lg font-bold text-slate-900">{isWholeKit ? 'Sail Hardware' : `Corner ${cornerLetter} Hardware`}</h2>
+              <p className="text-xs text-slate-500">{isWholeKit ? 'Select hardware items for your sail' : 'Select hardware items for this corner'}</p>
             </div>
           </div>
           <button
@@ -398,10 +400,10 @@ export function HardwareSelectionModal({
 
         <div className="border-t border-slate-100 bg-slate-50 px-5 py-3">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-semibold text-slate-700">Corner total:</span>
+            <span className="font-semibold text-slate-700">{isWholeKit ? 'Hardware total:' : 'Corner total:'}</span>
             <span className="text-lg font-bold text-[#D97706]">{formatCurrency(cornerTotalDisplay, currency)}</span>
           </div>
-          {totalCorners > 1 && (
+          {!isWholeKit && totalCorners > 1 && (
             <label className="mb-2 flex items-center gap-2 text-xs text-slate-700">
               <input
                 type="checkbox"
