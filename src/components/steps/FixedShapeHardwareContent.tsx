@@ -202,16 +202,20 @@ export function FixedShapeHardwareContent({
       )}
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center gap-2">
-          {showBackButton && (
-            <Button variant="outline" onClick={onPrev} className="text-sm">
-              Back
-            </Button>
-          )}
-          {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} />}
-        </div>
-        <Button onClick={onNext} className="text-sm">
+      <div className="flex flex-col gap-3 pt-4 border-t border-gray-100">
+        {(showBackButton || onSaveQuote) && (
+          <div className="grid grid-cols-2 gap-2">
+            {showBackButton && (
+              <Button variant="outline" onClick={onPrev} className="text-sm w-full">
+                Back
+              </Button>
+            )}
+            {onSaveQuote && (
+              <SaveProgressButton onClick={onSaveQuote} className="w-full" />
+            )}
+          </div>
+        )}
+        <Button onClick={onNext} className="text-sm w-full">
           Continue{nextStepTitle ? ` → ${nextStepTitle}` : ''}
         </Button>
       </div>

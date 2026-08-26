@@ -203,7 +203,7 @@ export function FixedShapeDimensionsContent({
 
   const show3D = device3DTier !== 'none' && supports3DForCorners(config.corners);
 
-  const sailPrice = calculations.totalPrice - (calculations.hardwareCost || 0);
+  const sailPrice = calculations.totalPrice - (calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0);
 
   return (
     <div className="p-4 sm:p-6">
@@ -241,7 +241,7 @@ export function FixedShapeDimensionsContent({
 
       {/* Mobile-only shape preview (desktop uses sticky sidebar) */}
       {isMobile && (
-        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 mb-6" style={{ minHeight: 200 }}>
+        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 mb-6" style={{ minHeight: 200, maxHeight: 280 }}>
           {show3D && (
             <div className="absolute top-2 right-2 z-10 flex gap-1">
               <button
@@ -370,20 +370,24 @@ export function FixedShapeDimensionsContent({
         </div>
       )}
 
-      {/* Navigation - matching custom dimensions step */}
-      <div className="flex items-center justify-between pt-5 mt-6 border-t border-slate-100">
-        <div className="flex items-center gap-2">
-          {showBackButton && (
-            <Button variant="outline" onClick={onPrev} className="text-sm">
-              Back
-            </Button>
-          )}
-          {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} />}
-        </div>
+      {/* Navigation */}
+      <div className="flex flex-col gap-3 pt-5 mt-6 border-t border-slate-100">
+        {(showBackButton || onSaveQuote) && (
+          <div className="grid grid-cols-2 gap-2">
+            {showBackButton && (
+              <Button variant="outline" onClick={onPrev} className="text-sm w-full">
+                Back
+              </Button>
+            )}
+            {onSaveQuote && (
+              <SaveProgressButton onClick={onSaveQuote} className="w-full" />
+            )}
+          </div>
+        )}
         <Button
           onClick={onNext}
           disabled={!isComplete}
-          className="text-sm"
+          className="text-sm w-full"
         >
           Continue{nextStepTitle ? ` → ${nextStepTitle}` : ''}
         </Button>
