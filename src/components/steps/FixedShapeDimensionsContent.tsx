@@ -51,7 +51,7 @@ function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: s
     }
     case 'right-angle-triangle': {
       const a = (measurements['AB'] || 3000) * scale;
-      const b = (measurements['BC'] || 3000) * scale;
+      const b = (measurements['CA'] || 3000) * scale;
       return [
         { x: cx - a / 2, y: cy + b / 3 },
         { x: cx - a / 2, y: cy - 2 * b / 3 },
@@ -87,7 +87,7 @@ function computeFixedShapeMeasurements(shape: FixedShapeType, edgeA: number, edg
       return { AB: edgeA, BC: edgeA, CA: edgeA };
     case 'right-angle-triangle': {
       const hypotenuse = Math.sqrt(edgeA * edgeA + edgeB * edgeB);
-      return { AB: edgeA, BC: edgeB, CA: Math.round(hypotenuse) };
+      return { AB: edgeA, BC: Math.round(hypotenuse), CA: edgeB };
     }
     case 'square':
       return { AB: edgeA, BC: edgeA, CD: edgeA, DA: edgeA };
@@ -130,7 +130,7 @@ export function FixedShapeDimensionsContent({
   const needsTwoInputs = shape === 'right-angle-triangle' || shape === 'rectangle';
 
   const edgeAMm = config.measurements['AB'] || 0;
-  const edgeBMm = config.measurements['BC'] || 0;
+  const edgeBMm = shape === 'right-angle-triangle' ? (config.measurements['CA'] || 0) : (config.measurements['BC'] || 0);
 
   const edgeADisplay = edgeAMm > 0 ? convertMmToUnit(edgeAMm, unit) : 0;
   const edgeBDisplay = edgeBMm > 0 ? convertMmToUnit(edgeBMm, unit) : 0;
@@ -186,7 +186,7 @@ export function FixedShapeDimensionsContent({
 
   const getEdgeBLabel = () => {
     switch (shape) {
-      case 'right-angle-triangle': return 'Sail Edge B → C (height)';
+      case 'right-angle-triangle': return 'Sail Edge A → C (height)';
       case 'rectangle': return 'Sail Edge B → C (depth)';
       default: return 'Sail Edge B → C';
     }
@@ -195,7 +195,7 @@ export function FixedShapeDimensionsContent({
   const getCalculatedLabel = () => {
     if (shape === 'right-angle-triangle' && edgeAMm > 0 && edgeBMm > 0) {
       const hyp = Math.sqrt(edgeAMm * edgeAMm + edgeBMm * edgeBMm);
-      return `Edge C → A (hypotenuse): ${formatMeasurement(hyp, unit)}`;
+      return `Edge B → C (hypotenuse): ${formatMeasurement(hyp, unit)}`;
     }
     return null;
   };
@@ -238,23 +238,26 @@ export function FixedShapeDimensionsContent({
       </div>
 
       {/* Info box */}
-      <div className="flex gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl mb-6">
-        <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="flex gap-3 p-3 sm:p-4 bg-blue-50 border border-blue-100 rounded-xl mb-4 sm:mb-6">
+        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <div>
-          <h5 className="text-base font-bold text-blue-900 mb-1">
+          <h5 className="text-sm sm:text-base font-bold text-blue-900 sm:mb-1">
             Enter Your Desired Sail Dimensions
           </h5>
-          <p className="text-sm text-blue-800 leading-relaxed">
+          <p className="hidden sm:block text-sm text-blue-800 leading-relaxed">
             Enter the <strong>finished sail measurements</strong>. These are the actual dimensions of the shade sail itself, not the distance between your fixing points.
+          </p>
+          <p className="sm:hidden text-xs text-blue-800">
+            The finished sail size, not fixing point distance.
           </p>
         </div>
       </div>
 
       {/* Mobile-only shape preview (desktop uses sticky sidebar) */}
       {isMobile && (
-        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 mb-6" style={{ minHeight: 200, maxHeight: 280 }}>
+        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 mb-6" style={{ minHeight: 220, maxHeight: 360 }}>
           {show3D && (
             <div className="absolute top-2 right-2 z-10 flex gap-1">
               <button
@@ -331,8 +334,8 @@ export function FixedShapeDimensionsContent({
                 value={edgeBDisplay}
                 onChange={handleEdgeBChange}
                 placeholder="Enter length"
-                error={!!validationErrors['BC']}
-                onFocus={() => setHighlightedMeasurement?.('BC')}
+                error={!!(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC'])}
+                onFocus={() => setHighlightedMeasurement?.(shape === 'right-angle-triangle' ? 'CA' : 'BC')}
                 onBlur={() => setHighlightedMeasurement?.(null)}
               />
             ) : (
@@ -341,10 +344,10 @@ export function FixedShapeDimensionsContent({
                   type="number"
                   value={edgeBDisplay > 0 ? edgeBDisplay : ''}
                   onChange={(e) => handleEdgeBChange(parseFloat(e.target.value) || 0)}
-                  onFocus={() => setHighlightedMeasurement?.('BC')}
+                  onFocus={() => setHighlightedMeasurement?.(shape === 'right-angle-triangle' ? 'CA' : 'BC')}
                   onBlur={() => setHighlightedMeasurement?.(null)}
                   placeholder="Enter length in mm"
-                  className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['BC'] ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
+                  className={`w-full px-4 py-3 rounded-xl border-2 ${(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']) ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
                 />
                 {edgeBMm > 0 && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
@@ -353,7 +356,11 @@ export function FixedShapeDimensionsContent({
                 )}
               </div>
             )}
-            {validationErrors['BC'] && <p className="mt-1.5 text-xs text-red-600 font-medium">{validationErrors['BC']}</p>}
+            {(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']) && (
+              <p className="mt-1.5 text-xs text-red-600 font-medium">
+                {shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']}
+              </p>
+            )}
           </div>
         )}
 

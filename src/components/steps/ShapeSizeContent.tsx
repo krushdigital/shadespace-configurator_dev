@@ -5,7 +5,7 @@ import { Card } from '../ui/Card';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { SketchUploadModal } from '../SketchUploadModal';
 import { ParsedSketchData } from '../../utils/sketchParser';
-import { Triangle, Square, Pentagon, Hexagon, Octagon, Upload, Ruler } from 'lucide-react';
+import { Triangle, Square, Pentagon, Hexagon, Octagon, Upload, Ruler, Info } from 'lucide-react';
 
 interface ShapeSizeContentProps {
   config: ConfiguratorState;
@@ -152,6 +152,8 @@ export function ShapeSizeContent({
   const [showSketchModal, setShowSketchModal] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showSketchInfo, setShowSketchInfo] = useState(false);
+  const [fixedShapeError, setFixedShapeError] = useState(false);
 
   const selectedMode = config.shapeMode || null;
   const selectedFixedShape = config.fixedShapeType || null;
@@ -188,6 +190,7 @@ export function ShapeSizeContent({
   };
 
   const handleSelectFixedShape = (shape: FixedShapeType) => {
+    setFixedShapeError(false);
     const corners = FIXED_SHAPES.find(s => s.id === shape)!.corners;
     const shapeChanged = shape !== config.fixedShapeType;
     updateConfig({
@@ -327,9 +330,37 @@ export function ShapeSizeContent({
           {/* Sketch Upload Card */}
           {onSketchApply && (
             <div>
+              {/* Mobile: compact single-line row */}
+              <div
+                className="sm:hidden group cursor-pointer border-2 border-dashed border-[#307C31]/40 hover:border-[#307C31] bg-[#307C31]/5 hover:bg-[#307C31]/10 rounded-xl px-4 py-3 transition-all duration-200"
+              >
+                <div className="flex items-center gap-3">
+                  <Upload className="w-5 h-5 text-[#307C31] flex-shrink-0" />
+                  <span
+                    onClick={() => setShowSketchModal(true)}
+                    className="text-sm font-semibold text-[#01312D] flex-1"
+                  >
+                    Have a sketch? <span className="underline">Upload it</span>
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowSketchInfo(!showSketchInfo); }}
+                    className="w-7 h-7 rounded-full bg-[#307C31]/10 flex items-center justify-center flex-shrink-0"
+                    aria-label="More info about sketch upload"
+                  >
+                    <Info className="w-3.5 h-3.5 text-[#307C31]" />
+                  </button>
+                </div>
+                {showSketchInfo && (
+                  <p className="mt-2 text-xs text-slate-600 pl-8">
+                    Upload your sketch and we'll auto-fill all dimensions for you.
+                  </p>
+                )}
+              </div>
+
+              {/* Desktop: full-size card */}
               <div
                 onClick={() => setShowSketchModal(true)}
-                className="group cursor-pointer border-2 border-dashed border-[#307C31]/40 hover:border-[#307C31] bg-[#307C31]/5 hover:bg-[#307C31]/10 rounded-xl p-5 transition-all duration-200"
+                className="hidden sm:block group cursor-pointer border-2 border-dashed border-[#307C31]/40 hover:border-[#307C31] bg-[#307C31]/5 hover:bg-[#307C31]/10 rounded-xl p-5 transition-all duration-200"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-[#307C31]/15 flex items-center justify-center flex-shrink-0 group-hover:bg-[#307C31]/25 transition-colors">
@@ -351,7 +382,7 @@ export function ShapeSizeContent({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 my-5">
+              <div className="hidden sm:flex items-center gap-3 my-5">
                 <div className="flex-1 h-px bg-slate-200" />
                 <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Or select your shape below</span>
                 <div className="flex-1 h-px bg-slate-200" />
@@ -407,28 +438,37 @@ export function ShapeSizeContent({
       {selectedMode === 'fixed' && (
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Select shape</p>
+          {fixedShapeError && (
+            <p className="text-xs text-red-600 font-medium mb-2">Please select a shape to continue</p>
+          )}
           <div className="grid grid-cols-2 gap-2.5">
             {FIXED_SHAPES.map(shape => (
               <button
                 key={shape.id}
                 onClick={() => handleSelectFixedShape(shape.id)}
                 aria-label={`Select ${shape.label} shape`}
-                className={`p-3 rounded-lg border-2 transition-all duration-150 text-left ${
+                className={`p-3 rounded-lg border-2 transition-all duration-150 text-left h-[72px] ${
                   selectedFixedShape === shape.id
                     ? 'border-[#307C31] bg-[#307C31]/5 shadow-sm'
-                    : 'border-gray-200 hover:border-[#307C31]/40 hover:bg-[#307C31]/5'
+                    : fixedShapeError
+                    ? 'border-red-400 bg-red-50 hover:border-red-500 animate-[pulse-error_0.8s_ease-in-out_3]'
+                    : 'border-[#307C31]/20 bg-[#307C31]/[0.02] hover:border-[#307C31]/40 hover:bg-[#307C31]/5'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <ShapeIcon
                     shape={shape.id}
-                    className={`w-6 h-6 ${selectedFixedShape === shape.id ? 'text-[#307C31]' : 'text-gray-500'}`}
+                    className={`w-6 h-6 flex-shrink-0 ${
+                      selectedFixedShape === shape.id ? 'text-[#307C31]' : fixedShapeError ? 'text-red-400' : 'text-[#307C31]/60'
+                    }`}
                   />
-                  <div>
-                    <span className={`text-sm font-medium ${selectedFixedShape === shape.id ? 'text-[#01312D]' : 'text-gray-800'}`}>
+                  <div className="min-w-0">
+                    <span className={`text-sm font-medium block ${
+                      selectedFixedShape === shape.id ? 'text-[#01312D]' : 'text-gray-800'
+                    }`}>
                       {shape.label}
                     </span>
-                    <p className="text-xs text-gray-500 mt-0.5">{shape.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{shape.description}</p>
                   </div>
                 </div>
               </button>
@@ -475,6 +515,10 @@ export function ShapeSizeContent({
             <div className="energy-border-chase-btn w-full" id="continue-button-shape-size" data-guidance-id="continue-button-shape-size">
               <Button
                 onClick={() => {
+                  if (selectedMode === 'fixed' && !selectedFixedShape) {
+                    setFixedShapeError(true);
+                    return;
+                  }
                   mobileGuidance?.clearHighlight();
                   onNext();
                 }}
@@ -490,6 +534,10 @@ export function ShapeSizeContent({
           ) : (
             <Button
               onClick={() => {
+                if (selectedMode === 'fixed' && !selectedFixedShape) {
+                  setFixedShapeError(true);
+                  return;
+                }
                 mobileGuidance?.clearHighlight();
                 onNext();
               }}
@@ -528,6 +576,10 @@ export function ShapeSizeContent({
             <div className="energy-border-chase-btn flex-1" id="continue-button-shape-size" data-guidance-id="continue-button-shape-size">
               <Button
                 onClick={() => {
+                  if (selectedMode === 'fixed' && !selectedFixedShape) {
+                    setFixedShapeError(true);
+                    return;
+                  }
                   mobileGuidance?.clearHighlight();
                   onNext();
                 }}
@@ -543,6 +595,10 @@ export function ShapeSizeContent({
           ) : (
             <Button
               onClick={() => {
+                if (selectedMode === 'fixed' && !selectedFixedShape) {
+                  setFixedShapeError(true);
+                  return;
+                }
                 mobileGuidance?.clearHighlight();
                 onNext();
               }}
