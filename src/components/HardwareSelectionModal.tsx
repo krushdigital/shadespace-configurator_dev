@@ -220,7 +220,7 @@ export function HardwareSelectionModal({
                   return (
                     <div
                       key={item.id}
-                      className={`flex items-center gap-2 sm:gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
+                      className={`rounded-xl border px-3 py-2.5 transition-colors ${
                         selected ? 'border-[#307C31]/60 bg-[#307C31]/5' : 'border-slate-100 hover:bg-slate-50'
                       }`}
                       onMouseEnter={e => {
@@ -229,62 +229,71 @@ export function HardwareSelectionModal({
                       }}
                       onMouseLeave={() => setHoverItem(prev => (prev?.id === item.id ? null : prev))}
                     >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() => toggle(item)}
-                        className="h-5 w-5 flex-shrink-0 rounded border-slate-300 text-[#307C31] focus:ring-[#307C31]"
-                      />
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
-                        {item.image_url ? (
-                          <img src={item.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                        ) : (
-                          <Wrench className="h-4 w-4 text-slate-400" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggle(item)}
+                          className="h-5 w-5 flex-shrink-0 rounded border-slate-300 text-[#307C31] focus:ring-[#307C31]"
+                        />
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                          {item.image_url ? (
+                            <img src={item.image_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                          ) : (
+                            <Wrench className="h-4 w-4 text-slate-400" />
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggle(item)}
+                          className="flex-1 min-w-0 text-left"
+                        >
+                          <div className="text-sm font-semibold text-slate-900 leading-tight line-clamp-2">{item.name}</div>
+                          <div className="text-[11px] text-slate-500 line-clamp-1">{item.short_description || item.material}</div>
+                        </button>
+                        {!selected && (
+                          <div className="flex-shrink-0 text-right text-sm font-bold text-[#D97706]">
+                            {formatCurrency(displayPrice, currency)}
+                          </div>
                         )}
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setDetailItem(item);
+                          }}
+                          aria-label={`More info about ${item.name}`}
+                          className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#01312D] lg:hidden"
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => toggle(item)}
-                        className="flex-1 text-left"
-                      >
-                        <div className="text-sm font-semibold text-slate-900 leading-tight line-clamp-1">{item.name}</div>
-                        <div className="text-[11px] text-slate-500 line-clamp-1">{item.short_description || item.material}</div>
-                      </button>
                       {selected && draftLine && (
-                        <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-1 py-0.5">
-                          <button
-                            type="button"
-                            onClick={() => changeQty(item.id, -1)}
-                            className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="min-w-[20px] text-center text-sm font-semibold text-slate-800">{draftLine.qty}</span>
-                          <button
-                            type="button"
-                            onClick={() => changeQty(item.id, 1)}
-                            className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
+                        <div className="flex items-center justify-between mt-2 ml-[68px] sm:ml-[76px]">
+                          <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white px-1 py-0.5">
+                            <button
+                              type="button"
+                              onClick={() => changeQty(item.id, -1)}
+                              className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </button>
+                            <span className="min-w-[20px] text-center text-sm font-semibold text-slate-800">{draftLine.qty}</span>
+                            <button
+                              type="button"
+                              onClick={() => changeQty(item.id, 1)}
+                              className="flex h-6 w-6 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <div className="text-sm font-bold text-[#D97706]">
+                            {formatCurrency(displayPrice * draftLine.qty, currency)}
+                          </div>
                         </div>
                       )}
-                      <div className="flex-shrink-0 text-right text-sm font-bold text-[#D97706]">
-                        {formatCurrency(displayPrice, currency)}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={e => {
-                          e.stopPropagation();
-                          setDetailItem(item);
-                        }}
-                        aria-label={`More info about ${item.name}`}
-                        className="flex-shrink-0 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-[#01312D] lg:hidden"
-                      >
-                        <Info className="h-4 w-4" />
-                      </button>
                     </div>
                   );
                 })}

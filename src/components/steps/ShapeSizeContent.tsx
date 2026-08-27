@@ -447,7 +447,7 @@ export function ShapeSizeContent({
                 key={shape.id}
                 onClick={() => handleSelectFixedShape(shape.id)}
                 aria-label={`Select ${shape.label} shape`}
-                className={`relative p-3 rounded-lg border-2 transition-all duration-150 text-left h-[56px] ${
+                className={`relative p-3 rounded-lg border-2 transition-all duration-150 text-left min-h-[52px] ${
                   selectedFixedShape === shape.id
                     ? 'border-[#307C31] bg-[#307C31]/5 shadow-sm'
                     : fixedShapeError
@@ -455,20 +455,20 @@ export function ShapeSizeContent({
                     : 'border-[#307C31]/20 bg-[#307C31]/[0.02] hover:border-[#307C31]/40 hover:bg-[#307C31]/5'
                 }`}
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   <ShapeIcon
                     shape={shape.id}
-                    className={`w-6 h-6 flex-shrink-0 ${
+                    className={`w-5 h-5 flex-shrink-0 ${
                       selectedFixedShape === shape.id ? 'text-[#307C31]' : fixedShapeError ? 'text-red-400' : 'text-[#307C31]/60'
                     }`}
                   />
-                  <span className={`text-sm font-medium ${
+                  <span className={`flex-1 min-w-0 text-[13px] font-medium leading-tight ${
                     selectedFixedShape === shape.id ? 'text-[#01312D]' : 'text-gray-800'
                   }`}>
                     {shape.label}
                   </span>
-                  <span className="group/tip ml-auto flex-shrink-0 relative">
-                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  <span className="group/tip flex-shrink-0 relative">
+                    <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                     <span className="pointer-events-none absolute bottom-full right-0 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap shadow-lg opacity-0 group-hover/tip:opacity-100 transition-opacity z-20">
                       {shape.description}
                       <span className="absolute top-full right-3 -mt-1 border-4 border-transparent border-t-gray-900" />

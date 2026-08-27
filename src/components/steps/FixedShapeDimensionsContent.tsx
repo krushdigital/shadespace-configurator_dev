@@ -35,32 +35,39 @@ interface FixedShapeDimensionsContentProps {
 }
 
 function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: string]: number }): { x: number; y: number }[] {
-  const scale = 0.05;
   const cx = 300, cy = 300;
+  const maxSpan = 400;
 
   switch (shape) {
     case 'triangle': {
       const edge = measurements['AB'] || 3000;
-      const s = edge * scale;
+      const s = edge;
       const h = (s * Math.sqrt(3)) / 2;
+      const scale = maxSpan / Math.max(s, h);
+      const sw = s * scale;
+      const sh = h * scale;
       return [
-        { x: cx, y: cy - h * 0.6 },
-        { x: cx + s / 2, y: cy + h * 0.4 },
-        { x: cx - s / 2, y: cy + h * 0.4 },
+        { x: cx, y: cy - sh * 0.6 },
+        { x: cx + sw / 2, y: cy + sh * 0.4 },
+        { x: cx - sw / 2, y: cy + sh * 0.4 },
       ];
     }
     case 'right-angle-triangle': {
-      const a = (measurements['AB'] || 3000) * scale;
-      const b = (measurements['CA'] || 3000) * scale;
+      const a = measurements['AB'] || 3000;
+      const b = measurements['CA'] || 3000;
+      const scale = maxSpan / Math.max(a, b);
+      const sw = a * scale;
+      const sh = b * scale;
       return [
-        { x: cx - a / 2, y: cy + b / 3 },
-        { x: cx - a / 2, y: cy - 2 * b / 3 },
-        { x: cx + a / 2, y: cy + b / 3 },
+        { x: cx - sw / 2, y: cy + sh / 2 },
+        { x: cx - sw / 2, y: cy - sh / 2 },
+        { x: cx + sw / 2, y: cy + sh / 2 },
       ];
     }
     case 'square': {
-      const s = (measurements['AB'] || 3000) * scale;
-      const half = s / 2;
+      const s = (measurements['AB'] || 3000);
+      const scale = maxSpan / s;
+      const half = (s * scale) / 2;
       return [
         { x: cx - half, y: cy - half },
         { x: cx + half, y: cy - half },
@@ -69,13 +76,16 @@ function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: s
       ];
     }
     case 'rectangle': {
-      const w = (measurements['AB'] || 4000) * scale;
-      const h = (measurements['BC'] || 3000) * scale;
+      const w = measurements['AB'] || 4000;
+      const h = measurements['BC'] || 3000;
+      const scale = maxSpan / Math.max(w, h);
+      const sw = w * scale;
+      const sh = h * scale;
       return [
-        { x: cx - w / 2, y: cy - h / 2 },
-        { x: cx + w / 2, y: cy - h / 2 },
-        { x: cx + w / 2, y: cy + h / 2 },
-        { x: cx - w / 2, y: cy + h / 2 },
+        { x: cx - sw / 2, y: cy - sh / 2 },
+        { x: cx + sw / 2, y: cy - sh / 2 },
+        { x: cx + sw / 2, y: cy + sh / 2 },
+        { x: cx - sw / 2, y: cy + sh / 2 },
       ];
     }
   }
