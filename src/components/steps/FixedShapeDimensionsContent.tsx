@@ -148,29 +148,37 @@ export function FixedShapeDimensionsContent({
   const handleEdgeAChange = useCallback((value: number) => {
     const mm = Math.round(convertUnitToMm(value, unit));
     if (mm <= 0) return;
-    const newMeasurements = computeFixedShapeMeasurements(shape, mm, edgeBMm || mm);
-    const points = generateFixedShapePoints(shape, newMeasurements);
-    updateConfig({ measurements: newMeasurements, points });
+    if (edgeBMm > 0) {
+      const newMeasurements = computeFixedShapeMeasurements(shape, mm, edgeBMm);
+      const points = generateFixedShapePoints(shape, newMeasurements);
+      updateConfig({ measurements: newMeasurements, points });
+    } else {
+      const depthForVisual = Math.round(mm * 0.75);
+      const visualMeasurements = computeFixedShapeMeasurements(shape, mm, depthForVisual);
+      const points = generateFixedShapePoints(shape, visualMeasurements);
+      updateConfig({ measurements: { AB: mm }, points });
+    }
   }, [shape, unit, edgeBMm, updateConfig]);
 
   const handleEdgeBChange = useCallback((value: number) => {
     const mm = Math.round(convertUnitToMm(value, unit));
     if (mm <= 0) return;
-    const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm || mm, mm);
+    const width = edgeAMm || mm;
+    const newMeasurements = computeFixedShapeMeasurements(shape, width, mm);
     const points = generateFixedShapePoints(shape, newMeasurements);
     updateConfig({ measurements: newMeasurements, points });
   }, [shape, unit, edgeAMm, updateConfig]);
 
   useEffect(() => {
-    if (edgeAMm > 0) {
-      const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, edgeBMm || edgeAMm);
-      if (shape === 'rectangle' && edgeAMm > 0 && edgeBMm > 0) {
-        const points = generateFixedShapePoints(shape, newMeasurements);
-        updateConfig({ measurements: newMeasurements, points });
-      } else {
-        const defaultPoints = generateFixedShapePoints(shape, {});
-        updateConfig({ measurements: newMeasurements, points: defaultPoints });
-      }
+    if (edgeAMm > 0 && edgeBMm > 0) {
+      const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, edgeBMm);
+      const points = generateFixedShapePoints(shape, newMeasurements);
+      updateConfig({ measurements: newMeasurements, points });
+    } else if (edgeAMm > 0) {
+      const depthForVisual = Math.round(edgeAMm * 0.75);
+      const visualMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, depthForVisual);
+      const points = generateFixedShapePoints(shape, visualMeasurements);
+      updateConfig({ measurements: { AB: edgeAMm }, points });
     } else if (!config.points || config.points.length === 0) {
       const defaultPoints = generateFixedShapePoints(shape, {});
       updateConfig({ points: defaultPoints });
