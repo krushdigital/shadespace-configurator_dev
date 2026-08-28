@@ -198,6 +198,7 @@ export function ShapeSizeContent({
         measurementOption: 'adjust',
         hardwareSelectionMode: 'standard',
       });
+      mobileGuidance?.scrollToElement('fixing-points-section', 300);
     } else {
       const shapeChanged = tile.id !== config.fixedShapeType;
       updateConfig({
@@ -208,6 +209,7 @@ export function ShapeSizeContent({
         hardwareSelectionMode: 'none',
         ...(shapeChanged ? { measurements: {}, points: [] } : {}),
       });
+      mobileGuidance?.scrollToElement('continue-button-shape-size', 300);
     }
   };
 
@@ -319,7 +321,7 @@ export function ShapeSizeContent({
 
       {/* Custom Shape: corner picker (shown on both mobile and desktop) */}
       {isCustomSelected && (
-        <div>
+        <div id="fixing-points-section">
           <h4 className="text-lg font-semibold mb-4 text-[#01312d]">
             How many fixing points will your shade sail have?
           </h4>

@@ -847,7 +847,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-6">
             {/* Shade Sail Preview */}
             <Card className="p-4 bg-slate-50/80 lg:max-h-[520px] lg:min-h-[400px] lg:flex lg:flex-col">
-              <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
+              <div ref={ref} className="shade-canvas-container lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
                   Preview
