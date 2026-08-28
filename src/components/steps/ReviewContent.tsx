@@ -3,7 +3,7 @@ import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
-import { Tooltip } from '../ui/Tooltip';
+
 import { PriceSummaryDisplay } from '../PriceSummaryDisplay';
 import { DeliveryEstimate } from '../DeliveryEstimate';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
@@ -598,7 +598,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           <div className="lg:col-span-2 space-y-6">
             {/* Configuration Summary */}
             {!isMobile && (
-              <h4 className="text-lg font-semibold text-slate-900 mb-3">
+              <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
                 Configuration Summary
               </h4>
             )}
@@ -676,114 +676,120 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </AccordionItem>
             ) : (
               <Card className="p-4 mb-4">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Fabric Material:</span>
-                  <span className="font-medium text-slate-900">{selectedFabric?.label}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Fabric Color:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-slate-900">
-                      {config.fabricColor}
-                    </span>
-                    {selectedColor?.imageUrl && (
-                      <img
-                        src={selectedColor.imageUrl}
-                        alt={config.fabricColor}
-                        className="w-6 h-6 rounded-full border border-slate-300 shadow-sm object-cover"
-                      />
-                    )}
-                    {selectedFabric?.isFireRetardant && selectedColor && !selectedColor.isFireRetardant && (
-                        <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
-                          Not FR Certified
-                        </span>
+              <div className="space-y-3 text-sm">
+                {/* Material cluster */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Fabric</span>
+                    <span className="font-medium text-slate-900">{selectedFabric?.label}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Color</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-slate-900">
+                        {config.fabricColor}
+                      </span>
+                      {selectedColor?.imageUrl && (
+                        <img
+                          src={selectedColor.imageUrl}
+                          alt={config.fabricColor}
+                          className="w-5 h-5 rounded-full border border-slate-200 object-cover"
+                        />
                       )}
+                    </div>
+                  </div>
+                  {selectedColor?.shadeFactor && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Shade Factor</span>
+                      <span className="font-medium text-slate-900">{selectedColor.shadeFactor}%</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Thread</span>
+                    <span className="font-medium text-slate-900">SolarFix® PTFE</span>
                   </div>
                 </div>
-                {selectedColor?.shadeFactor && (
+
+                <div className="border-t border-slate-100" />
+
+                {/* Shape & Structure cluster */}
+                <div className="space-y-1.5">
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Shade Factor:</span>
-                    <span className="font-medium text-slate-900">{selectedColor.shadeFactor}%</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Edge Type:</span>
-                  <span className="font-medium text-slate-900">
-                    {config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Shape:</span>
-                  <span className="font-medium text-slate-900">
-                    {config.shapeMode === 'fixed' && config.fixedShapeType
-                      ? `Fixed - ${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
-                      : `Custom (${config.corners} corners)`
-                    }
-                  </span>
-                </div>
-                {config.edgeType === 'webbing' && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Webbing Width:</span>
+                    <span className="text-slate-500">Shape</span>
                     <span className="font-medium text-slate-900">
-                      {config.unit === 'imperial'
-                        ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}" (${calculations.webbingWidth}mm)`
-                        : `${calculations.webbingWidth}mm`
+                      {config.shapeMode === 'fixed' && config.fixedShapeType
+                        ? `${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
+                        : `Custom (${config.corners} corners)`
                       }
                     </span>
                   </div>
-                )}
-                {config.edgeType === 'cabled' && calculations.wireThickness && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Wire Thickness:</span>
+                    <span className="text-slate-500">Edge</span>
+                    <span className="font-medium text-slate-900">
+                      {config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge'}
+                    </span>
+                  </div>
+                  {config.edgeType === 'webbing' && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Webbing</span>
+                      <span className="font-medium text-slate-900">
+                        {config.unit === 'imperial'
+                          ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}" (${calculations.webbingWidth}mm)`
+                          : `${calculations.webbingWidth}mm`
+                        }
+                      </span>
+                    </div>
+                  )}
+                  {config.edgeType === 'cabled' && calculations.wireThickness && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Wire</span>
+                      <span className="font-medium text-slate-900">
+                        {config.unit === 'imperial'
+                          ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
+                          : `${calculations.wireThickness}mm`
+                        }
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-100" />
+
+                {/* Calculated cluster */}
+                <div className="space-y-1.5">
+                  {(config.corners < 4 || allDiagonalsEntered) && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Area</span>
+                      <span className="font-medium text-slate-900">
+                        {formatArea(calculations.area * 1000000, config.unit)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Perimeter</span>
+                    <span className="font-medium text-slate-900">
+                      {formatMeasurement(calculations.perimeter * 1000, config.unit)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Weight</span>
                     <span className="font-medium text-slate-900">
                       {config.unit === 'imperial'
-                        ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
-                        : `${calculations.wireThickness}mm`
+                        ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
+                        : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`
                       }
                     </span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Thread:</span>
-                  <span className="font-medium text-slate-900">SolarFix® PTFE</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Corners:</span>
-                  <span className="font-medium text-slate-900">{config.corners}</span>
-                </div>
-                {(config.corners < 4 || allDiagonalsEntered) && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Area:</span>
+                    <span className="text-slate-500">Hardware</span>
                     <span className="font-medium text-slate-900">
-                      {formatArea(calculations.area * 1000000, config.unit)}
+                      {hardwareMode === 'standard' ? (
+                        <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
+                          <span className="font-medium text-slate-900">Tensioning Kit (included)</span>
+                        </StandardPackPreview>
+                      ) : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
                     </span>
                   </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Perimeter:</span>
-                  <span className="font-medium text-slate-900">
-                    {formatMeasurement(calculations.perimeter * 1000, config.unit)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Total Weight:</span>
-                  <span className="font-medium text-slate-900">
-                    {config.unit === 'imperial'
-                      ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
-                      : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`
-                    }
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Hardware:</span>
-                  <span className="font-medium text-slate-900">
-                    {hardwareMode === 'standard' ? (
-                      <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
-                        <span className="font-medium text-slate-900">Hardware Tensioning Kit (included)</span>
-                      </StandardPackPreview>
-                    ) : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
-                  </span>
                 </div>
               </div>
             </Card>
@@ -791,90 +797,44 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
             {/* Invalid Measurement Warning - Show prominently when area is 0 with all measurements AND diagonals are entered (or not required) */}
             {calculations.area === 0 && hasAllEdgeMeasurements && (config.corners < 4 || allDiagonalsEntered) && (
-              <Card className="p-4 mb-4 border-2 border-red-500 bg-red-50">
+              <Card className="p-4 mb-4 border border-red-300 bg-red-50">
                 <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 mt-1">
-                    <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                  </div>
+                  <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
                   <div className="flex-1">
-                    <h4 className="text-lg font-semibold text-red-900 mb-2">
-                      {config.corners === 3 ? 'Invalid Triangle Measurements' : 'Invalid Shape Measurements'}
-                    </h4>
-                    <p className="text-sm text-red-800 mb-3">
-                      The measurements you've entered cannot form a valid {config.corners === 3 ? 'triangle' : 'shape'}. This is why the area cannot be calculated.
+                    <p className="text-sm font-semibold text-red-900 mb-1">
+                      {config.corners === 3 ? 'Invalid Triangle' : 'Invalid Shape'} — measurements can't form this geometry
                     </p>
-                    {config.corners === 3 ? (
-                      <div className="p-3 bg-red-100 border border-red-300 rounded mb-3">
-                        <p className="text-sm text-red-900 font-medium mb-2">
-                          <strong>Triangle Rule:</strong> The sum of any two sides must be greater than the third side.
-                        </p>
-                        <div className="text-xs text-red-800 space-y-1 mt-2">
-                        {(() => {
-                          const AB = config.measurements['AB'] || 0;
-                          const BC = config.measurements['BC'] || 0;
-                          const CA = config.measurements['CA'] || 0;
-
-                          const checks = [
-                            { sides: 'B→C + C→A', sum: BC + CA, compare: 'A→B', value: AB, valid: BC + CA > AB },
-                            { sides: 'A→B + B→C', sum: AB + BC, compare: 'C→A', value: CA, valid: AB + BC > CA },
-                            { sides: 'A→B + C→A', sum: AB + CA, compare: 'B→C', value: BC, valid: AB + CA > BC }
-                          ];
-
-                          return checks.map((check, idx) => (
-                            <div key={idx} className={`flex items-start gap-2 ${!check.valid ? 'font-bold text-red-900' : ''}`}>
-                              <span>{check.valid ? '✓' : '✗'}</span>
-                              <span>
-                                {check.sides} ({formatMeasurement(check.sum, config.unit)}) {check.valid ? '>' : '≤'} {check.compare} ({formatMeasurement(check.value, config.unit)})
-                                {!check.valid && <span className="ml-2 text-red-700">← Problem here!</span>}
-                              </span>
+                    <p className="text-xs text-red-800 mb-2">
+                      {config.corners === 3
+                        ? 'Each side must be shorter than the sum of the other two.'
+                        : 'Your edge and diagonal measurements are incompatible. Check for typos, mixed units, or swapped values.'}
+                    </p>
+                    {config.corners === 3 && (() => {
+                      const AB = config.measurements['AB'] || 0;
+                      const BC = config.measurements['BC'] || 0;
+                      const CA = config.measurements['CA'] || 0;
+                      const checks = [
+                        { sides: 'B→C + C→A', sum: BC + CA, compare: 'A→B', value: AB, valid: BC + CA > AB },
+                        { sides: 'A→B + B→C', sum: AB + BC, compare: 'C→A', value: CA, valid: AB + BC > CA },
+                        { sides: 'A→B + C→A', sum: AB + CA, compare: 'B→C', value: BC, valid: AB + CA > BC }
+                      ];
+                      const failing = checks.filter(c => !c.valid);
+                      if (failing.length === 0) return null;
+                      return (
+                        <div className="text-xs text-red-800 space-y-0.5 mb-2">
+                          {failing.map((check, idx) => (
+                            <div key={idx} className="font-medium">
+                              ✗ {check.sides} ({formatMeasurement(check.sum, config.unit)}) must be {'>'} {check.compare} ({formatMeasurement(check.value, config.unit)})
                             </div>
-                          ));
-                        })()}
+                          ))}
                         </div>
-                      </div>
-                    ) : (
-                      <div className="p-3 bg-red-100 border border-red-300 rounded mb-3">
-                        <p className="text-sm text-red-900 font-medium mb-2">
-                          <strong>Geometry Issue:</strong> {config.corners === 4 ? 'Your diagonal measurements don\'t match your edge measurements.' : 'Your diagonal measurements are incompatible with your edge measurements.'}
-                        </p>
-                        <p className="text-xs text-red-800 mt-2">
-                          For a {config.corners}-corner shape, the diagonals must form valid triangles with the edges. The measurements you've entered create an impossible geometry.
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="mt-3 p-3 bg-yellow-50 border border-yellow-300 rounded">
-                      <p className="text-sm text-yellow-900 mb-2">
-                        <strong>Common Causes:</strong>
-                      </p>
-                      <ul className="text-xs text-yellow-800 space-y-1 ml-4 list-disc">
-                        <li>Typo or missing digit (e.g., 1344mm instead of 13440mm)</li>
-                        <li>Mixed units (e.g., entering some measurements in cm instead of mm)</li>
-                        <li>Swapped or transposed numbers</li>
-                        <li>Incorrect tape measure reading</li>
-                        {config.corners >= 4 && <li>Diagonals measured incorrectly or swapped</li>}
-                      </ul>
-                    </div>
-
-                    <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-0.5">
-                          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm text-blue-900 font-semibold mb-1">
-                            What to do:
-                          </p>
-                          <p className="text-sm text-blue-800">
-                            Please go back and re-check your {config.corners === 3 ? 'edge' : 'edge and diagonal'} measurements. Make sure all measurements are in the same unit ({config.unit === 'metric' ? 'millimeters' : 'inches'}) and verify each measurement on-site before proceeding.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
+                    <p className="text-xs text-red-700">
+                      Go back and re-check your {config.corners === 3 ? 'edge' : 'edge and diagonal'} measurements.
+                    </p>
                   </div>
                 </div>
               </Card>
@@ -884,12 +844,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
 
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
-          <div className="lg:col-span-2 lg:sticky lg:top-8 lg:self-start space-y-6">
+          <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-6">
             {/* Shade Sail Preview */}
-            <div ref={ref} className="shade-canvas-container">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold text-slate-900">
-                  Shade Sail Preview
+            <Card className="p-4 bg-slate-50/80 max-h-[520px] min-h-[400px] flex flex-col">
+              <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                  Preview
                 </h4>
                 {review3DAvailable && (!isMobile || device3DTier !== 'none') && (
                   <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
@@ -932,15 +893,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     isMobile={isMobile}
                     plainBackground={true}
                   />
-                  <div className="mt-2 text-xs text-slate-500">
-                    Visual reference only<br />
-                    Corner labels show edge positions
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 bg-slate-100 rounded px-2 py-1 w-fit">
+                    <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
+                    <span>Visual reference — corner labels show edge positions</span>
                   </div>
                 </>
               ) : (
-                <div className="h-[500px]">
+                <div className="flex-1 min-h-[300px]">
                   <Suspense fallback={
-                    <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
+                    <div className="flex items-center justify-center h-full bg-slate-100 rounded-lg">
                       <div className="text-center">
                         <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
                         <p className="text-sm text-slate-500">Loading 3D viewer...</p>
@@ -955,7 +916,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </Suspense>
                 </div>
               )}
-            </div>
+              </div>
+            </Card>
 
           </div>
 
@@ -965,14 +927,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             {!isFixedShape && <AccordionItem
               defaultOpen={false}
               trigger={
-                <span className="flex items-center gap-2 text-sm font-semibold">
-                  <span>Hardware & Price Breakdown</span>
-                  {totalHardwareItems > 0 && (
-                    <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
-                      {totalHardwareItems}
-                    </span>
-                  )}
-                </span>
+                <span className="text-sm font-semibold">Hardware & Price Breakdown</span>
               }
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
@@ -1090,12 +1045,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               {isMobile ? (
                 <AccordionItem
                   trigger={
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      <span>Measurements</span>
-                      <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
-                        {config.corners + (config.corners >= 4 ? diagonalMeasurements.length : 0)}
-                      </span>
-                    </span>
+                    <span className="text-sm font-medium">Measurements</span>
                   }
                   defaultOpen={isFixedShape}
                 >
@@ -1151,12 +1101,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 <AccordionItem
                   defaultOpen={isFixedShape}
                   trigger={
-                    <span className="flex items-center gap-2 text-sm font-semibold">
-                      <span>Precise Measurements</span>
-                      <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
-                        {config.corners + (config.corners >= 4 ? diagonalMeasurements.length : 0)}
-                      </span>
-                    </span>
+                    <span className="text-sm font-semibold">Precise Measurements</span>
                   }
                 >
                   <Card className="p-4 mt-2">
@@ -1216,12 +1161,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 {isMobile ? (
                   <AccordionItem
                     trigger={
-                      <span className="flex items-center gap-2 text-sm font-medium">
-                        <span>Heights</span>
-                        <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
-                          {config.corners}
-                        </span>
-                      </span>
+                      <span className="text-sm font-medium">Heights</span>
                     }
                     defaultOpen={false}
                   >
@@ -1248,12 +1188,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   <AccordionItem
                     defaultOpen={false}
                     trigger={
-                      <span className="flex items-center gap-2 text-sm font-semibold">
-                        <span>Anchor Point Heights</span>
-                        <span className="bg-[#01312D] text-white text-xs px-2 py-0.5 rounded-full">
-                          {config.corners}
-                        </span>
-                      </span>
+                      <span className="text-sm font-semibold">Anchor Point Heights</span>
                     }
                   >
                     <Card className="p-4 mt-2">
@@ -1333,32 +1268,28 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 ? '!border-red-500 bg-red-50 hover:!border-red-600 shadow-md'
                 : 'bg-slate-50 border-slate-200'
             } `}>
-          <h4 className={`${isMobile ? 'text-sm' : 'text-lg'} font-semibold text-slate-900 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+          <h4 className={`${isMobile ? 'text-sm' : 'text-base'} font-semibold text-slate-900 ${isMobile ? 'mb-1' : 'mb-2'}`}>
             Before we cut your fabric
             {allAcknowledgmentsChecked && (
               <span className="ml-2 text-emerald-600">✓</span>
             )}
           </h4>
-          <p className={`${isMobile ? 'text-xs mb-2' : 'text-sm mb-4'} text-slate-600`}>
-            Your sail is made to your measurements, so let's get this right together.
-          </p>
           <div className={`${isMobile ? 'space-y-2 text-xs' : 'space-y-4 text-sm'}`}>
             <ul className={`${isMobile ? 'space-y-1.5 pl-5' : 'space-y-2 pl-6'} list-disc text-slate-700 marker:text-slate-400`}>
-              <li>{isMobile ? 'Measurements are point-to-point and checked. We check again before cutting.' : "My measurements are point-to-point and I've checked them. Our team checks them again before anything is cut, and we'll contact you if something looks off."}</li>
+              <li>{isMobile ? 'Measurements are point-to-point and checked.' : "My measurements are point-to-point and I've double-checked them."}</li>
               <li>
-                {isMobile ? 'Fixing points are in place and sound. Not sure? ' : 'My fixing points are in place and structurally sound. Not sure? '}
+                {isMobile ? 'Fixing points are in place and sound. ' : 'My fixing points are in place and structurally sound. '}
                 <a
                   href="https://shadespace.com/pages/contact"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="font-semibold text-[#307C31] underline hover:text-[#01312D]"
                 >
-                  Talk to us first
+                  Not sure? Talk to us
                 </a>
-                {isMobile ? '' : " — we'd rather have that conversation now than after."}
               </li>
-              <li>{isMobile ? "Made for me, can't be resold or returned — backed by our Fit Guarantee." : "I understand this is made for me and can't be resold, which is why it isn't returnable — and why we back it with our Fit Guarantee."}</li>
-              <li>{isMobile ? "I'm arranging my own installation (step-by-step guide included)." : "I'm arranging my own installation. Our step-by-step guide is included; most customers do it themselves in an afternoon."}</li>
+              <li>{isMobile ? "Made for me, can't be returned — backed by Fit Guarantee." : "This is made for me and can't be returned — backed by our Fit Guarantee."}</li>
+              <li>{isMobile ? "I'm arranging installation (guide included)." : "I'm arranging my own installation (step-by-step guide included)."}</li>
             </ul>
             <div className={`rounded-lg border border-emerald-200 bg-emerald-50 ${isMobile ? 'p-2' : 'p-3'}`}>
               <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-emerald-900 leading-relaxed`}>
@@ -1409,53 +1340,21 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               </span>
             </label>
 
-            {/* Conditional Height Disclaimer - Only show if heights not provided AND measurementOption is 'adjust' */}
+            {/* Conditional Height Disclaimer */}
             {config.corners !== 3 && config.measurementOption === 'adjust' && !config.heightsProvidedByUser && (
-              <div className={`flex items-start gap-2 ${isMobile ? '' : 'p-2 -ml-2 rounded hover:bg-slate-50 transition-colors'}`}>
-                <span
-                  aria-hidden="true"
-                  className="mt-0.5 flex-shrink-0 inline-flex items-center justify-center"
-                  style={{
-                    width: isMobile ? 20 : 24,
-                    height: isMobile ? 20 : 24,
-                    borderRadius: 4,
-                    boxSizing: 'border-box',
-                    border: '2px solid #10b981',
-                    backgroundColor: '#10b981',
-                    opacity: 0.7,
-                  }}
-                >
-                  <Check size={isMobile ? 14 : 16} strokeWidth={3} color="#ffffff" />
-                </span>
-                <div className="flex-1">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-slate-700">
-                      {isMobile ? 'Standard manufacturing (heights not provided)' : 'I understand height information was not provided and manufacturing will use standard process.'}
-                    </span>
-                    {!isMobile && (
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs text-slate-600">Not required - standard manufacturing process will be used</span>
-                        <div className="flex items-center gap-1">
-                          <Tooltip content="Providing anchor point heights allows for more precise manufacturing customized to your installation. Standard manufacturing will be used if heights are not provided.">
-                            <span className="text-blue-600 hover:text-blue-800 inline-flex items-center justify-center" role="button" tabIndex={0}>
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                              </svg>
-                            </span>
-                          </Tooltip>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onPrev({ navigateToHeights: true })}
-                            className="text-xs py-1 px-3 border-blue-300 text-blue-700 hover:bg-blue-50 whitespace-nowrap"
-                          >
-                            Add Heights →
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Check size={14} strokeWidth={3} className="text-emerald-500" />
+                <span>{isMobile ? 'Standard manufacturing (no heights)' : 'Heights not provided — standard manufacturing will be used.'}</span>
+                {!isMobile && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onPrev({ navigateToHeights: true })}
+                    className="text-xs py-0.5 px-2 border-slate-300 text-slate-600 hover:bg-slate-50 whitespace-nowrap ml-1"
+                  >
+                    Add Heights
+                  </Button>
+                )}
               </div>
             )}
           </div>
@@ -1469,17 +1368,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           )}
         </Card>}
 
-        {/* Quality Assurance Note - Moved outside acknowledgments card (not needed for fixed shapes) */}
-        {!isMobile && !isFixedShape && (
-          <div className="mt-3 px-2">
-            <p className="text-sm text-slate-600">
-              <svg className="w-4 h-4 inline-block mr-1 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              Our team will verify all measurements before manufacturing and contact you if adjustments are needed.
-            </p>
-          </div>
-        )}
+
 
         {/* Action Buttons - Full width on desktop */}
         <div className="flex flex-col gap-3 pt-4 border-t border-slate-200 mt-6">
