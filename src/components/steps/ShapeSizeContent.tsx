@@ -3,9 +3,7 @@ import { ConfiguratorState, FixedShapeType } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { SketchUploadModal } from '../SketchUploadModal';
-import { ParsedSketchData } from '../../utils/sketchParser';
-import { Upload, Info, Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
+import { Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
 
 interface ShapeSizeContentProps {
   config: ConfiguratorState;
@@ -17,7 +15,6 @@ interface ShapeSizeContentProps {
   showBackButton?: boolean;
   isStepOpen?: boolean;
   onSaveQuote?: () => void;
-  onSketchApply?: (data: ParsedSketchData) => void;
   mobileGuidance?: {
     isGuidanceActive: boolean;
     currentHighlightTarget: string | null;
@@ -165,11 +162,8 @@ export function ShapeSizeContent({
   showBackButton = false,
   isStepOpen = true,
   onSaveQuote,
-  onSketchApply,
   mobileGuidance,
 }: ShapeSizeContentProps) {
-  const [showSketchModal, setShowSketchModal] = useState(false);
-  const [showSketchInfo, setShowSketchInfo] = useState(false);
   const [tileError, setTileError] = useState(false);
 
   // Determine current selection from config
@@ -186,16 +180,6 @@ export function ShapeSizeContent({
   // Determine if step is complete enough to continue
   const isComplete =
     (isCustomSelected && config.corners >= 3) || isFixedSelected;
-
-  // Detect mobile (< 640px) for the custom-flow behavior difference
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
-    setIsMobile(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
 
   // Mobile guidance: scroll to continue when sub-selection is complete
   useEffect(() => {
@@ -254,15 +238,7 @@ export function ShapeSizeContent({
       setTileError(true);
       return;
     }
-    // On mobile, if custom is selected but no corners yet, allow continue
-    // (the next step will handle corner selection)
-    if (isCustomSelected && isMobile && !config.corners) {
-      // Set a default so the flow doesn't break - next step handles it
-      const defaultCorners = 4;
-      handleCornerChange(defaultCorners);
-    }
-    if (isCustomSelected && !isMobile && !config.corners) {
-      // Desktop: must pick corners before continuing
+    if (isCustomSelected && !config.corners) {
       return;
     }
     mobileGuidance?.clearHighlight();
@@ -341,122 +317,38 @@ export function ShapeSizeContent({
         </div>
       )}
 
-      {/* Custom Shape sub-content: Desktop shows corner picker inline, Mobile skips */}
-      {isCustomSelected && !isMobile && (
-        <div className="space-y-5">
-          {/* Sketch Upload */}
-          {onSketchApply && (
-            <div>
-              <div
-                onClick={() => setShowSketchModal(true)}
-                className="group cursor-pointer border-2 border-dashed border-[#2e7d4f]/40 hover:border-[#2e7d4f] bg-[#2e7d4f]/5 hover:bg-[#2e7d4f]/10 rounded-xl p-5 transition-all duration-200"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-[#2e7d4f]/15 flex items-center justify-center flex-shrink-0 group-hover:bg-[#2e7d4f]/25 transition-colors">
-                    <Upload className="w-6 h-6 text-[#2e7d4f]" />
+      {/* Custom Shape: corner picker (shown on both mobile and desktop) */}
+      {isCustomSelected && (
+        <div>
+          <h4 className="text-lg font-semibold mb-4 text-[#01312d]">
+            How many fixing points will your shade sail have?
+          </h4>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {CORNER_OPTIONS.map((shape) => {
+              const Icon = shape.icon;
+              const hasError = validationErrors.corners && !config.corners;
+              return (
+                <Card
+                  key={shape.corners}
+                  className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                    config.corners === shape.corners
+                      ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                      : hasError
+                      ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
+                      : 'hover:border-slate-300'
+                  }`}
+                  onClick={() => handleCornerChange(shape.corners)}
+                >
+                  <div className="text-center">
+                    <Icon className="w-10 h-10 mx-auto mb-2 text-[#01312d]" aria-label={`${shape.corners} corners shape`} />
+                    <h5 className="font-semibold text-[#01312d] mb-1">{shape.label}</h5>
+                    <p className="text-xs text-[#6b8478]">{shape.description}</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#01312d]">
-                      Already have a sketch with measurements?
-                    </p>
-                    <p className="text-xs text-[#6b8478] mt-0.5">
-                      Upload your shade sail sketch and we'll fill in the dimensions for you
-                    </p>
-                  </div>
-                  <span className="inline-flex items-center px-3 py-1.5 bg-[#01312d] text-white text-xs font-semibold rounded-lg group-hover:bg-[#0a4a41] transition-colors flex-shrink-0">
-                    Upload Sketch
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 my-5">
-                <div className="flex-1 h-px bg-[#dfe7e1]" />
-                <span className="text-xs font-medium text-[#6b8478] uppercase tracking-wider">Or select below</span>
-                <div className="flex-1 h-px bg-[#dfe7e1]" />
-              </div>
-            </div>
-          )}
-
-          {/* Corner Count Grid */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4 text-[#01312d]">
-              How many fixing points will your shade sail have?
-            </h4>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              {CORNER_OPTIONS.map((shape) => {
-                const Icon = shape.icon;
-                const hasError = validationErrors.corners && !config.corners;
-                return (
-                  <Card
-                    key={shape.corners}
-                    className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                      config.corners === shape.corners
-                        ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
-                        : hasError
-                        ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                        : 'hover:border-slate-300'
-                    }`}
-                    onClick={() => handleCornerChange(shape.corners)}
-                  >
-                    <div className="text-center">
-                      <Icon className="w-10 h-10 mx-auto mb-2 text-[#01312d]" aria-label={`${shape.corners} corners shape`} />
-                      <h5 className="font-semibold text-[#01312d] mb-1">{shape.label}</h5>
-                      <p className="text-xs text-[#6b8478]">{shape.description}</p>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+                </Card>
+              );
+            })}
           </div>
         </div>
-      )}
-
-      {/* Mobile: Custom Shape selected - show sketch upload only */}
-      {isCustomSelected && isMobile && (
-        <div className="space-y-4">
-          {onSketchApply && (
-            <div
-              className="group cursor-pointer border-2 border-dashed border-[#2e7d4f]/40 hover:border-[#2e7d4f] bg-[#2e7d4f]/5 hover:bg-[#2e7d4f]/10 rounded-xl px-4 py-3 transition-all duration-200"
-            >
-              <div className="flex items-center gap-3">
-                <Upload className="w-5 h-5 text-[#2e7d4f] flex-shrink-0" />
-                <span
-                  onClick={() => setShowSketchModal(true)}
-                  className="text-sm font-semibold text-[#01312d] flex-1"
-                >
-                  Have a sketch? <span className="underline">Upload it</span>
-                </span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowSketchInfo(!showSketchInfo); }}
-                  className="w-7 h-7 rounded-full bg-[#2e7d4f]/10 flex items-center justify-center flex-shrink-0"
-                  aria-label="More info about sketch upload"
-                >
-                  <Info className="w-3.5 h-3.5 text-[#2e7d4f]" />
-                </button>
-              </div>
-              {showSketchInfo && (
-                <p className="mt-2 text-xs text-[#6b8478] pl-8">
-                  Upload your sketch and we'll auto-fill all dimensions for you.
-                </p>
-              )}
-            </div>
-          )}
-          <p className="text-sm text-[#6b8478]">
-            On the next step, you'll choose how many fixing points your sail has.
-          </p>
-        </div>
-      )}
-
-      {/* Sketch Upload Modal */}
-      {onSketchApply && (
-        <SketchUploadModal
-          open={showSketchModal}
-          onClose={() => setShowSketchModal(false)}
-          onApply={(data) => {
-            setShowSketchModal(false);
-            onSketchApply(data);
-          }}
-        />
       )}
 
       {/* Navigation */}
@@ -474,7 +366,7 @@ export function ShapeSizeContent({
           </div>
           {mobileGuidance?.currentHighlightTarget === 'continue-button-shape-size' ? (
             <div className="energy-border-chase-btn w-full" id="continue-button-shape-size" data-guidance-id="continue-button-shape-size">
-              <Button onClick={handleContinue} size="md" className={`w-full py-4 ${!isComplete && !(isCustomSelected && isMobile) ? 'opacity-50' : ''}`}>
+              <Button onClick={handleContinue} size="md" className={`w-full py-4 ${!isComplete ? 'opacity-50' : ''}`}>
                 <span className="flex flex-col items-center leading-tight">
                   <span>Continue</span>
                   {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
@@ -487,7 +379,7 @@ export function ShapeSizeContent({
               size="md"
               id="continue-button-shape-size"
               data-guidance-id="continue-button-shape-size"
-              className={`w-full py-4 ${!isComplete && !(isCustomSelected && isMobile) ? 'opacity-50' : ''}`}
+              className={`w-full py-4 ${!isComplete ? 'opacity-50' : ''}`}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span>Continue</span>

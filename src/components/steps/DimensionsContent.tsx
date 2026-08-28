@@ -10,8 +10,10 @@ import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle, Upload } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
+import { SketchUploadModal } from '../SketchUploadModal';
+import { ParsedSketchData } from '../../utils/sketchParser';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { toast } from 'react-toastify';
 
@@ -61,6 +63,7 @@ interface DimensionsContentProps {
   device3DTier?: 'high' | 'low' | 'none';
   mobileViewMode?: 'plan' | '3d';
   onMobileViewModeChange?: (mode: 'plan' | '3d') => void;
+  onSketchApply?: (data: ParsedSketchData) => void;
 }
 
 export function DimensionsContent({
@@ -98,9 +101,11 @@ export function DimensionsContent({
   device3DTier = 'none',
   mobileViewMode = 'plan',
   onMobileViewModeChange,
+  onSketchApply,
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
+  const [showSketchModal, setShowSketchModal] = useState(false);
   const [showHeightsSection, setShowHeightsSectionInternal] = useState(false);
   const setShowHeightsSection = (value: boolean) => {
     setShowHeightsSectionInternal(value);
@@ -497,6 +502,33 @@ export function DimensionsContent({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Slim Sketch Upload - shown for custom shapes */}
+      {onSketchApply && config.shapeMode === 'custom' && (
+        <div className="mb-4 sm:mb-6">
+          <button
+            type="button"
+            onClick={() => setShowSketchModal(true)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border border-[#2e7d4f]/30 bg-[#2e7d4f]/5 hover:bg-[#2e7d4f]/10 hover:border-[#2e7d4f]/50 transition-colors text-left"
+          >
+            <Upload className="w-4 h-4 text-[#2e7d4f] flex-shrink-0" />
+            <span className="text-sm text-[#01312d]">
+              Have a sketch with measurements? <span className="font-semibold underline underline-offset-2">Upload it</span> and we'll fill these in for you.
+            </span>
+          </button>
+        </div>
+      )}
+
+      {onSketchApply && (
+        <SketchUploadModal
+          open={showSketchModal}
+          onClose={() => setShowSketchModal(false)}
+          onApply={(data) => {
+            setShowSketchModal(false);
+            onSketchApply(data);
+          }}
+        />
       )}
 
       {config.measurementOption === 'exact' && (

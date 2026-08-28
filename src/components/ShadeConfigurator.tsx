@@ -2695,7 +2695,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                       setOpenStep(2);
                       setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
                     }}
-                    onSketchApply={index === 1 ? handleSketchApply : undefined}
+                    onSketchApply={index === 2 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
                     viewMode={index === 6 ? desktopViewMode : undefined}
                     onViewModeChange={index === 6 ? handleDesktopViewModeChange : undefined}
