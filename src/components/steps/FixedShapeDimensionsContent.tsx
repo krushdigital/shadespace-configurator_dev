@@ -233,14 +233,14 @@ export function FixedShapeDimensionsContent({
       {/* Unit indicator bar - matching custom dimensions step */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#307C31] animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-[#2e7d4f] animate-pulse" />
           <span className="text-sm font-medium text-slate-700">
             Using {unit === 'imperial' ? 'Imperial (ft/in)' : 'Metric (mm)'}
           </span>
         </div>
         <button
           onClick={handleUnitChange}
-          className="text-sm text-[#307C31] hover:text-[#01312D] font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
+          className="text-sm text-[#2e7d4f] hover:text-[#01312D] font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
         >
           <RefreshCw className="w-3 h-3" />
           Switch to {alternativeUnitName}
@@ -324,7 +324,7 @@ export function FixedShapeDimensionsContent({
                 onFocus={() => setHighlightedMeasurement?.('AB')}
                 onBlur={() => setHighlightedMeasurement?.(null)}
                 placeholder="Enter length in mm"
-                className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['AB'] ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
+                className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['AB'] ? 'border-red-400 bg-red-50' : 'border-[#dfe7e1] focus:border-[#2e7d4f]'} focus:ring-2 focus:ring-[#2e7d4f]/20 focus:outline-none text-base transition-colors`}
               />
               {edgeAMm > 0 && (
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
@@ -357,7 +357,7 @@ export function FixedShapeDimensionsContent({
                   onFocus={() => setHighlightedMeasurement?.(shape === 'right-angle-triangle' ? 'CA' : 'BC')}
                   onBlur={() => setHighlightedMeasurement?.(null)}
                   placeholder="Enter length in mm"
-                  className={`w-full px-4 py-3 rounded-xl border-2 ${(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']) ? 'border-red-400 bg-red-50' : 'border-slate-200 focus:border-[#307C31]'} focus:ring-2 focus:ring-[#307C31]/20 focus:outline-none text-base transition-colors`}
+                  className={`w-full px-4 py-3 rounded-xl border-2 ${(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']) ? 'border-red-400 bg-red-50' : 'border-[#dfe7e1] focus:border-[#2e7d4f]'} focus:ring-2 focus:ring-[#2e7d4f]/20 focus:outline-none text-base transition-colors`}
                 />
                 {edgeBMm > 0 && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
@@ -386,7 +386,7 @@ export function FixedShapeDimensionsContent({
       {/* Switch to custom shape */}
       <button
         onClick={onSwitchToCustom}
-        className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-slate-200 hover:border-[#307C31] hover:bg-[#BFF102]/5 text-sm text-slate-600 hover:text-[#01312D] transition-all duration-200"
+        className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-[#dfe7e1] hover:border-[#2e7d4f] hover:bg-[#eef5ef] text-sm text-[#6b8478] hover:text-[#01312D] transition-all duration-200"
       >
         <ArrowRight className="w-4 h-4" />
         {getCustomSwitchText()} <span className="font-semibold">Switch to Custom Shape</span>
@@ -394,14 +394,14 @@ export function FixedShapeDimensionsContent({
 
       {/* Live price preview - sail only (hardware shown on next step) */}
       {isComplete && sailPrice > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mt-6 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#eef5ef] border border-[#2e7d4f]/30 rounded-xl mt-6 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
           <span className="text-sm font-medium text-[#01312D]">Sail price estimate</span>
           <span className="text-lg font-bold text-[#01312D]">{formatCurrency(sailPrice, config.currency)}</span>
         </div>
       )}
 
       {/* Navigation */}
-      <div className="flex flex-col gap-3 pt-5 mt-6 border-t border-slate-100">
+      <div className="flex flex-col gap-3 pt-5 mt-6 border-t border-[#dfe7e1]">
         {(showBackButton || onSaveQuote) && (
           <div className="grid grid-cols-2 gap-2">
             {showBackButton && (

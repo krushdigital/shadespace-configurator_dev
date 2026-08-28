@@ -72,12 +72,12 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
   }, [config.fabricType, isStepOpen]);
 
   return (
-    <div className="p-6">
+    <div className="p-5 sm:p-6">
       {/* Fabric Type Selection */}
       <div className="mb-8">
         {showHint && !config.fabricType && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
             Tap to select your fabric material
           </div>
         )}
@@ -87,7 +87,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
               href="https://shadespace.com/pages/our-fabrics"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#01312D] hover:text-[#307C31] transition-colors"
+              className="text-[#01312D] hover:text-[#2e7d4f] transition-colors"
             >
               Fabric Material
             </a>
@@ -95,7 +95,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
           <button
             type="button"
             onClick={() => openComparison()}
-            className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-[#01312D] border border-[#01312D] hover:bg-[#01312D] hover:text-white px-3 py-1.5 rounded-full transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-[#2e7d4f] border border-[#2e7d4f] hover:bg-[#2e7d4f] hover:text-white px-3 py-1.5 rounded-full transition-colors"
           >
             <GitCompare className="w-3.5 h-3.5" />
             Compare Fabrics
@@ -109,12 +109,12 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
             return (
               <Card
                 key={fabric.id}
-                className={`relative h-full flex flex-col p-3 md:p-3 lg:p-3 cursor-pointer transition-all duration-300 ${
+                className={`relative h-full flex flex-col p-3 md:p-3 lg:p-3 cursor-pointer transition-all duration-200 ${
                   isSelected
-                    ? '!border-2 !border-[#01312D] !ring-2 !ring-[#01312D] shadow-xl transform scale-105'
+                    ? '!border-2 !border-[#2e7d4f] shadow-lg'
                     : hasError
-                    ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600 hover:shadow-lg'
-                    : 'hover:border-[#307C31] hover:shadow-lg'
+                    ? 'border-2 !border-red-400 bg-red-50 hover:!border-red-500 hover:shadow-lg'
+                    : 'hover:border-[#7bb08f] hover:shadow-lg'
                 }`}
                 onClick={() => {
                   analytics.fabricTypeSelected(fabric.id, fabric.label);
@@ -124,6 +124,11 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                   });
                 }}
               >
+                {isSelected && (
+                  <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-[#2e7d4f] text-white text-[13px] font-bold flex items-center justify-center">
+                    &#10003;
+                  </span>
+                )}
                 <div className="text-center flex flex-col h-full">
                   <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2 min-w-0">
                     <h5 className="font-semibold text-[#01312D] text-sm md:text-[15px] lg:text-sm leading-tight break-words">
@@ -234,7 +239,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                 e.stopPropagation();
                                 openComparison(fabric.id);
                               }}
-                              className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-[#01312D] hover:bg-[#307C31] px-3 py-2 rounded-full transition-colors"
+                              className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-[#2e7d4f] hover:bg-[#01312d] px-3 py-2 rounded-full transition-colors"
                             >
                               <GitCompare className="w-3.5 h-3.5" />
                               Compare all fabrics
@@ -244,7 +249,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         </div>
                       }
                     >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d]">
                         ?
                       </span>
                     </Tooltip>
@@ -261,7 +266,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                   </p>
                   <div className={`hidden md:block rounded-lg p-2 lg:px-2.5 lg:py-2 transition-all duration-300 mt-auto ${
                     isSelected
-                     ? 'bg-gradient-to-r from-[#01312D] to-[#307C31]'
+                     ? 'bg-gradient-to-r from-[#01312D] to-[#2e7d4f]'
                      : 'bg-[#F3FFE3]'
                   }`}>
                     <div className="flex justify-between items-center gap-2">
@@ -313,7 +318,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
       {selectedFabric && (
         <div className="mb-8" id="color-selection" data-guidance-id="color-selection">
           <div className={`flex items-center gap-2 mb-4 px-2 py-1 -mx-2 rounded-lg transition-all duration-300 ${
-            mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-[#BFF102]/10' : ''
+            mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-[#eef5ef]' : ''
           }`}>
             <h4 className={`text-lg font-semibold ${
               mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'shiny-text-guidance' : 'text-[#01312D]'
@@ -352,9 +357,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
           </div>
           {/* Dynamic Info Message for Extrablock 330 */}
           {selectedFabric.isFireRetardant && (
-            <div className="mb-4 p-3 bg-[#F3FFE3] border border-[#307C31] rounded-lg">
+            <div className="mb-4 p-3 bg-[#eef5ef] border border-[#2e7d4f] rounded-lg">
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#307C31] flex-shrink-0" />
+                <Info className="w-4 h-4 text-[#2e7d4f] flex-shrink-0" />
                 <p className="text-sm text-[#01312D]">
                   <strong>Important:</strong> Not all {selectedFabric.label} colors are fire retardant. Look for the <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">FR Fabric</span> badge for certified colors, or the <span className="bg-slate-300 text-slate-700 text-xs font-bold px-1.5 py-0.5 rounded">Standard</span> badge for non-FR colors.
                 </p>
@@ -381,7 +386,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                        ? 'border-2 border-[#01312D] ring-2 ring-[#01312D] shadow-md'
                         : hasError
                         ? 'ring-2 !ring-red-500 bg-red-50 hover:!ring-red-600 hover:shadow-sm'
-                        : 'ring-1 ring-[#307C31]/30 hover:ring-[#01312D] hover:shadow-sm'
+                        : 'ring-1 ring-[#2e7d4f]/30 hover:ring-[#01312D] hover:shadow-sm'
                     }`}
                   >
                     <div className="relative overflow-hidden">
@@ -432,7 +437,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
         </div>
       )}
 
-      <div className="flex flex-col gap-4 pt-4 border-t border-[#307C31]/30">
+      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && onPrev && (
             <Button

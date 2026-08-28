@@ -23,6 +23,13 @@ interface HardwareContentProps {
   setHighlightedCorner?: (corner: number | null) => void;
   highlightedCorner?: number | null;
   onSaveQuote?: () => void;
+  mobileGuidance?: {
+    isGuidanceActive: boolean;
+    currentHighlightTarget: string | null;
+    scrollToElement: (elementId: string, delay?: number, offset?: number) => void;
+    setHighlightTarget: (targetId: string | null, duration?: number) => void;
+    clearHighlight: () => void;
+  };
 }
 
 export function HardwareContent({
@@ -37,10 +44,20 @@ export function HardwareContent({
   setHighlightedCorner,
   highlightedCorner = null,
   onSaveQuote,
+  mobileGuidance,
 }: HardwareContentProps) {
   const { items, categories, packs, loading } = useHardwareCatalog();
   const [modalCorner, setModalCorner] = useState<number | null>(null);
   const manualPanelRef = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (mobileGuidance?.isGuidanceActive && mode) {
+      if (mode === 'manual' && !allManualConfigured) return;
+      mobileGuidance.scrollToElement('continue-button-hardware', 400);
+      mobileGuidance.setHighlightTarget('continue-button-hardware');
+    }
+  }, [mode, allManualConfigured, mobileGuidance?.isGuidanceActive]);
+
   const isExact = config.measurementOption === 'exact';
   const allowNone = isExact;
   const allowStandard = !isExact;
@@ -129,11 +146,11 @@ export function HardwareContent({
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4">
+    <div className="p-5 sm:p-6 space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-[#01312D]">Corner Hardware Selection</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <h2 className="text-lg sm:text-xl font-bold text-[#01312d]">Corner Hardware Selection</h2>
+          <p className="mt-1 text-sm text-[#6b8478]">
             {isExact
               ? 'Manually pick per corner, or continue without hardware.'
               : 'Choose a hardware tensioning kit or manually pick per corner.'}
@@ -141,7 +158,7 @@ export function HardwareContent({
         </div>
         {mode === 'manual' && (
           <span className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-            allManualConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+            allManualConfigured ? 'bg-[#eef5ef] text-[#2e7d4f]' : 'bg-[#fff7ed] text-[#8b5c1a]'
           }`}>
             {configuredCount}/{config.corners} configured
           </span>
@@ -156,7 +173,7 @@ export function HardwareContent({
             corners={config.corners}
             onTriggerClick={() => setMode('standard')}
             triggerClassName={`relative w-full rounded-xl border-2 p-4 text-left transition cursor-pointer ${
-              mode === 'standard' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
+              mode === 'standard' ? 'border-[#2e7d4f] bg-[#2e7d4f]/5' : 'border-[#dfe7e1] bg-white hover:border-[#7bb08f]'
             }`}
           >
             {({ openInfo }) => (
@@ -169,12 +186,12 @@ export function HardwareContent({
                   />
                 ) : (
                   <div className="h-14 w-14 flex-shrink-0 rounded-lg border border-slate-200 bg-white flex items-center justify-center">
-                    <Package className="h-6 w-6 text-[#307C31]" />
+                    <Package className="h-6 w-6 text-[#2e7d4f]" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</span>
+                    <span className="text-sm font-bold text-[#01312d]">Hardware Tensioning Kit</span>
                     <span
                       role="button"
                       tabIndex={0}
@@ -183,14 +200,14 @@ export function HardwareContent({
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') openInfo(e);
                       }}
-                      className="inline-flex items-center justify-center -m-1 p-1 rounded-full text-slate-400 hover:text-[#307C31] hover:bg-slate-100 cursor-pointer"
+                      className="inline-flex items-center justify-center -m-1 p-1 rounded-full text-[#6b8478] hover:text-[#2e7d4f] hover:bg-[#eef5ef] cursor-pointer"
                     >
                       <Info className="h-4 w-4" />
                     </span>
                   </div>
-                  <div className="mt-0.5 text-xs text-slate-600">Curated set for your sail.</div>
+                  <div className="mt-0.5 text-xs text-[#6b8478]">Curated set for your sail.</div>
                 </div>
-                {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#307C31] flex-shrink-0" />}
+                {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-[#2e7d4f] flex-shrink-0" />}
               </div>
             )}
           </StandardPackPreview>
@@ -200,36 +217,36 @@ export function HardwareContent({
           type="button"
           onClick={() => setMode('none')}
           className={`rounded-xl border-2 p-4 text-left transition ${
-            mode === 'none' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
+            mode === 'none' ? 'border-[#2e7d4f] bg-[#2e7d4f]/5' : 'border-[#dfe7e1] bg-white hover:border-[#7bb08f]'
           }`}
         >
           <div className="flex items-center justify-between">
-            <Ban className="h-6 w-6 text-[#307C31]" />
-            {mode === 'none' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
+            <Ban className="h-6 w-6 text-[#2e7d4f]" />
+            {mode === 'none' && <CheckCircle2 className="h-5 w-5 text-[#2e7d4f]" />}
           </div>
-          <div className="mt-2 text-sm font-bold text-slate-900">No Hardware</div>
-          <div className="mt-0.5 text-xs text-slate-600">Sail only — corner D-rings only, source hardware separately.</div>
+          <div className="mt-2 text-sm font-bold text-[#01312d]">No Hardware</div>
+          <div className="mt-0.5 text-xs text-[#6b8478]">Sail only — corner D-rings only, source hardware separately.</div>
         </button>}
 
         <button
           type="button"
           onClick={() => setMode('manual')}
           className={`rounded-xl border-2 p-4 text-left transition ${
-            mode === 'manual' ? 'border-[#307C31] bg-[#307C31]/5' : 'border-slate-200 bg-white hover:border-slate-300'
+            mode === 'manual' ? 'border-[#2e7d4f] bg-[#2e7d4f]/5' : 'border-[#dfe7e1] bg-white hover:border-[#7bb08f]'
           }`}
         >
           <div className="flex items-center justify-between">
-            <SlidersHorizontal className="h-6 w-6 text-[#307C31]" />
-            {mode === 'manual' && <CheckCircle2 className="h-5 w-5 text-[#307C31]" />}
+            <SlidersHorizontal className="h-6 w-6 text-[#2e7d4f]" />
+            {mode === 'manual' && <CheckCircle2 className="h-5 w-5 text-[#2e7d4f]" />}
           </div>
-          <div className="mt-2 text-sm font-bold text-slate-900">Manual per corner</div>
-          <div className="mt-0.5 text-xs text-slate-600">Pick specific hardware per corner.</div>
+          <div className="mt-2 text-sm font-bold text-[#01312d]">Manual per corner</div>
+          <div className="mt-0.5 text-xs text-[#6b8478]">Pick specific hardware per corner.</div>
         </button>
       </div>
 
       {mode === 'standard' && !pack && (
         <Card className="p-4">
-          <div className="text-sm text-slate-600">Standard pack details are unavailable — please contact support.</div>
+          <div className="text-sm text-[#6b8478]">Standard pack details are unavailable — please contact support.</div>
         </Card>
       )}
 
@@ -237,7 +254,7 @@ export function HardwareContent({
         <div ref={manualPanelRef} className="scroll-mt-4">
         <Card className="p-4">
           <div className="lg:hidden mb-4">
-            <p className="mb-2 text-xs text-slate-600">Tap a corner on the diagram or the list below to configure.</p>
+            <p className="mb-2 text-xs text-[#6b8478]">Tap a corner on the diagram or the list below to configure.</p>
             <div className="mx-auto max-w-[280px]">
               <ShapeCanvas
                 config={config}
@@ -255,7 +272,7 @@ export function HardwareContent({
               />
             </div>
           </div>
-          <p className="mb-3 text-sm text-slate-600 hidden lg:block">Hover over a corner row to highlight it on the diagram. Click to select hardware.</p>
+          <p className="mb-3 text-sm text-[#6b8478] hidden lg:block">Hover over a corner row to highlight it on the diagram. Click to select hardware.</p>
           <div className="space-y-2">
             {Array.from({ length: config.corners }, (_, idx) => {
               const letter = String.fromCharCode(65 + idx);
@@ -283,7 +300,7 @@ export function HardwareContent({
                   <div className="flex-1 min-w-0">
                     {isConfigured ? (
                       <>
-                        <div className="text-sm font-semibold text-slate-900 line-clamp-1">{preview}</div>
+                        <div className="text-sm font-semibold text-[#01312d] line-clamp-1">{preview}</div>
                         <div className="text-xs text-[#D97706] font-semibold mt-0.5">{cornerSubtotalDisplay(idx)}</div>
                       </>
                     ) : (
@@ -320,7 +337,7 @@ export function HardwareContent({
 
       {/* Live total price preview */}
       {calculations.totalPrice > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mt-4 mb-2 transition-all duration-300">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#eef5ef] border border-[#2e7d4f]/30 rounded-xl mt-4 mb-2 transition-all duration-300">
           <span className="text-sm font-medium text-[#01312D]">Estimated total</span>
           <span className="text-lg font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
         </div>
@@ -338,17 +355,35 @@ export function HardwareContent({
               <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
             )}
           </div>
-          <Button
-            onClick={onNext}
-            size="md"
-            disabled={mode === 'manual' && !allManualConfigured}
-            className="w-full py-4 sm:py-2"
-          >
-            <span className="flex flex-col items-center leading-tight">
-              <span>Continue</span>
-              {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-            </span>
-          </Button>
+          {mobileGuidance?.currentHighlightTarget === 'continue-button-hardware' ? (
+            <div className="energy-border-chase-btn w-full" id="continue-button-hardware" data-guidance-id="continue-button-hardware">
+              <Button
+                onClick={() => { mobileGuidance?.clearHighlight(); onNext?.(); }}
+                size="md"
+                disabled={mode === 'manual' && !allManualConfigured}
+                className="w-full py-4"
+              >
+                <span className="flex flex-col items-center leading-tight">
+                  <span>Continue</span>
+                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <Button
+              onClick={() => { mobileGuidance?.clearHighlight(); onNext?.(); }}
+              size="md"
+              id="continue-button-hardware"
+              data-guidance-id="continue-button-hardware"
+              disabled={mode === 'manual' && !allManualConfigured}
+              className="w-full py-4"
+            >
+              <span className="flex flex-col items-center leading-tight">
+                <span>Continue</span>
+                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+              </span>
+            </Button>
+          )}
         </div>
 
         <div className="hidden sm:flex items-center gap-4">

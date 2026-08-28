@@ -142,14 +142,14 @@ export function MaterialFinishContent({
       {/* ── Fabric Type Selection ── */}
       <div className="mb-8">
         {showFabricHint && !config.fabricType && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
             Tap to select your fabric material
           </div>
         )}
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
           <h4 className="text-lg font-semibold text-[#01312D]">
-            <a href="https://shadespace.com/pages/our-fabrics" target="_blank" rel="noopener noreferrer" className="text-[#01312D] hover:text-[#307C31] transition-colors">
+            <a href="https://shadespace.com/pages/our-fabrics" target="_blank" rel="noopener noreferrer" className="text-[#01312D] hover:text-[#2e7d4f] transition-colors">
               Fabric Material
             </a>
           </h4>
@@ -176,7 +176,7 @@ export function MaterialFinishContent({
                     ? '!border-2 !border-[#01312D] !ring-2 !ring-[#01312D] shadow-xl transform scale-105'
                     : hasError
                     ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600 hover:shadow-lg'
-                    : 'hover:border-[#307C31] hover:shadow-lg'
+                    : 'hover:border-[#7bb08f] hover:shadow-lg'
                 }`}
                 onClick={() => {
                   analytics.fabricTypeSelected(fabric.id, fabric.label);
@@ -233,21 +233,21 @@ export function MaterialFinishContent({
                                 <div><h5 className="font-semibold text-[#01312D] mb-1">Best For:</h5><ul className="text-xs text-[#01312D]/70 space-y-1">{fabric.bestFor.map((u, i) => <li key={i}>• {u}</li>)}</ul></div>
                               </div>
                             </AccordionItem>
-                            <button type="button" onClick={(e) => { e.stopPropagation(); openComparison(fabric.id); }} className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-[#01312D] hover:bg-[#307C31] px-3 py-2 rounded-full transition-colors">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); openComparison(fabric.id); }} className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-[#2e7d4f] hover:bg-[#01312d] px-3 py-2 rounded-full transition-colors">
                               <GitCompare className="w-3.5 h-3.5" />Compare all fabrics
                             </button>
                           </div>
                         </div>
                       }
                     >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">?</span>
+                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d]">?</span>
                     </Tooltip>
                   </div>
                   <div className="mb-2">
                     {fabric.badgeText && <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">{fabric.badgeText}</span>}
                   </div>
                   <p className="text-xs lg:text-[13px] text-[#01312D]/70 mb-2 md:mb-3 line-clamp-3 leading-snug flex-1">{fabric.description}</p>
-                  <div className={`hidden md:block rounded-lg p-2 lg:px-2.5 lg:py-2 transition-all duration-300 mt-auto ${isSelected ? 'bg-gradient-to-r from-[#01312D] to-[#307C31]' : 'bg-[#F3FFE3]'}`}>
+                  <div className={`hidden md:block rounded-lg p-2 lg:px-2.5 lg:py-2 transition-all duration-300 mt-auto ${isSelected ? 'bg-gradient-to-r from-[#01312D] to-[#2e7d4f]' : 'bg-[#eef5ef]'}`}>
                     <div className="flex justify-between items-center gap-2">
                       <div className="min-w-0">
                         <div className={`text-[10px] mb-0.5 ${isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'}`}>Weight</div>
@@ -302,13 +302,13 @@ export function MaterialFinishContent({
                 </div>
               }
             >
-              <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">?</span>
+              <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d]">?</span>
             </Tooltip>
           </div>
           {selectedFabric.isFireRetardant && (
-            <div className="mb-4 p-3 bg-[#F3FFE3] border border-[#307C31] rounded-lg">
+            <div className="mb-4 p-3 bg-[#eef5ef] border border-[#2e7d4f] rounded-lg">
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#307C31] flex-shrink-0" />
+                <Info className="w-4 h-4 text-[#2e7d4f] flex-shrink-0" />
                 <p className="text-sm text-[#01312D]">
                   <strong>Important:</strong> Not all {selectedFabric.label} colors are fire retardant. Look for the <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">FR Fabric</span> badge for certified colors, or the <span className="bg-slate-300 text-slate-700 text-xs font-bold px-1.5 py-0.5 rounded">Standard</span> badge for non-FR colors.
                 </p>
@@ -331,7 +331,7 @@ export function MaterialFinishContent({
                         ? 'border-2 border-[#01312D] ring-2 ring-[#01312D] shadow-md'
                         : hasColorError
                         ? 'ring-2 !ring-red-500 bg-red-50 hover:!ring-red-600 hover:shadow-sm'
-                        : 'ring-1 ring-[#307C31]/30 hover:ring-[#01312D] hover:shadow-sm'
+                        : 'ring-1 ring-[#2e7d4f]/30 hover:ring-[#01312D] hover:shadow-sm'
                     }`}
                   >
                     <div className="relative overflow-hidden">
@@ -345,7 +345,7 @@ export function MaterialFinishContent({
                       </div>
                       {/* Accessibility checkmark overlay for selected color */}
                       {isColorSelected && (
-                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-[#307C31] flex items-center justify-center shadow">
+                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-[#2e7d4f] flex items-center justify-center shadow">
                           <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                         </div>
                       )}
@@ -374,10 +374,10 @@ export function MaterialFinishContent({
         data-guidance-id="edge-finish-section"
         className={`overflow-hidden transition-all duration-500 ease-in-out ${showEdgeSection ? 'max-h-[2000px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}
       >
-        <div className="pt-6 border-t border-slate-200">
+        <div className="pt-6 border-t border-[#dfe7e1]">
           {showEdgeHint && !config.edgeType && (
-            <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+            <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
               Choose your preferred edge finish
             </div>
           )}
@@ -399,7 +399,7 @@ export function MaterialFinishContent({
                       ? 'border-2 border-[#01312D] shadow-md'
                       : hasEdgeError
                       ? 'border-2 border-red-500 bg-red-50'
-                      : 'border border-slate-200 hover:border-slate-300 hover:shadow-md'
+                      : 'border border-[#dfe7e1] hover:border-[#7bb08f] hover:shadow-md'
                   }`}
                 >
                   <div className="relative p-3 pb-0">
@@ -408,7 +408,7 @@ export function MaterialFinishContent({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setEnlargedImage({ url: edge.imageUrl, label: edge.label }); }}
-                        className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312D] shadow-sm hover:bg-white hover:text-[#307C31] transition-colors focus:outline-none focus:ring-2 focus:ring-[#307C31]"
+                        className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312d] shadow-sm hover:bg-white hover:text-[#2e7d4f] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e7d4f]"
                         aria-label={`Enlarge ${edge.label} image`}
                       >
                         <ZoomIn className="w-4 h-4" strokeWidth={2.25} />
@@ -418,20 +418,20 @@ export function MaterialFinishContent({
                   <div className="flex items-start justify-between gap-3 p-4 pt-3.5">
                     <div className="flex-1 min-w-0">
                       <h5 className="font-bold text-[#01312D] text-base md:text-lg leading-tight mb-1">{edge.label}</h5>
-                      <p className="text-sm text-slate-600 leading-relaxed">{edge.description}</p>
+                      <p className="text-sm text-[#6b8478] leading-relaxed">{edge.description}</p>
                     </div>
                     <Tooltip
                       content={
                         <div>
-                          <p className="text-sm text-slate-600 font-medium mb-1">{edge.label}</p>
+                          <p className="text-sm text-[#6b8478] font-medium mb-1">{edge.label}</p>
                           <p className="text-sm text-slate-500">{edge.longDescription}</p>
                           <p className="mt-3 text-sm">
-                            <a href="https://shadespace.com/pages/styles" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#307C31] hover:text-[#01312D] hover:underline transition-colors">Learn more about our styles &rarr;</a>
+                            <a href="https://shadespace.com/pages/styles" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2e7d4f] hover:text-[#01312D] hover:underline transition-colors">Learn more about our styles &rarr;</a>
                           </p>
                         </div>
                       }
                     >
-                      <span onClick={(e) => e.stopPropagation()} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] transition-colors">?</span>
+                      <span onClick={(e) => e.stopPropagation()} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d] transition-colors">?</span>
                     </Tooltip>
                   </div>
                 </div>
@@ -442,7 +442,7 @@ export function MaterialFinishContent({
       </div>
 
       {/* ── Navigation Footer ── */}
-      <div className="flex flex-col gap-4 pt-4 border-t border-slate-200">
+      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">
             {showBackButton && onPrev && <Button variant="outline" size="md" onClick={onPrev} className="flex-1">Back</Button>}

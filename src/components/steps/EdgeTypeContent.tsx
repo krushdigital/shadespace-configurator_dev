@@ -79,16 +79,16 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
   }, [config.edgeType, isStepOpen]);
 
   return (
-    <div className="p-6">
+    <div className="p-5 sm:p-6">
       <div className="mb-6">
         {showHint && !config.edgeType && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
             Choose your preferred edge style
           </div>
         )}
         <h4 className={`text-lg font-semibold mb-4 ${
-          !config.edgeType && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-slate-900'
+          !config.edgeType && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-[#01312d]'
         }`}>
           Select Edge Reinforcement Type
         </h4>
@@ -101,16 +101,21 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
               <div
                 key={edge.id}
                 onClick={() => updateConfig({ edgeType: edge.id })}
-                className={`group relative bg-white rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col ${
+                className={`group relative bg-white rounded-2xl border-2 transition-all duration-200 cursor-pointer overflow-hidden flex flex-col ${
                   isSelected
-                    ? 'border-2 border-[#01312D] shadow-md'
+                    ? 'border-[#2e7d4f] shadow-[inset_0_0_0_1px_#2e7d4f]'
                     : hasError
-                    ? 'border-2 border-red-500 bg-red-50'
-                    : 'border border-slate-200 hover:border-slate-300 hover:shadow-md'
+                    ? 'border-red-400 bg-red-50'
+                    : 'border-[#dfe7e1] hover:border-[#7bb08f] hover:shadow-md'
                 }`}
               >
+                {isSelected && (
+                  <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-[#2e7d4f] text-white text-[13px] font-bold flex items-center justify-center">
+                    &#10003;
+                  </span>
+                )}
                 <div className="relative p-3 pb-0">
-                  <div className="relative rounded-xl overflow-hidden bg-[#F3FFE3]/60 aspect-[16/9]">
+                  <div className="relative rounded-xl overflow-hidden bg-[#eef5ef] aspect-[16/9]">
                     <img
                       src={edge.imageUrl}
                       alt={`${edge.label} example`}
@@ -122,7 +127,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                         e.stopPropagation();
                         setEnlargedImage({ url: edge.imageUrl, label: edge.label });
                       }}
-                      className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312D] shadow-sm hover:bg-white hover:text-[#307C31] transition-colors focus:outline-none focus:ring-2 focus:ring-[#307C31]"
+                      className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312d] shadow-sm hover:bg-white hover:text-[#2e7d4f] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e7d4f]"
                       aria-label={`Enlarge ${edge.label} image`}
                     >
                       <ZoomIn className="w-4 h-4" strokeWidth={2.25} />
@@ -135,7 +140,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                     <h5 className="font-bold text-[#01312D] text-base md:text-lg leading-tight mb-1">
                       {edge.label}
                     </h5>
-                    <p className="text-sm text-slate-600 leading-relaxed">
+                    <p className="text-sm text-[#6b8478] leading-relaxed">
                       {edge.description}
                     </p>
                   </div>
@@ -163,7 +168,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                   >
                     <span
                       onClick={(e) => e.stopPropagation()}
-                      className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] transition-colors"
+                      className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d] transition-colors"
                     >
                       ?
                     </span>
@@ -175,7 +180,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 pt-4 border-t border-slate-200">
+      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
         {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">
