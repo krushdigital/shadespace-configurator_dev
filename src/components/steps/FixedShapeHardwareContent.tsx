@@ -49,14 +49,14 @@ export function FixedShapeHardwareContent({
   const edgeType = (config.edgeType as 'webbing' | 'cabled') || 'webbing';
   const pack = getDefaultPack(packs, edgeType, config.corners);
 
+  const mode: 'standard' | 'manual' | 'none' = config.hardwareSelectionMode ?? 'none';
+
   React.useEffect(() => {
     if (mobileGuidance?.isGuidanceActive && mode) {
       mobileGuidance.scrollToElement('continue-button-hardware', 400);
       mobileGuidance.setHighlightTarget('continue-button-hardware');
     }
   }, [mode, mobileGuidance?.isGuidanceActive]);
-
-  const mode: 'standard' | 'manual' | 'none' = config.hardwareSelectionMode ?? 'none';
 
   const itemsById = useMemo(() => {
     const m = new Map<string, HardwareItem>();
