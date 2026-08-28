@@ -50,14 +50,6 @@ export function HardwareContent({
   const [modalCorner, setModalCorner] = useState<number | null>(null);
   const manualPanelRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    if (mobileGuidance?.isGuidanceActive && mode) {
-      if (mode === 'manual' && !allManualConfigured) return;
-      mobileGuidance.scrollToElement('continue-button-hardware', 400);
-      mobileGuidance.setHighlightTarget('continue-button-hardware');
-    }
-  }, [mode, allManualConfigured, mobileGuidance?.isGuidanceActive]);
-
   const isExact = config.measurementOption === 'exact';
   const allowNone = isExact;
   const allowStandard = !isExact;
@@ -79,6 +71,14 @@ export function HardwareContent({
   const cornerHardware = config.cornerHardware || {};
   const configuredCount = Array.from({ length: config.corners }, (_, i) => cornerHardware[i]?.length || 0).filter(n => n > 0).length;
   const allManualConfigured = mode === 'manual' ? configuredCount === config.corners : true;
+
+  React.useEffect(() => {
+    if (mobileGuidance?.isGuidanceActive && mode) {
+      if (mode === 'manual' && !allManualConfigured) return;
+      mobileGuidance.scrollToElement('continue-button-hardware', 400);
+      mobileGuidance.setHighlightTarget('continue-button-hardware');
+    }
+  }, [mode, allManualConfigured, mobileGuidance?.isGuidanceActive]);
 
   const setMode = (next: 'standard' | 'manual' | 'none') => {
     if (next === 'none' && !allowNone) return;
