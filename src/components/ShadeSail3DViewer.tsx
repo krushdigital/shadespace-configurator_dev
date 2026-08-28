@@ -838,9 +838,9 @@ function CameraFramer({ corners3D, centroid }: { corners3D: THREE.Vector3[]; cen
     const aspect = size.width / size.height;
     const hFov = 2 * Math.atan(Math.tan(fov / 2) * aspect);
     const effectiveFov = Math.min(fov, hFov);
-    const distance = (sphere.radius * 1.3) / Math.tan(effectiveFov / 2);
+    const distance = (sphere.radius * 1.5) / Math.tan(effectiveFov / 2);
 
-    const target = new THREE.Vector3(centroid.x, centroid.y * 0.5, centroid.z);
+    const target = new THREE.Vector3(centroid.x, sphere.center.y, centroid.z);
     const angle = Math.PI / 5;
     const azimuth = Math.PI / 4;
 
@@ -1010,7 +1010,7 @@ function Scene({ config, highlightedMeasurement, highlightedCorner, activeSectio
 
   const initialTarget = useMemo(() => {
     if (corners3D.length < 3) return new THREE.Vector3(0, 1, 0);
-    return new THREE.Vector3(centroid.x, centroid.y * 0.5, centroid.z);
+    return new THREE.Vector3(centroid.x, centroid.y * 0.6, centroid.z);
   }, [corners3D.length >= 3 ? centroid.x : 0, corners3D.length >= 3 ? centroid.y : 0, corners3D.length >= 3 ? centroid.z : 0]);
 
   if (corners3D.length < 3) {
@@ -1220,7 +1220,7 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
       <div
         ref={containerRef}
         data-lenis-prevent
-        className="w-[calc(100%-24px)] mx-auto sm:w-full h-full min-h-[500px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200 relative"
+        className="w-[calc(100%-24px)] mx-auto sm:w-full h-full min-h-[200px] rounded-lg overflow-hidden bg-gradient-to-b from-sky-100 to-sky-50 border border-slate-200 relative"
         style={{ overscrollBehavior: 'contain', touchAction: isTouchDevice ? 'none' : 'auto' }}
       >
         <Canvas
