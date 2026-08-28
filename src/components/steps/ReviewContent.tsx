@@ -846,7 +846,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
           <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-6">
             {/* Shade Sail Preview */}
-            <Card className="p-4 bg-slate-50/80 max-h-[520px] min-h-[400px] flex flex-col">
+            <Card className="p-4 bg-slate-50/80 lg:max-h-[520px] lg:min-h-[400px] lg:flex lg:flex-col">
               <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
@@ -899,7 +899,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </div>
                 </>
               ) : (
-                <div className="flex-1 min-h-[300px]">
+                <div className="h-[300px] lg:flex-1 lg:min-h-[300px] lg:h-auto">
                   <Suspense fallback={
                     <div className="flex items-center justify-center h-full bg-slate-100 rounded-lg">
                       <div className="text-center">
