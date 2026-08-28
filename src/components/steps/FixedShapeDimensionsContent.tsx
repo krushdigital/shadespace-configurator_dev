@@ -149,24 +149,16 @@ export function FixedShapeDimensionsContent({
     const mm = Math.round(convertUnitToMm(value, unit));
     if (mm <= 0) return;
     const newMeasurements = computeFixedShapeMeasurements(shape, mm, edgeBMm || mm);
-    if (shape === 'rectangle' && mm > 0 && edgeBMm > 0) {
-      const points = generateFixedShapePoints(shape, newMeasurements);
-      updateConfig({ measurements: newMeasurements, points });
-    } else {
-      updateConfig({ measurements: newMeasurements });
-    }
+    const points = generateFixedShapePoints(shape, newMeasurements);
+    updateConfig({ measurements: newMeasurements, points });
   }, [shape, unit, edgeBMm, updateConfig]);
 
   const handleEdgeBChange = useCallback((value: number) => {
     const mm = Math.round(convertUnitToMm(value, unit));
     if (mm <= 0) return;
     const newMeasurements = computeFixedShapeMeasurements(shape, edgeAMm || mm, mm);
-    if (shape === 'rectangle' && edgeAMm > 0 && mm > 0) {
-      const points = generateFixedShapePoints(shape, newMeasurements);
-      updateConfig({ measurements: newMeasurements, points });
-    } else {
-      updateConfig({ measurements: newMeasurements });
-    }
+    const points = generateFixedShapePoints(shape, newMeasurements);
+    updateConfig({ measurements: newMeasurements, points });
   }, [shape, unit, edgeAMm, updateConfig]);
 
   useEffect(() => {

@@ -899,7 +899,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </div>
                 </>
               ) : (
-                <div className="h-[300px] lg:flex-1 lg:min-h-[300px] lg:h-auto">
+                <div className="h-[240px] lg:flex-1 lg:min-h-[300px] lg:h-auto">
                   <Suspense fallback={
                     <div className="flex items-center justify-center h-full bg-slate-100 rounded-lg">
                       <div className="text-center">

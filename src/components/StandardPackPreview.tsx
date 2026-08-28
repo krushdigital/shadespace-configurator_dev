@@ -35,7 +35,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [coords, setCoords] = useState({ x: 0, y: 0, placement: 'right' as 'right' | 'left' | 'bottom' });
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
