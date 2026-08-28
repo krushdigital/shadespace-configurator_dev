@@ -953,6 +953,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const diagonalMeasurements = getDiagonalMeasurements;
 
   const allDiagonalsEntered = useMemo(() => {
+    // Fixed shapes have known geometry -- diagonals are never required
+    if (config.shapeMode === 'fixed') {
+      return true;
+    }
+
     // If diagonals were initially provided in the Dimensions step, consider them as entered
     if (config.diagonalsInitiallyProvided) {
       return true;
@@ -968,7 +973,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
     // For 3 corners, no diagonals are required
     return true;
-  }, [config.diagonalsInitiallyProvided, config.corners, config.measurements]);
+  }, [config.shapeMode, config.diagonalsInitiallyProvided, config.corners, config.measurements]);
 
   const allAcknowledgmentsChecked = agreedToAcknowledgments;
 

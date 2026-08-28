@@ -494,10 +494,10 @@ export function DimensionsContent({
             </svg>
             <div>
               <h5 className="text-base font-bold text-blue-900 mb-1">
-                You're Measuring Your Space
+                Measure Between Your Fixing Points
               </h5>
               <p className="text-sm text-blue-800 leading-relaxed">
-                Enter the measurements <strong>between your fixing points</strong> (the space where the shade will be installed). We'll calculate the perfect sail size to fit your space, accounting for fabric stretch and tensioning hardware.
+                Enter the distance <strong>from fixing point to fixing point</strong> (where the shade will attach). We'll calculate the perfect sail size to fit your space, accounting for tensioning hardware.
               </p>
             </div>
           </div>

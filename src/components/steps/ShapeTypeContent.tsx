@@ -57,7 +57,22 @@ export function ShapeTypeContent({
   const selectedFixedShape = config.fixedShapeType || null;
 
   const handleSelectCustom = () => {
-    updateConfig({ shapeMode: 'custom', fixedShapeType: null });
+    const switchingFromFixed = config.shapeMode === 'fixed';
+    updateConfig({
+      shapeMode: 'custom',
+      fixedShapeType: null,
+      measurementOption: 'adjust',
+      ...(switchingFromFixed ? {
+        measurements: {},
+        points: [],
+        fixingHeights: [],
+        fixingTypes: undefined,
+        eyeOrientations: undefined,
+        heightsProvidedByUser: false,
+        cornerHardware: {},
+        diagonalsInitiallyProvided: false,
+      } : {}),
+    });
   };
 
   const handleSelectFixedShape = (shape: FixedShapeType) => {
