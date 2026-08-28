@@ -70,7 +70,7 @@ export function FixedShapeHardwareContent({
 
   const cornerHardware = config.cornerHardware || {};
   const manualLines = cornerHardware[0] || [];
-  const totalManualPrice = manualLines.reduce((sum, l) => sum + (l.livePrice || 0), 0) * config.corners;
+  const totalManualPrice = manualLines.reduce((sum, l) => sum + (l.livePrice || 0) * l.qty, 0);
 
   if (loading) {
     return (
@@ -190,12 +190,12 @@ export function FixedShapeHardwareContent({
             {manualLines.map((line, idx) => (
               <div key={idx} className="flex items-center justify-between py-1.5 text-sm">
                 <span className="text-slate-700">{line.qty}x {line.name}</span>
-                <span className="font-medium text-slate-900">{formatCurrency(line.livePrice || 0, currency)}</span>
+                <span className="font-medium text-slate-900">{formatCurrency((line.livePrice || 0) * line.qty, currency)}</span>
               </div>
             ))}
           </div>
           <div className="flex justify-between items-center pt-2 border-t border-slate-200">
-            <span className="text-sm font-semibold text-slate-700">Total ({config.corners} corners)</span>
+            <span className="text-sm font-semibold text-slate-700">Hardware Total</span>
             <span className="text-sm font-bold text-slate-900">{formatCurrency(totalManualPrice, currency)}</span>
           </div>
         </div>
