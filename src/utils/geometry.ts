@@ -1,4 +1,4 @@
-import { Point } from '../types';
+import { Point, FixedShapeType } from '../types';
 
 // Unit conversion constants
 const MM_TO_INCHES = 0.0393701;
@@ -1881,4 +1881,32 @@ function reconstructPolygonRaw(
 
   if (!isSimplePolygon(points)) return null;
   return points;
+}
+
+export function detectMatchingFixedShape(
+  measurements: { [key: string]: number },
+  corners: number
+): FixedShapeType | null {
+  if (corners === 3) {
+    const ab = measurements['AB'], bc = measurements['BC'], ca = measurements['CA'];
+    if (!ab || !bc || !ca) return null;
+    const tol = Math.max(ab, bc, ca) * 0.02;
+    if (Math.abs(ab - bc) <= tol && Math.abs(bc - ca) <= tol) return 'triangle';
+    const sides = [ab, bc, ca].sort((a, b) => a - b);
+    const hypSq = sides[2] * sides[2];
+    const legSq = sides[0] * sides[0] + sides[1] * sides[1];
+    if (Math.abs(hypSq - legSq) <= hypSq * 0.03) return 'right-angle-triangle';
+    return null;
+  }
+  if (corners === 4) {
+    const ab = measurements['AB'], bc = measurements['BC'], cd = measurements['CD'], da = measurements['DA'];
+    if (!ab || !bc || !cd || !da) return null;
+    const tol = Math.max(ab, bc, cd, da) * 0.02;
+    const allEqual = Math.abs(ab - bc) <= tol && Math.abs(bc - cd) <= tol && Math.abs(cd - da) <= tol;
+    if (allEqual) return 'square';
+    const pairsMatch = Math.abs(ab - cd) <= tol && Math.abs(bc - da) <= tol;
+    if (pairsMatch) return 'rectangle';
+    return null;
+  }
+  return null;
 }

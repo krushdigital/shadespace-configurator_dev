@@ -6,7 +6,7 @@ import { AccordionStep } from './AccordionStep';
 import { MaterialFinishContent } from './steps/MaterialFinishContent';
 import { ShapeSizeContent } from './steps/ShapeSizeContent';
 import { DimensionsContent } from './steps/DimensionsContent';
-import { FixedShapeDimensionsContent } from './steps/FixedShapeDimensionsContent';
+import { FixedShapeDimensionsContent, generateFixedShapePoints, computeFixedShapeMeasurements } from './steps/FixedShapeDimensionsContent';
 import { FixedShapeHardwareContent } from './steps/FixedShapeHardwareContent';
 import { HardwareContent } from './steps/HardwareContent';
 import { ReviewContent } from './steps/ReviewContent';
@@ -2694,12 +2694,30 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     setLoading={setLoading}
                     setShowLoadingOverlay={setShowLoadingOverlay}
                     onSaveQuote={index > 0 ? handleSaveQuote : undefined}
-                    onSwitchToCustom={() => {
+                    onSwitchToCustom={(keepMeasurements: boolean) => {
                       const corners = config.corners || (config.fixedShapeType === 'triangle' || config.fixedShapeType === 'right-angle-triangle' ? 3 : 4);
-                      updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: 'standard' });
+                      if (keepMeasurements) {
+                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: 'standard' });
+                      } else {
+                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: 'standard', measurements: {}, points: [], fixingHeights: Array(corners).fill(0) });
+                      }
                       setOpenStep(2);
                       setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
                     }}
+                    onSwitchToFixed={index === 2 ? (shape: import('../types').FixedShapeType, keepMeasurements: boolean) => {
+                      const corners = shape === 'triangle' || shape === 'right-angle-triangle' ? 3 : 4;
+                      if (keepMeasurements) {
+                        const edgeA = config.measurements['AB'] || 0;
+                        const edgeB = shape === 'rectangle' ? (config.measurements['BC'] || 0) : shape === 'right-angle-triangle' ? (config.measurements['CA'] || 0) : edgeA;
+                        const newMeasurements = computeFixedShapeMeasurements(shape, edgeA, edgeB);
+                        const points = generateFixedShapePoints(shape, newMeasurements);
+                        updateConfig({ shapeMode: 'fixed', fixedShapeType: shape, corners, measurements: newMeasurements, points, measurementOption: 'exact', hardwareSelectionMode: 'standard' });
+                      } else {
+                        updateConfig({ shapeMode: 'fixed', fixedShapeType: shape, corners, measurements: {}, points: [], measurementOption: 'exact', hardwareSelectionMode: 'standard', fixingHeights: Array(corners).fill(0) });
+                      }
+                      setOpenStep(2);
+                      setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
+                    } : undefined}
                     onSketchApply={index === 2 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
                     viewMode={index === 6 ? desktopViewMode : undefined}

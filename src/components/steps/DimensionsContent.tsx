@@ -7,7 +7,7 @@ import { Input } from '../ui/Input';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence } from '../../utils/geometry';
+import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence, detectMatchingFixedShape } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle, Upload } from 'lucide-react';
@@ -15,6 +15,7 @@ import { SaveProgressButton } from '../SaveProgressButton';
 import { SketchUploadModal } from '../SketchUploadModal';
 import { ParsedSketchData } from '../../utils/sketchParser';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
+import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
 import { toast } from 'react-toastify';
 
 const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
@@ -64,6 +65,7 @@ interface DimensionsContentProps {
   mobileViewMode?: 'plan' | '3d';
   onMobileViewModeChange?: (mode: 'plan' | '3d') => void;
   onSketchApply?: (data: ParsedSketchData) => void;
+  onSwitchToFixed?: (shape: import('../../types').FixedShapeType, keepMeasurements: boolean) => void;
 }
 
 export function DimensionsContent({
@@ -102,6 +104,7 @@ export function DimensionsContent({
   mobileViewMode = 'plan',
   onMobileViewModeChange,
   onSketchApply,
+  onSwitchToFixed,
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
@@ -118,6 +121,11 @@ export function DimensionsContent({
   const [activeEditField, setActiveEditField] = useState<string | null>(null);
   const activeEditFieldRef = React.useRef<string | null>(null);
   const pendingGeometryErrorRef = React.useRef<string | null>(null);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const matchingFixedShape = React.useMemo(
+    () => config.shapeMode === 'custom' ? detectMatchingFixedShape(config.measurements, config.corners) : null,
+    [config.measurements, config.corners, config.shapeMode]
+  );
 
   React.useEffect(() => {
     activeEditFieldRef.current = activeEditField;
@@ -827,6 +835,32 @@ export function DimensionsContent({
                 );
               })}
 
+              {/* Switch to fixed shape suggestion */}
+              {matchingFixedShape && onSwitchToFixed && (() => {
+                const SHAPE_NAMES: Record<string, string> = { triangle: 'Triangle', 'right-angle-triangle': 'Right Angle Triangle', square: 'Square', rectangle: 'Rectangle' };
+                const name = SHAPE_NAMES[matchingFixedShape] || matchingFixedShape;
+                return (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-emerald-900">Your measurements match a {name}</p>
+                      <p className="text-xs text-emerald-700 mt-0.5">
+                        {config.corners >= 4
+                          ? `Fixed shapes are simpler \u2014 no diagonals needed.`
+                          : `Switching to a fixed shape simplifies the process.`}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowSwitchModal(true)}
+                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+                      >
+                        Switch to {name}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Diagonal measurements for 4+ corners */}
               {config.corners >= 4 && config.corners <= 8 && (() => {
                 const shapeAccuracyInfo = getShapeAccuracy(config.measurements, config.corners);
@@ -1396,6 +1430,22 @@ export function DimensionsContent({
           );
         })()}
       </div>
+
+      {showSwitchModal && matchingFixedShape && onSwitchToFixed && (
+        <ShapeModeSwitchModal
+          direction="toFixed"
+          targetShape={matchingFixedShape}
+          onKeepMeasurements={() => {
+            setShowSwitchModal(false);
+            onSwitchToFixed(matchingFixedShape, true);
+          }}
+          onStartFresh={() => {
+            setShowSwitchModal(false);
+            onSwitchToFixed(matchingFixedShape, false);
+          }}
+          onCancel={() => setShowSwitchModal(false)}
+        />
+      )}
     </div>
   );
 }

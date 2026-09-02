@@ -6,6 +6,7 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ArrowRight, Info, RefreshCw } from 'lucide-react';
+import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
 import {
   getAlternativeUnit,
   getAlternativeUnitName,
@@ -27,14 +28,14 @@ interface FixedShapeDimensionsContentProps {
   nextStepTitle?: string;
   showBackButton?: boolean;
   onSaveQuote?: () => void;
-  onSwitchToCustom?: () => void;
+  onSwitchToCustom?: (keepMeasurements: boolean) => void;
   isMobile?: boolean;
   device3DTier?: 'high' | 'low' | 'none';
   setHighlightedMeasurement?: (measurement: string | null) => void;
   highlightedMeasurement?: string | null;
 }
 
-function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: string]: number }): { x: number; y: number }[] {
+export function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: string]: number }): { x: number; y: number }[] {
   const cx = 300, cy = 300;
   const maxSpan = 400;
 
@@ -91,7 +92,7 @@ function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: s
   }
 }
 
-function computeFixedShapeMeasurements(shape: FixedShapeType, edgeA: number, edgeB: number): { [key: string]: number } {
+export function computeFixedShapeMeasurements(shape: FixedShapeType, edgeA: number, edgeB: number): { [key: string]: number } {
   switch (shape) {
     case 'triangle':
       return { AB: edgeA, BC: edgeA, CA: edgeA };
@@ -229,6 +230,7 @@ export function FixedShapeDimensionsContent({
   const show3D = device3DTier !== 'none' && supports3DForCorners(config.corners);
 
   const sailPrice = calculations.totalPrice - (calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
 
   const highlightedEdgeKeys = useMemo(() => {
     if (!highlightedMeasurement || !shape) return undefined;
@@ -400,12 +402,28 @@ export function FixedShapeDimensionsContent({
 
       {/* Switch to custom shape */}
       <button
-        onClick={onSwitchToCustom}
+        onClick={() => setShowSwitchModal(true)}
         className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-[#dfe7e1] hover:border-[#2e7d4f] hover:bg-[#eef5ef] text-sm text-[#6b8478] hover:text-[#01312D] transition-all duration-200"
       >
         <ArrowRight className="w-4 h-4" />
         {getCustomSwitchText()} <span className="font-semibold">Switch to Custom Shape</span>
       </button>
+
+      {showSwitchModal && onSwitchToCustom && (
+        <ShapeModeSwitchModal
+          direction="toCustom"
+          targetShape={shape}
+          onKeepMeasurements={() => {
+            setShowSwitchModal(false);
+            onSwitchToCustom(true);
+          }}
+          onStartFresh={() => {
+            setShowSwitchModal(false);
+            onSwitchToCustom(false);
+          }}
+          onCancel={() => setShowSwitchModal(false)}
+        />
+      )}
 
       {/* Live price preview - sail only (hardware shown on next step) */}
       {isComplete && sailPrice > 0 && (
