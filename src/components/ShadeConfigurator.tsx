@@ -145,6 +145,17 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   // Highlighted measurement state for sticky diagram
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
+  const fixedEdgeKeys = useMemo(() => {
+    if (!highlightedMeasurement || config.shapeMode !== 'fixed' || !config.fixedShapeType) return undefined;
+    switch (config.fixedShapeType) {
+      case 'triangle': return new Set(['AB', 'BC', 'CA']);
+      case 'square': return new Set(['AB', 'BC', 'CD', 'DA']);
+      case 'rectangle':
+        return highlightedMeasurement === 'AB' ? new Set(['AB', 'CD']) : new Set(['BC', 'DA']);
+      case 'right-angle-triangle': return new Set([highlightedMeasurement]);
+      default: return undefined;
+    }
+  }, [highlightedMeasurement, config.shapeMode, config.fixedShapeType]);
 
   // Highlighted corner state for height input fields
   const [highlightedCorner, setHighlightedCorner] = useState<number | null>(null);
@@ -2798,6 +2809,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         snapToGrid={true}
                         highlightedMeasurement={highlightedMeasurement}
                         highlightedCorner={highlightedCorner}
+                        highlightedEdgeKeys={fixedEdgeKeys}
                         isMobile={isMobile}
                         measurementOption={config.measurementOption}
                         unit={config.unit}
@@ -2822,6 +2834,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                       snapToGrid={true}
                       highlightedMeasurement={highlightedMeasurement}
                       highlightedCorner={highlightedCorner}
+                      highlightedEdgeKeys={fixedEdgeKeys}
                       isMobile={isMobile}
                       measurementOption={config.measurementOption}
                       unit={config.unit}
