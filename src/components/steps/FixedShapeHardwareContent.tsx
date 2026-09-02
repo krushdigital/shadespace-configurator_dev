@@ -85,7 +85,8 @@ export function FixedShapeHardwareContent({
 
   const cornerHardware = config.cornerHardware || {};
   const manualLines = cornerHardware[0] || [];
-  const totalManualPrice = manualLines.reduce((sum, l) => sum + (l.livePrice || 0) * l.qty, 0);
+  const perCornerManualPrice = manualLines.reduce((sum, l) => sum + (l.livePrice || 0) * l.qty, 0);
+  const totalManualPrice = perCornerManualPrice * config.corners;
 
   if (loading) {
     return (
@@ -192,7 +193,7 @@ export function FixedShapeHardwareContent({
       {mode === 'manual' && manualLines.length > 0 && (
         <div className="rounded-lg border border-[#dfe7e1] bg-[#fbfdfb] p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700">Selected hardware (applied to all corners)</span>
+            <span className="text-sm font-medium text-slate-700">Selected hardware ({config.corners} corners)</span>
             <button
               type="button"
               onClick={() => setModalOpen(true)}
@@ -204,8 +205,8 @@ export function FixedShapeHardwareContent({
           <div className="divide-y divide-[#dfe7e1]">
             {manualLines.map((line, idx) => (
               <div key={idx} className="flex items-center justify-between py-1.5 text-sm">
-                <span className="text-slate-700">{line.qty}x {line.name}</span>
-                <span className="font-medium text-[#01312d]">{formatCurrency((line.livePrice || 0) * line.qty, currency)}</span>
+                <span className="text-slate-700">{line.qty * config.corners}x {line.name}</span>
+                <span className="font-medium text-[#01312d]">{formatCurrency((line.livePrice || 0) * line.qty * config.corners, currency)}</span>
               </div>
             ))}
           </div>
