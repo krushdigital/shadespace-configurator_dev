@@ -70,6 +70,7 @@ export function ShapeTypeContent({
         eyeOrientations: undefined,
         heightsProvidedByUser: false,
         cornerHardware: {},
+        hardwareSelectionMode: undefined,
         diagonalsInitiallyProvided: false,
       } : {}),
     });
@@ -83,7 +84,7 @@ export function ShapeTypeContent({
       fixedShapeType: shape,
       corners,
       measurementOption: 'exact',
-      ...(shapeChanged ? { measurements: {}, points: [] } : {}),
+      ...(shapeChanged ? { measurements: {}, points: [], cornerHardware: {}, hardwareSelectionMode: undefined } : {}),
     });
   };
 
