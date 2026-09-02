@@ -2726,8 +2726,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                       } else {
                         updateConfig({ shapeMode: 'fixed', fixedShapeType: shape, corners, measurements: {}, points: [], measurementOption: 'exact', hardwareSelectionMode: 'standard', fixingHeights: Array(corners).fill(0) });
                       }
-                      setOpenStep(2);
-                      setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
+                      setOpenStep(3);
+                      setConfig(prev => ({ ...prev, step: Math.max(prev.step, 3) }));
                     } : undefined}
                     onSketchApply={index === 2 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
