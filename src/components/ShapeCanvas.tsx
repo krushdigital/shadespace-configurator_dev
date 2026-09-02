@@ -21,6 +21,7 @@ interface ShapeCanvasProps {
   onCornerTap?: (index: number) => void;
   onCornerHover?: (index: number | null) => void;
   hideHelp?: boolean;
+  highlightedEdgeKeys?: ReadonlySet<string>;
 }
 
 export function ShapeCanvas({
@@ -37,6 +38,7 @@ export function ShapeCanvas({
   onCornerTap,
   onCornerHover,
   hideHelp = false,
+  highlightedEdgeKeys,
 }: ShapeCanvasProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -407,6 +409,7 @@ export function ShapeCanvas({
             onEditKeyDown={handleEditKeyDown}
             isMobile={isMobile}
             showAccuracyBadge={true}
+            highlightedEdgeKeys={highlightedEdgeKeys}
           >
             {/* Corner points */}
             {cornerPoints.map(({ point, index, labelPosition, cornerColor, label }) => {

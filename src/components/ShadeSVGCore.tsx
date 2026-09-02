@@ -22,6 +22,7 @@ interface ShadeSVGCoreProps {
   isMobile?: boolean;
   showAccuracyBadge?: boolean;
   plainBackground?: boolean;
+  highlightedEdgeKeys?: ReadonlySet<string>;
 }
 
 export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
@@ -42,7 +43,8 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   forPdfCapture = false,
   isMobile = false,
   showAccuracyBadge = false,
-  plainBackground = false
+  plainBackground = false,
+  highlightedEdgeKeys
 }, ref) => {
   const [fabricImageBase64, setFabricImageBase64] = useState<string | null>(null);
 
@@ -411,7 +413,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
         const fromPoint = config.points[measurement.from];
         const toPoint = config.points[measurement.to];
         if (!fromPoint || !toPoint) return null;
-        const isHighlighted = highlightedMeasurement === measurement.key || editingMeasurementKey === measurement.key;
+        const isHighlighted = (highlightedEdgeKeys ? highlightedEdgeKeys.has(measurement.key) : highlightedMeasurement === measurement.key) || editingMeasurementKey === measurement.key;
         const labelPosition = getEdgeLabelPosition(fromPoint, toPoint);
         
         return (

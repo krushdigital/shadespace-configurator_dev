@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ConfiguratorState, ShadeCalculations, FixedShapeType } from '../../types';
 import { Button } from '../ui/Button';
 import { DualImperialInput } from '../ui/DualImperialInput';
@@ -230,6 +230,18 @@ export function FixedShapeDimensionsContent({
 
   const sailPrice = calculations.totalPrice - (calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0);
 
+  const highlightedEdgeKeys = useMemo(() => {
+    if (!highlightedMeasurement || !shape) return undefined;
+    switch (shape) {
+      case 'triangle': return new Set(['AB', 'BC', 'CA']);
+      case 'square': return new Set(['AB', 'BC', 'CD', 'DA']);
+      case 'rectangle':
+        return highlightedMeasurement === 'AB' ? new Set(['AB', 'CD']) : new Set(['BC', 'DA']);
+      case 'right-angle-triangle':
+        return new Set([highlightedMeasurement]);
+    }
+  }, [highlightedMeasurement, shape]);
+
   return (
     <div className="p-4 sm:p-6">
       {/* Unit indicator bar - matching custom dimensions step */}
@@ -291,6 +303,7 @@ export function FixedShapeDimensionsContent({
               isMobile={isMobile}
               measurementOption="exact"
               highlightedMeasurement={highlightedMeasurement}
+              highlightedEdgeKeys={highlightedEdgeKeys}
             />
           ) : (
             <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Loading 3D...</div>}>
