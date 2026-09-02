@@ -154,11 +154,12 @@ export function FixedShapeDimensionsContent({
       updateConfig({ measurements: newMeasurements, points });
     } else {
       const depthForVisual = Math.round(mm * 0.75);
-      const visualMeasurements = computeFixedShapeMeasurements(shape, mm, depthForVisual);
-      const points = generateFixedShapePoints(shape, visualMeasurements);
-      updateConfig({ measurements: { AB: mm }, points });
+      const fullMeasurements = computeFixedShapeMeasurements(shape, mm, depthForVisual);
+      const points = generateFixedShapePoints(shape, fullMeasurements);
+      const savedMeasurements = needsTwoInputs ? { AB: mm } : fullMeasurements;
+      updateConfig({ measurements: savedMeasurements, points });
     }
-  }, [shape, unit, edgeBMm, updateConfig]);
+  }, [shape, unit, edgeBMm, needsTwoInputs, updateConfig]);
 
   const handleEdgeBChange = useCallback((value: number) => {
     const mm = Math.round(convertUnitToMm(value, unit));
@@ -176,9 +177,10 @@ export function FixedShapeDimensionsContent({
       updateConfig({ measurements: newMeasurements, points });
     } else if (edgeAMm > 0) {
       const depthForVisual = Math.round(edgeAMm * 0.75);
-      const visualMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, depthForVisual);
-      const points = generateFixedShapePoints(shape, visualMeasurements);
-      updateConfig({ measurements: { AB: edgeAMm }, points });
+      const fullMeasurements = computeFixedShapeMeasurements(shape, edgeAMm, depthForVisual);
+      const points = generateFixedShapePoints(shape, fullMeasurements);
+      const savedMeasurements = needsTwoInputs ? { AB: edgeAMm } : fullMeasurements;
+      updateConfig({ measurements: savedMeasurements, points });
     } else if (!config.points || config.points.length === 0) {
       const defaultPoints = generateFixedShapePoints(shape, {});
       updateConfig({ points: defaultPoints });
