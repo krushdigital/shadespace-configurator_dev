@@ -246,18 +246,20 @@ export function SpaceMeasurementsCard({
 export interface ModeSwitchDialogProps {
   /** true = switching Standard → Custom; false = Custom → Standard */
   toCustom?: boolean;
+  shape?: ShapeKey;
   onKeep?: () => void;
   onReset?: () => void;
   onCancel?: () => void;
 }
 
-export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }: ModeSwitchDialogProps) {
+export function ModeSwitchDialog({ toCustom = true, shape, onKeep, onReset, onCancel }: ModeSwitchDialogProps) {
   const [hover, setHover] = React.useState<string | null>(null);
+  const [showHelp, setShowHelp] = React.useState(false);
 
   const nowLabel = toCustom ? "Sail dimensions" : "Fixing point distances";
   const afterLabel = toCustom ? "Fixing point distances" : "Sail dimensions";
-  const NowDiagram = toCustom ? MiniSailDiagram : MiniSpaceDiagram;
-  const AfterDiagram = toCustom ? MiniSpaceDiagram : MiniSailDiagram;
+  const NowDiagram = () => toCustom ? <MiniSailDiagram shape={shape} /> : <MiniSpaceDiagram shape={shape} />;
+  const AfterDiagram = () => toCustom ? <MiniSpaceDiagram shape={shape} /> : <MiniSailDiagram shape={shape} />;
 
   const columnStyle: React.CSSProperties = {
     flex: 1,
@@ -308,11 +310,41 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
         </button>
       </div>
 
-      <p style={{ fontSize: 13.5, lineHeight: 1.5, color: BODY, margin: "0 0 16px" }}>
+      <p style={{ fontSize: 13.5, lineHeight: 1.5, color: BODY, margin: "0 0 4px" }}>
         {toCustom
-          ? "Your numbers will change from sail size to the distance between your fixing points."
-          : "Your numbers will change from fixing point distance to the finished sail size."}
+          ? "Instead of entering the sail's own size, you'll enter the distance between the points where it attaches."
+          : "Instead of measuring between attachment points, you'll enter the finished size of the sail itself."}
       </p>
+      <button
+        onClick={() => setShowHelp(h => !h)}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 4,
+          border: "none", background: "none", padding: 0,
+          color: TEAL_EDGE, fontSize: 12.5, fontWeight: 600,
+          cursor: "pointer", marginBottom: showHelp ? 8 : 16,
+        }}
+      >
+        <span style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 16, height: 16, borderRadius: "50%", border: `1.5px solid ${TEAL_EDGE}`,
+          fontSize: 10, fontWeight: 800, lineHeight: 1,
+        }}>?</span>
+        {showHelp ? "Hide details" : "What does this mean?"}
+      </button>
+      {showHelp && (
+        <div style={{
+          background: "#F0FAF4", border: `1px solid ${TEAL_EDGE}40`,
+          borderRadius: 8, padding: "10px 12px", marginBottom: 16,
+          fontSize: 12.5, lineHeight: 1.55, color: BODY,
+        }}>
+          <div style={{ marginBottom: 6 }}>
+            <strong style={{ color: GREEN }}>Sail dimensions</strong> = the finished size of the fabric, edge to edge. This is how big the sail itself will be.
+          </div>
+          <div>
+            <strong style={{ color: GREEN }}>Fixing point distances</strong> = the distance between your posts, walls, or brackets. We make the sail slightly smaller so the tensioning hardware fits in between.
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 12, alignItems: "stretch", marginBottom: 18 }}>
         <div style={columnStyle}>
@@ -392,46 +424,97 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
   );
 }
 
-/** Compact inline SVG: sail shape with measurement lines along edges. Renders the actual chosen shape. */
-export function MiniSailDiagram({ shape }: { shape?: 'triangle' | 'right-angle-triangle' | 'square' | 'rectangle' }) {
-  const shapePoints: Record<string, number[][]> = {
-    triangle:              [[55,10],[98,68],[12,68]],
-    'right-angle-triangle':[[12,12],[12,68],[98,68]],
-    square:                [[18,12],[92,12],[92,68],[18,68]],
-    rectangle:             [[12,12],[98,12],[98,68],[12,68]],
-  };
-  const pts = shapePoints[shape || 'rectangle'];
-  const polyStr = pts.map(p => p.join(',')).join(' ');
-  const edges = pts.map((p, i) => ({ from: p, to: pts[(i + 1) % pts.length] }));
+type ShapeKey = 'triangle' | 'right-angle-triangle' | 'square' | 'rectangle';
+
+const SHAPE_POINTS: Record<ShapeKey, number[][]> = {
+  triangle:               [[55,10],[98,68],[12,68]],
+  'right-angle-triangle': [[12,12],[12,68],[98,68]],
+  square:                 [[18,12],[92,12],[92,68],[18,68]],
+  rectangle:              [[12,12],[98,12],[98,68],[12,68]],
+};
+
+function curvedSailPath(pts: number[][], sag = 4): string {
+  const n = pts.length;
+  let d = `M ${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < n; i++) {
+    const [x1, y1] = pts[i];
+    const [x2, y2] = pts[(i + 1) % n];
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const nx = -dy / len;
+    const ny = dx / len;
+    const cx = mx + nx * sag;
+    const cy = my + ny * sag;
+    d += ` Q ${cx},${cy} ${x2},${y2}`;
+  }
+  d += ' Z';
+  return d;
+}
+
+/** Compact inline SVG: sail shape with curved fabric edges and measurement lines. */
+export function MiniSailDiagram({ shape }: { shape?: ShapeKey }) {
+  const pts = SHAPE_POINTS[shape || 'rectangle'];
+  const n = pts.length;
+  const fillPath = curvedSailPath(pts, 4);
 
   return (
     <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-      <polygon points={polyStr} fill={TEAL} fillOpacity={0.18} stroke={TEAL_EDGE} strokeWidth={1.5} />
-      {edges.map((e, i) => (
-        <line key={i} x1={e.from[0]} y1={e.from[1]} x2={e.to[0]} y2={e.to[1]} stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      ))}
-      {pts.map(([cx,cy], i) => (
+      <path d={fillPath} fill={TEAL} fillOpacity={0.18} stroke={TEAL_EDGE} strokeWidth={1.5} />
+      {Array.from({ length: n }, (_, i) => {
+        const [x1, y1] = pts[i];
+        const [x2, y2] = pts[(i + 1) % n];
+        return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />;
+      })}
+      {pts.map(([cx, cy], i) => (
         <circle key={i} cx={cx} cy={cy} r={3} fill={TEAL_EDGE} />
       ))}
     </svg>
   );
 }
 
+const SPACE_OUTER: Record<ShapeKey, number[][]> = {
+  triangle:               [[55,6],[102,72],[8,72]],
+  'right-angle-triangle': [[8,8],[8,72],[102,72]],
+  square:                 [[14,8],[96,8],[96,72],[14,72]],
+  rectangle:              [[8,8],[102,8],[102,72],[8,72]],
+};
+
+const SPACE_INNER: Record<ShapeKey, number[][]> = {
+  triangle:               [[55,18],[90,64],[20,64]],
+  'right-angle-triangle': [[18,18],[18,64],[90,64]],
+  square:                 [[22,16],[88,16],[88,64],[22,64]],
+  rectangle:              [[18,16],[92,16],[92,64],[18,64]],
+};
+
 /** Compact inline SVG: fixing points outside sail with measurement lines between them. */
-export function MiniSpaceDiagram() {
+export function MiniSpaceDiagram({ shape }: { shape?: ShapeKey }) {
+  const outer = SPACE_OUTER[shape || 'rectangle'];
+  const inner = SPACE_INNER[shape || 'rectangle'];
+  const n = outer.length;
+  const innerFill = curvedSailPath(inner, 3);
+
   return (
     <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-      <rect x="20" y="18" width="70" height="44" rx="2" fill={TEAL} fillOpacity={0.1} stroke={TEAL_EDGE} strokeWidth={1} strokeOpacity={0.4} />
-      {[[8,8],[102,8],[102,72],[8,72]].map(([cx,cy], i) => (
+      <path d={innerFill} fill={TEAL} fillOpacity={0.1} stroke={TEAL_EDGE} strokeWidth={1} strokeOpacity={0.4} />
+      {Array.from({ length: n }, (_, i) => {
+        const [ox, oy] = outer[i];
+        const [ix, iy] = inner[i];
+        return <line key={`hw${i}`} x1={ox} y1={oy} x2={ix} y2={iy} stroke={MUTED} strokeWidth={1} strokeOpacity={0.5} />;
+      })}
+      {outer.map(([cx, cy], i) => (
         <React.Fragment key={i}>
           <circle cx={cx} cy={cy} r={4} fill="#fff" stroke={INK} strokeWidth={1.5} />
           <circle cx={cx} cy={cy} r={1.5} fill={INK} />
         </React.Fragment>
       ))}
-      <line x1="8" y1="8" x2="102" y2="8" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="102" y1="8" x2="102" y2="72" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="102" y1="72" x2="8" y2="72" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="8" y1="72" x2="8" y2="8" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      {Array.from({ length: n }, (_, i) => {
+        const [x1, y1] = outer[i];
+        const [x2, y2] = outer[(i + 1) % n];
+        return <line key={`m${i}`} x1={x1} y1={y1} x2={x2} y2={y2} stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />;
+      })}
     </svg>
   );
 }

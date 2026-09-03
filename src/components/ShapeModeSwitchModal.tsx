@@ -12,6 +12,7 @@ interface ShapeModeSwitchModalProps {
 
 export function ShapeModeSwitchModal({
   direction,
+  targetShape,
   onKeepMeasurements,
   onStartFresh,
   onCancel,
@@ -22,6 +23,7 @@ export function ShapeModeSwitchModal({
       <div className="relative max-w-[430px] w-full">
         <ModeSwitchDialog
           toCustom={direction === 'toCustom'}
+          shape={targetShape}
           onKeep={onKeepMeasurements}
           onReset={onStartFresh}
           onCancel={onCancel}

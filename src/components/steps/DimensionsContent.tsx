@@ -512,7 +512,7 @@ export function DimensionsContent({
               </div>
             </div>
             <div className="flex justify-center sm:items-center">
-              <MiniSpaceDiagram />
+              <MiniSpaceDiagram shape={config.corners === 3 ? 'triangle' : 'rectangle'} />
             </div>
           </div>
         </div>
