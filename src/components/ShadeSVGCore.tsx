@@ -296,6 +296,20 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   const edgeMeasurements = useMemo(() => getEdgeMeasurements(), [getEdgeMeasurements]);
   const diagonalMeasurements = useMemo(() => getDiagonalMeasurements(), [getDiagonalMeasurements]);
 
+  const resolvedHighlightedEdgeKeys = useMemo(() => {
+    if (highlightedEdgeKeys) return highlightedEdgeKeys;
+    if (!highlightedMeasurement || config.shapeMode !== 'fixed' || !config.fixedShapeType) return undefined;
+    switch (config.fixedShapeType) {
+      case 'triangle': return new Set(['AB', 'BC', 'CA']);
+      case 'square': return new Set(['AB', 'BC', 'CD', 'DA']);
+      case 'rectangle':
+        return highlightedMeasurement === 'AB' ? new Set(['AB', 'CD']) : new Set(['BC', 'DA']);
+      case 'right-angle-triangle':
+        return highlightedMeasurement === 'AB' ? new Set(['AB']) : new Set(['CA']);
+      default: return undefined;
+    }
+  }, [highlightedEdgeKeys, highlightedMeasurement, config.shapeMode, config.fixedShapeType]);
+
   // Dynamic clickable area dimensions for mobile
   const rectWidth = isMobile ? 80 : 50;
   const rectHeight = isMobile ? 30 : 16;
@@ -413,7 +427,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
         const fromPoint = config.points[measurement.from];
         const toPoint = config.points[measurement.to];
         if (!fromPoint || !toPoint) return null;
-        const isHighlighted = (highlightedEdgeKeys ? highlightedEdgeKeys.has(measurement.key) : highlightedMeasurement === measurement.key) || editingMeasurementKey === measurement.key;
+        const isHighlighted = (resolvedHighlightedEdgeKeys ? resolvedHighlightedEdgeKeys.has(measurement.key) : highlightedMeasurement === measurement.key) || editingMeasurementKey === measurement.key;
         const labelPosition = getEdgeLabelPosition(fromPoint, toPoint);
         
         return (
