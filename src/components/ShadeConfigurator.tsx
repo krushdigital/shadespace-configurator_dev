@@ -18,7 +18,7 @@ import { useMobileGuidance } from '../hooks/useMobileGuidance';
 import { ConfiguratorState, EdgeType } from '../types';
 import { useFabricCatalog } from '../hooks/useFabricCatalog';
 import { Point } from '../types';
-import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, canReconstructShape, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy } from '../utils/geometry';
+import { validateMeasurements, validateHeights, getDiagonalKeysForCorners, formatDualMeasurement, getDualMeasurementValues, canReconstructShape, reconstructPolygonFromMeasurements, formatMeasurement, formatArea, getHeightRequirement, areHeightsProvided, isHeightRequiredForCheckout, getShapeAccuracy, generateRegularPolygonPoints } from '../utils/geometry';
 import { generatePdfFromBlocks, CustomerDetails } from '../utils/pdfGenerator';
 import { loadActivePdfTemplate } from '../utils/activePdfTemplate';
 import { ShapeCanvas } from './ShapeCanvas';
@@ -2712,7 +2712,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                       if (keepMeasurements) {
                         updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: undefined, ...resetFields });
                       } else {
-                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: undefined, measurements: {}, points: [], fixingHeights: Array(corners).fill(0), ...resetFields });
+                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: undefined, measurements: {}, points: generateRegularPolygonPoints(corners), fixingHeights: Array(corners).fill(0), ...resetFields });
                       }
                       setOpenStep(2);
                       setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
@@ -2727,7 +2727,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         const points = generateFixedShapePoints(shape, newMeasurements);
                         updateConfig({ shapeMode: 'fixed', fixedShapeType: shape, corners, measurements: newMeasurements, points, measurementOption: 'exact', hardwareSelectionMode: 'standard' });
                       } else {
-                        updateConfig({ shapeMode: 'fixed', fixedShapeType: shape, corners, measurements: {}, points: [], measurementOption: 'exact', hardwareSelectionMode: 'standard', fixingHeights: Array(corners).fill(0) });
+                        updateConfig({ shapeMode: 'fixed', fixedShapeType: shape, corners, measurements: {}, points: generateFixedShapePoints(shape, {}), measurementOption: 'exact', hardwareSelectionMode: 'standard', fixingHeights: Array(corners).fill(0) });
                       }
                       setOpenStep(3);
                       setConfig(prev => ({ ...prev, step: Math.max(prev.step, 3) }));

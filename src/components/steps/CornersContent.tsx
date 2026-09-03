@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfiguratorState } from '../../types';
+import { generateRegularPolygonPoints } from '../../utils/geometry';
 import { Button } from '../ui/Button';
 import { Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -40,73 +41,7 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     }
   }, [config.corners, mobileGuidance?.isGuidanceActive]);
 
-  const generateRegularPoints = (corners: number) => {
-    const centerX = 300;
-    const centerY = 300;
-    const radius = 160;
-    const points = [];
-
-    if (corners === 5) {
-      points.push(
-        { x: 156, y: 180 },
-        { x: 300, y: 140 },
-        { x: 444, y: 180 },
-        { x: 420, y: 420 },
-        { x: 180, y: 420 }
-      );
-      return points;
-    }
-
-    if (corners === 6) {
-      points.push(
-        { x: 156, y: 156 },
-        { x: 300, y: 140 },
-        { x: 444, y: 156 },
-        { x: 444, y: 444 },
-        { x: 300, y: 460 },
-        { x: 156, y: 444 }
-      );
-      return points;
-    }
-
-    if (corners === 7) {
-      points.push(
-        { x: 156, y: 170 },
-        { x: 300, y: 140 },
-        { x: 444, y: 170 },
-        { x: 460, y: 310 },
-        { x: 400, y: 440 },
-        { x: 200, y: 440 },
-        { x: 140, y: 310 }
-      );
-      return points;
-    }
-
-    if (corners === 8) {
-      points.push(
-        { x: 180, y: 150 },
-        { x: 300, y: 140 },
-        { x: 420, y: 150 },
-        { x: 460, y: 270 },
-        { x: 460, y: 390 },
-        { x: 370, y: 460 },
-        { x: 230, y: 460 },
-        { x: 140, y: 350 }
-      );
-      return points;
-    }
-
-    const startAngle = -3 * Math.PI / 4;
-    for (let i = 0; i < corners; i++) {
-      const angle = startAngle + (i * 2 * Math.PI) / corners;
-      points.push({
-        x: centerX + radius * Math.cos(angle),
-        y: centerY + radius * Math.sin(angle)
-      });
-    }
-
-    return points;
-  };
+  const generateRegularPoints = generateRegularPolygonPoints;
 
   const handleShapeChange = (corners: number) => {
     const points = generateRegularPoints(corners);

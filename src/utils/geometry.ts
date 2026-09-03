@@ -1910,3 +1910,29 @@ export function detectMatchingFixedShape(
   }
   return null;
 }
+
+export function generateRegularPolygonPoints(corners: number): Point[] {
+  const centerX = 300;
+  const centerY = 300;
+  const radius = 160;
+  const points: Point[] = [];
+
+  const presets: Record<number, Point[]> = {
+    5: [{ x: 156, y: 180 }, { x: 300, y: 140 }, { x: 444, y: 180 }, { x: 420, y: 420 }, { x: 180, y: 420 }],
+    6: [{ x: 156, y: 156 }, { x: 300, y: 140 }, { x: 444, y: 156 }, { x: 444, y: 444 }, { x: 300, y: 460 }, { x: 156, y: 444 }],
+    7: [{ x: 156, y: 170 }, { x: 300, y: 140 }, { x: 444, y: 170 }, { x: 460, y: 310 }, { x: 400, y: 440 }, { x: 200, y: 440 }, { x: 140, y: 310 }],
+    8: [{ x: 180, y: 150 }, { x: 300, y: 140 }, { x: 420, y: 150 }, { x: 460, y: 270 }, { x: 460, y: 390 }, { x: 370, y: 460 }, { x: 230, y: 460 }, { x: 140, y: 350 }],
+  };
+
+  if (presets[corners]) return presets[corners];
+
+  const startAngle = -3 * Math.PI / 4;
+  for (let i = 0; i < corners; i++) {
+    const angle = startAngle + (i * 2 * Math.PI) / corners;
+    points.push({
+      x: centerX + radius * Math.cos(angle),
+      y: centerY + radius * Math.sin(angle),
+    });
+  }
+  return points;
+}
