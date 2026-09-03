@@ -341,7 +341,7 @@ export function ModeSwitchDialog({ toCustom = true, shape, onKeep, onReset, onCa
             <strong style={{ color: GREEN }}>Sail dimensions</strong> = the finished size of the fabric, edge to edge. This is how big the sail itself will be.
           </div>
           <div>
-            <strong style={{ color: GREEN }}>Fixing point distances</strong> = the distance between your posts, walls, or brackets. We make the sail slightly smaller so the tensioning hardware fits in between.
+            <strong style={{ color: GREEN }}>Fixing point distances</strong> = the distance between your posts, walls, or brackets. We calculate and make allowance for fabric stretch and corner tensioning hardware so the sail fits perfectly and snug.
           </div>
         </div>
       )}
