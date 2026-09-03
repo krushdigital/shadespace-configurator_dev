@@ -392,16 +392,25 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
   );
 }
 
-/** Compact inline SVG: sail shape with measurement lines along edges. */
-export function MiniSailDiagram() {
+/** Compact inline SVG: sail shape with measurement lines along edges. Renders the actual chosen shape. */
+export function MiniSailDiagram({ shape }: { shape?: 'triangle' | 'right-angle-triangle' | 'square' | 'rectangle' }) {
+  const shapePoints: Record<string, number[][]> = {
+    triangle:              [[55,10],[98,68],[12,68]],
+    'right-angle-triangle':[[12,12],[12,68],[98,68]],
+    square:                [[18,12],[92,12],[92,68],[18,68]],
+    rectangle:             [[12,12],[98,12],[98,68],[12,68]],
+  };
+  const pts = shapePoints[shape || 'rectangle'];
+  const polyStr = pts.map(p => p.join(',')).join(' ');
+  const edges = pts.map((p, i) => ({ from: p, to: pts[(i + 1) % pts.length] }));
+
   return (
     <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-      <rect x="12" y="12" width="86" height="56" rx="2" fill={TEAL} fillOpacity={0.18} stroke={TEAL_EDGE} strokeWidth={1.5} />
-      <line x1="12" y1="12" x2="98" y2="12" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="98" y1="12" x2="98" y2="68" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="98" y1="68" x2="12" y2="68" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="12" y1="68" x2="12" y2="12" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      {[[12,12],[98,12],[98,68],[12,68]].map(([cx,cy], i) => (
+      <polygon points={polyStr} fill={TEAL} fillOpacity={0.18} stroke={TEAL_EDGE} strokeWidth={1.5} />
+      {edges.map((e, i) => (
+        <line key={i} x1={e.from[0]} y1={e.from[1]} x2={e.to[0]} y2={e.to[1]} stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      ))}
+      {pts.map(([cx,cy], i) => (
         <circle key={i} cx={cx} cy={cy} r={3} fill={TEAL_EDGE} />
       ))}
     </svg>

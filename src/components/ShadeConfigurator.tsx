@@ -152,7 +152,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       case 'square': return new Set(['AB', 'BC', 'CD', 'DA']);
       case 'rectangle':
         return highlightedMeasurement === 'AB' ? new Set(['AB', 'CD']) : new Set(['BC', 'DA']);
-      case 'right-angle-triangle': return new Set([highlightedMeasurement]);
+      case 'right-angle-triangle':
+        return highlightedMeasurement === 'AB' ? new Set(['AB', 'BC']) : new Set(['CA', 'BC']);
       default: return undefined;
     }
   }, [highlightedMeasurement, config.shapeMode, config.fixedShapeType]);

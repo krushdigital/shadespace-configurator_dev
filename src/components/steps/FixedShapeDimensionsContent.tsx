@@ -241,7 +241,7 @@ export function FixedShapeDimensionsContent({
       case 'rectangle':
         return highlightedMeasurement === 'AB' ? new Set(['AB', 'CD']) : new Set(['BC', 'DA']);
       case 'right-angle-triangle':
-        return new Set([highlightedMeasurement]);
+        return highlightedMeasurement === 'AB' ? new Set(['AB', 'BC']) : new Set(['CA', 'BC']);
     }
   }, [highlightedMeasurement, shape]);
 
@@ -283,7 +283,7 @@ export function FixedShapeDimensionsContent({
           </div>
         </div>
         <div className="flex justify-center sm:items-center">
-          <MiniSailDiagram />
+          <MiniSailDiagram shape={shape} />
         </div>
       </div>
 
