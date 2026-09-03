@@ -2182,6 +2182,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     updateConfig({ points: centeredPoints });
     setOpenStep(nextStepIndex);
 
+    if (nextStepIndex === 7) {
+      setDesktopViewMode('plan');
+    }
+
     setTimeout(() => {
       smoothScrollToStep(nextStepIndex);
     }, (nextStepIndex === 7) ? (isMobile ? 600 : 500) : (isMobile ? 400 : 350));
