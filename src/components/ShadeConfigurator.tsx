@@ -2633,9 +2633,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
         )}
 
-        <div className={`grid grid-cols-1 gap-8 ${(openStep === 2 || openStep === 3 || openStep === 5) ? 'lg:grid-cols-4' : (openStep === 7) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-8 ${(openStep === 2 || openStep === 3 || openStep === 5 || openStep === 6) ? 'lg:grid-cols-4' : (openStep === 7) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${(openStep === 2 || openStep === 3 || openStep === 5)
+          <div className={`space-y-2 min-h-0 ${(openStep === 2 || openStep === 3 || openStep === 5 || openStep === 6)
             ? 'lg:col-span-2'
             : (openStep === 7) ? 'lg:col-span-3' : 'lg:col-span-3'
             }`}>
@@ -2765,7 +2765,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {(openStep === 2 || openStep === 3 || openStep === 5) && !isMobile && (() => {
+          {(openStep === 2 || openStep === 3 || openStep === 5 || openStep === 6) && !isMobile && (() => {
             const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
             const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
             const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
@@ -2778,7 +2778,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-24 lg:self-start z-10 max-h-[calc(100vh-7rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-slate-900">
-                    {openStep === 5 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
+                    {(openStep === 5 || openStep === 6) ? 'Sail Diagram' : 'Interactive Measurement Guide'}
                   </h4>
                   {desktop3DAvailable && (
                     <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
@@ -2808,7 +2808,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   )}
                 </div>
 
-                {openStep === 5 && effectiveDesktopView === 'plan' && (
+                {(openStep === 5 || openStep === 6) && effectiveDesktopView === 'plan' && (
                   <p className="text-sm text-slate-600 mb-3">
                     Hover over a corner below to preview which corner on the sail you are configuring.
                   </p>
@@ -2870,7 +2870,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         config={config}
                         highlightedMeasurement={highlightedMeasurement}
                         highlightedCorner={highlightedCorner}
-                        activeSection={openStep === 5 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+                        activeSection={(openStep === 5 || openStep === 6) ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
                       />
                     </Suspense>
                     <button
@@ -3013,7 +3013,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             config={config}
             highlightedMeasurement={highlightedMeasurement}
             highlightedCorner={highlightedCorner}
-            activeSection={openStep === 5 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+            activeSection={(openStep === 5 || openStep === 6) ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
           />
         </Suspense>
       )}
