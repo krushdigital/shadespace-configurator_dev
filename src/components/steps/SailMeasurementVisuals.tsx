@@ -254,41 +254,31 @@ export interface ModeSwitchDialogProps {
 export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }: ModeSwitchDialogProps) {
   const [hover, setHover] = React.useState<string | null>(null);
 
-  const step = (n: string, heading: string, body: React.ReactNode) => (
-    <div style={{ display: "flex", gap: 12 }}>
-      <span
-        style={{
-          flex: "none",
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          background: "#DCEFE3",
-          color: GREEN,
-          fontSize: 12,
-          fontWeight: 700,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {n}
-      </span>
-      <div style={{ fontSize: 13.5, lineHeight: 1.55, color: BODY }}>
-        <strong style={{ color: GREEN }}>{heading}</strong>
-        <br />
-        {body}
-      </div>
-    </div>
-  );
+  const nowLabel = toCustom ? "Sail dimensions" : "Fixing point distances";
+  const afterLabel = toCustom ? "Fixing point distances" : "Sail dimensions";
+  const NowDiagram = toCustom ? MiniSailDiagram : MiniSpaceDiagram;
+  const AfterDiagram = toCustom ? MiniSpaceDiagram : MiniSailDiagram;
+
+  const columnStyle: React.CSSProperties = {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 8,
+    padding: "14px 8px",
+    borderRadius: 10,
+    background: "#F9FAFB",
+    border: "1px solid #E5E7EB",
+  };
 
   return (
     <div
       style={{
-        width: 410,
+        width: 420,
         background: "#ffffff",
         borderRadius: 16,
         boxShadow: "0 12px 32px rgba(16,24,40,0.14)",
-        padding: "26px 26px 22px",
+        padding: "24px 24px 20px",
         boxSizing: "border-box",
         fontFamily: FONT,
         color: INK,
@@ -296,9 +286,9 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
       role="dialog"
       aria-modal="true"
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: GREEN, margin: 0 }}>
-          {toCustom ? "Switch to a custom made-to-measure sail?" : "Switch to a standard shape and size sail?"}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: GREEN, margin: 0, lineHeight: 1.3 }}>
+          {toCustom ? "Switch to custom made-to-measure?" : "Switch to standard shape and size?"}
         </h2>
         <button
           onClick={onCancel}
@@ -311,87 +301,36 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
             lineHeight: 1,
             cursor: "pointer",
             padding: 2,
+            flexShrink: 0,
           }}
         >
           ✕
         </button>
       </div>
 
-      <div
-        style={{
-          background: AMBER_BG,
-          border: `1px solid ${AMBER_BORDER}`,
-          borderRadius: 10,
-          padding: "12px 14px",
-          fontSize: 13.5,
-          lineHeight: 1.5,
-          color: "#92400E",
-          marginBottom: 18,
-        }}
-      >
-        <strong>⚠ Important:</strong> the same numbers mean different things in each mode.{" "}
+      <p style={{ fontSize: 13.5, lineHeight: 1.5, color: BODY, margin: "0 0 16px" }}>
         {toCustom
-          ? "Keep the same numbers and your sail will not come out the size you expect."
-          : "Keep the same numbers and your sail will be too large to tension."}
-      </div>
+          ? "Your numbers will change from sail size to the distance between your fixing points."
+          : "Your numbers will change from fixing point distance to the finished sail size."}
+      </p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginBottom: 20 }}>
-        {toCustom
-          ? step(
-              "1",
-              "Right now (standard shape and size)",
-              <>
-                Your measurements are the <strong>size of the sail itself</strong> — the finished fabric, edge to edge.
-              </>
-            )
-          : step(
-              "1",
-              "Right now (custom made-to-measure)",
-              <>
-                Your measurements are the <strong>distances between your fixing points</strong>, and we calculate the
-                adjustments needed for fabric stretch and corner hardware to ensure a perfect, snug fit.
-              </>
-            )}
-        {toCustom
-          ? step(
-              "2",
-              "After switching (custom made-to-measure)",
-              <>
-                Your measurements become the <strong>distance between your fixing points</strong> (posts, walls). We
-                calculate the adjustments needed for fabric stretch and corner hardware to ensure a perfect, snug fit.
-                If you carry your current numbers across, the finished sail will be smaller than the one you have now.
-              </>
-            )
-          : step(
-              "2",
-              "After switching (standard shape and size)",
-              <>
-                Your measurements become the <strong>size of the sail itself</strong>. If you carry your current numbers
-                across, the sail will be as wide as the gap between your fixing points — too large to tension properly.
-              </>
-            )}
+      <div style={{ display: "flex", gap: 12, alignItems: "stretch", marginBottom: 18 }}>
+        <div style={columnStyle}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: "uppercase", letterSpacing: 0.5 }}>Now</span>
+          <NowDiagram />
+          <span style={{ fontSize: 12, fontWeight: 600, color: BODY, textAlign: "center" }}>{nowLabel}</span>
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", flexShrink: 0, color: MUTED, fontSize: 20 }}>→</div>
+
+        <div style={{ ...columnStyle, background: "#F0FAF4", border: `1.5px solid ${TEAL_EDGE}` }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, textTransform: "uppercase", letterSpacing: 0.5 }}>After</span>
+          <AfterDiagram />
+          <span style={{ fontSize: 12, fontWeight: 600, color: GREEN, textAlign: "center" }}>{afterLabel}</span>
+        </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button
-          onClick={onKeep}
-          onMouseEnter={() => setHover("keep")}
-          onMouseLeave={() => setHover(null)}
-          style={{
-            width: "100%",
-            padding: "13px 16px",
-            borderRadius: 10,
-            border: `1.5px solid ${GREEN}`,
-            background: hover === "keep" ? "#F0F6F2" : "#ffffff",
-            color: GREEN,
-            fontFamily: FONT,
-            fontSize: 14,
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          →&nbsp; I understand — keep my measurements
-        </button>
         <button
           onClick={onReset}
           onMouseEnter={() => setHover("reset")}
@@ -409,7 +348,26 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
             cursor: "pointer",
           }}
         >
-          Start with fresh measurements
+          Start fresh
+        </button>
+        <button
+          onClick={onKeep}
+          onMouseEnter={() => setHover("keep")}
+          onMouseLeave={() => setHover(null)}
+          style={{
+            width: "100%",
+            padding: "13px 16px",
+            borderRadius: 10,
+            border: `1.5px solid ${GREEN}`,
+            background: hover === "keep" ? "#F0F6F2" : "#ffffff",
+            color: GREEN,
+            fontFamily: FONT,
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Keep my measurements
         </button>
         <button
           onClick={onCancel}
@@ -438,14 +396,12 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
 export function MiniSailDiagram() {
   return (
     <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-      <polygon points="10,15 100,10 95,70 15,65" fill={TEAL} fillOpacity={0.18} stroke={TEAL_EDGE} strokeWidth={1.5} />
-      {/* Edge measurement lines */}
-      <line x1="10" y1="15" x2="100" y2="10" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="100" y1="10" x2="95" y2="70" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="95" y1="70" x2="15" y2="65" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="15" y1="65" x2="10" y2="15" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      {/* Corner dots */}
-      {[[10,15],[100,10],[95,70],[15,65]].map(([cx,cy], i) => (
+      <rect x="12" y="12" width="86" height="56" rx="2" fill={TEAL} fillOpacity={0.18} stroke={TEAL_EDGE} strokeWidth={1.5} />
+      <line x1="12" y1="12" x2="98" y2="12" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="98" y1="12" x2="98" y2="68" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="98" y1="68" x2="12" y2="68" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="12" y1="68" x2="12" y2="12" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      {[[12,12],[98,12],[98,68],[12,68]].map(([cx,cy], i) => (
         <circle key={i} cx={cx} cy={cy} r={3} fill={TEAL_EDGE} />
       ))}
     </svg>
@@ -456,20 +412,17 @@ export function MiniSailDiagram() {
 export function MiniSpaceDiagram() {
   return (
     <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-      {/* Sail shape (faded) */}
-      <polygon points="22,22 88,18 85,62 25,58" fill={TEAL} fillOpacity={0.1} stroke={TEAL_EDGE} strokeWidth={1} strokeOpacity={0.4} />
-      {/* Fixing points outside the sail */}
-      {[[8,12],[102,8],[98,72],[12,68]].map(([cx,cy], i) => (
+      <rect x="20" y="18" width="70" height="44" rx="2" fill={TEAL} fillOpacity={0.1} stroke={TEAL_EDGE} strokeWidth={1} strokeOpacity={0.4} />
+      {[[8,8],[102,8],[102,72],[8,72]].map(([cx,cy], i) => (
         <React.Fragment key={i}>
           <circle cx={cx} cy={cy} r={4} fill="#fff" stroke={INK} strokeWidth={1.5} />
           <circle cx={cx} cy={cy} r={1.5} fill={INK} />
         </React.Fragment>
       ))}
-      {/* Measurement lines between fixing points */}
-      <line x1="8" y1="12" x2="102" y2="8" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="102" y1="8" x2="98" y2="72" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="98" y1="72" x2="12" y2="68" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
-      <line x1="12" y1="68" x2="8" y2="12" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="8" y1="8" x2="102" y2="8" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="102" y1="8" x2="102" y2="72" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="102" y1="72" x2="8" y2="72" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="8" y1="72" x2="8" y2="8" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
     </svg>
   );
 }
