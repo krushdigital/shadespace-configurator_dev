@@ -846,8 +846,8 @@ export function DimensionsContent({
                       <p className="text-sm font-semibold text-emerald-900">Your measurements match a {name}</p>
                       <p className="text-xs text-emerald-700 mt-0.5">
                         {config.corners >= 4
-                          ? `Fixed shapes are simpler \u2014 no diagonals needed.`
-                          : `Switching to a fixed shape simplifies the process.`}
+                          ? `Standard shapes are simpler \u2014 no diagonals needed.`
+                          : `Switching to a standard shape simplifies the process.`}
                       </p>
                       <button
                         type="button"

@@ -790,8 +790,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         Shade_Factor: selectedColor?.shadeFactor,
         Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
         Shape_Type: config.shapeMode === 'fixed' && config.fixedShapeType
-          ? `Fixed - ${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
-          : `Custom (${config.corners} corners)`,
+          ? `Standard - ${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
+          : `Custom made-to-measure (${config.corners} corners)`,
         Wire_Thickness: config.unit === 'imperial'
           ? calculations?.wireThickness !== undefined
             ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"`
@@ -1810,8 +1810,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         Shade_Factor: selectedColorLocal?.shadeFactor,
         Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
         Shape_Type: config.shapeMode === 'fixed' && config.fixedShapeType
-          ? `Fixed - ${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
-          : `Custom (${config.corners} corners)`,
+          ? `Standard - ${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
+          : `Custom made-to-measure (${config.corners} corners)`,
         Wire_Thickness: config.unit === 'imperial' ?
           calculations?.wireThickness !== undefined ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}"` : 'N/A'
           : calculations?.wireThickness !== undefined ? `${calculations.wireThickness}mm` : 'N/A',
@@ -2232,10 +2232,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         const edgeText = config.edgeType === 'cabled' ? ', Cabled' : config.edgeType === 'webbing' ? ', Webbing' : '';
         return fabric ? `${fabric.label}${colorText}${edgeText}` : 'Not selected';
       case 1: // Shape & Size
-        if (config.shapeMode === 'custom') return config.corners ? `Custom - ${config.corners} points` : 'Custom Shape';
+        if (config.shapeMode === 'custom') return config.corners ? `Custom made-to-measure - ${config.corners} points` : 'Custom made-to-measure';
         if (config.shapeMode === 'fixed' && config.fixedShapeType) {
           const labels: Record<string, string> = { triangle: 'Triangle', 'right-angle-triangle': 'Right Angle Triangle', square: 'Square', rectangle: 'Rectangle' };
-          return `Fixed - ${labels[config.fixedShapeType]}`;
+          return `Standard - ${labels[config.fixedShapeType]}`;
         }
         return 'Not selected';
       case 2: // Dimensions (custom)

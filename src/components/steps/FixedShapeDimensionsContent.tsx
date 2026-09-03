@@ -410,7 +410,7 @@ export function FixedShapeDimensionsContent({
         className="w-full mt-6 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-[#dfe7e1] hover:border-[#2e7d4f] hover:bg-[#eef5ef] text-sm text-[#6b8478] hover:text-[#01312D] transition-all duration-200"
       >
         <ArrowRight className="w-4 h-4" />
-        {getCustomSwitchText()} <span className="font-semibold">Switch to Custom Shape</span>
+        {getCustomSwitchText()} <span className="font-semibold">Switch to Custom made-to-measure</span>
       </button>
 
       {showSwitchModal && onSwitchToCustom && (

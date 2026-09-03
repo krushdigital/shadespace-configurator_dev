@@ -2,7 +2,8 @@ import React from 'react';
 import { ConfiguratorState, FixedShapeType } from '../../types';
 import { Button } from '../ui/Button';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { Triangle, Square, Hexagon, Ruler } from 'lucide-react';
+import { Triangle, Square, Hexagon, Ruler, HelpCircle } from 'lucide-react';
+import { SailDimensionsCard, SpaceMeasurementsCard } from './SailMeasurementVisuals';
 import { generateFixedShapePoints } from './FixedShapeDimensionsContent';
 
 interface ShapeTypeContentProps {
@@ -43,6 +44,49 @@ function ShapeIcon({ shape, className }: { shape: FixedShapeType; className?: st
         </svg>
       );
   }
+}
+
+function ModeInfoTooltip({ mode }: { mode: 'standard' | 'custom' }) {
+  const [show, setShow] = React.useState(false);
+  const wrapRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!show) return;
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setShow(false);
+    };
+    document.addEventListener('mousedown', handler);
+    document.addEventListener('touchstart', handler);
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('touchstart', handler); };
+  }, [show]);
+
+  return (
+    <div ref={wrapRef} className="relative inline-block mt-2">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setShow(v => !v); }}
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-emerald-700 transition-colors"
+        aria-label={`What does ${mode === 'standard' ? 'standard shape and size' : 'custom made-to-measure'} mean?`}
+      >
+        <HelpCircle className="w-3.5 h-3.5" />
+        <span>What does this mean?</span>
+      </button>
+      {show && (
+        <div
+          className="absolute z-50 left-0 top-full mt-2 shadow-2xl rounded-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {mode === 'standard' ? (
+            <SailDimensionsCard title={null} />
+          ) : (
+            <SpaceMeasurementsCard title={null} />
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ShapeTypeContent({
@@ -111,7 +155,7 @@ export function ShapeTypeContent({
               <div className={`p-2 rounded-lg ${selectedMode === 'custom' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
                 <Hexagon className="w-6 h-6" />
               </div>
-              <span className="font-semibold text-gray-900 text-base">Custom Shape</span>
+              <span className="font-semibold text-gray-900 text-base">Custom made-to-measure</span>
               <div className={`ml-auto w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
                 selectedMode === 'custom' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
               }`}>
@@ -123,6 +167,7 @@ export function ShapeTypeContent({
               </div>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">For any irregular shape with 3 to 8 corners. Measure each edge and diagonal of your space for a precise fit.</p>
+            <ModeInfoTooltip mode="custom" />
             <span className="inline-block mt-2 px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 rounded-full">Includes Fit Guarantee</span>
           </button>
 
@@ -143,7 +188,7 @@ export function ShapeTypeContent({
               <div className={`p-2 rounded-lg ${selectedMode === 'fixed' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                 <Ruler className="w-6 h-6" />
               </div>
-              <span className="font-semibold text-gray-900 text-base">Fixed Shape</span>
+              <span className="font-semibold text-gray-900 text-base">Standard shape and size</span>
               <div className={`ml-auto w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
                 selectedMode === 'fixed' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
               }`}>
@@ -155,6 +200,7 @@ export function ShapeTypeContent({
               </div>
             </div>
             <p className="text-sm text-gray-600 leading-relaxed">Standard geometric shapes like triangles, squares, and rectangles. Only 1-2 measurements needed. Ideal for standard sizes.</p>
+            <ModeInfoTooltip mode="standard" />
           </button>
         </div>
 
