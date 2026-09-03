@@ -1336,14 +1336,15 @@ export function DimensionsContent({
           const missingCount = config.corners - edgeCount;
           const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
 
-          const hasQuote = calculations.totalPrice > 0 && edgeCount === config.corners;
+          const sailPrice = calculations.totalPrice - (calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0);
+          const hasQuote = sailPrice > 0 && edgeCount === config.corners;
 
           return (
             <>
               {hasQuote && (
                 <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mb-3 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
-                  <span className="text-sm font-medium text-[#01312D]">Estimated total</span>
-                  <span className="text-lg font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
+                  <span className="text-sm font-medium text-[#01312D]">Sail price estimate</span>
+                  <span className="text-lg font-bold text-[#01312D]">{formatCurrency(sailPrice, config.currency)}</span>
                 </div>
               )}
               {shouldDisable && (
