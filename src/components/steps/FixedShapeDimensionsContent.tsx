@@ -325,12 +325,14 @@ export function FixedShapeDimensionsContent({
           <label className="block text-sm font-semibold text-slate-700 mb-2">{getEdgeALabel()}</label>
           {unit === 'imperial' ? (
             <DualImperialInput
+              key={`edgeA-${shape}-${unit}`}
               value={edgeADisplay}
               onChange={handleEdgeAChange}
               placeholder="Enter length"
               error={!!validationErrors['AB']}
               onFocus={() => setHighlightedMeasurement?.('AB')}
               onBlur={() => setHighlightedMeasurement?.(null)}
+              unit={unit}
             />
           ) : (
             <div className="relative">
@@ -358,9 +360,11 @@ export function FixedShapeDimensionsContent({
             <label className="block text-sm font-semibold text-slate-700 mb-2">{getEdgeBLabel()}</label>
             {unit === 'imperial' ? (
               <DualImperialInput
+                key={`edgeB-${shape}-${unit}`}
                 value={edgeBDisplay}
                 onChange={handleEdgeBChange}
                 placeholder="Enter length"
+                unit={unit}
                 error={!!(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC'])}
                 onFocus={() => setHighlightedMeasurement?.(shape === 'right-angle-triangle' ? 'CA' : 'BC')}
                 onBlur={() => setHighlightedMeasurement?.(null)}
