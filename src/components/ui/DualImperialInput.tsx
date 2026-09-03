@@ -58,7 +58,6 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
 
   // Initialize from prop value
   useEffect(() => {
-    // Don't overwrite user input while they're typing
     if (isUserTyping) {
       return;
     }
@@ -67,10 +66,15 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     const currentFeet = parseFloat(feetInput) || 0;
     const currentInches = parseFloat(inchesInput) || 0;
     const currentTotal = (currentFeet * 12) + currentInches;
+    const currentTotalInches = parseFloat(totalInchesInput) || 0;
 
-    // If the incoming value matches what we already have, don't update
-    // This prevents circular updates when user types in the inches field
-    if (Math.abs(currentTotal - value) < 0.01 && value > 0) {
+    // Check if the current displayed value already matches the incoming value
+    // Use different source depending on display mode to avoid stale comparisons
+    const displayedTotal = unit === 'imperial' && displayMode === 'feet-inches'
+      ? currentTotal
+      : currentTotalInches;
+
+    if (Math.abs(displayedTotal - value) < 0.01 && value > 0) {
       return;
     }
 
@@ -86,13 +90,12 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
       } else {
         setTotalInchesInput(Math.round(value).toString());
       }
-    } else if (value === 0 && currentTotal === 0) {
-      // Only clear if both are actually zero
+    } else if (value === 0 && displayedTotal === 0) {
       setFeetInput('');
       setInchesInput('');
       setTotalInchesInput('');
     }
-  }, [value, unit, displayMode, isUserTyping, feetInput, inchesInput]);
+  }, [value, unit, displayMode, isUserTyping, feetInput, inchesInput, totalInchesInput]);
 
   const handleFeetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;

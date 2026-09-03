@@ -3,6 +3,7 @@ import { ConfiguratorState, FixedShapeType } from '../../types';
 import { Button } from '../ui/Button';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { Triangle, Square, Hexagon, Ruler } from 'lucide-react';
+import { generateFixedShapePoints } from './FixedShapeDimensionsContent';
 
 interface ShapeTypeContentProps {
   config: ConfiguratorState;
@@ -84,7 +85,7 @@ export function ShapeTypeContent({
       fixedShapeType: shape,
       corners,
       measurementOption: 'exact',
-      ...(shapeChanged ? { measurements: {}, points: [], cornerHardware: {}, hardwareSelectionMode: undefined } : {}),
+      ...(shapeChanged ? { measurements: {}, points: generateFixedShapePoints(shape, {}), cornerHardware: {}, hardwareSelectionMode: undefined } : {}),
     });
   };
 

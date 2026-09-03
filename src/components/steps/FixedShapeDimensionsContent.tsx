@@ -147,7 +147,7 @@ export function FixedShapeDimensionsContent({
   const edgeBDisplay = edgeBMm > 0 ? convertMmToUnit(edgeBMm, unit) : 0;
 
   const handleEdgeAChange = useCallback((value: number) => {
-    const mm = Math.round(convertUnitToMm(value, unit));
+    const mm = Math.round(convertUnitToMm(value, unit) * 10) / 10;
     if (mm <= 0) return;
     if (edgeBMm > 0) {
       const newMeasurements = computeFixedShapeMeasurements(shape, mm, edgeBMm);
@@ -163,7 +163,7 @@ export function FixedShapeDimensionsContent({
   }, [shape, unit, edgeBMm, needsTwoInputs, updateConfig]);
 
   const handleEdgeBChange = useCallback((value: number) => {
-    const mm = Math.round(convertUnitToMm(value, unit));
+    const mm = Math.round(convertUnitToMm(value, unit) * 10) / 10;
     if (mm <= 0) return;
     const width = edgeAMm || mm;
     const newMeasurements = computeFixedShapeMeasurements(shape, width, mm);

@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
+import { generateFixedShapePoints } from './FixedShapeDimensionsContent';
 
 interface ShapeSizeContentProps {
   config: ConfiguratorState;
@@ -207,7 +208,7 @@ export function ShapeSizeContent({
         corners: tile.corners!,
         measurementOption: 'exact',
         hardwareSelectionMode: 'none',
-        ...(shapeChanged ? { measurements: {}, points: [] } : {}),
+        ...(shapeChanged ? { measurements: {}, points: generateFixedShapePoints(tile.id as FixedShapeType, {}) } : {}),
       });
       mobileGuidance?.scrollToElement('continue-button-shape-size', 300);
     }
