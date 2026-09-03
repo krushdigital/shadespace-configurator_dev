@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getPortalRoot } from '../../utils/appScope';
-import { X, ZoomIn } from 'lucide-react';
+import { X, ZoomIn, Shield, Zap, Info } from 'lucide-react';
 import { ConfiguratorState } from '../../types';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { analytics } from '../../utils/analytics';
 
 interface EdgeTypeContentProps {
   config: ConfiguratorState;
@@ -31,23 +32,51 @@ const EDGE_OPTIONS = [
   {
     id: 'cabled',
     label: 'Cabled Edge',
-    description: 'Premium cable edge reinforcement.',
+    description: 'Strongest and sleekest -- best for permanent installations.',
     longDescription: 'Experience superior durability and a sleek finish with our Cabled Edge reinforcement. A marine-grade stainless steel cable is expertly integrated along the entire perimeter of the shade sail, allowing for precise tensioning during installation. Each corner features uniquely styled stainless steel D-rings, which not only securely house the cable but also contribute to an exceptionally professional appearance and enormous structural strength.',
     imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.Configurator.webp?v=1784063875'
   },
   {
     id: 'webbing',
     label: 'Webbing Reinforced',
-    description: 'Robust reinforcement with webbing tape. Easiest to install.',
+    description: 'Easiest to install -- ideal for DIY projects.',
     longDescription: 'Our webbing-reinforced design incorporates a unique method, utilizing an exceptionally strong 48mm (2-inch) polyester webbing expertly integrated within the hemline. This webbing is meticulously pre-set and pre-sewn, ensuring optimal tension is achieved effortlessly once the sail is fully stretched into position. This innovative approach guarantees a hassle-free on-site installation: simply tension from each fixing point and enjoy your perfectly taut shade sail.',
     imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge.Configurator.webp?v=1784063875'
   }
 ];
 
+function getPerimeterMm(measurements: Record<string, number>, corners: number): number {
+  const edgeKeys: string[] = [];
+  const labels = 'ABCDEFGH';
+  for (let i = 0; i < corners; i++) {
+    edgeKeys.push(labels[i] + labels[(i + 1) % corners]);
+  }
+  let total = 0;
+  for (const key of edgeKeys) {
+    total += measurements[key] || 0;
+  }
+  return total;
+}
+
+type Recommendation = 'cabled' | 'webbing' | 'either';
+
+function getRecommendation(perimeterMm: number): Recommendation {
+  if (perimeterMm <= 0) return 'either';
+  const perimeterM = perimeterMm / 1000;
+  if (perimeterM >= 40) return 'cabled';
+  if (perimeterM <= 10) return 'webbing';
+  return 'either';
+}
+
 export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, mobileGuidance }: EdgeTypeContentProps) {
   const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string } | null>(null);
+  const stepStartTime = useRef(Date.now());
 
   useBodyScrollLock(!!enlargedImage);
+
+  useEffect(() => {
+    analytics.stepViewed(5, 'edge_style');
+  }, []);
 
   useEffect(() => {
     if (!enlargedImage) return;
@@ -55,12 +84,10 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
       if (e.key === 'Escape') setEnlargedImage(null);
     };
     window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-    };
+    return () => window.removeEventListener('keydown', onKey);
   }, [enlargedImage]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (mobileGuidance?.isGuidanceActive && config.edgeType) {
       mobileGuidance.scrollToElement('continue-button-edge', 400);
       mobileGuidance.setHighlightTarget('continue-button-edge');
@@ -78,6 +105,30 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
     }
   }, [config.edgeType, isStepOpen]);
 
+  const perimeterMm = useMemo(
+    () => getPerimeterMm(config.measurements || {}, config.corners || 0),
+    [config.measurements, config.corners]
+  );
+  const recommendation = useMemo(() => getRecommendation(perimeterMm), [perimeterMm]);
+
+  // Auto-select recommended edge if user hasn't chosen yet
+  const hasAutoSelected = useRef(false);
+  useEffect(() => {
+    if (!config.edgeType && recommendation !== 'either' && !hasAutoSelected.current && isStepOpen) {
+      hasAutoSelected.current = true;
+      updateConfig({ edgeType: recommendation });
+    }
+  }, [recommendation, config.edgeType, isStepOpen]);
+
+  const perimeterM = perimeterMm / 1000;
+
+  const handleContinue = () => {
+    const t = (Date.now() - stepStartTime.current) / 1000;
+    analytics.stepCompleted(5, 'edge_style', t, { edge_type: config.edgeType, perimeter_m: Math.round(perimeterM * 10) / 10 });
+    mobileGuidance?.clearHighlight();
+    onNext();
+  };
+
   return (
     <div className="p-5 sm:p-6">
       <div className="mb-6">
@@ -87,15 +138,53 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             Choose your preferred edge style
           </div>
         )}
-        <h4 className={`text-lg font-semibold mb-4 ${
+        <h4 className={`text-lg font-semibold mb-1 ${
           !config.edgeType && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-[#01312d]'
         }`}>
-          Select Edge Reinforcement Type
+          Edge Finish
         </h4>
+        <p className="text-sm text-slate-500 mb-4">Strongest and sleekest, or easiest to install?</p>
+
+        {/* Perimeter-based recommendation banner */}
+        {perimeterM > 0 && recommendation === 'cabled' && (
+          <div className="mb-5 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <Shield className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Cabled Edge strongly recommended</p>
+              <p className="text-sm text-amber-700 mt-0.5">
+                Your sail has a {perimeterM.toFixed(1)}m perimeter. For sails this size, a cabled edge provides the structural strength needed to maintain shape and tension over time.
+              </p>
+            </div>
+          </div>
+        )}
+        {perimeterM > 0 && recommendation === 'webbing' && (
+          <div className="mb-5 flex items-start gap-3 p-4 bg-[#eef5ef] border border-[#c5dfc9] rounded-xl">
+            <Zap className="w-5 h-5 text-[#2e7d4f] flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-[#1a3d2c]">Webbing Reinforced is a great choice</p>
+              <p className="text-sm text-[#3d6b50] mt-0.5">
+                At {perimeterM.toFixed(1)}m perimeter, your sail is well-suited to webbing reinforcement -- it's the easiest to install and gives excellent results for this size.
+              </p>
+            </div>
+          </div>
+        )}
+        {perimeterM > 0 && recommendation === 'either' && (
+          <div className="mb-5 flex items-start gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+            <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-slate-700">Either option works well</p>
+              <p className="text-sm text-slate-500 mt-0.5">
+                At {perimeterM.toFixed(1)}m perimeter, both edge types are suitable. Cabled is stronger and sleeker; webbing is easier to install. Choose based on your preference.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
           {EDGE_OPTIONS.map((edge) => {
             const hasError = validationErrors.edgeType && !config.edgeType;
             const isSelected = config.edgeType === edge.id;
+            const isRecommended = recommendation === edge.id;
 
             return (
               <div
@@ -112,6 +201,11 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                 {isSelected && (
                   <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-[#2e7d4f] text-white text-[13px] font-bold flex items-center justify-center">
                     &#10003;
+                  </span>
+                )}
+                {isRecommended && !isSelected && perimeterM > 0 && (
+                  <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-[#2e7d4f] text-white text-[10px] font-bold uppercase tracking-wide">
+                    Recommended
                   </span>
                 )}
                 <div className="relative p-3 pb-0">
@@ -160,7 +254,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                             rel="noopener noreferrer"
                             className="font-semibold text-[#307C31] hover:text-[#01312D] hover:underline transition-colors"
                           >
-                            Learn more about our styles →
+                            Learn more about our styles &rarr;
                           </a>
                         </p>
                       </div>
@@ -181,36 +275,18 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
       </div>
 
       <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
-        {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">
             {showBackButton && (
-              <Button
-                variant="outline"
-                size="md"
-                onClick={onPrev}
-                className="flex-1"
-              >
-                Back
-              </Button>
+              <Button variant="outline" size="md" onClick={onPrev} className="flex-1">Back</Button>
             )}
             {onSaveQuote && (
-              <SaveProgressButton
-                onClick={onSaveQuote}
-                className="flex-1"
-              />
+              <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
             )}
           </div>
           {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
             <div className="energy-border-chase-btn w-full" id="continue-button-edge" data-guidance-id="continue-button-edge">
-              <Button
-                onClick={() => {
-                  mobileGuidance?.clearHighlight();
-                  onNext();
-                }}
-                size="md"
-                className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
-              >
+              <Button onClick={handleContinue} size="md" className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}>
                 <span className="flex flex-col items-center leading-tight">
                   <span>Continue</span>
                   {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
@@ -219,10 +295,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             </div>
           ) : (
             <Button
-              onClick={() => {
-                mobileGuidance?.clearHighlight();
-                onNext();
-              }}
+              onClick={handleContinue}
               size="md"
               id="continue-button-edge"
               data-guidance-id="continue-button-edge"
@@ -236,34 +309,16 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           )}
         </div>
 
-        {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
         <div className="hidden sm:flex gap-4">
           {showBackButton && (
-            <Button
-              variant="outline"
-              size="md"
-              onClick={onPrev}
-              className="w-auto"
-            >
-              Back
-            </Button>
+            <Button variant="outline" size="md" onClick={onPrev} className="w-auto">Back</Button>
           )}
           {onSaveQuote && (
-            <SaveProgressButton
-              onClick={onSaveQuote}
-              className="w-auto"
-            />
+            <SaveProgressButton onClick={onSaveQuote} className="w-auto" />
           )}
           {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
             <div className="energy-border-chase-btn flex-1" id="continue-button-edge" data-guidance-id="continue-button-edge">
-              <Button
-                onClick={() => {
-                  mobileGuidance?.clearHighlight();
-                  onNext();
-                }}
-                size="md"
-                className={`w-full ${!config.edgeType ? 'opacity-50' : ''}`}
-              >
+              <Button onClick={handleContinue} size="md" className={`w-full ${!config.edgeType ? 'opacity-50' : ''}`}>
                 <span className="flex flex-col items-center leading-tight">
                   <span>Continue</span>
                   {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
@@ -272,10 +327,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             </div>
           ) : (
             <Button
-              onClick={() => {
-                mobileGuidance?.clearHighlight();
-                onNext();
-              }}
+              onClick={handleContinue}
               size="md"
               id="continue-button-edge"
               data-guidance-id="continue-button-edge"
@@ -301,27 +353,19 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
         >
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setEnlargedImage(null);
-            }}
+            onClick={(e) => { e.stopPropagation(); setEnlargedImage(null); }}
             className="absolute top-4 right-4 w-10 h-10 inline-flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
             aria-label="Close enlarged image"
           >
             <X className="w-5 h-5" />
           </button>
-          <div
-            className="max-w-4xl w-full"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="max-w-4xl w-full" onClick={(e) => e.stopPropagation()}>
             <img
               src={enlargedImage.url}
               alt={`${enlargedImage.label} - enlarged view`}
               className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white"
             />
-            <p className="mt-3 text-center text-white font-semibold text-lg">
-              {enlargedImage.label}
-            </p>
+            <p className="mt-3 text-center text-white font-semibold text-lg">{enlargedImage.label}</p>
           </div>
         </div>,
         getPortalRoot()

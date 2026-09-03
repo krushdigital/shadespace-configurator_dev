@@ -9,6 +9,7 @@ import { DimensionsContent } from './steps/DimensionsContent';
 import { FixedShapeDimensionsContent, generateFixedShapePoints, computeFixedShapeMeasurements } from './steps/FixedShapeDimensionsContent';
 import { FixedShapeHardwareContent } from './steps/FixedShapeHardwareContent';
 import { HardwareContent } from './steps/HardwareContent';
+import { EdgeTypeContent } from './steps/EdgeTypeContent';
 import { ReviewContent } from './steps/ReviewContent';
 import { useShadeCalculations } from '../hooks/useShadeCalculations';
 import { useHardwareCatalog } from '../hooks/useHardwareCatalog';
@@ -1879,10 +1880,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     const isFixed = config.shapeMode === 'fixed';
     switch (step) {
       case 2: // Dimensions (custom) - custom only
-      case 4: // Hardware (custom) - custom only
+      case 5: // Hardware (custom) - custom only
         return isFixed;
       case 3: // Fixed Dimensions - fixed only
-      case 5: // Fixed Hardware - fixed only
+      case 6: // Fixed Hardware - fixed only
         return !isFixed;
       default:
         return false;
@@ -1892,10 +1893,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Helper function to get the actual next step (accounting for skips)
   const getActualNextStep = (currentStep: number): number => {
     let nextStep = currentStep + 1;
-    while (nextStep <= 6 && shouldSkipStep(nextStep)) {
+    while (nextStep <= 7 && shouldSkipStep(nextStep)) {
       nextStep++;
     }
-    return Math.min(nextStep, 6);
+    return Math.min(nextStep, 7);
   };
 
   // Helper function to get the actual previous step (accounting for skips)
@@ -1921,7 +1922,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 0: // Material & Finish
-        return !!config.fabricType && !!config.fabricColor && !!config.edgeType;
+        return !!config.fabricType && !!config.fabricColor;
       case 1: // Shape & Size
         if (config.shapeMode === 'custom') return config.corners >= 3 && config.corners <= 8;
         if (config.shapeMode === 'fixed') return !!config.fixedShapeType;
@@ -1941,7 +1942,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         const needsTwo = config.fixedShapeType === 'right-angle-triangle' || config.fixedShapeType === 'rectangle';
         if (needsTwo) return (config.measurements['AB'] || 0) > 0 && (config.measurements['BC'] || 0) > 0;
         return (config.measurements['AB'] || 0) > 0;
-      case 4: // Hardware Selection (custom)
+      case 4: // Edge Style
+        return !!config.edgeType;
+      case 5: // Hardware Selection (custom)
         if (config.hardwareSelectionMode === 'manual') {
           const ch = config.cornerHardware || {};
           for (let i = 0; i < config.corners; i++) {
@@ -1950,9 +1953,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           return true;
         }
         return true;
-      case 5: // Fixed Hardware
+      case 6: // Fixed Hardware
         return true;
-      case 6: // Review
+      case 7: // Review
         return true;
       default:
         return true;
@@ -2031,9 +2034,6 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         if (!config.fabricColor || config.fabricColor === '') {
           errors.fabricColor = 'Please select a fabric color';
         }
-        if (!config.edgeType) {
-          errors.edgeType = 'Please select an edge reinforcement type';
-        }
         break;
       case 1: // Shape & Size
         if (config.shapeMode === 'custom') {
@@ -2102,7 +2102,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           }
         }
         break;
-      case 4: // Hardware Selection (custom)
+      case 4: // Edge Style
+        if (!config.edgeType) {
+          errors.edgeType = 'Please select an edge reinforcement type';
+        }
+        break;
+      case 5: // Hardware Selection (custom)
         if (config.hardwareSelectionMode === 'manual') {
           const ch = config.cornerHardware || {};
           for (let i = 0; i < config.corners; i++) {
@@ -2113,7 +2118,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           }
         }
         break;
-      case 5: // Fixed Hardware - always optional
+      case 6: // Fixed Hardware - always optional
         break;
     }
 
@@ -2179,7 +2184,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
     setTimeout(() => {
       smoothScrollToStep(nextStepIndex);
-    }, (nextStepIndex === 6) ? (isMobile ? 600 : 500) : (isMobile ? 400 : 350));
+    }, (nextStepIndex === 7) ? (isMobile ? 600 : 500) : (isMobile ? 400 : 350));
   };
 
   const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
@@ -2230,8 +2235,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       case 0: // Material & Finish
         const fabric = FABRICS.find(f => f.id === config.fabricType);
         const colorText = config.fabricColor ? ` - ${config.fabricColor}` : '';
-        const edgeText = config.edgeType === 'cabled' ? ', Cabled' : config.edgeType === 'webbing' ? ', Webbing' : '';
-        return fabric ? `${fabric.label}${colorText}${edgeText}` : 'Not selected';
+        return fabric ? `${fabric.label}${colorText}` : 'Not selected';
       case 1: // Shape & Size
         if (config.shapeMode === 'custom') return config.corners ? `Custom made-to-measure - ${config.corners} points` : 'Custom made-to-measure';
         if (config.shapeMode === 'fixed' && config.fixedShapeType) {
@@ -2256,7 +2260,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           return `Dimensions entered`;
         }
         return 'Not entered';
-      case 4: // Hardware Selection (custom)
+      case 4: // Edge Style
+        return config.edgeType === 'cabled' ? 'Cabled Edge' : config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Not selected';
+      case 5: // Hardware Selection (custom)
         {
           const m = config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
           if (m === 'manual') {
@@ -2267,12 +2273,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           if (m === 'none') return 'No hardware';
           return 'Standard hardware pack';
         }
-      case 5: // Fixed Hardware
+      case 6: // Fixed Hardware
         {
           const hasAny = config.cornerHardware && Object.values(config.cornerHardware).some(lines => lines.length > 0);
           return hasAny ? 'Hardware selected' : 'No hardware selected';
         }
-      case 6: // Review
+      case 7: // Review
         return 'Ready for purchase';
       default:
         return 'Not selected';
@@ -2286,12 +2292,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       'Shape & Size',
       'Dimensions',
       'Dimensions',
+      'Edge Style',
       'Hardware',
       'Hardware',
       'see pricing'
     ];
     const actualNextStep = getActualNextStep(currentStep);
-    if (actualNextStep === 6) return 'see pricing';
+    if (actualNextStep === 7) return 'see pricing';
     return stepSubtitles[actualNextStep] || '';
   };
   const shouldShowBackButton = (currentStep: number) => currentStep > 0;
@@ -2299,7 +2306,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const steps = [
     {
       title: 'Material & Finish',
-      subtitle: 'Select fabric, color, and edge finish',
+      subtitle: 'Select fabric and color',
       component: MaterialFinishContent
     },
     {
@@ -2316,6 +2323,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       title: 'Dimensions',
       subtitle: 'Enter your shade sail dimensions',
       component: FixedShapeDimensionsContent
+    },
+    {
+      title: 'Edge Style',
+      subtitle: 'Choose edge reinforcement',
+      component: EdgeTypeContent
     },
     {
       title: 'Hardware',
@@ -2621,11 +2633,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
         )}
 
-        <div className={`grid grid-cols-1 gap-8 ${(openStep === 2 || openStep === 3 || openStep === 4) ? 'lg:grid-cols-4' : (openStep === 6) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
+        <div className={`grid grid-cols-1 gap-8 ${(openStep === 2 || openStep === 3 || openStep === 5) ? 'lg:grid-cols-4' : (openStep === 7) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
           {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${(openStep === 2 || openStep === 3 || openStep === 4)
+          <div className={`space-y-2 min-h-0 ${(openStep === 2 || openStep === 3 || openStep === 5)
             ? 'lg:col-span-2'
-            : (openStep === 6) ? 'lg:col-span-3' : 'lg:col-span-3'
+            : (openStep === 7) ? 'lg:col-span-3' : 'lg:col-span-3'
             }`}>
             {steps.map((step, index) => {
               const StepComponent = step.component;
@@ -2700,7 +2712,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     highlightedCorner={highlightedCorner}
                     setHighlightedCorner={setHighlightedCorner}
                     canvasRef={canvasRef}
-                    ref={index === 6 ? reviewContentRef : undefined}
+                    ref={index === 7 ? reviewContentRef : undefined}
                     fabrics={FABRICS}
                     loading={loading}
                     setLoading={setLoading}
@@ -2734,8 +2746,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     } : undefined}
                     onSketchApply={index === 2 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
-                    viewMode={index === 6 ? desktopViewMode : undefined}
-                    onViewModeChange={index === 6 ? handleDesktopViewModeChange : undefined}
+                    viewMode={index === 7 ? desktopViewMode : undefined}
+                    onViewModeChange={index === 7 ? handleDesktopViewModeChange : undefined}
                     navigateToHeights={index === 2 ? navigateToHeights : undefined}
                     setNavigateToHeights={index === 2 ? setNavigateToHeights : undefined}
                     navigateToDiagonals={index === 2 ? navigateToDiagonals : undefined}
@@ -2753,7 +2765,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           </div>
 
           {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {(openStep === 2 || openStep === 3 || openStep === 4) && !isMobile && (() => {
+          {(openStep === 2 || openStep === 3 || openStep === 5) && !isMobile && (() => {
             const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
             const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
             const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
@@ -2766,7 +2778,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-24 lg:self-start z-10 max-h-[calc(100vh-7rem)] overflow-y-auto">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-lg font-semibold text-slate-900">
-                    {openStep === 4 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
+                    {openStep === 5 ? 'Sail Diagram' : 'Interactive Measurement Guide'}
                   </h4>
                   {desktop3DAvailable && (
                     <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
@@ -2796,7 +2808,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   )}
                 </div>
 
-                {openStep === 4 && effectiveDesktopView === 'plan' && (
+                {openStep === 5 && effectiveDesktopView === 'plan' && (
                   <p className="text-sm text-slate-600 mb-3">
                     Hover over a corner below to preview which corner on the sail you are configuring.
                   </p>
@@ -2858,7 +2870,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         config={config}
                         highlightedMeasurement={highlightedMeasurement}
                         highlightedCorner={highlightedCorner}
-                        activeSection={openStep === 4 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+                        activeSection={openStep === 5 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
                       />
                     </Suspense>
                     <button
@@ -2875,18 +2887,18 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           })()}
 
           {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
-          {(openStep === 6) && (
+          {(openStep === 7) && (
             <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
               <PriceSummaryDisplay
                 config={config}
                 calculations={calculations}
                 onSaveQuote={handleSaveQuote}
-                allAcknowledgmentsChecked={openStep === 6 ? allAcknowledgmentsChecked : false}
-                canAddToCart={openStep === 6 ? canAddToCart : false}
+                allAcknowledgmentsChecked={openStep === 7 ? allAcknowledgmentsChecked : false}
+                canAddToCart={openStep === 7 ? canAddToCart : false}
                 handleAddToCart={handleAddToCartFromConfigurator}
                 loading={loading}
                 fabrics={FABRICS}
-                isEmailMode={openStep === 6 && hasAllEdgeMeasurements}
+                isEmailMode={openStep === 7 && hasAllEdgeMeasurements}
                 adminMode={adminMode}
               />
             </div>
@@ -2952,7 +2964,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           calculations={calculations}
           currentStep={openStep}
           totalSteps={steps.filter((_, i) => !shouldSkipStep(i)).length}
-          shouldShowEmailOption={openStep === 6 && hasAllEdgeMeasurements}
+          shouldShowEmailOption={openStep === 7 && hasAllEdgeMeasurements}
           pricingSnapshot={pricingSettingsMap}
           existingQuoteId={savedQuoteId}
           existingAccessToken={savedAccessToken}
@@ -3001,7 +3013,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             config={config}
             highlightedMeasurement={highlightedMeasurement}
             highlightedCorner={highlightedCorner}
-            activeSection={openStep === 4 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+            activeSection={openStep === 5 ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
           />
         </Suspense>
       )}

@@ -7,7 +7,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Tooltip } from '../ui/Tooltip';
 import { AccordionItem } from '../ui/AccordionItem';
-import { Info, AlertCircle, GitCompare, ZoomIn, X } from 'lucide-react';
+import { Info, AlertCircle, GitCompare, X } from 'lucide-react';
 import { analytics } from '../../utils/analytics';
 import { FabricComparison } from '../FabricComparison';
 import { SaveProgressButton } from '../SaveProgressButton';
@@ -33,22 +33,7 @@ interface MaterialFinishContentProps {
   };
 }
 
-const EDGE_OPTIONS = [
-  {
-    id: 'cabled',
-    label: 'Cabled Edge',
-    description: 'Strongest and sleekest -- best for permanent installations.',
-    longDescription: 'Experience superior durability and a sleek finish with our Cabled Edge reinforcement. A marine-grade stainless steel cable is expertly integrated along the entire perimeter of the shade sail, allowing for precise tensioning during installation. Each corner features uniquely styled stainless steel D-rings, which not only securely house the cable but also contribute to an exceptionally professional appearance and enormous structural strength.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.Configurator.webp?v=1784063875',
-  },
-  {
-    id: 'webbing',
-    label: 'Webbing Reinforced',
-    description: 'Easiest to install -- ideal for DIY projects.',
-    longDescription: 'Our webbing-reinforced design incorporates a unique method, utilizing an exceptionally strong 48mm (2-inch) polyester webbing expertly integrated within the hemline. This webbing is meticulously pre-set and pre-sewn, ensuring optimal tension is achieved effortlessly once the sail is fully stretched into position. This innovative approach guarantees a hassle-free on-site installation: simply tension from each fixing point and enjoy your perfectly taut shade sail.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge.Configurator.webp?v=1784063875',
-  },
-];
+
 
 export function MaterialFinishContent({
   config,
@@ -70,7 +55,7 @@ export function MaterialFinishContent({
   const [comparisonInitialId, setComparisonInitialId] = useState<string | undefined>(undefined);
   const [enlargedImage, setEnlargedImage] = useState<{ url: string; label: string } | null>(null);
   const [showFabricHint, setShowFabricHint] = useState(false);
-  const [showEdgeHint, setShowEdgeHint] = useState(false);
+
 
   useBodyScrollLock(!!enlargedImage);
 
@@ -91,19 +76,14 @@ export function MaterialFinishContent({
     }
   }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
-  useEffect(() => {
-    if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor && !config.edgeType) {
-      mobileGuidance.scrollToElement('edge-finish-section', 400, 80, true);
-      mobileGuidance.setHighlightTarget('edge-finish-section');
-    }
-  }, [config.fabricType, config.fabricColor, config.edgeType, mobileGuidance?.isGuidanceActive]);
+
 
   useEffect(() => {
-    if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor && config.edgeType) {
+    if (mobileGuidance?.isGuidanceActive && config.fabricType && config.fabricColor) {
       mobileGuidance.scrollToElement('continue-button-material', 400);
       mobileGuidance.setHighlightTarget('continue-button-material');
     }
-  }, [config.fabricType, config.fabricColor, config.edgeType, mobileGuidance?.isGuidanceActive]);
+  }, [config.fabricType, config.fabricColor, mobileGuidance?.isGuidanceActive]);
 
   // Hints
   useEffect(() => {
@@ -115,14 +95,7 @@ export function MaterialFinishContent({
     }
   }, [config.fabricType, isStepOpen]);
 
-  useEffect(() => {
-    if (config.fabricColor && !config.edgeType) {
-      const timer = setTimeout(() => setShowEdgeHint(true), 600);
-      return () => clearTimeout(timer);
-    } else {
-      setShowEdgeHint(false);
-    }
-  }, [config.fabricColor, config.edgeType]);
+
 
   // Escape to close enlarged image
   useEffect(() => {
@@ -134,8 +107,7 @@ export function MaterialFinishContent({
     return () => window.removeEventListener('keydown', onKey);
   }, [enlargedImage]);
 
-  const isComplete = !!config.fabricType && !!config.fabricColor && !!config.edgeType;
-  const showEdgeSection = !!config.fabricColor;
+  const isComplete = !!config.fabricType && !!config.fabricColor;
 
   return (
     <div className="p-6">
@@ -368,79 +340,6 @@ export function MaterialFinishContent({
         </div>
       )}
 
-      {/* ── Edge Finish Section (revealed after color is chosen) ── */}
-      <div
-        id="edge-finish-section"
-        data-guidance-id="edge-finish-section"
-        className={`overflow-hidden transition-all duration-500 ease-in-out ${showEdgeSection ? 'max-h-[2000px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}
-      >
-        <div className="pt-6 border-t border-[#dfe7e1]">
-          {showEdgeHint && !config.edgeType && (
-            <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
-              Choose your preferred edge finish
-            </div>
-          )}
-          <h4 className={`text-lg font-semibold mb-1 ${!config.edgeType && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-[#01312D]'}`}>
-            Edge Finish
-          </h4>
-          <p className="text-sm text-slate-500 mb-4">Strongest and sleekest, or easiest to install?</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-            {EDGE_OPTIONS.map((edge) => {
-              const hasEdgeError = validationErrors.edgeType && !config.edgeType;
-              const isEdgeSelected = config.edgeType === edge.id;
-              return (
-                <div
-                  key={edge.id}
-                  onClick={() => updateConfig({ edgeType: edge.id })}
-                  className={`group relative bg-white rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col ${
-                    isEdgeSelected
-                      ? 'border-2 border-[#01312D] shadow-md'
-                      : hasEdgeError
-                      ? 'border-2 border-red-500 bg-red-50'
-                      : 'border border-[#dfe7e1] hover:border-[#7bb08f] hover:shadow-md'
-                  }`}
-                >
-                  <div className="relative p-3 pb-0">
-                    <div className="relative rounded-xl overflow-hidden bg-[#F3FFE3]/60 aspect-[16/9]">
-                      <img src={edge.imageUrl} alt={`${edge.label} example`} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setEnlargedImage({ url: edge.imageUrl, label: edge.label }); }}
-                        className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312d] shadow-sm hover:bg-white hover:text-[#2e7d4f] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e7d4f]"
-                        aria-label={`Enlarge ${edge.label} image`}
-                      >
-                        <ZoomIn className="w-4 h-4" strokeWidth={2.25} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-start justify-between gap-3 p-4 pt-3.5">
-                    <div className="flex-1 min-w-0">
-                      <h5 className="font-bold text-[#01312D] text-base md:text-lg leading-tight mb-1">{edge.label}</h5>
-                      <p className="text-sm text-[#6b8478] leading-relaxed">{edge.description}</p>
-                    </div>
-                    <Tooltip
-                      content={
-                        <div>
-                          <p className="text-sm text-[#6b8478] font-medium mb-1">{edge.label}</p>
-                          <p className="text-sm text-slate-500">{edge.longDescription}</p>
-                          <p className="mt-3 text-sm">
-                            <a href="https://shadespace.com/pages/styles" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#2e7d4f] hover:text-[#01312D] hover:underline transition-colors">Learn more about our styles &rarr;</a>
-                          </p>
-                        </div>
-                      }
-                    >
-                      <span onClick={(e) => e.stopPropagation()} className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d] transition-colors">?</span>
-                    </Tooltip>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* ── Navigation Footer ── */}
       <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
         <div className="flex sm:hidden flex-col gap-3">
@@ -452,19 +351,19 @@ export function MaterialFinishContent({
             <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
               <span className="flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-slate-500" />
-                <span>Please select {[!config.fabricType && 'fabric', !config.fabricColor && 'color', !config.edgeType && 'edge finish'].filter(Boolean).join(', ')} to continue</span>
+                <span>Please select {[!config.fabricType && 'fabric', !config.fabricColor && 'color'].filter(Boolean).join(' and ')} to continue</span>
               </span>
             </div>
           )}
           {mobileGuidance?.currentHighlightTarget === 'continue-button-material' && isComplete ? (
             <div className="energy-border-chase-btn w-full" id="continue-button-material" data-guidance-id="continue-button-material">
-              <Button onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor, edge_type: config.edgeType }); mobileGuidance?.clearHighlight(); onNext(); }} size="md" className="w-full py-4 sm:py-2">
+              <Button onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }} size="md" className="w-full py-4 sm:py-2">
                 <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}</span>
               </Button>
             </div>
           ) : (
             <Button
-              onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor, edge_type: config.edgeType }); mobileGuidance?.clearHighlight(); onNext(); }}
+              onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }}
               size="md" id="continue-button-material" data-guidance-id="continue-button-material"
               className={`w-full py-4 sm:py-2 ${!isComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
@@ -481,19 +380,19 @@ export function MaterialFinishContent({
               <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
                 <span className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-slate-500" />
-                  <span>Please select {[!config.fabricType && 'fabric', !config.fabricColor && 'color', !config.edgeType && 'edge finish'].filter(Boolean).join(', ')} to continue</span>
+                  <span>Please select {[!config.fabricType && 'fabric', !config.fabricColor && 'color'].filter(Boolean).join(' and ')} to continue</span>
                 </span>
               </div>
             )}
             {mobileGuidance?.currentHighlightTarget === 'continue-button-material' && isComplete ? (
               <div className="energy-border-chase-btn flex-1" id="continue-button-material" data-guidance-id="continue-button-material">
-                <Button onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor, edge_type: config.edgeType }); mobileGuidance?.clearHighlight(); onNext(); }} size="md" className="w-full">
+                <Button onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }} size="md" className="w-full">
                   <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}</span>
                 </Button>
               </div>
             ) : (
               <Button
-                onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor, edge_type: config.edgeType }); mobileGuidance?.clearHighlight(); onNext(); }}
+                onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }}
                 size="md" id="continue-button-material" data-guidance-id="continue-button-material"
                 className={`flex-1 ${!isComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
