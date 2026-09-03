@@ -278,10 +278,10 @@ export function ShapeSizeContent({
                 }
                 ${isSelected
                   ? 'border-[#2e7d4f] shadow-[inset_0_0_0_1px_#2e7d4f]'
-                  : isCustomTile
-                  ? 'border-[#7bb08f] hover:border-[#2e7d4f]'
                   : tileError
                   ? 'border-red-400 hover:border-red-500'
+                  : isCustomTile
+                  ? 'border-[#7bb08f] hover:border-[#2e7d4f]'
                   : 'border-[#dfe7e1] hover:border-[#7bb08f]'
                 }
               `}
