@@ -7,6 +7,7 @@ import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUni
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ArrowRight, Info, RefreshCw } from 'lucide-react';
 import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
+import { MiniSailDiagram } from './SailMeasurementVisuals';
 import {
   getAlternativeUnit,
   getAlternativeUnitName,
@@ -264,20 +265,25 @@ export function FixedShapeDimensionsContent({
       </div>
 
       {/* Info box */}
-      <div className="flex gap-3 p-3 sm:p-4 bg-blue-50 border border-blue-100 rounded-xl mb-4 sm:mb-6">
-        <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <div>
-          <h5 className="text-sm sm:text-base font-bold text-blue-900 sm:mb-1">
-            Enter Your Desired Sail Dimensions
-          </h5>
-          <p className="hidden sm:block text-sm text-blue-800 leading-relaxed">
-            Enter the <strong>finished sail measurements</strong>. These are the actual dimensions of the shade sail itself, not the distance between your fixing points.
-          </p>
-          <p className="sm:hidden text-xs text-blue-800">
-            The finished sail size, not fixing point distance.
-          </p>
+      <div className="flex flex-col sm:flex-row gap-3 p-3 sm:p-4 bg-blue-50 border border-blue-100 rounded-xl mb-4 sm:mb-6">
+        <div className="flex gap-3 flex-1 min-w-0">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <h5 className="text-sm sm:text-base font-bold text-blue-900 sm:mb-1">
+              Enter Your Desired Sail Dimensions
+            </h5>
+            <p className="hidden sm:block text-sm text-blue-800 leading-relaxed">
+              Enter the <strong>finished sail measurements</strong>. These are the actual dimensions of the shade sail itself, not the distance between your fixing points.
+            </p>
+            <p className="sm:hidden text-xs text-blue-800">
+              The finished sail size, not fixing point distance.
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-center sm:items-center">
+          <MiniSailDiagram />
         </div>
       </div>
 

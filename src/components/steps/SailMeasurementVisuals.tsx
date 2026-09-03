@@ -434,6 +434,46 @@ export function ModeSwitchDialog({ toCustom = true, onKeep, onReset, onCancel }:
   );
 }
 
+/** Compact inline SVG: sail shape with measurement lines along edges. */
+export function MiniSailDiagram() {
+  return (
+    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+      <polygon points="10,15 100,10 95,70 15,65" fill={TEAL} fillOpacity={0.18} stroke={TEAL_EDGE} strokeWidth={1.5} />
+      {/* Edge measurement lines */}
+      <line x1="10" y1="15" x2="100" y2="10" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="100" y1="10" x2="95" y2="70" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="95" y1="70" x2="15" y2="65" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="15" y1="65" x2="10" y2="15" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      {/* Corner dots */}
+      {[[10,15],[100,10],[95,70],[15,65]].map(([cx,cy], i) => (
+        <circle key={i} cx={cx} cy={cy} r={3} fill={TEAL_EDGE} />
+      ))}
+    </svg>
+  );
+}
+
+/** Compact inline SVG: fixing points outside sail with measurement lines between them. */
+export function MiniSpaceDiagram() {
+  return (
+    <svg width="110" height="80" viewBox="0 0 110 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+      {/* Sail shape (faded) */}
+      <polygon points="22,22 88,18 85,62 25,58" fill={TEAL} fillOpacity={0.1} stroke={TEAL_EDGE} strokeWidth={1} strokeOpacity={0.4} />
+      {/* Fixing points outside the sail */}
+      {[[8,12],[102,8],[98,72],[12,68]].map(([cx,cy], i) => (
+        <React.Fragment key={i}>
+          <circle cx={cx} cy={cy} r={4} fill="#fff" stroke={INK} strokeWidth={1.5} />
+          <circle cx={cx} cy={cy} r={1.5} fill={INK} />
+        </React.Fragment>
+      ))}
+      {/* Measurement lines between fixing points */}
+      <line x1="8" y1="12" x2="102" y2="8" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="102" y1="8" x2="98" y2="72" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="98" y1="72" x2="12" y2="68" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+      <line x1="12" y1="68" x2="8" y2="12" stroke={RED} strokeWidth={1.5} strokeDasharray="4 3" />
+    </svg>
+  );
+}
+
 export default function MeasurementModesDemo() {
   const [toCustom, setToCustom] = React.useState(true);
   return (

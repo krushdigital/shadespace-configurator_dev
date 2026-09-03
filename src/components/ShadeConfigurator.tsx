@@ -2707,13 +2707,15 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     onSaveQuote={index > 0 ? handleSaveQuote : undefined}
                     onSwitchToCustom={(keepMeasurements: boolean) => {
                       const corners = config.corners || (config.fixedShapeType === 'triangle' || config.fixedShapeType === 'right-angle-triangle' ? 3 : 4);
+                      const resetFields = { cornerHardware: {}, fixingTypes: undefined, eyeOrientations: undefined };
                       if (keepMeasurements) {
-                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: 'standard' });
+                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: undefined, ...resetFields });
                       } else {
-                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: 'standard', measurements: {}, points: [], fixingHeights: Array(corners).fill(0) });
+                        updateConfig({ shapeMode: 'custom', fixedShapeType: null, corners, measurementOption: 'adjust', hardwareSelectionMode: undefined, measurements: {}, points: [], fixingHeights: Array(corners).fill(0), ...resetFields });
                       }
                       setOpenStep(2);
                       setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
+                      setTimeout(() => smoothScrollToStep(2), 150);
                     }}
                     onSwitchToFixed={index === 2 ? (shape: import('../types').FixedShapeType, keepMeasurements: boolean) => {
                       const corners = shape === 'triangle' || shape === 'right-angle-triangle' ? 3 : 4;

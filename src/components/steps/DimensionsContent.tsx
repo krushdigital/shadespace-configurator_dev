@@ -16,6 +16,7 @@ import { SketchUploadModal } from '../SketchUploadModal';
 import { ParsedSketchData } from '../../utils/sketchParser';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
+import { MiniSpaceDiagram } from './SailMeasurementVisuals';
 import { toast } from 'react-toastify';
 
 const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
@@ -496,17 +497,22 @@ export function DimensionsContent({
       {/* Measurement Context Banner */}
       {config.measurementOption === 'adjust' && (
         <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
-          <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <h5 className="text-base font-bold text-blue-900 mb-1">
-                Measure Between Your Fixing Points
-              </h5>
-              <p className="text-sm text-blue-800 leading-relaxed">
-                Enter the distance <strong>from fixing point to fixing point</strong> (where the shade will attach). We'll calculate the perfect sail size to fit your space, accounting for tensioning hardware.
-              </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h5 className="text-base font-bold text-blue-900 mb-1">
+                  Measure Between Your Fixing Points
+                </h5>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  Enter the distance <strong>from fixing point to fixing point</strong> (where the shade will attach). We'll calculate the perfect sail size to fit your space, accounting for tensioning hardware.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-center sm:items-center">
+              <MiniSpaceDiagram />
             </div>
           </div>
         </div>
