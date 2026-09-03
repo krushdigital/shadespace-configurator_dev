@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { SlidersHorizontal, Package, CheckCircle2, Ban, Info } from 'lucide-react';
+import { SlidersHorizontal, Package, CheckCircle2, Info } from 'lucide-react';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ShapeCanvas } from '../ShapeCanvas';
@@ -50,27 +50,14 @@ export function HardwareContent({
   const [modalCorner, setModalCorner] = useState<number | null>(null);
   const manualPanelRef = useRef<HTMLDivElement>(null);
 
-  const isExact = config.measurementOption === 'exact';
-  const allowNone = isExact;
-  const allowStandard = !isExact;
-  const mode: 'standard' | 'manual' | 'none' =
-    config.hardwareSelectionMode
-    ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
+  const mode: 'standard' | 'manual' | 'none' = config.hardwareSelectionMode ?? 'none';
   const edgeType = (config.edgeType as 'webbing' | 'cabled') || 'webbing';
   const pack = getDefaultPack(packs, edgeType, config.corners);
-
-  React.useEffect(() => {
-    if (!allowNone && config.hardwareSelectionMode === 'none') {
-      updateConfig({ hardwareSelectionMode: 'standard', cornerHardware: {} });
-    }
-    if (!allowStandard && config.hardwareSelectionMode === 'standard') {
-      updateConfig({ hardwareSelectionMode: 'none', cornerHardware: {} });
-    }
-  }, [allowNone, allowStandard, config.hardwareSelectionMode, updateConfig]);
 
   const cornerHardware = config.cornerHardware || {};
   const configuredCount = Array.from({ length: config.corners }, (_, i) => cornerHardware[i]?.length || 0).filter(n => n > 0).length;
   const allManualConfigured = mode === 'manual' ? configuredCount === config.corners : true;
+  const canProceed = (mode === 'standard') || (mode === 'manual' && allManualConfigured);
 
   React.useEffect(() => {
     if (mobileGuidance?.isGuidanceActive && mode) {
@@ -81,7 +68,10 @@ export function HardwareContent({
   }, [mode, allManualConfigured, mobileGuidance?.isGuidanceActive]);
 
   const setMode = (next: 'standard' | 'manual' | 'none') => {
-    if (next === 'none' && !allowNone) return;
+    if (next === mode) {
+      updateConfig({ hardwareSelectionMode: 'none', cornerHardware: {} });
+      return;
+    }
     const wasManual = mode === 'manual';
     const updates: Partial<ConfiguratorState> = { hardwareSelectionMode: next };
     if (next !== 'manual') {
@@ -151,9 +141,7 @@ export function HardwareContent({
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-[#01312d]">Corner Hardware Selection</h2>
           <p className="mt-1 text-sm text-[#6b8478]">
-            {isExact
-              ? 'Manually pick per corner, or continue without hardware.'
-              : 'Choose a hardware tensioning kit or manually pick per corner.'}
+            Choose a hardware tensioning kit or manually pick per corner.
           </p>
         </div>
         {mode === 'manual' && (
@@ -165,8 +153,7 @@ export function HardwareContent({
         )}
       </div>
 
-      <div className={`grid grid-cols-1 gap-3 ${allowStandard && allowNone ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-        {allowStandard && (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StandardPackPreview
             pack={pack}
             itemsById={itemsById}
@@ -211,22 +198,6 @@ export function HardwareContent({
               </div>
             )}
           </StandardPackPreview>
-        )}
-
-        {allowNone && <button
-          type="button"
-          onClick={() => setMode('none')}
-          className={`rounded-xl border-2 p-4 text-left transition ${
-            mode === 'none' ? 'border-[#2e7d4f] bg-[#2e7d4f]/5' : 'border-[#dfe7e1] bg-white hover:border-[#7bb08f]'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <Ban className="h-6 w-6 text-[#2e7d4f]" />
-            {mode === 'none' && <CheckCircle2 className="h-5 w-5 text-[#2e7d4f]" />}
-          </div>
-          <div className="mt-2 text-sm font-bold text-[#01312d]">No Hardware</div>
-          <div className="mt-0.5 text-xs text-[#6b8478]">Sail only — corner D-rings only, source hardware separately.</div>
-        </button>}
 
         <button
           type="button"
@@ -360,7 +331,7 @@ export function HardwareContent({
               <Button
                 onClick={() => { mobileGuidance?.clearHighlight(); onNext?.(); }}
                 size="md"
-                disabled={mode === 'manual' && !allManualConfigured}
+                disabled={!canProceed}
                 className="w-full py-4"
               >
                 <span className="flex flex-col items-center leading-tight">
@@ -375,7 +346,7 @@ export function HardwareContent({
               size="md"
               id="continue-button-hardware"
               data-guidance-id="continue-button-hardware"
-              disabled={mode === 'manual' && !allManualConfigured}
+              disabled={!canProceed}
               className="w-full py-4"
             >
               <span className="flex flex-col items-center leading-tight">
@@ -398,7 +369,7 @@ export function HardwareContent({
           <Button
             onClick={onNext}
             size="md"
-            disabled={mode === 'manual' && !allManualConfigured}
+            disabled={!canProceed}
             className="flex-1"
           >
             <span className="flex flex-col items-center leading-tight">

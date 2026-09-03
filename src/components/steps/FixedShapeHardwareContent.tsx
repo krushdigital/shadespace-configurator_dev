@@ -8,7 +8,7 @@ import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPrevie
 import { ShapeCanvas } from '../ShapeCanvas';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { EXCHANGE_RATES } from '../../data/pricing';
-import { Package, SlidersHorizontal, CheckCircle2, Info, Ban } from 'lucide-react';
+import { Package, SlidersHorizontal, CheckCircle2, Info } from 'lucide-react';
 import { PricingSetting } from '../../hooks/usePricingSettings';
 
 interface FixedShapeHardwareContentProps {
@@ -77,6 +77,10 @@ export function FixedShapeHardwareContent({
   }, [catalogItems]);
 
   const setMode = (next: 'standard' | 'manual' | 'none') => {
+    if (next === mode) {
+      updateConfig({ hardwareSelectionMode: 'none', cornerHardware: {} });
+      return;
+    }
     const updates: Partial<ConfiguratorState> = { hardwareSelectionMode: next };
     if (next !== 'manual') {
       updates.cornerHardware = {};
@@ -140,7 +144,7 @@ export function FixedShapeHardwareContent({
         <div>
           <h2 className="text-lg sm:text-xl font-bold text-[#01312d]">Hardware (Recommended)</h2>
           <p className="mt-1 text-sm text-[#6b8478]">
-            Add mounting hardware to your order. Skip this if you already have your own.
+            Add mounting hardware to your order, or continue without to get the sail only.
           </p>
         </div>
         {mode === 'manual' && (
@@ -152,7 +156,7 @@ export function FixedShapeHardwareContent({
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Standard Pack Card */}
         {pack && (
           <StandardPackPreview
@@ -206,22 +210,6 @@ export function FixedShapeHardwareContent({
             )}
           </StandardPackPreview>
         )}
-
-        {/* No Hardware Card */}
-        <button
-          type="button"
-          onClick={() => setMode('none')}
-          className={`rounded-xl border-2 p-4 text-left transition ${
-            mode === 'none' ? 'border-[#2e7d4f] bg-[#2e7d4f]/5' : 'border-[#dfe7e1] bg-white hover:border-[#7bb08f]'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <Ban className="h-6 w-6 text-[#2e7d4f]" />
-            {mode === 'none' && <CheckCircle2 className="h-5 w-5 text-[#2e7d4f]" />}
-          </div>
-          <div className="mt-2 text-sm font-bold text-[#01312d]">No Hardware</div>
-          <div className="mt-0.5 text-xs text-[#6b8478]">Sail only — source hardware separately.</div>
-        </button>
 
         {/* Manual per corner Card */}
         <button
