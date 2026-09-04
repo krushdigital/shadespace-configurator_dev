@@ -1,25 +1,14 @@
 import React, { useMemo } from 'react';
-import { Info, Package } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { ConfiguratorState, ShadeCalculations, Fabric } from '../types';
 import { Button } from './ui/Button';
 import { Tooltip } from './ui/Tooltip';
 import { FABRICS as FALLBACK_FABRICS } from '../data/fabrics';
 import { formatCurrency } from '../utils/currencyFormatter';
-import { useHardwareCatalog, getDefaultPack } from '../hooks/useHardwareCatalog';
+
 import { DeliveryEstimate } from './DeliveryEstimate';
 
-function stripHardwareSize(name: string): string {
-  return name.replace(/\s+SS\s+316-\d+mm$/i, '').replace(/\s+-\s*\d+mm$/i, '');
-}
 
-const HARDWARE_PACK_IMAGES: { [key: number]: string } = {
-  3: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/hardware-pack-3-corner-sail-276119.jpg?v=1724718113',
-  4: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/4-ss-corner-sail.jpg?v=1742362331',
-  5: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/5_Corner_Sails.jpg?v=1724717405',
-  6: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/6-ss-corner-sail.jpg?v=1742362262',
-  7: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/7_Corner_Hardware_kit_3.png?v=1779146929',
-  8: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/8_Corner_Hardware_kit_2.png?v=1779138488',
-};
 
 interface PriceSummaryDisplayProps {
   config: ConfiguratorState;
@@ -50,21 +39,6 @@ export function PriceSummaryDisplay({
 }: PriceSummaryDisplayProps) {
   const FABRICS = fabrics && fabrics.length > 0 ? fabrics : FALLBACK_FABRICS;
   const selectedFabric = FABRICS.find(f => f.id === config.fabricType);
-
-  const { items: hardwareItems, packs: hardwarePacks } = useHardwareCatalog();
-  const hardwareItemsById = useMemo(() => {
-    const m = new Map<string, typeof hardwareItems[number]>();
-    for (const it of hardwareItems) m.set(it.id, it);
-    return m;
-  }, [hardwareItems]);
-  const hardwareEdgeType = (config.edgeType as 'webbing' | 'cabled') || 'webbing';
-  const hardwarePack = getDefaultPack(hardwarePacks, hardwareEdgeType, config.corners);
-  const packLines = hardwarePack
-    ? hardwarePack.items
-        .map(p => ({ item: hardwareItemsById.get(p.catalog_id), qty: p.qty }))
-        .filter((row): row is { item: typeof hardwareItems[number]; qty: number } => !!row.item)
-    : [];
-  const packImage = HARDWARE_PACK_IMAGES[config.corners];
 
   const hardwareMode =
     config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none');
@@ -156,139 +130,6 @@ export function PriceSummaryDisplay({
           {!isMobile && <DeliveryEstimate />}
 
           <div className="space-y-4 border-t border-slate-200 pt-4">
-            {(config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none')) === 'standard' ? (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-start gap-3 mb-3">
-                  {packImage ? (
-                    <img
-                      src={packImage}
-                      alt={`${config.corners} Corner Hardware Tensioning Kit`}
-                      className="h-14 w-14 flex-shrink-0 rounded-lg object-cover border border-slate-200 bg-white"
-                    />
-                  ) : (
-                    <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
-                      <Package className="h-6 w-6 text-[#307C31]" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-bold text-slate-900">Hardware Tensioning Kit</span>
-                      <Tooltip
-                        content={
-                          <div>
-                            <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Pack Included</h4>
-                            {config.corners > 0 && HARDWARE_PACK_IMAGES[config.corners] && (
-                              <img
-                                src={HARDWARE_PACK_IMAGES[config.corners]}
-                                alt={`${config.corners} Corner Hardware Pack`}
-                                className="w-full h-auto object-cover rounded-lg mb-3"
-                              />
-                            )}
-                            <p className="text-sm text-slate-600 mb-3">
-                              Stainless steel hardware kit included with your sail.
-                            </p>
-                            <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
-                              <a
-                                href="https://shadespace.com/pages/hardware"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
-                              >
-                                More information about hardware
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                                </svg>
-                              </a>
-                            </div>
-                          </div>
-                        }
-                      >
-                        <button
-                          type="button"
-                          aria-label="Hardware kit details"
-                          className="inline-flex items-center justify-center text-slate-400 hover:text-[#307C31] focus:outline-none focus:ring-2 focus:ring-[#307C31] focus:ring-offset-1 rounded-full"
-                        >
-                          <Info className="h-4 w-4" />
-                        </button>
-                      </Tooltip>
-                    </div>
-                    <div className="mt-0.5 text-xs font-semibold text-[#307C31]">
-                      Included in sail price
-                    </div>
-                  </div>
-                </div>
-                {packLines.length > 0 && (
-                  <div className="pt-3 border-t border-slate-200">
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2">
-                      What's included
-                    </div>
-                    <ul className="space-y-1.5">
-                      {packLines.map(({ item, qty }) => (
-                        <li key={item.id} className="flex items-center gap-2 text-xs">
-                          {item.image_url && (
-                            <img src={item.image_url} alt="" className="h-7 w-7 rounded object-cover flex-shrink-0 bg-white border border-slate-200" />
-                          )}
-                          <span className="flex-1 min-w-0 truncate text-slate-800">{stripHardwareSize(item.name)}</span>
-                          <span className="flex-shrink-0 font-semibold text-slate-600">x {qty}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : (config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none')) === 'manual' ? (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-bold text-slate-900">Selected Hardware</span>
-                </div>
-                <div className="space-y-2.5">
-                  {Array.from({ length: config.corners }, (_, i) => {
-                    const letter = String.fromCharCode(65 + i);
-                    const lines = (config.cornerHardware || {})[i] || [];
-                    return (
-                      <div key={i}>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-bold text-white">{letter}</div>
-                          <span className="text-xs font-semibold text-slate-700">Corner {letter}</span>
-                        </div>
-                        {lines.length === 0 ? (
-                          <div className="text-[11px] text-slate-400 ml-6">No hardware</div>
-                        ) : (
-                          <ul className="ml-6 space-y-0.5">
-                            {lines.map((l, li) => (
-                              <li key={li} className="flex items-center gap-2 text-xs">
-                                <span className="flex-1 min-w-0 truncate text-slate-700">{l.name}</span>
-                                <span className="flex-shrink-0 font-semibold text-slate-500">x {l.qty}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {calculations.hardwareBreakdown?.greaseIncluded && (
-                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 flex items-center gap-2 text-xs">
-                    <span className="flex-1 text-slate-700">Nulan Grease Tube (50ml)</span>
-                    <span className="flex-shrink-0 font-semibold text-slate-500">x 1</span>
-                  </div>
-                )}
-                {hardwareOnlyDisplay > 0 && (
-                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 flex justify-between text-sm">
-                    <span className="font-semibold text-slate-700">Hardware total</span>
-                    <span className="font-bold text-[#D97706]">{formatCurrency(Math.round(hardwareOnlyDisplay), config.currency)}</span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex justify-between text-sm">
-                <span className="text-[#01312D]/60">Tensioning hardware & fittings:</span>
-                <span className="text-[#01312D] font-semibold">
-                  Not included
-                </span>
-              </div>
-            )}
-
             {!isMobile && (
               <div className="bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-4 mt-6">
                 <div className="text-sm font-bold text-[#01312D] mb-2">

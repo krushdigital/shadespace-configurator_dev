@@ -923,141 +923,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
           {/* Full-width sections below the two-column grid row */}
           <div className="lg:col-span-4 space-y-4">
-            {/* Hardware & Price Breakdown - Collapsible (hidden for fixed shapes) */}
-            {!isFixedShape && <AccordionItem
-              defaultOpen={false}
-              trigger={
-                <span className="text-sm font-semibold">Hardware & Price Breakdown</span>
-              }
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
-                <Card className="p-4 md:p-5">
-                  <h3 className="text-base font-bold text-slate-900 mb-3">Hardware Breakdown</h3>
-                  {hardwareMode === 'standard' && hardwarePack && (
-                    <div>
-                      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                        <div className="text-sm font-semibold text-slate-900">Hardware Tensioning Kit</div>
-                        <span className="text-xs font-semibold text-[#307C31] bg-[#307C31]/10 px-2 py-0.5 rounded-full">Included in sail price</span>
-                      </div>
-                      <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
-                        {hardwarePack.items.map((p, idx) => {
-                          const it = hardwareItemsById.get(p.catalog_id);
-                          if (!it) return null;
-                          return (
-                            <div key={idx} className="flex items-center gap-3 px-3 py-2">
-                              {it.image_url && (
-                                <img src={it.image_url} alt={it.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-slate-900 truncate">{it.name.replace(/-\d+mm$/, '')}</div>
-                              </div>
-                              <div className="text-xs font-semibold text-slate-600 flex-shrink-0">× {p.qty}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
-                        <div className="mt-3 border border-slate-200 rounded-lg px-3 py-2.5">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
-                            <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
-                          </div>
-                          <div className="text-xs text-slate-500 mt-0.5">Prevents seizing &amp; ensures correct installation</div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                  {hardwareMode === 'manual' && (
-                    <div className="space-y-3">
-                      <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
-                        {Array.from({ length: config.corners }, (_, i) => {
-                          const letter = String.fromCharCode(65 + i);
-                          const lines = (config.cornerHardware || {})[i] || [];
-                          const cornerLive = perCornerLiveDisplay[i] ?? 0;
-                          return (
-                            <div key={i} className="px-3 py-2.5">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <div className="flex items-center gap-2">
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{letter}</div>
-                                  <div className="text-sm font-semibold text-slate-900">Corner {letter}</div>
-                                </div>
-                                <div className="text-sm font-semibold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
-                              </div>
-                              {lines.length === 0 ? (
-                                <div className="text-xs text-slate-500 ml-8">No hardware selected</div>
-                              ) : (
-                                <div className="ml-8 grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 text-xs text-slate-700">
-                                  {lines.map((l, li) => (
-                                    <React.Fragment key={li}>
-                                      <span className="truncate">{l.qty}× {l.name}{l.sku ? ` (${l.sku})` : ''}</span>
-                                      <span className="text-slate-500 text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
-                                    </React.Fragment>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
-                        <div className="border border-slate-200 rounded-lg px-3 py-2.5">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
-                            <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
-                          </div>
-                          <div className="text-xs text-slate-500 mt-0.5">Prevents seizing &amp; ensures correct installation</div>
-                        </div>
-                      )}
-                      <div className="flex justify-between items-center rounded-lg bg-slate-100 px-3 py-1.5">
-                        <span className="text-sm font-semibold text-slate-700">Hardware subtotal</span>
-                        <span className="text-sm font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
-                      </div>
-                    </div>
-                  )}
-                  {hardwareMode === 'none' && (
-                    <div className="text-sm text-slate-700">No hardware — the sail ships with corner D-rings sewn in only.</div>
-                  )}
-                </Card>
-
-                {/* Price Breakdown */}
-                <Card className="p-4 md:p-5">
-                  <h3 className="text-base font-bold text-slate-900 mb-3">Price Breakdown</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Shade sail:</span>
-                      <span className="font-semibold text-slate-900">
-                        {formatCurrency(
-                          hardwareMode === 'manual'
-                            ? calculations.totalPrice - Math.round(hardwareOnlyDisplay)
-                            : calculations.totalPrice,
-                          config.currency,
-                        )}
-                      </span>
-                    </div>
-                    {hardwareMode === 'manual' && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Hardware:</span>
-                        <span className="font-semibold text-slate-900">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
-                      </div>
-                    )}
-                    {hardwareMode === 'standard' && (
-                      <div className="flex justify-between text-xs">
-                        <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
-                          <span className="text-slate-500">Hardware Tensioning Kit included</span>
-                        </StandardPackPreview>
-                        <span className="text-slate-500">Included</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between pt-2 border-t border-slate-200">
-                      <span className="text-slate-900 font-semibold">Total:</span>
-                      <span className="font-bold text-[#01312D]">{formatCurrency(calculations.totalPrice, config.currency)}</span>
-                    </div>
-                  </div>
-                  <DeliveryEstimate className="mt-3" />
-                </Card>
-              </div>
-            </AccordionItem>}
-
             {/* Precise Measurements Summary */}
             <div>
               {isFixedShape ? (
@@ -1160,7 +1025,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </AccordionItem>
                 ) : (
                   <AccordionItem
-                    defaultOpen={false}
+                    defaultOpen={true}
                     trigger={
                       <span className="text-sm font-semibold">Precise Measurements</span>
                     }
@@ -1259,6 +1124,193 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           );
                         })}
                       </div>
+                    </Card>
+                  </AccordionItem>
+                )}
+              </div>
+            )}
+
+            {/* Selected Hardware - Collapsible (hidden for fixed shapes) */}
+            {!isFixedShape && hardwareMode !== 'none' && (
+              <div>
+                {isMobile ? (
+                  <AccordionItem
+                    trigger={
+                      <span className="text-sm font-medium">Selected Hardware</span>
+                    }
+                    defaultOpen={false}
+                  >
+                    <Card className="p-3 mt-2">
+                      {hardwareMode === 'standard' && hardwarePack && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                            <div className="text-xs font-semibold text-slate-900">Hardware Tensioning Kit</div>
+                            <span className="text-[10px] font-semibold text-[#307C31] bg-[#307C31]/10 px-1.5 py-0.5 rounded-full">Included</span>
+                          </div>
+                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                            {hardwarePack.items.map((p, idx) => {
+                              const it = hardwareItemsById.get(p.catalog_id);
+                              if (!it) return null;
+                              return (
+                                <div key={idx} className="flex items-center gap-2 px-2 py-1.5">
+                                  {it.image_url && (
+                                    <img src={it.image_url} alt={it.name} className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-medium text-slate-900 truncate">{it.name.replace(/-\d+mm$/, '')}</div>
+                                  </div>
+                                  <div className="text-[10px] font-semibold text-slate-600 flex-shrink-0">x {p.qty}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
+                            <div className="mt-2 border border-slate-200 rounded-lg px-2 py-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {hardwareMode === 'manual' && (
+                        <div className="space-y-2">
+                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                            {Array.from({ length: config.corners }, (_, i) => {
+                              const letter = String.fromCharCode(65 + i);
+                              const lines = (config.cornerHardware || {})[i] || [];
+                              const cornerLive = perCornerLiveDisplay[i] ?? 0;
+                              return (
+                                <div key={i} className="px-2 py-1.5">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-bold text-white">{letter}</div>
+                                      <div className="text-xs font-semibold text-slate-900">Corner {letter}</div>
+                                    </div>
+                                    <div className="text-xs font-semibold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
+                                  </div>
+                                  {lines.length === 0 ? (
+                                    <div className="text-[10px] text-slate-500 ml-7">No hardware selected</div>
+                                  ) : (
+                                    <div className="ml-7 grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 text-[10px] text-slate-700">
+                                      {lines.map((l, li) => (
+                                        <React.Fragment key={li}>
+                                          <span className="truncate">{l.qty}x {l.name}</span>
+                                          <span className="text-slate-500 text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
+                                        </React.Fragment>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
+                            <div className="border border-slate-200 rounded-lg px-2 py-1.5">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center rounded-lg bg-slate-100 px-2 py-1">
+                            <span className="text-xs font-semibold text-slate-700">Hardware subtotal</span>
+                            <span className="text-xs font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
+                          </div>
+                        </div>
+                      )}
+                    </Card>
+                  </AccordionItem>
+                ) : (
+                  <AccordionItem
+                    defaultOpen={false}
+                    trigger={
+                      <span className="text-sm font-semibold">Selected Hardware</span>
+                    }
+                  >
+                    <Card className="p-4 mt-2">
+                      {hardwareMode === 'standard' && hardwarePack && (
+                        <div>
+                          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                            <div className="text-sm font-semibold text-slate-900">Hardware Tensioning Kit</div>
+                            <span className="text-xs font-semibold text-[#307C31] bg-[#307C31]/10 px-2 py-0.5 rounded-full">Included in sail price</span>
+                          </div>
+                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                            {hardwarePack.items.map((p, idx) => {
+                              const it = hardwareItemsById.get(p.catalog_id);
+                              if (!it) return null;
+                              return (
+                                <div key={idx} className="flex items-center gap-3 px-3 py-2">
+                                  {it.image_url && (
+                                    <img src={it.image_url} alt={it.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-slate-900 truncate">{it.name.replace(/-\d+mm$/, '')}</div>
+                                  </div>
+                                  <div className="text-xs font-semibold text-slate-600 flex-shrink-0">x {p.qty}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
+                            <div className="mt-3 border border-slate-200 rounded-lg px-3 py-2.5">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
+                              </div>
+                              <div className="text-xs text-slate-500 mt-0.5">Prevents seizing & ensures correct installation</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {hardwareMode === 'manual' && (
+                        <div className="space-y-3">
+                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                            {Array.from({ length: config.corners }, (_, i) => {
+                              const letter = String.fromCharCode(65 + i);
+                              const lines = (config.cornerHardware || {})[i] || [];
+                              const cornerLive = perCornerLiveDisplay[i] ?? 0;
+                              return (
+                                <div key={i} className="px-3 py-2.5">
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{letter}</div>
+                                      <div className="text-sm font-semibold text-slate-900">Corner {letter}</div>
+                                    </div>
+                                    <div className="text-sm font-semibold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
+                                  </div>
+                                  {lines.length === 0 ? (
+                                    <div className="text-xs text-slate-500 ml-8">No hardware selected</div>
+                                  ) : (
+                                    <div className="ml-8 grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 text-xs text-slate-700">
+                                      {lines.map((l, li) => (
+                                        <React.Fragment key={li}>
+                                          <span className="truncate">{l.qty}x {l.name}{l.sku ? ` (${l.sku})` : ''}</span>
+                                          <span className="text-slate-500 text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
+                                        </React.Fragment>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
+                            <div className="border border-slate-200 rounded-lg px-3 py-2.5">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
+                              </div>
+                              <div className="text-xs text-slate-500 mt-0.5">Prevents seizing & ensures correct installation</div>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center rounded-lg bg-slate-100 px-3 py-1.5">
+                            <span className="text-sm font-semibold text-slate-700">Hardware subtotal</span>
+                            <span className="text-sm font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
+                          </div>
+                        </div>
+                      )}
                     </Card>
                   </AccordionItem>
                 )}
