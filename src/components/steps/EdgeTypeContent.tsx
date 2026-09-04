@@ -111,18 +111,19 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
   );
   const recommendation = useMemo(() => getRecommendation(perimeterMm), [perimeterMm]);
 
-  // Auto-select recommended edge if user hasn't chosen yet
+  // Auto-select only when there is a clear recommendation (not "either")
   const hasAutoSelected = useRef(false);
   useEffect(() => {
-    if (!config.edgeType && !hasAutoSelected.current && isStepOpen) {
+    if (!config.edgeType && !hasAutoSelected.current && isStepOpen && recommendation !== 'either') {
       hasAutoSelected.current = true;
-      updateConfig({ edgeType: recommendation === 'either' ? 'webbing' : recommendation });
+      updateConfig({ edgeType: recommendation });
     }
   }, [recommendation, config.edgeType, isStepOpen]);
 
   const perimeterM = perimeterMm / 1000;
 
   const handleContinue = () => {
+    if (!config.edgeType) return;
     const t = (Date.now() - stepStartTime.current) / 1000;
     analytics.stepCompleted(5, 'edge_style', t, { edge_type: config.edgeType, perimeter_m: Math.round(perimeterM * 10) / 10 });
     mobileGuidance?.clearHighlight();
@@ -286,7 +287,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           </div>
           {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
             <div className="energy-border-chase-btn w-full" id="continue-button-edge" data-guidance-id="continue-button-edge">
-              <Button onClick={handleContinue} size="md" className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}>
+              <Button onClick={handleContinue} disabled={!config.edgeType} size="md" className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <span className="flex flex-col items-center leading-tight">
                   <span>Continue</span>
                   {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
@@ -296,10 +297,11 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           ) : (
             <Button
               onClick={handleContinue}
+              disabled={!config.edgeType}
               size="md"
               id="continue-button-edge"
               data-guidance-id="continue-button-edge"
-              className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50' : ''}`}
+              className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span>Continue</span>
@@ -318,7 +320,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           )}
           {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
             <div className="energy-border-chase-btn flex-1" id="continue-button-edge" data-guidance-id="continue-button-edge">
-              <Button onClick={handleContinue} size="md" className={`w-full ${!config.edgeType ? 'opacity-50' : ''}`}>
+              <Button onClick={handleContinue} disabled={!config.edgeType} size="md" className={`w-full ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <span className="flex flex-col items-center leading-tight">
                   <span>Continue</span>
                   {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
@@ -328,10 +330,11 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           ) : (
             <Button
               onClick={handleContinue}
+              disabled={!config.edgeType}
               size="md"
               id="continue-button-edge"
               data-guidance-id="continue-button-edge"
-              className={`flex-1 ${!config.edgeType ? 'opacity-50' : ''}`}
+              className={`flex-1 ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span>Continue</span>

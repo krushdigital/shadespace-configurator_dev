@@ -230,7 +230,7 @@ export function FixedShapeDimensionsContent({
 
   const show3D = device3DTier !== 'none' && supports3DForCorners(config.corners);
 
-  const sailPrice = calculations.totalPrice - (calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0);
+  const sailPrice = calculations.hardwareBreakdown?.sailOnlyLivePrice ?? calculations.totalPrice;
   const [showSwitchModal, setShowSwitchModal] = useState(false);
 
   const highlightedEdgeKeys = useMemo(() => {

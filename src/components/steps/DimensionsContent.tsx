@@ -1342,7 +1342,7 @@ export function DimensionsContent({
           const missingCount = config.corners - edgeCount;
           const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
 
-          const sailPrice = calculations.totalPrice - (calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0);
+          const sailPrice = calculations.hardwareBreakdown?.sailOnlyLivePrice ?? calculations.totalPrice;
           const hasQuote = sailPrice > 0 && edgeCount === config.corners;
 
           return (

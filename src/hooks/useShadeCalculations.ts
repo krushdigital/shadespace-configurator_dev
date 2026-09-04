@@ -13,7 +13,7 @@ import {
 } from '../data/pricing';
 import { FABRICS } from '../data/fabrics';
 import { calculatePolygonArea } from '../utils/geometry';
-import { getRecommendedEdgeType } from '../utils/edgeRecommendation';
+import { getRecommendedEdgeType, getEdgeRecommendation } from '../utils/edgeRecommendation';
 import { PricingSetting, getPricingForCurrency } from './usePricingSettings';
 import {
   BasePricingData,
@@ -71,6 +71,8 @@ export function useShadeCalculations(
     const perimeterM = perimeterMM / 1000;
     const adjustedPerimeter = Math.round(perimeterM / 0.5) * 0.5;
     const area = calculatePolygonArea(config.measurements, config.corners, config.fixingHeights, config.points);
+    const recommendation = getEdgeRecommendation(perimeterMM);
+    const usesCheaperFallback = !config.edgeType && recommendation === 'either';
     const edgeType = (config.edgeType || getRecommendedEdgeType(perimeterMM)) as 'webbing' | 'cabled';
 
     let webbingWidth: number;
@@ -96,16 +98,38 @@ export function useShadeCalculations(
       cornerCostNZD = getCornerCostFromDB(basePricingData, config.corners, edgeType);
       embeddedHardwareCostNZD = getHardwareCostFromDB(basePricingData, config.corners, edgeType);
     } else {
-      if (config.edgeType === 'webbing') {
+      if (edgeType === 'webbing') {
         fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'webbing');
         edgeCostNZD = 0;
         cornerCostNZD = CORNER_COSTS[config.corners as keyof typeof CORNER_COSTS] || 0;
         embeddedHardwareCostNZD = HARDWARE_COSTS[config.corners as keyof typeof HARDWARE_COSTS] || 0;
-      } else if (config.edgeType === 'cabled') {
+      } else if (edgeType === 'cabled') {
         fabricCostNZD = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'cabled');
         edgeCostNZD = 0;
         cornerCostNZD = CABLED_CORNER_COSTS[config.corners as keyof typeof CABLED_CORNER_COSTS] || 0;
         embeddedHardwareCostNZD = CABLED_HARDWARE_COSTS[config.corners as keyof typeof CABLED_HARDWARE_COSTS] || 0;
+      }
+    }
+
+    if (usesCheaperFallback) {
+      let altFabric = 0, altCorner = 0;
+      const alt: 'webbing' | 'cabled' = edgeType === 'webbing' ? 'cabled' : 'webbing';
+      if (basePricingData) {
+        altFabric = getFabricPriceFromDB(basePricingData, adjustedPerimeter, config.fabricType, alt);
+        altCorner = getCornerCostFromDB(basePricingData, config.corners, alt);
+      } else if (alt === 'webbing') {
+        altFabric = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'webbing');
+        altCorner = CORNER_COSTS[config.corners as keyof typeof CORNER_COSTS] || 0;
+      } else {
+        altFabric = getFabricPriceFromPerimeter(adjustedPerimeter, config.fabricType, 'cabled');
+        altCorner = CABLED_CORNER_COSTS[config.corners as keyof typeof CABLED_CORNER_COSTS] || 0;
+      }
+      const altSail = altFabric + altCorner;
+      const currentSail = fabricCostNZD + edgeCostNZD + cornerCostNZD;
+      if (altSail < currentSail) {
+        fabricCostNZD = altFabric;
+        edgeCostNZD = 0;
+        cornerCostNZD = altCorner;
       }
     }
 
@@ -258,6 +282,7 @@ export function useShadeCalculations(
         standardPackLivePrice,
         greaseLivePrice: greaseLivePrice > 0 ? greaseLivePrice : undefined,
         greaseIncluded: config.includeGrease !== false && resolvedMode !== 'none' && greaseLivePrice > 0,
+        sailOnlyLivePrice: Math.ceil(sailConverted),
       },
       totalPrice,
       webbingWidth,

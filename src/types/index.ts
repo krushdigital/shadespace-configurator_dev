@@ -61,6 +61,7 @@ export interface ShadeCalculations {
     standardPackLivePrice?: number | null;
     greaseLivePrice?: number;
     greaseIncluded?: boolean;
+    sailOnlyLivePrice?: number;
   };
   totalPrice: number;
   webbingWidth: number;
