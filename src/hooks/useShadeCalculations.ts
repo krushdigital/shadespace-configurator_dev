@@ -13,6 +13,7 @@ import {
 } from '../data/pricing';
 import { FABRICS } from '../data/fabrics';
 import { calculatePolygonArea } from '../utils/geometry';
+import { getRecommendedEdgeType } from '../utils/edgeRecommendation';
 import { PricingSetting, getPricingForCurrency } from './usePricingSettings';
 import {
   BasePricingData,
@@ -70,7 +71,7 @@ export function useShadeCalculations(
     const perimeterM = perimeterMM / 1000;
     const adjustedPerimeter = Math.round(perimeterM / 0.5) * 0.5;
     const area = calculatePolygonArea(config.measurements, config.corners, config.fixingHeights, config.points);
-    const edgeType = config.edgeType as 'webbing' | 'cabled';
+    const edgeType = (config.edgeType || getRecommendedEdgeType(perimeterMM)) as 'webbing' | 'cabled';
 
     let webbingWidth: number;
     let wireThickness: number;
@@ -184,7 +185,7 @@ export function useShadeCalculations(
 
     let greaseLivePrice = 0;
     let greaseNzdPrice = 0;
-    if (config.includeGrease !== false && resolvedMode !== 'none' && hardwareItems) {
+    if (config.includeGrease !== false && resolvedMode === 'manual' && hardwareItems) {
       const greaseIt = hardwareItems.find(isGreaseItem);
       if (greaseIt) {
         greaseNzdPrice = Number(greaseIt.price_nzd) || 0;

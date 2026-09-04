@@ -235,7 +235,7 @@ export function FixedShapeHardwareContent({
         </button>
       </div>
 
-      {mode === 'standard' && greaseItem && (
+      {mode === 'manual' && greaseItem && (
         <div className={`flex items-center gap-3 rounded-xl border-2 p-3 transition cursor-pointer ${
           includeGrease ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200 bg-white'
         }`} onClick={() => updateConfig({ includeGrease: !includeGrease })}>
