@@ -114,9 +114,9 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
   // Auto-select recommended edge if user hasn't chosen yet
   const hasAutoSelected = useRef(false);
   useEffect(() => {
-    if (!config.edgeType && recommendation !== 'either' && !hasAutoSelected.current && isStepOpen) {
+    if (!config.edgeType && !hasAutoSelected.current && isStepOpen) {
       hasAutoSelected.current = true;
-      updateConfig({ edgeType: recommendation });
+      updateConfig({ edgeType: recommendation === 'either' ? 'webbing' : recommendation });
     }
   }, [recommendation, config.edgeType, isStepOpen]);
 
