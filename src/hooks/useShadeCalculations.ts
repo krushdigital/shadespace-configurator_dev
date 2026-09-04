@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../types';
 import type { HardwarePack, HardwareItem } from './useHardwareCatalog';
-import { getLiveHardwarePrice, getLivePackPrice } from './useHardwareCatalog';
+import { getLiveHardwarePrice, getLivePackPrice, isGreaseItem } from './useHardwareCatalog';
 import {
   CORNER_COSTS,
   CABLED_CORNER_COSTS,
@@ -182,6 +182,19 @@ export function useShadeCalculations(
       breakdownSubtotalNzd = 0;
     }
 
+    let greaseLivePrice = 0;
+    let greaseNzdPrice = 0;
+    if (config.includeGrease !== false && resolvedMode !== 'none' && hardwareItems) {
+      const greaseIt = hardwareItems.find(isGreaseItem);
+      if (greaseIt) {
+        greaseNzdPrice = Number(greaseIt.price_nzd) || 0;
+        greaseLivePrice = getLiveHardwarePrice(greaseIt, config.currency, pricing.exchangeRate);
+        hardwareCostNZD += greaseNzdPrice;
+        hardwareLiveSubtotal += greaseLivePrice;
+        breakdownSubtotalNzd += greaseNzdPrice;
+      }
+    }
+
     const sailOnlyBaseNZD = fabricCostNZD + edgeCostNZD + cornerCostNZD;
 
     // Sail portion goes through market/DHL markup + FX; hardware uses Shopify
@@ -242,6 +255,8 @@ export function useShadeCalculations(
         hardwareOnlyLivePrice: hardwareLiveSubtotal,
         perCornerLivePrice,
         standardPackLivePrice,
+        greaseLivePrice: greaseLivePrice > 0 ? greaseLivePrice : undefined,
+        greaseIncluded: config.includeGrease !== false && resolvedMode !== 'none' && greaseLivePrice > 0,
       },
       totalPrice,
       webbingWidth,
@@ -258,6 +273,7 @@ export function useShadeCalculations(
     config.unit,
     config.hardwareSelectionMode,
     config.cornerHardware,
+    config.includeGrease,
     pricingSettingsMap,
     basePricingData,
     hardwarePacks,

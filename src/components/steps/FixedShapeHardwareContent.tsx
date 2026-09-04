@@ -2,14 +2,14 @@ import React, { useState, useRef, useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
 import { Button } from '../ui/Button';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { useHardwareCatalog, getDefaultPack, getLivePackPrice, HardwareItem } from '../../hooks/useHardwareCatalog';
+import { useHardwareCatalog, getDefaultPack, getLivePackPrice, HardwareItem, isGreaseItem, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
 import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { EXCHANGE_RATES } from '../../data/pricing';
-import { Package, SlidersHorizontal, CheckCircle2, Info } from 'lucide-react';
-import { PricingSetting } from '../../hooks/usePricingSettings';
+import { Package, SlidersHorizontal, CheckCircle2, Info, Droplets } from 'lucide-react';
+import { PricingSetting, getPricingForCurrency } from '../../hooks/usePricingSettings';
 
 interface FixedShapeHardwareContentProps {
   config: ConfiguratorState;
@@ -61,6 +61,13 @@ export function FixedShapeHardwareContent({
   const cornerHardware = config.cornerHardware || {};
   const configuredCount = Array.from({ length: config.corners }, (_, i) => cornerHardware[i]?.length || 0).filter(n => n > 0).length;
   const allManualConfigured = mode === 'manual' ? configuredCount === config.corners : true;
+
+  const greaseItem = useMemo(() => catalogItems.find(isGreaseItem) || null, [catalogItems]);
+  const includeGrease = config.includeGrease !== false;
+  const pricingCfg = pricingSettingsMap
+    ? getPricingForCurrency(pricingSettingsMap, currency)
+    : { exchangeRate: 1 };
+  const greaseLivePrice = greaseItem ? getLiveHardwarePrice(greaseItem, currency, pricingCfg.exchangeRate) : 0;
 
   React.useEffect(() => {
     if (mobileGuidance?.isGuidanceActive && mode) {
@@ -228,6 +235,32 @@ export function FixedShapeHardwareContent({
         </button>
       </div>
 
+      {mode === 'standard' && greaseItem && (
+        <div className={`flex items-center gap-3 rounded-xl border-2 p-3 transition cursor-pointer ${
+          includeGrease ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200 bg-white'
+        }`} onClick={() => updateConfig({ includeGrease: !includeGrease })}>
+          {greaseItem.image_url ? (
+            <img src={greaseItem.image_url} alt={greaseItem.name} className="h-12 w-12 flex-shrink-0 rounded-lg border border-slate-200 bg-white object-contain" />
+          ) : (
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white">
+              <Droplets className="h-5 w-5 text-amber-600" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-[#01312d]">{greaseItem.name}</div>
+            <div className="text-xs text-[#6b8478] mt-0.5">Prevents seizing &amp; ensures correct installation. One per sail.</div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-sm font-bold text-[#01312d]">{formatCurrency(greaseLivePrice, currency)}</span>
+            <div className={`flex h-5 w-5 items-center justify-center rounded border-2 transition ${
+              includeGrease ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
+            }`}>
+              {includeGrease && <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Per-corner manual selection panel */}
       {mode === 'manual' && (
         <div ref={manualPanelRef} className="scroll-mt-4 rounded-xl border border-[#dfe7e1] bg-[#fbfdfb] p-4 space-y-3">
@@ -303,10 +336,36 @@ export function FixedShapeHardwareContent({
             })}
           </div>
 
+          {greaseItem && (
+            <div className={`mt-3 flex items-center gap-3 rounded-xl border-2 p-3 transition cursor-pointer ${
+              includeGrease ? 'border-emerald-300 bg-emerald-50/50' : 'border-slate-200 bg-white'
+            }`} onClick={() => updateConfig({ includeGrease: !includeGrease })}>
+              {greaseItem.image_url ? (
+                <img src={greaseItem.image_url} alt={greaseItem.name} className="h-12 w-12 flex-shrink-0 rounded-lg border border-slate-200 bg-white object-contain" />
+              ) : (
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white">
+                  <Droplets className="h-5 w-5 text-amber-600" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-[#01312d]">{greaseItem.name}</div>
+                <div className="text-xs text-[#6b8478] mt-0.5">Prevents seizing &amp; ensures correct installation. One per sail.</div>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-sm font-bold text-[#01312d]">{formatCurrency(greaseLivePrice, currency)}</span>
+                <div className={`flex h-5 w-5 items-center justify-center rounded border-2 transition ${
+                  includeGrease ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
+                }`}>
+                  {includeGrease && <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                </div>
+              </div>
+            </div>
+          )}
+
           {config.corners > 0 && (
             <div className="mt-3 rounded-xl bg-slate-100 p-3 flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-700">Hardware Cost (added to total):</span>
-              <span className="text-lg font-bold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0, config.currency)}</span>
+              <span className="text-lg font-bold text-[#D97706]">{formatCurrency((calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0), config.currency)}</span>
             </div>
           )}
         </div>

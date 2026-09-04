@@ -956,6 +956,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           );
                         })}
                       </div>
+                      {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
+                        <div className="mt-3 border border-slate-200 rounded-lg px-3 py-2.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                            <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mt-0.5">Prevents seizing &amp; ensures correct installation</div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {hardwareMode === 'manual' && (
@@ -990,6 +999,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                           );
                         })}
                       </div>
+                      {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
+                        <div className="border border-slate-200 rounded-lg px-3 py-2.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                            <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
+                          </div>
+                          <div className="text-xs text-slate-500 mt-0.5">Prevents seizing &amp; ensures correct installation</div>
+                        </div>
+                      )}
                       <div className="flex justify-between items-center rounded-lg bg-slate-100 px-3 py-1.5">
                         <span className="text-sm font-semibold text-slate-700">Hardware subtotal</span>
                         <span className="text-sm font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>

@@ -28,6 +28,7 @@ export interface ConfiguratorState {
   hasManuallyAdjustedShape?: boolean;
   hardwareSelectionMode?: 'standard' | 'manual' | 'none';
   cornerHardware?: { [cornerIndex: number]: CornerHardwareLine[] };
+  includeGrease?: boolean;
   shapeMode?: 'custom' | 'fixed';
   fixedShapeType?: FixedShapeType | null;
 }
@@ -58,6 +59,8 @@ export interface ShadeCalculations {
     hardwareOnlyLivePrice?: number;
     perCornerLivePrice?: number[];
     standardPackLivePrice?: number | null;
+    greaseLivePrice?: number;
+    greaseIncluded?: boolean;
   };
   totalPrice: number;
   webbingWidth: number;

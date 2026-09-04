@@ -1,12 +1,12 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getPortalRoot } from '../utils/appScope';
-import { X, Search, Minus, Plus, Wrench, Info, Droplets } from 'lucide-react';
+import { X, Search, Minus, Plus, Wrench, Info } from 'lucide-react';
 import { Button } from './ui/Button';
 import { formatCurrency } from '../utils/currencyFormatter';
 import type { CornerHardwareLine } from '../types';
 import type { HardwareItem, HardwareCategory, HardwarePack } from '../hooks/useHardwareCatalog';
-import { groupItemsByCategory, useHardwareSearch, getLiveHardwarePrice, isGreaseItem } from '../hooks/useHardwareCatalog';
+import { groupItemsByCategory, useHardwareSearch, getLiveHardwarePrice } from '../hooks/useHardwareCatalog';
 import { getPricingForCurrency, PricingSetting } from '../hooks/usePricingSettings';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import { useLenisPrevent } from '../hooks/useLenisPrevent';
@@ -58,13 +58,6 @@ export function HardwareSelectionModal({
     for (const line of initialSelection) {
       const item = items.find(i => i.id === line.catalogId);
       if (item) next.set(item.id, { item, qty: line.qty });
-    }
-    // Auto-select grease when opening with no existing selection
-    if (initialSelection.length === 0) {
-      const greaseItem = items.find(isGreaseItem);
-      if (greaseItem && !next.has(greaseItem.id)) {
-        next.set(greaseItem.id, { item: greaseItem, qty: 1 });
-      }
     }
     setDraft(next);
     setQuery('');
@@ -213,14 +206,6 @@ export function HardwareSelectionModal({
         <div ref={lenisRef} className="flex-1 overflow-y-auto overscroll-contain px-5 pb-3" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
           {grouped.length === 0 && (
             <div className="py-12 text-center text-sm text-slate-500">No hardware matches your search.</div>
-          )}
-          {grouped.length > 0 && grouped[0]?.category.id === '_grease' && (
-            <div className="mb-3 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
-              <Droplets className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600" />
-              <p className="text-sm text-amber-900">
-                <span className="font-semibold">Grease is highly recommended</span> with any corner hardware to prevent seizing and ensure correct installation. It has been pre-selected for you — uncheck it if you don't need it.
-              </p>
-            </div>
           )}
           {grouped.map(group => (
             <div key={group.category.id} className="mb-4">

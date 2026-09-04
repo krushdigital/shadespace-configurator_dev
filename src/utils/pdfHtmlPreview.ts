@@ -307,8 +307,12 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
         return `<h2>${escapeHtml(title)}</h2><div class="row"><span class="muted">No tensioning hardware included with this order.</span></div>`;
       }
       if (hwMode === 'standard') {
+        const greaseLineStd = cfgData?.includeGrease !== false && calc?.hardwareBreakdown?.greaseIncluded && calc?.hardwareBreakdown?.greaseLivePrice
+          ? `<div class="row" style="margin-top:6px;"><span class="muted">1x Nulan Grease Tube (50ml)</span><span class="val">${formatCurrencyPreview(calc.hardwareBreakdown.greaseLivePrice, currency)}</span></div>`
+          : '';
         return `<h2>${escapeHtml(title)}</h2>
           <div class="row"><span class="muted">Hardware Tensioning Kit (${corners}-corner pack)</span><span class="val" style="color:#307C31;">Included</span></div>
+          ${greaseLineStd}
           <div style="font-size:11px;color:${cfg.brand.mutedColor};padding:4px 0 0;">Pack contents are listed in the Bill of Materials block.</div>`;
       }
       const cornerHw = (cfgData as { cornerHardware?: Record<number, Array<{ name: string; sku?: string; qty: number; livePrice?: number; livePriceCurrency?: string }>> })?.cornerHardware;
@@ -335,7 +339,15 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
             }).join('')}
           </div>`);
         }
-        return `<h2>${escapeHtml(title)}</h2>${rows.join('')}`;
+        const greaseLineManual = cfgData?.includeGrease !== false && calc?.hardwareBreakdown?.greaseIncluded && calc?.hardwareBreakdown?.greaseLivePrice
+          ? `<div style="padding:8px 0;border-bottom:1px solid #E5E7EB;">
+              <div style="display:flex;justify-content:space-between;font-weight:700;">
+                <span>Grease</span><span>${formatCurrencyPreview(calc.hardwareBreakdown.greaseLivePrice, currency)}</span>
+              </div>
+              <div style="padding-left:12px;font-size:11px;color:${cfg.brand.mutedColor};">1x Nulan Grease Tube (50ml)</div>
+            </div>`
+          : '';
+        return `<h2>${escapeHtml(title)}</h2>${rows.join('')}${greaseLineManual}`;
       }
       return `<h2>${escapeHtml(title)}</h2>
         <div style="padding:8px 0;border-bottom:1px solid #E5E7EB;">

@@ -140,15 +140,9 @@ export function isGreaseItem(it: HardwareItem): boolean {
 }
 
 export function groupItemsByCategory(items: HardwareItem[], categories: HardwareCategory[]): Array<{ category: HardwareCategory; items: HardwareItem[] }> {
-  const greaseItems: HardwareItem[] = [];
-  const rest: HardwareItem[] = [];
-  for (const it of items) {
-    if (isGreaseItem(it)) greaseItems.push(it);
-    else rest.push(it);
-  }
-
   const map = new Map<string, HardwareItem[]>();
-  for (const it of rest) {
+  for (const it of items) {
+    if (isGreaseItem(it)) continue;
     const key = resolvedCategoryId(it);
     const arr = map.get(key) || [];
     arr.push(it);
@@ -164,9 +158,6 @@ export function groupItemsByCategory(items: HardwareItem[], categories: Hardware
   }
 
   const out: Array<{ category: HardwareCategory; items: HardwareItem[] }> = [];
-  if (greaseItems.length > 0) {
-    out.push({ category: { id: '_grease', label: 'Recommended', display_order: -1 }, items: greaseItems });
-  }
   for (const cat of categories) {
     const bucket = map.get(cat.id);
     if (bucket && bucket.length > 0) out.push({ category: cat, items: bucket });
