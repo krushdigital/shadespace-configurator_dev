@@ -1060,116 +1060,150 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
             {/* Precise Measurements Summary */}
             <div>
-              {isMobile ? (
-                <AccordionItem
-                  trigger={
-                    <span className="text-sm font-medium">Measurements</span>
-                  }
-                  defaultOpen={isFixedShape}
-                >
-                  <Card className="p-3 mt-2">
-                    <div className="space-y-3">
-                      <div>
-                        <h6 className="text-xs font-semibold text-slate-700 mb-2">Edges</h6>
-                        <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                          {Array.from({ length: config.corners }, (_, index) => {
-                            const nextIndex = (index + 1) % config.corners;
-                            const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
-                            const measurement = config.measurements[edgeKey];
-
-                            return (
-                              <div key={edgeKey} className="flex justify-between">
-                                <span className="text-slate-600">
-                                  {String.fromCharCode(65 + index)}-{String.fromCharCode(65 + nextIndex)}:
-                                </span>
-                                <span className="font-medium text-slate-900">
-                                  {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {!isFixedShape && config.corners >= 4 && diagonalMeasurements.length > 0 && (
-                        <div className="pt-2 border-t border-slate-200">
-                          <h6 className="text-xs font-semibold text-slate-700 mb-2">Diagonals</h6>
-                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                            {diagonalMeasurements.map((diagonal) => {
-                              const measurement = config.measurements[diagonal.key];
-
-                              return (
-                                <div key={diagonal.key} className="flex justify-between">
-                                  <span className="text-slate-600">
-                                    {diagonal.key}:
-                                  </span>
-                                  <span className="font-medium text-slate-900">
-                                    {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                </AccordionItem>
-              ) : (
-                <AccordionItem
-                  defaultOpen={isFixedShape}
-                  trigger={
-                    <span className="text-sm font-semibold">Precise Measurements</span>
-                  }
-                >
-                  <Card className="p-4 mt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
-                      <div>
-                        <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths</h6>
-                        <div className="space-y-1 text-sm">
-                          {Array.from({ length: config.corners }, (_, index) => {
-                            const nextIndex = (index + 1) % config.corners;
-                            const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
-                            const measurement = config.measurements[edgeKey];
-
-                            return (
-                              <div key={edgeKey} className="flex items-baseline gap-3">
-                                <span className="text-slate-600 whitespace-nowrap min-w-[100px]">
-                                  Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:
-                                </span>
-                                <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">
-                                  {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {!isFixedShape && config.corners >= 4 && diagonalMeasurements.length > 0 && (
+              {isFixedShape ? (
+                /* Fixed shapes: always visible, no accordion */
+                isMobile ? (
+                  <div>
+                    <div className="py-2 px-2 text-sm font-medium text-[#01312D]">Measurements</div>
+                    <Card className="p-3">
+                      <div className="space-y-3">
                         <div>
-                          <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths</h6>
-                          <div className="space-y-1 text-sm">
-                            {diagonalMeasurements.map((diagonal) => {
-                              const measurement = config.measurements[diagonal.key];
-
+                          <h6 className="text-xs font-semibold text-slate-700 mb-2">Edges</h6>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                            {Array.from({ length: config.corners }, (_, index) => {
+                              const nextIndex = (index + 1) % config.corners;
+                              const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
+                              const measurement = config.measurements[edgeKey];
                               return (
-                                <div key={diagonal.key} className="flex items-baseline gap-3">
-                                  <span className="text-slate-600 whitespace-nowrap min-w-[100px]">
-                                    Diagonal {diagonal.key}:
-                                  </span>
-                                  <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">
-                                    {measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}
-                                  </span>
+                                <div key={edgeKey} className="flex justify-between">
+                                  <span className="text-slate-600">{String.fromCharCode(65 + index)}-{String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-slate-900">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
                                 </div>
                               );
                             })}
                           </div>
                         </div>
-                      )}
-                    </div>
-                  </Card>
-                </AccordionItem>
+                      </div>
+                    </Card>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="py-2 px-2 text-sm font-semibold text-[#01312D]">Precise Measurements</div>
+                    <Card className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+                        <div>
+                          <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths</h6>
+                          <div className="space-y-1 text-sm">
+                            {Array.from({ length: config.corners }, (_, index) => {
+                              const nextIndex = (index + 1) % config.corners;
+                              const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
+                              const measurement = config.measurements[edgeKey];
+                              return (
+                                <div key={edgeKey} className="flex items-baseline gap-3">
+                                  <span className="text-slate-600 whitespace-nowrap min-w-[100px]">Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                )
+              ) : (
+                /* Custom shapes: collapsible accordion */
+                isMobile ? (
+                  <AccordionItem
+                    trigger={
+                      <span className="text-sm font-medium">Measurements</span>
+                    }
+                    defaultOpen={false}
+                  >
+                    <Card className="p-3 mt-2">
+                      <div className="space-y-3">
+                        <div>
+                          <h6 className="text-xs font-semibold text-slate-700 mb-2">Edges</h6>
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                            {Array.from({ length: config.corners }, (_, index) => {
+                              const nextIndex = (index + 1) % config.corners;
+                              const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
+                              const measurement = config.measurements[edgeKey];
+                              return (
+                                <div key={edgeKey} className="flex justify-between">
+                                  <span className="text-slate-600">{String.fromCharCode(65 + index)}-{String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-slate-900">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {config.corners >= 4 && diagonalMeasurements.length > 0 && (
+                          <div className="pt-2 border-t border-slate-200">
+                            <h6 className="text-xs font-semibold text-slate-700 mb-2">Diagonals</h6>
+                            <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                              {diagonalMeasurements.map((diagonal) => {
+                                const measurement = config.measurements[diagonal.key];
+                                return (
+                                  <div key={diagonal.key} className="flex justify-between">
+                                    <span className="text-slate-600">{diagonal.key}:</span>
+                                    <span className="font-medium text-slate-900">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </AccordionItem>
+                ) : (
+                  <AccordionItem
+                    defaultOpen={false}
+                    trigger={
+                      <span className="text-sm font-semibold">Precise Measurements</span>
+                    }
+                  >
+                    <Card className="p-4 mt-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+                        <div>
+                          <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths</h6>
+                          <div className="space-y-1 text-sm">
+                            {Array.from({ length: config.corners }, (_, index) => {
+                              const nextIndex = (index + 1) % config.corners;
+                              const edgeKey = `${String.fromCharCode(65 + index)}${String.fromCharCode(65 + nextIndex)}`;
+                              const measurement = config.measurements[edgeKey];
+                              return (
+                                <div key={edgeKey} className="flex items-baseline gap-3">
+                                  <span className="text-slate-600 whitespace-nowrap min-w-[100px]">Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {config.corners >= 4 && diagonalMeasurements.length > 0 && (
+                          <div>
+                            <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths</h6>
+                            <div className="space-y-1 text-sm">
+                              {diagonalMeasurements.map((diagonal) => {
+                                const measurement = config.measurements[diagonal.key];
+                                return (
+                                  <div key={diagonal.key} className="flex items-baseline gap-3">
+                                    <span className="text-slate-600 whitespace-nowrap min-w-[100px]">Diagonal {diagonal.key}:</span>
+                                    <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </AccordionItem>
+                )
               )}
             </div>
 

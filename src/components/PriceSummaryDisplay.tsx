@@ -236,7 +236,51 @@ export function PriceSummaryDisplay({
                   </div>
                 )}
               </div>
-            ) : (config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none')) === 'manual' ? null : (
+            ) : (config.hardwareSelectionMode ?? (config.measurementOption === 'adjust' ? 'standard' : 'none')) === 'manual' ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-bold text-slate-900">Selected Hardware</span>
+                </div>
+                <div className="space-y-2.5">
+                  {Array.from({ length: config.corners }, (_, i) => {
+                    const letter = String.fromCharCode(65 + i);
+                    const lines = (config.cornerHardware || {})[i] || [];
+                    return (
+                      <div key={i}>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-bold text-white">{letter}</div>
+                          <span className="text-xs font-semibold text-slate-700">Corner {letter}</span>
+                        </div>
+                        {lines.length === 0 ? (
+                          <div className="text-[11px] text-slate-400 ml-6">No hardware</div>
+                        ) : (
+                          <ul className="ml-6 space-y-0.5">
+                            {lines.map((l, li) => (
+                              <li key={li} className="flex items-center gap-2 text-xs">
+                                <span className="flex-1 min-w-0 truncate text-slate-700">{l.name}</span>
+                                <span className="flex-shrink-0 font-semibold text-slate-500">x {l.qty}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                {calculations.hardwareBreakdown?.greaseIncluded && (
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 flex items-center gap-2 text-xs">
+                    <span className="flex-1 text-slate-700">Nulan Grease Tube (50ml)</span>
+                    <span className="flex-shrink-0 font-semibold text-slate-500">x 1</span>
+                  </div>
+                )}
+                {hardwareOnlyDisplay > 0 && (
+                  <div className="mt-2.5 pt-2.5 border-t border-slate-200 flex justify-between text-sm">
+                    <span className="font-semibold text-slate-700">Hardware total</span>
+                    <span className="font-bold text-[#D97706]">{formatCurrency(Math.round(hardwareOnlyDisplay), config.currency)}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
               <div className="flex justify-between text-sm">
                 <span className="text-[#01312D]/60">Tensioning hardware & fittings:</span>
                 <span className="text-[#01312D] font-semibold">

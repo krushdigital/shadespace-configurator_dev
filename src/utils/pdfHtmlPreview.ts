@@ -483,7 +483,8 @@ function renderBlockHtml(block: PdfBlock, cfg: PdfTemplateConfig, live: PreviewL
       return `<h2>${escapeHtml(title)}</h2>
         <div class="row"><span class="muted">${escapeHtml(fabricLabel)} - ${escapeHtml(fabricColor)} (${fmtA((calc?.area || 12.5) * 1000000)})</span><span class="val">${formatCurrencyPreview(total - 70, currency)}</span></div>
         <div class="row"><span class="muted">Edge reinforcement</span><span class="val">Included</span></div>
-        <div class="row"><span class="muted">Hardware Tensioning Kit (${corners}-corner pack)</span><span class="val">Included</span></div>
+        <div class="row"><span class="muted">Hardware Tensioning Kit (${corners}-corner pack)</span><span class="val">Included</span></div>${cfgData?.includeGrease !== false && calc?.hardwareBreakdown?.greaseIncluded && calc?.hardwareBreakdown?.greaseLivePrice ? `
+        <div class="row"><span class="muted">Nulan Grease Tube (50ml)</span><span class="val">${formatCurrencyPreview(calc.hardwareBreakdown.greaseLivePrice, currency)}</span></div>` : ''}
         <div class="row"><span class="val">Total (all-inclusive)</span><span class="val">${formatCurrencyPreview(total, currency)}</span></div>`;
     case 'resumeButton': {
       const label = (p.label as string) || 'Open My Saved Quote';
