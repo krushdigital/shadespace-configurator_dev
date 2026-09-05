@@ -32,7 +32,8 @@ export function DeliveryEstimate({
         <Truck className="w-4 h-4 text-[#307C31] mt-0.5 flex-shrink-0" />
         <div className="min-w-0">
           <p className="text-sm font-semibold text-[#01312D] leading-snug">
-            Made and delivered approx. {from} – {to}
+            Made and delivered approx.<br />
+            {from} – {to}
           </p>
           <p className="text-xs text-[#01312D]/70 mt-0.5 leading-relaxed">
             Up to {makeDays} business days to make, then {shipMin}–{shipMax} business days express
