@@ -354,6 +354,15 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         setSavedQuoteId(quoteData.id);
         setSavedAccessToken(quoteData.token);
 
+        if (quote.customer_email) {
+          setCapturedCustomerDetails({
+            firstName: (quote as any).customer_first_name || '',
+            lastName: (quote as any).customer_last_name || '',
+            email: quote.customer_email,
+            quoteReference: quote.quote_reference,
+          });
+        }
+
         // Restore the locked total verbatim if we are within the lock window.
         // This bypasses the pricing engine so Market / FX / markup never reruns.
         if (
@@ -452,6 +461,15 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         setQuoteReference(quote.quote_reference);
         setSavedQuoteId(initialQuoteId);
         setSavedAccessToken(initialQuoteToken);
+
+        if (quote.customer_email) {
+          setCapturedCustomerDetails({
+            firstName: (quote as any).customer_first_name || '',
+            lastName: (quote as any).customer_last_name || '',
+            email: quote.customer_email,
+            quoteReference: quote.quote_reference,
+          });
+        }
 
         if (
           quote.pricing_status === 'locked' &&
@@ -2353,9 +2371,55 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Check if quote is ready (has price)
   const hasQuote = calculations.totalPrice > 0;
 
-  // Handle save quote - opens unified modal
-  const handleSaveQuote = () => {
-    setShowUnifiedSaveModal(true);
+  // Handle save quote - auto-save silently if user has already saved once
+  const [isSilentSaving, setIsSilentSaving] = useState(false);
+  const handleSaveQuote = async () => {
+    const canAutoSave = savedQuoteId && savedAccessToken && capturedCustomerDetails;
+    if (!canAutoSave) {
+      setShowUnifiedSaveModal(true);
+      return;
+    }
+
+    setIsSilentSaving(true);
+    try {
+      let capturedCanvasUrl: string | null = null;
+      try {
+        const blob = await renderSailPngBlob(config, 800, 800);
+        if (blob) {
+          const ts = new Date().toISOString().replace(/[:.]/g, '-');
+          capturedCanvasUrl = await uploadToQuoteAssets(blob, `shade-sail-${config.corners}corner-${ts}.png`) || null;
+        }
+      } catch {}
+
+      let capturedCanvas3DUrl: string | null = null;
+      try {
+        const screenshot = await viewer3DRef.current?.capture3DScreenshot();
+        if (screenshot) {
+          const blob3d = await fetch(screenshot).then(r => r.blob());
+          const ts = new Date().toISOString().replace(/[:.]/g, '-');
+          capturedCanvas3DUrl = await uploadToQuoteAssets(blob3d, `shade-sail-3d-${config.corners}corner-${ts}.png`) || null;
+        }
+      } catch {}
+
+      await updateQuote(savedQuoteId, savedAccessToken, config, calculations, {
+        email: capturedCustomerDetails.email,
+        firstName: capturedCustomerDetails.firstName,
+        lastName: capturedCustomerDetails.lastName,
+        currentStep: openStep,
+        totalSteps: steps.filter((_, i) => !shouldSkipStep(i)).length,
+        pricingSnapshot: pricingSettingsMap,
+        canvasImageUrl: capturedCanvasUrl,
+        canvasImage3DUrl: capturedCanvas3DUrl,
+        status: 'in_progress',
+      });
+
+      showToast('Progress saved!', 'success');
+    } catch (err) {
+      console.error('Silent auto-save failed:', err);
+      setShowUnifiedSaveModal(true);
+    } finally {
+      setIsSilentSaving(false);
+    }
   };
 
   // Handle sketch upload apply - fills configurator with AI-extracted data and advances
@@ -2979,6 +3043,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           }}
           onSaveComplete={() => setLoadedPricingSnapshot(null)}
           onCustomerDetailsCaptured={setCapturedCustomerDetails}
+          initialCustomerDetails={capturedCustomerDetails}
           onGeneratePDFWithDetails={handleGeneratePDFWithDetails}
           onEmailPDFQuote={handleEmailPDFQuote}
           getCanvasImageUrl={async () => {

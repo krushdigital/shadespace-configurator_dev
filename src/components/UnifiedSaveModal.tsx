@@ -55,6 +55,7 @@ interface UnifiedSaveModalProps {
   ) => Promise<boolean>;
   onSaveComplete?: () => void;
   onCustomerDetailsCaptured?: (details: { firstName: string; lastName: string; email: string; quoteReference?: string }) => void;
+  initialCustomerDetails?: { firstName: string; lastName: string; email: string } | null;
   getCanvasImageUrl?: () => Promise<string | null>;
   getCanvasImage3DUrl?: () => Promise<string | null>;
 }
@@ -75,6 +76,7 @@ export function UnifiedSaveModal({
   onEmailPDFQuote,
   onSaveComplete,
   onCustomerDetailsCaptured,
+  initialCustomerDetails,
   getCanvasImageUrl,
   getCanvasImage3DUrl,
 }: UnifiedSaveModalProps) {
@@ -102,6 +104,14 @@ export function UnifiedSaveModal({
   const { showToast } = useToast();
   const [defaultQuoteName, setDefaultQuoteName] = useState('');
   const [modalOpenTime, setModalOpenTime] = useState<number>(Date.now());
+
+  useEffect(() => {
+    if (isOpen && initialCustomerDetails) {
+      if (!firstName) setFirstName(initialCustomerDetails.firstName);
+      if (!lastName) setLastName(initialCustomerDetails.lastName);
+      if (!email) setEmail(initialCustomerDetails.email);
+    }
+  }, [isOpen, initialCustomerDetails]);
 
   useEffect(() => {
     if (isOpen) {
