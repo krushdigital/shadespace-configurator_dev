@@ -111,7 +111,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const [showUnifiedSaveModal, setShowUnifiedSaveModal] = useState(false);
   const [agreedToAcknowledgments, setAgreedToAcknowledgments] = useState(false);
   const [capturedCustomerDetails, setCapturedCustomerDetails] = useState<{
-    firstName: string; lastName: string; email: string; quoteReference?: string;
+    firstName: string; lastName: string; email: string; quoteReference?: string; quoteName?: string; customerReference?: string;
   } | null>(null);
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
   const [loadingStep, setLoadingStep] = useState({
@@ -462,14 +462,14 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         setSavedQuoteId(initialQuoteId);
         setSavedAccessToken(initialQuoteToken);
 
-        if (quote.customer_email) {
-          setCapturedCustomerDetails({
-            firstName: (quote as any).customer_first_name || '',
-            lastName: (quote as any).customer_last_name || '',
-            email: quote.customer_email,
-            quoteReference: quote.quote_reference,
-          });
-        }
+        setCapturedCustomerDetails({
+          firstName: (quote as any).customer_first_name || '',
+          lastName: (quote as any).customer_last_name || '',
+          email: quote.customer_email || '',
+          quoteReference: quote.quote_reference,
+          quoteName: quote.quote_name || '',
+          customerReference: (quote as any).customer_reference || '',
+        });
 
         if (
           quote.pricing_status === 'locked' &&
@@ -2374,7 +2374,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Handle save quote - auto-save silently if user has already saved once
   const [isSilentSaving, setIsSilentSaving] = useState(false);
   const handleSaveQuote = async () => {
-    const canAutoSave = savedQuoteId && savedAccessToken && capturedCustomerDetails;
+    const canAutoSave = !adminMode && savedQuoteId && savedAccessToken && capturedCustomerDetails;
     if (!canAutoSave) {
       setShowUnifiedSaveModal(true);
       return;
@@ -2992,6 +2992,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           pricingSnapshot={pricingSettingsMap}
           existingQuoteId={savedQuoteId}
           existingAccessToken={savedAccessToken}
+          existingCustomerDetails={capturedCustomerDetails ?? undefined}
           onQuoteCreated={(ref, id, token) => {
             setQuoteReference(ref);
             setSavedQuoteId(id);

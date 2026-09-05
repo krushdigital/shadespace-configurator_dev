@@ -32,6 +32,7 @@ interface AdminSaveQuoteModalProps {
   pricingSnapshot?: Record<string, unknown> | null;
   existingQuoteId?: string | null;
   existingAccessToken?: string | null;
+  existingCustomerDetails?: { firstName: string; lastName: string; email: string; quoteName?: string; customerReference?: string } | null;
   onQuoteCreated?: (reference: string, id: string, accessToken: string) => void;
   getCanvasImageUrl?: () => Promise<string | null>;
   getCanvasImage3DUrl?: () => Promise<string | null>;
@@ -46,16 +47,17 @@ export function AdminSaveQuoteModal({
   pricingSnapshot,
   existingQuoteId,
   existingAccessToken,
+  existingCustomerDetails,
   onQuoteCreated,
   getCanvasImageUrl,
   getCanvasImage3DUrl,
 }: AdminSaveQuoteModalProps) {
   const [modalStep, setModalStep] = useState<ModalStep>('form');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [quoteName, setQuoteName] = useState('');
-  const [customerReference, setCustomerReference] = useState('');
+  const [firstName, setFirstName] = useState(existingCustomerDetails?.firstName || '');
+  const [lastName, setLastName] = useState(existingCustomerDetails?.lastName || '');
+  const [email, setEmail] = useState(existingCustomerDetails?.email || '');
+  const [quoteName, setQuoteName] = useState(existingCustomerDetails?.quoteName || '');
+  const [customerReference, setCustomerReference] = useState(existingCustomerDetails?.customerReference || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedQuote, setSavedQuote] = useState<{
     id: string;
@@ -169,11 +171,11 @@ export function AdminSaveQuoteModal({
 
   const handleClose = () => {
     setModalStep('form');
-    setFirstName('');
-    setLastName('');
-    setEmail('');
-    setQuoteName('');
-    setCustomerReference('');
+    setFirstName(existingCustomerDetails?.firstName || '');
+    setLastName(existingCustomerDetails?.lastName || '');
+    setEmail(existingCustomerDetails?.email || '');
+    setQuoteName(existingCustomerDetails?.quoteName || '');
+    setCustomerReference(existingCustomerDetails?.customerReference || '');
     setSavedQuote(null);
     setCopied(false);
     onClose();
