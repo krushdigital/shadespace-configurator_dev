@@ -1221,12 +1221,25 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   } else if (quoteParams) {
     try {
       setLoadingStep({ text: 'Preparing order details...', progress: 15 });
+      const checkoutSnapshot = {
+        config_data: config,
+        calculations_data: calculations,
+        locked_total: lockedQuote?.total ?? calculations.totalPrice ?? null,
+        locked_currency: lockedQuote?.currency ?? config.currency ?? null,
+        snapshotted_at: new Date().toISOString(),
+      };
       await updateQuote(quoteParams.id, quoteParams.token, config, calculations, {
         status: 'checkout_pending',
+        checkoutSnapshot,
       });
+      setCheckoutSnapshotSaved(true);
       console.log('Updated existing quote config for checkout:', autoSavedRef);
     } catch (updateErr) {
-      console.error('Quote config update for checkout failed (non-blocking):', updateErr);
+      console.error('Checkout snapshot save failed — blocking cart:', updateErr);
+      setLoading(false);
+      setShowLoadingOverlay(false);
+      showToast('Failed to prepare your order. Please try again.', 'error');
+      return;
     }
   }
 
@@ -2373,10 +2386,17 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   // Handle save quote - auto-save silently if user has already saved once
   const [isSilentSaving, setIsSilentSaving] = useState(false);
+  const [checkoutSnapshotSaved, setCheckoutSnapshotSaved] = useState(false);
   const handleSaveQuote = async () => {
     const canAutoSave = !adminMode && savedQuoteId && savedAccessToken && capturedCustomerDetails;
     if (!canAutoSave) {
       setShowUnifiedSaveModal(true);
+      return;
+    }
+
+    // Never overwrite a quote that has already reached checkout or been purchased
+    if (checkoutSnapshotSaved) {
+      showToast('This quote has been sent to checkout. Start a new quote to make changes.', 'info');
       return;
     }
 

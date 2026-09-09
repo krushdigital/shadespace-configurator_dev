@@ -164,6 +164,48 @@ Deno.serve(async (req: Request) => {
 
     // Update the matched quote with purchase info and backfill customer details
     if (matchedQuoteId) {
+      // Mismatch detection: compare Shopify line item properties with the saved quote
+      try {
+        const { data: quoteForCheck } = await supabase
+          .from("saved_quotes")
+          .select("config_data, calculations_data, checkout_snapshot, locked_total, locked_total_currency")
+          .eq("id", matchedQuoteId)
+          .maybeSingle();
+
+        if (quoteForCheck && order.line_items) {
+          const lineItem = (order.line_items as Array<Record<string, unknown>>)[0];
+          const props = ((lineItem?.properties || []) as Array<{ name: string; value: string }>);
+          const getProp = (name: string) => props.find((p) => p.name === name)?.value || null;
+
+          const shopifyFabric = getProp("Fabric Material") || getProp("fabric_material");
+          const shopifyColor = getProp("Fabric Color") || getProp("fabric_color");
+          const shopifyTotal = getProp("_locked_total");
+
+          const snap = quoteForCheck.checkout_snapshot as Record<string, unknown> | null;
+          const effectiveCfg = (snap?.config_data || quoteForCheck.config_data) as Record<string, unknown> | null;
+          const dbFabric = effectiveCfg?.fabricType as string | null;
+          const dbColor = effectiveCfg?.fabricColor as string | null;
+          const dbTotal = quoteForCheck.locked_total;
+
+          const mismatches: string[] = [];
+          if (shopifyFabric && dbFabric && shopifyFabric !== dbFabric) {
+            mismatches.push(`fabric: shopify="${shopifyFabric}" db="${dbFabric}"`);
+          }
+          if (shopifyColor && dbColor && shopifyColor !== dbColor) {
+            mismatches.push(`color: shopify="${shopifyColor}" db="${dbColor}"`);
+          }
+          if (shopifyTotal && dbTotal && Math.abs(parseFloat(shopifyTotal) - dbTotal) > 0.01) {
+            mismatches.push(`total: shopify=${shopifyTotal} db=${dbTotal}`);
+          }
+
+          if (mismatches.length > 0) {
+            console.warn(`[MISMATCH] Order ${shopifyOrderNumber} / Quote ${matchedQuoteRef}: ${mismatches.join("; ")}`);
+          }
+        }
+      } catch (mismatchErr) {
+        console.warn("Mismatch detection failed (non-blocking):", mismatchErr);
+      }
+
       const shippingFirst = order.shipping_address?.first_name || order.customer?.first_name || "";
       const shippingLast = order.shipping_address?.last_name || order.customer?.last_name || "";
 

@@ -186,6 +186,7 @@ export async function updateQuote(
     canvasImage3DUrl?: string | null;
     status?: string;
     marketingOptIn?: boolean;
+    checkoutSnapshot?: Record<string, unknown> | null;
   }
 ): Promise<SavedQuote> {
   const response = await fetch(SAVE_QUOTE_URL, {
@@ -212,6 +213,9 @@ export async function updateQuote(
       status: options?.status || null,
       ...(typeof options?.marketingOptIn === 'boolean'
         ? { marketingOptIn: options.marketingOptIn }
+        : {}),
+      ...(options?.checkoutSnapshot
+        ? { checkoutSnapshot: options.checkoutSnapshot }
         : {}),
     }),
   });
@@ -459,6 +463,13 @@ export async function saveQuoteForCheckout(
       canvasImageUrl: canvasImageUrl || null,
       canvasImage3DUrl: canvasImage3DUrl || null,
       status: 'checkout_pending',
+      checkoutSnapshot: {
+        config_data: config,
+        calculations_data: calculations,
+        locked_total: calculations.totalPrice ?? null,
+        locked_currency: config.currency ?? null,
+        snapshotted_at: new Date().toISOString(),
+      },
     }),
   });
 

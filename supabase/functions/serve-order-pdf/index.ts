@@ -865,7 +865,7 @@ Deno.serve(async (req: Request) => {
     const { data: quote, error: quoteErr } = await supabase
       .from("saved_quotes")
       .select(
-        "id, quote_reference, quote_name, customer_first_name, customer_last_name, customer_email, customer_reference, config_data, calculations_data, diagram_public_url, diagram_3d_public_url, created_at, access_token, shopify_order_number, shipping_address, estimated_weight_kg, order_notes"
+        "id, quote_reference, quote_name, customer_first_name, customer_last_name, customer_email, customer_reference, config_data, calculations_data, checkout_snapshot, status, diagram_public_url, diagram_3d_public_url, created_at, access_token, shopify_order_number, shipping_address, estimated_weight_kg, order_notes"
       )
       .eq("quote_reference", ref)
       .maybeSingle();
@@ -918,6 +918,20 @@ Deno.serve(async (req: Request) => {
       return imgUrl;
     };
 
+    // For purchased or checkout_pending quotes with a checkout_snapshot,
+    // use the snapshot as the authoritative config/calculations so the PDF
+    // matches exactly what was sent to the Shopify cart.
+    const snapshot = quote.checkout_snapshot as Record<string, unknown> | null;
+    const useSnapshot = snapshot &&
+      (quote.status === "purchased" || quote.status === "checkout_pending") &&
+      snapshot.config_data && snapshot.calculations_data;
+    const effectiveConfig = useSnapshot
+      ? (snapshot.config_data as Record<string, unknown>)
+      : quote.config_data;
+    const effectiveCalculations = useSnapshot
+      ? (snapshot.calculations_data as Record<string, unknown>)
+      : quote.calculations_data;
+
     const live: LiveData = {
       id: quote.id,
       quote_reference: quote.quote_reference,
@@ -930,8 +944,8 @@ Deno.serve(async (req: Request) => {
       diagram_public_url: validImageUrl(quote.diagram_public_url),
       diagram_3d_url: validImageUrl(quote.diagram_3d_public_url),
       created_at: quote.created_at,
-      config_data: quote.config_data,
-      calculations_data: quote.calculations_data,
+      config_data: effectiveConfig,
+      calculations_data: effectiveCalculations,
       shopify_order_number: quote.shopify_order_number,
       shipping_address: quote.shipping_address,
       estimated_weight_kg: quote.estimated_weight_kg,

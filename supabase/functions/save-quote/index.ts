@@ -582,6 +582,9 @@ async function handlePost(
     ...(createdByAdminId ? { created_by_admin_id: createdByAdminId } : {}),
     ...(salesRepName ? { sales_rep_name: salesRepName } : {}),
     ...(createdVia ? { created_via: createdVia } : {}),
+    ...(body.checkoutSnapshot && typeof body.checkoutSnapshot === "object"
+      ? { checkout_snapshot: body.checkoutSnapshot }
+      : {}),
   };
 
   const { data: inserted, error: insertErr } = await supabase
@@ -780,6 +783,10 @@ async function handlePut(
     diagram_3d_public_url: canvasImage3DUrl || null,
     updated_at: new Date().toISOString(),
   };
+
+  if (body.checkoutSnapshot && typeof body.checkoutSnapshot === "object") {
+    updatePayload.checkout_snapshot = body.checkoutSnapshot;
+  }
 
   if (finalStatus) {
     updatePayload.status = finalStatus;
