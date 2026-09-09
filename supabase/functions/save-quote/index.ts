@@ -735,6 +735,13 @@ async function handlePut(
     );
   }
 
+  if (existing.status === "purchased") {
+    return jsonResponse(
+      { success: false, error: "Cannot update a purchased quote" },
+      409
+    );
+  }
+
   const validStatuses = ["in_progress", "quote_ready", "completed", "checkout_pending"];
   const finalStatus = requestedStatus && validStatuses.includes(requestedStatus)
     ? requestedStatus

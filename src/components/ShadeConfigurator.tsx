@@ -409,6 +409,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           setPendingAutoAddToCart(true);
         }
 
+        if (quote.status === 'purchased' || quote.status === 'checkout_pending') {
+          setCheckoutSnapshotSaved(true);
+        }
+
         if (quote.status === 'purchased') {
           setPurchasedOrder({
             orderNumber: quote.shopify_order_number || null,
