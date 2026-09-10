@@ -76,7 +76,7 @@ export function MaterialFinishContent({
   // Collapse cards after fabric is selected
   useEffect(() => {
     if (config.fabricType) {
-      const timer = setTimeout(() => setFabricsExpanded(false), 100);
+      const timer = setTimeout(() => setFabricsExpanded(false), 350);
       return () => clearTimeout(timer);
     } else {
       setFabricsExpanded(true);
@@ -151,7 +151,7 @@ export function MaterialFinishContent({
     <div className="space-y-6">
       {/* Fabric type section */}
       <div>
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
           <h4 className="text-[19px] font-extrabold text-brand-green">
             <a href="https://shadespace.com/pages/our-fabrics" target="_blank" rel="noopener noreferrer" className="text-brand-green hover:text-brand-mid transition-colors">
               Fabric Material
@@ -166,6 +166,12 @@ export function MaterialFinishContent({
             Compare fabrics
           </button>
         </div>
+        {fabricsExpanded && !config.fabricType && (
+          <p className="text-[15px] text-text-muted mb-4">Select the fabric that best suits your project.</p>
+        )}
+        {fabricsExpanded && config.fabricType && (
+          <div className="mb-4" />
+        )}
 
         {/* Pill row - shown when fabric selected and cards collapsed */}
         {config.fabricType && (
@@ -217,7 +223,7 @@ export function MaterialFinishContent({
           onMouseEnter={handleCardAreaMouseEnter}
           onMouseLeave={handleCardAreaMouseLeave}
         >
-          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: config.fabricType ? 'repeat(auto-fill, minmax(230px, 1fr))' : 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {FABRICS.map((fabric) => {
               const isSelected = config.fabricType === fabric.id;
               return (
@@ -228,7 +234,7 @@ export function MaterialFinishContent({
                     analytics.fabricTypeSelected(fabric.id, fabric.label);
                     updateConfig({ fabricType: fabric.id, fabricColor: '' });
                   }}
-                  className={`relative text-left rounded-card p-4 transition-all duration-200 cursor-pointer min-h-[44px] ${
+                  className={`relative text-left rounded-card transition-all duration-200 cursor-pointer min-h-[44px] ${!config.fabricType ? 'p-5' : 'p-4'} ${
                     isSelected
                       ? 'bg-brand-green text-white border-2 border-brand-green'
                       : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
@@ -240,7 +246,7 @@ export function MaterialFinishContent({
                     </div>
                   )}
                   <div className="flex items-center gap-2 flex-wrap mb-1.5 pr-8">
-                    <span className="font-extrabold text-[17px] leading-tight">{fabric.label}</span>
+                    <span className={`font-extrabold leading-tight ${!config.fabricType ? 'text-[19px]' : 'text-[17px]'}`}>{fabric.label}</span>
                     {fabric.isFireRetardant && (
                       <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">FR</span>
                     )}
@@ -299,9 +305,9 @@ export function MaterialFinishContent({
                       <span className="w-4.5 h-4.5 inline-flex items-center justify-center text-[10px] bg-brand-mid text-white rounded-full cursor-help hover:bg-brand-green transition-colors">?</span>
                     </Tooltip>
                   </div>
-                  <p className={`text-[14px] leading-[1.45] line-clamp-2 ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>{fabric.description}</p>
+                  <p className={`leading-[1.45] ${!config.fabricType ? 'text-[15px] line-clamp-3' : 'text-[14px] line-clamp-2'} ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>{fabric.description}</p>
 
-                  <div className={`text-[13px] mt-2 font-semibold ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>
+                  <div className={`mt-2 font-semibold ${!config.fabricType ? 'text-[14px]' : 'text-[13px]'} ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>
                     {fabric.weightPerSqm} g/m&sup2; &middot; {fabric.warrantyYears} year warranty
                   </div>
                 </button>
@@ -311,14 +317,16 @@ export function MaterialFinishContent({
         </div>
 
         {/* Mobile compare button */}
-        <button
-          type="button"
-          onClick={() => openComparison()}
-          className={`sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1.5 text-sm font-bold text-brand-green border-2 border-border-card hover:bg-brand-green hover:text-white px-3 py-2.5 rounded-btn transition-colors min-h-[44px] ${!fabricsExpanded && config.fabricType ? '' : ''}`}
-        >
-          <GitCompare className="w-4 h-4" />
-          Compare fabrics
-        </button>
+        {fabricsExpanded && (
+          <button
+            type="button"
+            onClick={() => openComparison()}
+            className="sm:hidden mt-3 w-full inline-flex items-center justify-center gap-1.5 text-sm font-bold text-brand-green border-2 border-border-card hover:bg-brand-green hover:text-white px-3 py-2.5 rounded-btn transition-colors min-h-[44px]"
+          >
+            <GitCompare className="w-4 h-4" />
+            Compare fabrics
+          </button>
+        )}
       </div>
 
       {/* Color section with fadeUp animation */}
