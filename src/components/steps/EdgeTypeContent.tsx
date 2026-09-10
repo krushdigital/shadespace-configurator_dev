@@ -135,7 +135,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
       <div className="mb-6">
         {showHint && !config.edgeType && (
           <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-mid animate-pulse" />
             Choose your preferred edge style
           </div>
         )}
@@ -144,7 +144,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
         }`}>
           Edge Finish
         </h4>
-        <p className="text-sm text-slate-500 mb-4">Strongest and sleekest, or easiest to install?</p>
+        <p className="text-sm text-text-muted mb-4">Strongest and sleekest, or easiest to install?</p>
 
         {/* Perimeter-based recommendation banner */}
         {perimeterM > 0 && recommendation === 'cabled' && (
@@ -160,7 +160,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
         )}
         {perimeterM > 0 && recommendation === 'webbing' && (
           <div className="mb-5 flex items-start gap-3 p-4 bg-[#eef5ef] border border-[#c5dfc9] rounded-xl">
-            <Zap className="w-5 h-5 text-[#2e7d4f] flex-shrink-0 mt-0.5" />
+            <Zap className="w-5 h-5 text-brand-mid flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-[#1a3d2c]">Webbing Reinforced is a great choice</p>
               <p className="text-sm text-[#3d6b50] mt-0.5">
@@ -170,11 +170,11 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           </div>
         )}
         {perimeterM > 0 && recommendation === 'either' && (
-          <div className="mb-5 flex items-start gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-            <Info className="w-5 h-5 text-slate-500 flex-shrink-0 mt-0.5" />
+          <div className="mb-5 flex items-start gap-3 p-4 bg-surface-soft border border-border-card rounded-card">
+            <Info className="w-5 h-5 text-text-muted flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-slate-700">Either option works well</p>
-              <p className="text-sm text-slate-500 mt-0.5">
+              <p className="text-sm font-semibold text-brand-green">Either option works well</p>
+              <p className="text-sm text-text-muted mt-0.5">
                 At {perimeterM.toFixed(1)}m perimeter, both edge types are suitable. Cabled is stronger and sleeker; webbing is easier to install. Choose based on your preference.
               </p>
             </div>
@@ -193,19 +193,19 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                 onClick={() => updateConfig({ edgeType: edge.id })}
                 className={`group relative bg-white rounded-2xl border-2 transition-all duration-200 cursor-pointer overflow-hidden flex flex-col ${
                   isSelected
-                    ? 'border-[#2e7d4f] shadow-[inset_0_0_0_1px_#2e7d4f]'
+                    ? 'border-brand-green bg-brand-green shadow-md'
                     : hasError
                     ? 'border-red-400 bg-red-50'
                     : 'border-[#dfe7e1] hover:border-[#7bb08f] hover:shadow-md'
                 }`}
               >
                 {isSelected && (
-                  <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-[#2e7d4f] text-white text-[13px] font-bold flex items-center justify-center">
+                  <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-bold flex items-center justify-center">
                     &#10003;
                   </span>
                 )}
                 {isRecommended && !isSelected && perimeterM > 0 && (
-                  <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-[#2e7d4f] text-white text-[10px] font-bold uppercase tracking-wide">
+                  <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-brand-mid text-white text-[10px] font-bold uppercase tracking-wide">
                     Recommended
                   </span>
                 )}
@@ -222,7 +222,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                         e.stopPropagation();
                         setEnlargedImage({ url: edge.imageUrl, label: edge.label });
                       }}
-                      className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-[#01312d] shadow-sm hover:bg-white hover:text-[#2e7d4f] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2e7d4f]"
+                      className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-brand-green shadow-sm hover:bg-white hover:text-brand-mid transition-colors focus:outline-none focus:ring-2 focus:ring-brand-mid"
                       aria-label={`Enlarge ${edge.label} image`}
                     >
                       <ZoomIn className="w-4 h-4" strokeWidth={2.25} />
@@ -232,7 +232,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
 
                 <div className="flex items-start justify-between gap-3 p-4 pt-3.5">
                   <div className="flex-1 min-w-0">
-                    <h5 className="font-bold text-[#01312D] text-base md:text-lg leading-tight mb-1">
+                    <h5 className="font-bold text-brand-green text-base md:text-lg leading-tight mb-1">
                       {edge.label}
                     </h5>
                     <p className="text-sm text-[#6b8478] leading-relaxed">
@@ -242,10 +242,10 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                   <Tooltip
                     content={
                       <div>
-                        <p className="text-sm text-slate-600 font-medium mb-1">
+                        <p className="text-sm text-text-muted font-medium mb-1">
                           {edge.label}
                         </p>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-text-muted">
                           {edge.longDescription}
                         </p>
                         <p className="mt-3 text-sm">
@@ -253,7 +253,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                             href="https://shadespace.com/pages/styles"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-semibold text-[#307C31] hover:text-[#01312D] hover:underline transition-colors"
+                            className="font-semibold text-brand-mid hover:text-brand-green hover:underline transition-colors"
                           >
                             Learn more about our styles &rarr;
                           </a>
@@ -263,7 +263,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                   >
                     <span
                       onClick={(e) => e.stopPropagation()}
-                      className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d] transition-colors"
+                      className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-brand-mid text-white rounded-full cursor-help hover:bg-brand-green transition-colors"
                     >
                       ?
                     </span>
@@ -275,73 +275,54 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
+      <div className="flex flex-col gap-3 pt-6 mt-2 border-t border-border-card">
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">
             {showBackButton && (
-              <Button variant="outline" size="md" onClick={onPrev} className="flex-1">Back</Button>
+              <button onClick={onPrev} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
             )}
             {onSaveQuote && (
               <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
             )}
           </div>
-          {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
-            <div className="energy-border-chase-btn w-full" id="continue-button-edge" data-guidance-id="continue-button-edge">
-              <Button onClick={handleContinue} disabled={!config.edgeType} size="md" className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <span className="flex flex-col items-center leading-tight">
-                  <span>Continue</span>
-                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                </span>
-              </Button>
-            </div>
-          ) : (
-            <Button
+          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn w-full rounded-btn' : 'w-full'}>
+            <button
               onClick={handleContinue}
               disabled={!config.edgeType}
-              size="md"
               id="continue-button-edge"
               data-guidance-id="continue-button-edge"
-              className={`w-full py-4 sm:py-2 ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm disabled:bg-state-disabled disabled:cursor-not-allowed`}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
               </span>
-            </Button>
-          )}
+            </button>
+          </div>
         </div>
 
-        <div className="hidden sm:flex gap-4">
+        <div className="hidden sm:flex items-center gap-4">
           {showBackButton && (
-            <Button variant="outline" size="md" onClick={onPrev} className="w-auto">Back</Button>
+            <button onClick={onPrev} className="inline-flex items-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
           )}
           {onSaveQuote && (
             <SaveProgressButton onClick={onSaveQuote} className="w-auto" />
           )}
-          {mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? (
-            <div className="energy-border-chase-btn flex-1" id="continue-button-edge" data-guidance-id="continue-button-edge">
-              <Button onClick={handleContinue} disabled={!config.edgeType} size="md" className={`w-full ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                <span className="flex flex-col items-center leading-tight">
-                  <span>Continue</span>
-                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                </span>
-              </Button>
-            </div>
-          ) : (
-            <Button
+          <div className="flex-1" />
+          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn rounded-btn' : ''}>
+            <button
               onClick={handleContinue}
               disabled={!config.edgeType}
-              size="md"
               id="continue-button-edge"
               data-guidance-id="continue-button-edge"
-              className={`flex-1 ${!config.edgeType ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`inline-flex items-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm disabled:bg-state-disabled disabled:cursor-not-allowed`}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
               </span>
-            </Button>
-          )}
+            </button>
+          </div>
         </div>
       </div>
 

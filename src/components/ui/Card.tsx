@@ -4,12 +4,17 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
+  selected?: boolean;
 }
 
-export function Card({ children, className = '', onClick }: CardProps) {
+export function Card({ children, className = '', onClick, selected }: CardProps) {
+  const selectedStyles = selected
+    ? 'bg-brand-green text-white border-brand-green shadow-md'
+    : 'bg-white border-border-card hover:border-brand-mid';
+
   return (
     <div
-      className={`bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 ${onClick ? 'cursor-pointer hover:border-[#BFF102] hover:shadow-lg transform hover:-translate-y-1' : ''} ${className}`}
+      className={`border-2 rounded-card transition-all duration-200 ${selectedStyles} ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       {children}

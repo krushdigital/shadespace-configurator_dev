@@ -49,57 +49,57 @@ export function PriceSummaryDisplay({
     : calculations.totalPrice;
 
   return (
-    <div className={`bg-white border border-slate-200 rounded-xl shadow-lg p-6 ${
+    <div className={`bg-white border border-border-card rounded-xl shadow-lg p-6 ${
       isMobile ? 'lg:bg-white bg-gradient-to-br from-[#307C31]/5 to-[#BFF102]/5' : ''
     }`}>
       {calculations.totalPrice > 0 ? (
         <>
           <div className={`mb-6 ${
-            isMobile ? 'bg-[#01312D] -mx-6 -mt-6 px-6 pt-6 pb-5 rounded-t-xl' : ''
+            isMobile ? 'bg-brand-green -mx-6 -mt-6 px-6 pt-6 pb-5 rounded-t-xl' : ''
           }`}>
             <h3 className={`text-xl font-bold mb-3 ${
-              isMobile ? 'text-white' : 'text-[#01312D]'
+              isMobile ? 'text-white' : 'text-brand-green'
             }`}>
               All-Inclusive Price to Your Door
             </h3>
             <div className={`text-4xl font-extrabold mb-3 whitespace-nowrap ${
-              isMobile ? 'text-white' : 'text-[#01312D]'
+              isMobile ? 'text-white' : 'text-brand-green'
             }`}>
               {formatCurrency(calculations.totalPrice, config.currency)}
             </div>
             <div className="space-y-1">
               <p className={`text-sm font-semibold ${
-                isMobile ? 'text-[#BFF102]' : 'text-[#307C31] font-medium'
+                isMobile ? 'text-brand-lime' : 'text-brand-mid font-medium'
               }`}>
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={isMobile ? 'text-[#BFF102] hover:underline' : 'text-[#307C31] hover:underline'}
+                  className={isMobile ? 'text-brand-lime hover:underline' : 'text-brand-mid hover:underline'}
                 >
                   ✓ Express freight to your door included
                 </a>
               </p>
               <p className={`text-sm font-semibold ${
-                isMobile ? 'text-[#BFF102]' : 'text-[#307C31] font-medium'
+                isMobile ? 'text-brand-lime' : 'text-brand-mid font-medium'
               }`}>
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={isMobile ? 'text-[#BFF102] hover:underline' : 'text-[#307C31] hover:underline'}
+                  className={isMobile ? 'text-brand-lime hover:underline' : 'text-brand-mid hover:underline'}
                 >
                   ✓ All taxes & duties included
                 </a>
               </p>
               <p className={`text-sm font-semibold ${
-                isMobile ? 'text-[#BFF102]' : 'text-[#307C31] font-medium'
+                isMobile ? 'text-brand-lime' : 'text-brand-mid font-medium'
               }`}>
                 <a
                   href="https://shadespace.com/pages/shipping"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={isMobile ? 'text-[#BFF102] hover:underline' : 'text-[#307C31] hover:underline'}
+                  className={isMobile ? 'text-brand-lime hover:underline' : 'text-brand-mid hover:underline'}
                 >
                   ✓ No hidden costs or tariffs
                 </a>
@@ -107,18 +107,18 @@ export function PriceSummaryDisplay({
             </div>
             {calculations.totalPrice > 0 && hardwareMode !== 'none' && (
               <div className={`mt-4 pt-3 border-t space-y-1.5 ${
-                isMobile ? 'border-white/20' : 'border-slate-200'
+                isMobile ? 'border-white/20' : 'border-border-card'
               }`}>
                 <div className="flex justify-between text-sm">
-                  <span className={isMobile ? 'text-white/70' : 'text-slate-600'}>Shade sail:</span>
-                  <span className={`font-semibold ${isMobile ? 'text-white' : 'text-slate-900'}`}>
+                  <span className={isMobile ? 'text-white/70' : 'text-text-muted'}>Shade sail:</span>
+                  <span className={`font-semibold ${isMobile ? 'text-white' : 'text-brand-green'}`}>
                     {formatCurrency(sailOnlyDisplay, config.currency)}
                   </span>
                 </div>
                 {hardwareOnlyDisplay > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className={isMobile ? 'text-white/70' : 'text-slate-600'}>Hardware:</span>
-                    <span className={`font-semibold ${isMobile ? 'text-white' : 'text-slate-900'}`}>
+                    <span className={isMobile ? 'text-white/70' : 'text-text-muted'}>Hardware:</span>
+                    <span className={`font-semibold ${isMobile ? 'text-white' : 'text-brand-green'}`}>
                       {formatCurrency(Math.round(hardwareOnlyDisplay), config.currency)}
                     </span>
                   </div>
@@ -129,19 +129,19 @@ export function PriceSummaryDisplay({
 
           {!isMobile && <DeliveryEstimate />}
 
-          <div className="space-y-4 border-t border-slate-200 pt-4">
+          <div className="space-y-4 border-t border-border-card pt-4">
             {!isMobile && (
               <div className="bg-gradient-to-r from-[#BFF102]/20 to-[#307C31]/10 border border-[#BFF102] rounded-lg p-4 mt-6">
-                <div className="text-sm font-bold text-[#01312D] mb-2">
+                <div className="text-sm font-bold text-brand-green mb-2">
                   Premium Quality Guarantee
                 </div>
-                <ul className="text-xs text-[#01312D]/80 space-y-1">
+                <ul className="text-xs text-brand-green/80 space-y-1">
                   <li>
                     ✓ <a
                       href="https://shadespace.com/pages/warranty"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#01312D]/80 hover:underline"
+                      className="text-brand-green/80 hover:underline"
                     >
                       {selectedFabric?.warrantyYears || 10}-year Fabric & Workmanship Warranty
                     </a>
@@ -155,14 +155,14 @@ export function PriceSummaryDisplay({
 
           {/* Quote Actions - Desktop Only */}
           {onSaveQuote && (
-            <div className="mt-5 pt-5 border-t border-slate-200">
+            <div className="mt-5 pt-5 border-t border-border-card">
               <Tooltip
                 content={
-                  <div className="text-slate-700">
+                  <div className="text-brand-green">
                     <p className="font-semibold mb-1">
                       {adminMode ? 'Save Quote' : isEmailMode ? 'Save & Email PDF Quote' : 'Save Your Progress'}
                     </p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-text-muted">
                       {adminMode
                         ? 'Save this configuration and get a shareable link and PDF for your customer.'
                         : isEmailMode
@@ -177,7 +177,7 @@ export function PriceSummaryDisplay({
                   variant="outline"
                   onClick={onSaveQuote}
                   fullWidth
-                  className="flex items-center justify-center gap-2 border-2 !bg-gradient-to-r !from-[#d4f763] !to-[#BFF102] hover:!from-[#BFF102] hover:!to-[#a8d902] !text-[#01312D] hover:!text-[#01312D] !border-[#BFF102] hover:!border-[#a8d902] transition-colors font-semibold"
+                  className="flex items-center justify-center gap-2 border-2 !bg-gradient-to-r !from-[#d4f763] !to-[#BFF102] hover:!from-[#BFF102] hover:!to-[#a8d902] !text-brand-green hover:!text-brand-green !border-[#BFF102] hover:!border-[#a8d902] transition-colors font-semibold"
                 >
                   {isEmailMode ? (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -191,7 +191,7 @@ export function PriceSummaryDisplay({
                   <span>{adminMode ? 'Save Quote' : isEmailMode ? 'Save & Email Quote' : 'Save Progress'}</span>
                 </Button>
               </Tooltip>
-              <p className="text-xs text-center text-slate-500 mt-2">
+              <p className="text-xs text-center text-text-muted mt-2">
                 {adminMode ? 'Get a share link and PDF for your customer' : isEmailMode ? 'Your price is locked for 30 days' : 'Return anytime to continue where you left off'}
               </p>
 
@@ -202,7 +202,7 @@ export function PriceSummaryDisplay({
                     onClick={() => handleAddToCart()}
                     fullWidth
                     disabled={loading || !canAddToCart}
-                    className={`flex items-center justify-center gap-2 !bg-[#01312D] hover:!bg-[#024f3a] !text-white font-bold ${
+                    className={`flex items-center justify-center gap-2 !bg-brand-green hover:!bg-[#024f3a] !text-white font-bold ${
                       allAcknowledgmentsChecked && !loading ? 'pulsate-cta' : ''
                     }`}
                   >
@@ -224,10 +224,10 @@ export function PriceSummaryDisplay({
         </>
       ) : (
         <div className="text-center py-8">
-          <h3 className="text-xl font-bold text-[#01312D] mb-3">
+          <h3 className="text-xl font-bold text-brand-green mb-3">
             Your Shade Sail Price
           </h3>
-          <p className="text-sm text-[#01312D]/60">
+          <p className="text-sm text-brand-green/60">
             Complete configuration to see pricing
           </p>
         </div>

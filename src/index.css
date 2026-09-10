@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  #SHADE_SPACE,
+  #SHADE_SPACE * {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@keyframes fade-in-popover {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-popover {
+  animation: fade-in-popover 0.15s ease-out;
+}
+
 /* Reset button borders within app to prevent host site (Shopify) styles leaking in.
    Exclude buttons that have explicit Tailwind border classes (e.g. border-2, border-slate-200). */
 #SHADE_SPACE button:not([class*="border-"]) {

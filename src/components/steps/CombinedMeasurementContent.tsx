@@ -118,13 +118,13 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
         mobileGuidance?.currentHighlightTarget === 'measurement-option-section' ? 'energy-border-chase' : ''
       }`} id="measurement-option-section" data-guidance-id="measurement-option-section">
         {showHint && !config.measurementOption && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#BFF102]/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-[#01312D]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#307C31] animate-pulse" />
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-brand-lime/20 border border-[#BFF102]/40 rounded-full text-xs font-medium text-brand-green">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-mid animate-pulse" />
             Choose how your sail will be manufactured
           </div>
         )}
         <h4 className={`text-lg font-semibold mb-4 ${
-          !config.measurementOption && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-slate-900'
+          !config.measurementOption && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-brand-green'
         }`}>
           How would you like your shade sail to be manufactured?
         </h4>
@@ -142,10 +142,10 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
           <Card
             className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.measurementOption === 'adjust'
-                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                ? '!ring-2 !ring-brand-green !border-2 !border-brand-green'
                 : validationErrors.measurementOption && !config.measurementOption
                 ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                : 'hover:border-slate-300'
+                : 'hover:border-border-card'
             }`}
             onClick={() => handleMeasurementOptionChange('adjust')}
           >
@@ -154,7 +154,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.measurementOption === 'adjust'
                     ? 'border-[#caee41] bg-[#caee41]'
-                    : 'border-slate-300'
+                    : 'border-border-card'
                 }`}>
                   {config.measurementOption === 'adjust' && (
                     <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
@@ -164,7 +164,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               <div className="flex-1">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full mb-2">
                   <div className="flex items-center gap-2">
-                    <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight">
+                    <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-brand-green leading-tight">
                       Manufactured to Fit my Space
                     </h5>
                     <Tooltip
@@ -176,37 +176,37 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                               alt="Fixing points measurement diagram"
                               className="w-full h-auto rounded-lg mb-3"
                             />
-                            <h4 className="font-bold text-[#01312D] text-base mb-2">Perfect Fit, Every Time</h4>
-                            <p className="text-sm text-slate-700 leading-relaxed">
+                            <h4 className="font-bold text-brand-green text-base mb-2">Perfect Fit, Every Time</h4>
+                            <p className="text-sm text-brand-green leading-relaxed">
                               Provide the fixing-point measurements of your space, and we'll engineer your sail for a flawless, professional tensioned fit.
                             </p>
                           </div>
 
                           <AccordionItem trigger="Learn more →">
                             <div className="space-y-4 mt-2">
-                              <p className="text-xs text-slate-600 italic font-medium">
+                              <p className="text-xs text-text-muted italic font-medium">
                                 This is the industry best-practice and fail-safe approach for a perfect fit.
                               </p>
 
                               <div>
-                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
-                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <h5 className="font-semibold text-brand-green mb-2 text-sm">What you do:</h5>
+                                <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                   <li>You provide the exact measurements between your fixing points or poles.</li>
                                   <li>If your poles or fixings aren't yet installed, you can estimate measurements for pricing, then re-measure and finalise before ordering once your poles or fixings are in place.</li>
                                 </ul>
                               </div>
 
                               <div>
-                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">What we do:</h5>
-                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <h5 className="font-semibold text-brand-green mb-2 text-sm">What we do:</h5>
+                                <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                   <li>We take your precise measurements and calculate the optimal sail size - factoring in fabric stretch and hardware deductions - to ensure a taut, wrinkle-free fit.</li>
                                   <li>All required tensioning hardware is included and selected by our team to match your sail size.</li>
                                 </ul>
                               </div>
 
                               <div>
-                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">Best for:</h5>
-                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <h5 className="font-semibold text-brand-green mb-2 text-sm">Best for:</h5>
+                                <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                   <li>Professional-looking, long-term installations</li>
                                   <li>High-wind or exposed locations</li>
                                   <li>All projects requiring tight tension and zero flapping</li>
@@ -214,8 +214,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                               </div>
 
                               <div>
-                                <h5 className="font-semibold text-slate-800 mb-2 text-sm">Heads-up:</h5>
-                                <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                                <h5 className="font-semibold text-brand-green mb-2 text-sm">Heads-up:</h5>
+                                <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                   <li>The finished sail will be slightly smaller than your measurements (to allow for stretch).</li>
                                   <li>Tensioning hardware is included. (Wall brackets or eyebolts can be added to cart separately if required).</li>
                                   <li>If measurement discrepancies arise, we'll contact you before manufacturing.</li>
@@ -227,21 +227,21 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                         </div>
                       }
                     >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                         ?
                       </span>
                     </Tooltip>
                   </div>
-                  <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded-full shadow-md mt-1 sm:mt-0 sm:ml-2 w-fit">
+                  <span className="bg-brand-lime text-brand-green text-xs font-bold px-2 py-0.5 rounded-full shadow-md mt-1 sm:mt-0 sm:ml-2 w-fit">
                     Recommended
                   </span>
                 </div>
-                <p className="text-sm text-slate-600 mt-1">
+                <p className="text-sm text-text-muted mt-1">
                   Tensioning Hardware Included
                   <Tooltip
                     content={
                       <div>
-                        <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Pack Included</h4>
+                        <h4 className="font-bold text-brand-green mb-2">Tensioning Hardware Pack Included</h4>
                         {config.corners > 0 && hardwarePackImageUrl && (
                           <img 
                             src={hardwarePackImageUrl} 
@@ -249,15 +249,15 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                             className="w-full h-auto object-cover rounded-lg mb-3"
                           />
                         )}
-                        <p className="text-sm text-slate-600 mb-3">
+                        <p className="text-sm text-text-muted mb-3">
                           Complete stainless steel tensioning hardware kit included with your sail.
                         </p>
-                        <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
+                        <div className="bg-brand-lime/10 border border-[#BFF102] rounded-lg p-3">
                           <a 
                             href="https://shadespace.com/pages/hardware" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
+                            className="inline-flex items-center px-3 py-1 bg-brand-lime text-brand-green text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
                           >
                             More information about hardware
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
@@ -268,7 +268,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] ml-1">
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid ml-1">
                       ?
                     </span>
                   </Tooltip>
@@ -280,10 +280,10 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
           <Card
             className={`p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
               config.measurementOption === 'exact'
-                ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                ? '!ring-2 !ring-brand-green !border-2 !border-brand-green'
                 : validationErrors.measurementOption && !config.measurementOption
                 ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                : 'hover:border-slate-300'
+                : 'hover:border-border-card'
             }`}
             onClick={() => handleMeasurementOptionChange('exact')}
           >
@@ -292,7 +292,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   config.measurementOption === 'exact'
                     ? 'border-[#caee41] bg-[#caee41]'
-                    : 'border-slate-300'
+                    : 'border-border-card'
                 }`}>
                   {config.measurementOption === 'exact' && (
                     <div className="w-2 h-2 bg-[#0e302d] rounded-full" />
@@ -301,7 +301,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-slate-900 leading-tight">
+                  <h5 className="text-sm sm:text-base lg:text-lg font-semibold text-brand-green leading-tight">
                     Manufactured to the Dimensions I Provide
                   </h5>
                   <Tooltip
@@ -313,8 +313,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                             alt="Sail dimensions diagram"
                             className="w-full h-auto rounded-lg mb-3"
                           />
-                          <h4 className="font-bold text-[#01312D] text-base mb-2">Your Sail, Your Measurements</h4>
-                          <p className="text-sm text-slate-700 leading-relaxed">
+                          <h4 className="font-bold text-brand-green text-base mb-2">Your Sail, Your Measurements</h4>
+                          <p className="text-sm text-brand-green leading-relaxed">
                             You know exactly what size sail you need - we make it to your specifications, no adjustments.
                           </p>
                         </div>
@@ -322,8 +322,8 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                         <AccordionItem trigger="Learn more →">
                           <div className="space-y-4 mt-2">
                             <div>
-                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">What you do:</h5>
-                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                              <h5 className="font-semibold text-brand-green mb-2 text-sm">What you do:</h5>
+                              <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                 <li>Provide the exact finished sail dimensions you want.</li>
                                 <li>Select your own hardware separately.</li>
                                 <li>Once you receive the sail, install your poles and fixings to suit.</li>
@@ -331,24 +331,24 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                             </div>
 
                             <div>
-                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">What we do:</h5>
-                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                              <h5 className="font-semibold text-brand-green mb-2 text-sm">What we do:</h5>
+                              <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                 <li>We manufacture the sail to your provided dimensions.</li>
                                 <li>Hardware can be added to your order at checkout.</li>
                               </ul>
                             </div>
 
                             <div>
-                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">Best for:</h5>
-                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                              <h5 className="font-semibold text-brand-green mb-2 text-sm">Best for:</h5>
+                              <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                 <li>Urgent orders where poles or fixings aren't yet installed</li>
                                 <li>Smaller or temporary sails with a looser fit, that can be taken down easily</li>
                               </ul>
                             </div>
 
                             <div>
-                              <h5 className="font-semibold text-slate-800 mb-2 text-sm">Heads-up:</h5>
-                              <ul className="text-xs text-slate-600 space-y-1.5 ml-4 list-disc">
+                              <h5 className="font-semibold text-brand-green mb-2 text-sm">Heads-up:</h5>
+                              <ul className="text-xs text-text-muted space-y-1.5 ml-4 list-disc">
                                 <li>The sail is made exactly to your measurements - you must allow for extra tensioning space during install.</li>
                                 <li>Hardware not included (add to cart separately).</li>
                                 <li>If measurement discrepancies arise, we'll contact you before manufacturing.</li>
@@ -360,18 +360,18 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                       ?
                     </span>
                   </Tooltip>
                 </div>
-                <p className="text-sm text-slate-600 mt-1">
+                <p className="text-sm text-text-muted mt-1">
                   Tensioning Hardware Not Included
                   <Tooltip
                     content={
                       <div>
-                        <h4 className="font-bold text-slate-900 mb-2">Tensioning Hardware Not Included</h4>
-                        <p className="text-sm text-slate-600 mb-3">
+                        <h4 className="font-bold text-brand-green mb-2">Tensioning Hardware Not Included</h4>
+                        <p className="text-sm text-text-muted mb-3">
                           With this option, you'll receive the shade sail with corner D-rings sewn in. Tensioning hardware (turnbuckles, shackles etc.) must be sourced separately.
                         </p>
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -379,7 +379,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                             href="https://shadespace.com/pages/hardware" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
+                            className="inline-flex items-center px-3 py-1 bg-brand-lime text-brand-green text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
                           >
                             Shop Hardware
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
@@ -390,7 +390,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31] ml-1">
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid ml-1">
                       ?
                     </span>
                   </Tooltip>
@@ -402,7 +402,7 @@ export function CombinedMeasurementContent({ config, updateConfig, onNext, onPre
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 pt-4 border-t border-slate-200 mt-6">
+      <div className="flex flex-col gap-4 pt-4 border-t border-border-card mt-6">
         {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">

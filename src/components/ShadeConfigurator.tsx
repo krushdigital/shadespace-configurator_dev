@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'rea
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { PriceSummaryDisplay } from './PriceSummaryDisplay';
-import { AccordionStep } from './AccordionStep';
+import { StepRail, MobileHeader } from './StepNavigation';
 import { MaterialFinishContent } from './steps/MaterialFinishContent';
 import { ShapeSizeContent } from './steps/ShapeSizeContent';
 import { DimensionsContent } from './steps/DimensionsContent';
@@ -92,7 +92,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
-  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 1024);
+  const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 900);
   const [device3DTier, setDevice3DTier] = useState<Device3DTier>(() => canRender3D());
   const [mobileViewMode, setMobileViewMode] = useState<'plan' | '3d'>('plan');
   // Once the user picks a view, stop auto-applying the 3D default (their choice sticks).
@@ -212,7 +212,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Mobile detection effect
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+      setIsMobile(window.innerWidth < 900);
       setDevice3DTier(canRender3D());
     };
 
@@ -2003,7 +2003,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     const stepElement = document.getElementById(`step-${displayedNumber}`);
     if (!stepElement) return;
 
-    const isMobileView = window.innerWidth < 1024;
+    const isMobileView = window.innerWidth < 900;
     const headerOffset = isMobileView ? 120 : 140;
 
     const elementPosition = stepElement.getBoundingClientRect().top;
@@ -2029,7 +2029,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       }
 
       if (targetElement) {
-        const isMobileView = window.innerWidth < 1024;
+        const isMobileView = window.innerWidth < 900;
         const headerOffset = isMobileView ? 100 : 120;
         const viewportOffset = window.innerHeight * 0.2;
 
@@ -2669,113 +2669,102 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     );
   }
 
+  const visibleSteps = steps
+    .map((s, i) => ({ ...s, originalIndex: i }))
+    .filter(s => !shouldSkipStep(s.originalIndex));
+
+  const currentDisplayStep = visibleSteps.findIndex(s => s.originalIndex === openStep);
+  const totalVisibleSteps = visibleSteps.length;
+
+  const railSteps = visibleSteps.map((s) => ({
+    label: s.title,
+    completed: s.originalIndex < config.step,
+    current: s.originalIndex === openStep,
+    accessible: s.originalIndex <= config.step,
+  }));
+
+  const handleRailStepClick = (displayIndex: number) => {
+    const step = visibleSteps[displayIndex];
+    if (step && step.originalIndex <= config.step) {
+      toggleStep(step.originalIndex);
+    }
+  };
+
+  const isDiagramStep = openStep === 2 || openStep === 3 || openStep === 5 || openStep === 6;
+  const isReviewStep = openStep === 7;
+  const ActiveStepComponent = steps[openStep]?.component;
+
   return (
     <>
-      {/* Mobile Sticky Progress Indicator */}
-      {isMobile && (
-        <div className="sticky top-0 left-0 right-0 z-[999] bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm px-4 py-2">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-[#01312D] truncate">
-                {steps[openStep]?.title || 'Configure'}
+      {/* Mobile Header with progress */}
+      <MobileHeader
+        currentStep={currentDisplayStep + 1}
+        totalSteps={totalVisibleSteps}
+        onSave={openStep > 0 ? handleSaveQuote : undefined}
+      />
+
+      <div className="flex min-h-screen bg-surface-panel">
+        {/* Left Rail Navigation - tablet+ */}
+        <StepRail steps={railSteps} onStepClick={handleRailStepClick} />
+
+        {/* Main content area */}
+        <div className="flex-1 min-w-0">
+          <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8">
+            {/* Quote Reference */}
+            {quoteReference && (
+              <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 bg-brand-lime/15 border border-brand-lime/30 rounded-full">
+                <span className="text-sm font-semibold text-brand-green">
+                  Quote: {quoteReference}
+                </span>
+              </div>
+            )}
+
+            {purchasedOrder && (
+              <div className="mb-4 bg-teal-50 border border-teal-200 rounded-card p-4 flex items-center gap-3">
+                <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-teal-800">
+                  <span className="font-semibold">This shade sail has been ordered</span>
+                  {purchasedOrder.orderNumber && <span> ({purchasedOrder.orderNumber})</span>}
+                  {purchasedOrder.purchasedAt && (
+                    <span className="text-teal-600"> on {new Date(purchasedOrder.purchasedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Step heading */}
+            <div className="mb-6">
+              <h1 className="text-heading font-extrabold text-brand-green leading-tight">
+                {steps[openStep]?.title}
+              </h1>
+              <p className="mt-1 text-text-muted text-base">
+                {steps[openStep]?.subtitle}
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-[10px] font-medium text-[#01312D]/60">
-                {Math.min(openStep + 1, steps.length)}/{steps.filter((_, i) => !shouldSkipStep(i)).length}
-              </span>
-              <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#307C31] to-[#BFF102] rounded-full transition-all duration-500 progress-bar-fill"
-                  style={{ width: `${Math.min(((openStep + 1) / steps.filter((_, i) => !shouldSkipStep(i)).length) * 100, 100)}%` }}
-                />
+
+            {/* Sketch applied banner */}
+            {openStep === 2 && sketchAppliedBanner && (
+              <div className="mb-4 flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-card">
+                <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-emerald-800">Your sketch measurements have been applied. Please review them below, then continue.</p>
+                <button onClick={() => setSketchAppliedBanner(false)} className="ml-auto text-emerald-600 hover:text-emerald-800 p-1 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-8 pb-16">
-        {/* Header */}
-        <div className="text-center mb-6">
-          {/* Quote Reference Display */}
-          {quoteReference && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#BFF102]/20 border border-[#307C31]/30 rounded-full">
-              <svg className="w-5 h-5 text-[#307C31]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="text-sm font-semibold text-[#01312D]">
-                Quote: {quoteReference}
-              </span>
-            </div>
-          )}
-        </div>
+            )}
 
-        {purchasedOrder && (
-          <div className="mb-6 mx-auto max-w-2xl bg-teal-50 border border-teal-200 rounded-lg p-4 flex items-center gap-3">
-            <svg className="w-5 h-5 text-teal-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-sm text-teal-800">
-              <span className="font-semibold">This shade sail has been ordered</span>
-              {purchasedOrder.orderNumber && <span> ({purchasedOrder.orderNumber})</span>}
-              {purchasedOrder.purchasedAt && (
-                <span className="text-teal-600"> on {new Date(purchasedOrder.purchasedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-              )}
-            </p>
-          </div>
-        )}
-
-        <div className={`grid grid-cols-1 gap-8 ${(openStep === 2 || openStep === 3 || openStep === 5 || openStep === 6) ? 'lg:grid-cols-4' : (openStep === 7) ? 'lg:grid-cols-5' : 'lg:grid-cols-3'}`}>
-          {/* Accordion Steps */}
-          <div className={`space-y-2 min-h-0 ${(openStep === 2 || openStep === 3 || openStep === 5 || openStep === 6)
-            ? 'lg:col-span-2'
-            : (openStep === 7) ? 'lg:col-span-3' : 'lg:col-span-3'
-            }`}>
-            {steps.map((step, index) => {
-              const StepComponent = step.component;
-              const isCompleted = index < config.step;
-              const isCurrent = index === config.step;
-              const isOpen = openStep === index;
-              const canOpen = index <= config.step;
-              const selection = getStepSelection(index);
-
-              // Skip steps that should be hidden based on measurement option
-              if (shouldSkipStep(index)) {
-                return null;
-              }
-
-              // On mobile, show current step, completed steps, and the next available step
-              if (isMobile && index > config.step) {
-                return null;
-              }
-
-              return (
-                <AccordionStep
-                  key={index}
-                  title={step.title}
-                  subtitle={step.subtitle}
-                  stepNumber={getDisplayedStepNumber(index)}
-                  isCompleted={isCompleted}
-                  isCurrent={isCurrent}
-                  isOpen={isOpen}
-                  canOpen={canOpen}
-                  selection={selection}
-                  onToggle={() => toggleStep(index)}
-                >
-                  {index === 2 && sketchAppliedBanner && isOpen && (
-                    <div className="mx-6 mt-4 mb-0 flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                      <svg className="w-5 h-5 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-sm text-emerald-800">Your sketch measurements have been applied. Please review them below, then continue.</p>
-                      <button onClick={() => setSketchAppliedBanner(false)} className="ml-auto text-emerald-600 hover:text-emerald-800 p-1">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                  <StepComponent
+            {/* Step content + optional side panel */}
+            <div className={`${isDiagramStep || isReviewStep ? 'desktop:grid desktop:grid-cols-[1fr_340px] desktop:gap-8' : ''}`}>
+              {/* Current step content */}
+              <div className="min-w-0">
+                {ActiveStepComponent && (
+                  <ActiveStepComponent
                     config={config}
                     updateConfig={updateConfig}
                     calculations={calculations}
@@ -2809,7 +2798,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     loading={loading}
                     setLoading={setLoading}
                     setShowLoadingOverlay={setShowLoadingOverlay}
-                    onSaveQuote={index > 0 ? handleSaveQuote : undefined}
+                    onSaveQuote={openStep > 0 ? handleSaveQuote : undefined}
                     onSwitchToCustom={(keepMeasurements: boolean) => {
                       const corners = config.corners || (config.fixedShapeType === 'triangle' || config.fixedShapeType === 'right-angle-triangle' ? 3 : 4);
                       const resetFields = { cornerHardware: {}, fixingTypes: undefined, eyeOrientations: undefined };
@@ -2822,7 +2811,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                       setConfig(prev => ({ ...prev, step: Math.max(prev.step, 2) }));
                       setTimeout(() => smoothScrollToStep(2), 150);
                     }}
-                    onSwitchToFixed={index === 2 ? (shape: import('../types').FixedShapeType, keepMeasurements: boolean) => {
+                    onSwitchToFixed={openStep === 2 ? (shape: import('../types').FixedShapeType, keepMeasurements: boolean) => {
                       const corners = shape === 'triangle' || shape === 'right-angle-triangle' ? 3 : 4;
                       if (keepMeasurements) {
                         const edgeA = config.measurements['AB'] || 0;
@@ -2836,173 +2825,175 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                       setOpenStep(3);
                       setConfig(prev => ({ ...prev, step: Math.max(prev.step, 3) }));
                     } : undefined}
-                    onSketchApply={index === 2 ? handleSketchApply : undefined}
+                    onSketchApply={openStep === 2 ? handleSketchApply : undefined}
                     quoteReference={quoteReference}
-                    viewMode={index === 7 ? desktopViewMode : undefined}
-                    onViewModeChange={index === 7 ? handleDesktopViewModeChange : undefined}
-                    navigateToHeights={index === 2 ? navigateToHeights : undefined}
-                    setNavigateToHeights={index === 2 ? setNavigateToHeights : undefined}
-                    navigateToDiagonals={index === 2 ? navigateToDiagonals : undefined}
-                    setNavigateToDiagonals={index === 2 ? setNavigateToDiagonals : undefined}
-                    onHeightsSectionChange={index === 2 ? setIsHeightsSectionOpen : undefined}
+                    viewMode={openStep === 7 ? desktopViewMode : undefined}
+                    onViewModeChange={openStep === 7 ? handleDesktopViewModeChange : undefined}
+                    navigateToHeights={openStep === 2 ? navigateToHeights : undefined}
+                    setNavigateToHeights={openStep === 2 ? setNavigateToHeights : undefined}
+                    navigateToDiagonals={openStep === 2 ? navigateToDiagonals : undefined}
+                    setNavigateToDiagonals={openStep === 2 ? setNavigateToDiagonals : undefined}
+                    onHeightsSectionChange={openStep === 2 ? setIsHeightsSectionOpen : undefined}
                     device3DTier={device3DTier}
                     mobileViewMode={mobileViewMode}
                     onMobileViewModeChange={handleMobileViewModeChange}
                     pricingSettingsMap={activePricingMap}
                     adminMode={adminMode}
                   />
-                </AccordionStep>
-              );
-            })}
-          </div>
-
-          {/* Sticky Diagram for Dimensions Step - Desktop Only */}
-          {(openStep === 2 || openStep === 3 || openStep === 5 || openStep === 6) && !isMobile && (() => {
-            const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
-            const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
-            const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
-            const desktopProvidedDiagonals = desktopDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
-            const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals && desktopMinDiagonals > 0;
-            const desktop3DAvailable = supports3DForCorners(config.corners);
-            const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
-
-            return (
-              <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-24 lg:self-start z-10 max-h-[calc(100vh-7rem)] overflow-y-auto">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-slate-900">
-                    {(openStep === 5 || openStep === 6) ? 'Sail Diagram' : 'Interactive Measurement Guide'}
-                  </h4>
-                  {desktop3DAvailable && (
-                    <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                      <button
-                        onClick={() => handleDesktopViewModeChange('plan')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                          effectiveDesktopView === 'plan'
-                            ? 'bg-white shadow-sm text-slate-900'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        <Layers className="w-4 h-4" />
-                        Plan
-                      </button>
-                      <button
-                        onClick={() => handleDesktopViewModeChange('3d')}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                          effectiveDesktopView === '3d'
-                            ? 'bg-white shadow-sm text-slate-900'
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                      >
-                        <Box className="w-4 h-4" />
-                        3D
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {(openStep === 5 || openStep === 6) && effectiveDesktopView === 'plan' && (
-                  <p className="text-sm text-slate-600 mb-3">
-                    Hover over a corner below to preview which corner on the sail you are configuring.
-                  </p>
-                )}
-
-                {effectiveDesktopView === 'plan' ? (
-                  (openStep === 2 || openStep === 3) ? (
-                    <div>
-                      <ShapeCanvas
-                        config={config}
-                        updateConfig={updateConfig}
-                        readonly={false}
-                        snapToGrid={true}
-                        highlightedMeasurement={highlightedMeasurement}
-                        highlightedCorner={highlightedCorner}
-                        highlightedEdgeKeys={fixedEdgeKeys}
-                        isMobile={isMobile}
-                        measurementOption={config.measurementOption}
-                        unit={config.unit}
-                      />
-                      {config.corners >= 4 && (
-                        <div className="mt-3">
-                          <ShapeModeToggle
-                            isAutoMode={!config.hasManuallyAdjustedShape}
-                            onToggle={(isAuto) => handleToggleMode(isAuto)}
-                            corners={config.corners}
-                            hasEnoughDiagonals={desktopHasEnoughDiagonals}
-                            shapeAccuracy={desktopShapeAccuracy.accuracy}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <ShapeCanvas
-                      config={config}
-                      updateConfig={updateConfig}
-                      readonly={true}
-                      snapToGrid={true}
-                      highlightedMeasurement={highlightedMeasurement}
-                      highlightedCorner={highlightedCorner}
-                      highlightedEdgeKeys={fixedEdgeKeys}
-                      isMobile={isMobile}
-                      measurementOption={config.measurementOption}
-                      unit={config.unit}
-                    />
-                  )
-                ) : (
-                  <div className="h-[calc(100vh-12rem)] relative group/viewer3d">
-                    <Suspense fallback={
-                      <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
-                        <div className="text-center">
-                          <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
-                          <p className="text-sm text-slate-500">Loading 3D viewer...</p>
-                        </div>
-                      </div>
-                    }>
-                      <ShadeSail3DViewer
-                        ref={viewer3DRef}
-                        config={config}
-                        highlightedMeasurement={highlightedMeasurement}
-                        highlightedCorner={highlightedCorner}
-                        activeSection={(openStep === 5 || openStep === 6) ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
-                      />
-                    </Suspense>
-                    <button
-                      onClick={() => setIs3DExpanded(true)}
-                      className="absolute bottom-3 right-3 p-2 bg-white/90 hover:bg-white rounded-lg shadow-md border border-slate-200/80 text-slate-500 hover:text-slate-700 transition-all duration-150 sm:opacity-0 sm:group-hover/viewer3d:opacity-100 sm:focus:opacity-100 z-10"
-                      title="Expand 3D viewer"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  </div>
                 )}
               </div>
-            );
-          })()}
 
-          {/* Desktop Pricing Summary - Sticky Sidebar (Review step) */}
-          {(openStep === 7) && (
-            <div className="hidden lg:block lg:col-span-2 lg:sticky lg:top-20 lg:self-start z-10 max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <PriceSummaryDisplay
-                config={config}
-                calculations={calculations}
-                onSaveQuote={handleSaveQuote}
-                allAcknowledgmentsChecked={openStep === 7 ? allAcknowledgmentsChecked : false}
-                canAddToCart={openStep === 7 ? canAddToCart : false}
-                handleAddToCart={handleAddToCartFromConfigurator}
-                loading={loading}
-                fabrics={FABRICS}
-                isEmailMode={openStep === 7 && hasAllEdgeMeasurements}
-                adminMode={adminMode}
-              />
+              {/* Right summary panel - desktop only (diagram + price) */}
+              {(isDiagramStep || isReviewStep) && !isMobile && (
+                <div className="hidden desktop:block">
+                  <div className="sticky top-6 self-start z-10 max-h-[calc(100vh-3rem)] overflow-y-auto space-y-4">
+                    {isDiagramStep && (() => {
+                      const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
+                      const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
+                      const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
+                      const desktopProvidedDiagonals = desktopDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
+                      const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals && desktopMinDiagonals > 0;
+                      const desktop3DAvailable = supports3DForCorners(config.corners);
+                      const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
+
+                      return (
+                        <div className="bg-white border-2 border-border-card rounded-card p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-[15px] font-bold text-brand-green">
+                              {(openStep === 5 || openStep === 6) ? 'Sail Diagram' : 'Measurement Guide'}
+                            </h4>
+                            {desktop3DAvailable && (
+                              <div className="flex items-center gap-1 bg-surface-panel rounded-lg p-0.5">
+                                <button
+                                  onClick={() => handleDesktopViewModeChange('plan')}
+                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                    effectiveDesktopView === 'plan'
+                                      ? 'bg-white shadow-sm text-brand-green'
+                                      : 'text-text-muted hover:text-brand-green'
+                                  }`}
+                                >
+                                  <Layers className="w-3.5 h-3.5" />
+                                  Plan
+                                </button>
+                                <button
+                                  onClick={() => handleDesktopViewModeChange('3d')}
+                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                    effectiveDesktopView === '3d'
+                                      ? 'bg-white shadow-sm text-brand-green'
+                                      : 'text-text-muted hover:text-brand-green'
+                                  }`}
+                                >
+                                  <Box className="w-3.5 h-3.5" />
+                                  3D
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {(openStep === 5 || openStep === 6) && effectiveDesktopView === 'plan' && (
+                            <p className="text-sm text-text-muted mb-3">
+                              Hover over a corner below to see which corner you are configuring.
+                            </p>
+                          )}
+
+                          {effectiveDesktopView === 'plan' ? (
+                            (openStep === 2 || openStep === 3) ? (
+                              <div>
+                                <ShapeCanvas
+                                  config={config}
+                                  updateConfig={updateConfig}
+                                  readonly={false}
+                                  snapToGrid={true}
+                                  highlightedMeasurement={highlightedMeasurement}
+                                  highlightedCorner={highlightedCorner}
+                                  highlightedEdgeKeys={fixedEdgeKeys}
+                                  isMobile={isMobile}
+                                  measurementOption={config.measurementOption}
+                                  unit={config.unit}
+                                />
+                                {config.corners >= 4 && (
+                                  <div className="mt-3">
+                                    <ShapeModeToggle
+                                      isAutoMode={!config.hasManuallyAdjustedShape}
+                                      onToggle={(isAuto) => handleToggleMode(isAuto)}
+                                      corners={config.corners}
+                                      hasEnoughDiagonals={desktopHasEnoughDiagonals}
+                                      shapeAccuracy={desktopShapeAccuracy.accuracy}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <ShapeCanvas
+                                config={config}
+                                updateConfig={updateConfig}
+                                readonly={true}
+                                snapToGrid={true}
+                                highlightedMeasurement={highlightedMeasurement}
+                                highlightedCorner={highlightedCorner}
+                                highlightedEdgeKeys={fixedEdgeKeys}
+                                isMobile={isMobile}
+                                measurementOption={config.measurementOption}
+                                unit={config.unit}
+                              />
+                            )
+                          ) : (
+                            <div className="h-[400px] relative group/viewer3d">
+                              <Suspense fallback={
+                                <div className="flex items-center justify-center h-full bg-surface-panel rounded-lg border border-border-card">
+                                  <div className="text-center">
+                                    <div className="animate-spin w-8 h-8 border-3 border-border-card border-t-brand-green rounded-full mx-auto mb-3"></div>
+                                    <p className="text-sm text-text-muted">Loading 3D viewer...</p>
+                                  </div>
+                                </div>
+                              }>
+                                <ShadeSail3DViewer
+                                  ref={viewer3DRef}
+                                  config={config}
+                                  highlightedMeasurement={highlightedMeasurement}
+                                  highlightedCorner={highlightedCorner}
+                                  activeSection={(openStep === 5 || openStep === 6) ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+                                />
+                              </Suspense>
+                              <button
+                                onClick={() => setIs3DExpanded(true)}
+                                className="absolute bottom-3 right-3 p-2 bg-white/90 hover:bg-white rounded-lg shadow-md border border-border-card text-text-muted hover:text-brand-green transition-all duration-150 sm:opacity-0 sm:group-hover/viewer3d:opacity-100 sm:focus:opacity-100 z-10"
+                                title="Expand 3D viewer"
+                              >
+                                <Maximize2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {isReviewStep && (
+                      <PriceSummaryDisplay
+                        config={config}
+                        calculations={calculations}
+                        onSaveQuote={handleSaveQuote}
+                        allAcknowledgmentsChecked={allAcknowledgmentsChecked}
+                        canAddToCart={canAddToCart}
+                        handleAddToCart={handleAddToCartFromConfigurator}
+                        loading={loading}
+                        fabrics={FABRICS}
+                        isEmailMode={hasAllEdgeMeasurements}
+                        adminMode={adminMode}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
+          <LoadingOverlay
+            isVisible={showLoadingOverlay}
+            currentStep={loadingStep.text}
+            progress={loadingStep.progress}
+          />
         </div>
-
-        <LoadingOverlay
-          isVisible={showLoadingOverlay}
-          currentStep={loadingStep.text}
-          progress={loadingStep.progress}
-        />
       </div>
 
       {/* Unified Save Modal */}

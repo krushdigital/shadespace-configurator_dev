@@ -76,18 +76,18 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
       {/* Fabric Type Selection */}
       <div className="mb-8">
         {showHint && !config.fabricType && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-surface-soft border border-[#7bb08f] rounded-full text-xs font-medium text-brand-green">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-mid animate-pulse" />
             Tap to select your fabric material
           </div>
         )}
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-          <h4 className="text-lg font-semibold text-[#01312D]">
+          <h4 className="text-lg font-semibold text-brand-green">
             <a
               href="https://shadespace.com/pages/our-fabrics"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#01312D] hover:text-[#2e7d4f] transition-colors"
+              className="text-brand-green hover:text-brand-mid transition-colors"
             >
               Fabric Material
             </a>
@@ -95,7 +95,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
           <button
             type="button"
             onClick={() => openComparison()}
-            className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-[#2e7d4f] border border-[#2e7d4f] hover:bg-[#2e7d4f] hover:text-white px-3 py-1.5 rounded-full transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-brand-mid border border-brand-mid hover:bg-brand-mid hover:text-white px-3 py-1.5 rounded-full transition-colors"
           >
             <GitCompare className="w-3.5 h-3.5" />
             Compare Fabrics
@@ -111,7 +111,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                 key={fabric.id}
                 className={`relative h-full flex flex-col p-3 md:p-3 lg:p-3 cursor-pointer transition-all duration-200 ${
                   isSelected
-                    ? '!border-2 !border-[#2e7d4f] shadow-lg'
+                    ? '!border-2 !border-brand-mid shadow-lg'
                     : hasError
                     ? 'border-2 !border-red-400 bg-red-50 hover:!border-red-500 hover:shadow-lg'
                     : 'hover:border-[#7bb08f] hover:shadow-lg'
@@ -125,13 +125,13 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                 }}
               >
                 {isSelected && (
-                  <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-[#2e7d4f] text-white text-[13px] font-bold flex items-center justify-center">
+                  <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-brand-mid text-white text-[13px] font-bold flex items-center justify-center">
                     &#10003;
                   </span>
                 )}
                 <div className="text-center flex flex-col h-full">
                   <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2 min-w-0">
-                    <h5 className="font-semibold text-[#01312D] text-sm md:text-[15px] lg:text-sm leading-tight break-words">
+                    <h5 className="font-semibold text-brand-green text-sm md:text-[15px] lg:text-sm leading-tight break-words">
                       {fabric.label}
                     </h5>
                     {fabric.isFireRetardant && (
@@ -148,7 +148,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                               href="https://shadespace.com/pages/our-fabrics"
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center px-3 py-1 bg-[#BFF102] text-[#01312D] text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
+                              className="inline-flex items-center px-3 py-1 bg-brand-lime text-brand-green text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
                               onClick={() => analytics.fabricLinkClicked(fabric.id, 'https://shadespace.com/pages/our-fabrics')}
                             >
                               View All Fabrics
@@ -158,17 +158,17 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                             </a>
                           </div>
                           <div>
-                            <h4 className="font-bold text-[#01312D] mb-2">
+                            <h4 className="font-bold text-brand-green mb-2">
                               {fabric.label}
                             </h4>
-                            <div className={`grid ${fabric.id === 'monotec370' ? 'grid-cols-3' : 'grid-cols-2'} gap-3 mb-3 p-3 bg-[#F3FFE3] rounded-lg`}>
+                            <div className={`grid ${fabric.id === 'monotec370' ? 'grid-cols-3' : 'grid-cols-2'} gap-3 mb-3 p-3 bg-surface-soft rounded-lg`}>
                               <div>
-                                <div className="text-xs text-[#01312D]/60 mb-1">Weight</div>
-                                <div className="font-semibold text-[#01312D]">{fabric.weightPerSqm} g/m²</div>
+                                <div className="text-xs text-brand-green/60 mb-1">Weight</div>
+                                <div className="font-semibold text-brand-green">{fabric.weightPerSqm} g/m²</div>
                               </div>
                               <div>
-                                <div className="text-xs text-[#01312D]/60 mb-1">Warranty</div>
-                                <div className="font-semibold text-[#01312D]">
+                                <div className="text-xs text-brand-green/60 mb-1">Warranty</div>
+                                <div className="font-semibold text-brand-green">
                                   <a
                                     href="https://shadespace.com/pages/warranty"
                                     target="_blank"
@@ -181,12 +181,12 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                               </div>
                               {fabric.id === 'monotec370' && (
                                 <div>
-                                  <div className="text-xs text-[#01312D]/60 mb-1">Wind rating</div>
-                                  <div className="font-semibold text-[#01312D]">85 mph</div>
+                                  <div className="text-xs text-brand-green/60 mb-1">Wind rating</div>
+                                  <div className="font-semibold text-brand-green">85 mph</div>
                                 </div>
                               )}
                             </div>
-                            <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
+                            <p className="text-sm text-brand-green/80 mb-3 leading-relaxed">
                               {fabric.detailedDescription}
                             </p>
 
@@ -197,7 +197,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                   alt="Fire Retardant Certified"
                                   className="w-12 h-12 mr-2"
                                 />
-                                <p className="text-xs text-[#01312D] font-semibold">
+                                <p className="text-xs text-brand-green font-semibold">
                                   Fire Retardant Certified
                                 </p>
                               </div>
@@ -206,13 +206,13 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                             <AccordionItem trigger="Learn More" defaultOpen={false}>
                               <div className="space-y-3 mt-2">
                                 <div>
-                                  <h5 className="font-semibold text-[#01312D] mb-1">Made In:</h5>
-                                  <p className="text-sm text-[#01312D]/80">{fabric.madeIn}</p>
+                                  <h5 className="font-semibold text-brand-green mb-1">Made In:</h5>
+                                  <p className="text-sm text-brand-green/80">{fabric.madeIn}</p>
                                 </div>
 
                                 <div>
-                                  <h5 className="font-semibold text-[#01312D] mb-1">Key Benefits:</h5>
-                                  <ul className="text-xs text-[#01312D]/70 space-y-1">
+                                  <h5 className="font-semibold text-brand-green mb-1">Key Benefits:</h5>
+                                  <ul className="text-xs text-brand-green/70 space-y-1">
                                     {fabric.benefits
                                       .filter(benefit => !benefit.toLowerCase().includes('uv protection'))
                                       .map((benefit, index) => (
@@ -223,8 +223,8 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                 </div>
 
                                 <div>
-                                  <h5 className="font-semibold text-[#01312D] mb-1">Best For:</h5>
-                                  <ul className="text-xs text-[#01312D]/70 space-y-1">
+                                  <h5 className="font-semibold text-brand-green mb-1">Best For:</h5>
+                                  <ul className="text-xs text-brand-green/70 space-y-1">
                                     {fabric.bestFor.map((use, index) => (
                                       <li key={index}>• {use}</li>
                                     ))}
@@ -239,7 +239,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                                 e.stopPropagation();
                                 openComparison(fabric.id);
                               }}
-                              className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-[#2e7d4f] hover:bg-[#01312d] px-3 py-2 rounded-full transition-colors"
+                              className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-brand-mid hover:bg-brand-green px-3 py-2 rounded-full transition-colors"
                             >
                               <GitCompare className="w-3.5 h-3.5" />
                               Compare all fabrics
@@ -249,51 +249,51 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         </div>
                       }
                     >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#2e7d4f] text-white rounded-full cursor-help hover:bg-[#01312d]">
+                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-mid text-white rounded-full cursor-help hover:bg-brand-green">
                         ?
                       </span>
                     </Tooltip>
                   </div>
                   <div className="mb-2">
                     {fabric.badgeText && (
-                      <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">
+                      <span className="bg-brand-lime text-brand-green text-xs font-bold px-2 py-0.5 rounded shadow-md">
                         {fabric.badgeText}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs lg:text-[13px] text-[#01312D]/70 mb-2 md:mb-3 line-clamp-3 leading-snug flex-1">
+                  <p className="text-xs lg:text-[13px] text-brand-green/70 mb-2 md:mb-3 line-clamp-3 leading-snug flex-1">
                     {fabric.description}
                   </p>
                   <div className={`hidden md:block rounded-lg p-2 lg:px-2.5 lg:py-2 transition-all duration-300 mt-auto ${
                     isSelected
                      ? 'bg-gradient-to-r from-[#01312D] to-[#2e7d4f]'
-                     : 'bg-[#F3FFE3]'
+                     : 'bg-surface-soft'
                   }`}>
                     <div className="flex justify-between items-center gap-2">
                       <div className="min-w-0">
                         <div className={`text-[10px] mb-0.5 ${
-                          isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'
+                          isSelected ? 'text-[#F3FFE3]/90' : 'text-brand-green/60'
                         }`}>Weight</div>
                         <div className={`font-semibold text-xs lg:text-[13px] whitespace-nowrap ${
-                          isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'
+                          isSelected ? 'text-[#F3FFE3]' : 'text-brand-green'
                         }`}>{fabric.weightPerSqm} g/m²</div>
                       </div>
                       {fabric.id === 'monotec370' && (
                         <div className="min-w-0 text-center">
                           <div className={`text-[10px] mb-0.5 ${
-                            isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'
+                            isSelected ? 'text-[#F3FFE3]/90' : 'text-brand-green/60'
                           }`}>Wind rating</div>
                           <div className={`font-semibold text-xs lg:text-[13px] whitespace-nowrap ${
-                            isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'
+                            isSelected ? 'text-[#F3FFE3]' : 'text-brand-green'
                           }`}>85 mph</div>
                         </div>
                       )}
                       <div className="min-w-0 text-right">
                         <div className={`text-[10px] mb-0.5 ${
-                          isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'
+                          isSelected ? 'text-[#F3FFE3]/90' : 'text-brand-green/60'
                         }`}>Warranty</div>
                         <div className={`font-semibold text-xs lg:text-[13px] whitespace-nowrap ${
-                          isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'
+                          isSelected ? 'text-[#F3FFE3]' : 'text-brand-green'
                         }`}>
                           <a
                             href="https://shadespace.com/pages/warranty"
@@ -318,50 +318,50 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
       {selectedFabric && (
         <div className="mb-8" id="color-selection" data-guidance-id="color-selection">
           <div className={`flex items-center gap-2 mb-4 px-2 py-1 -mx-2 rounded-lg transition-all duration-300 ${
-            mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-[#eef5ef]' : ''
+            mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-surface-soft' : ''
           }`}>
             <h4 className={`text-lg font-semibold ${
-              mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'shiny-text-guidance' : 'text-[#01312D]'
+              mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'shiny-text-guidance' : 'text-brand-green'
             }`}>
               Choose Color
             </h4>
             <Tooltip
               content={
                 <div>
-                  <h4 className="font-bold text-slate-900 mb-2">Shade Factor (SF %)</h4>
-                  <p className="text-sm text-slate-600 mb-3">
+                  <h4 className="font-bold text-brand-green mb-2">Shade Factor (SF %)</h4>
+                  <p className="text-sm text-text-muted mb-3">
                     The Shade Factor percentage indicates how much sunlight the fabric blocks. 
                     Higher percentages provide more shade and UV protection.
                   </p>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span>70-80% SF:</span>
-                      <span className="text-slate-500">Light filtering</span>
+                      <span className="text-text-muted">Light filtering</span>
                     </div>
                     <div className="flex justify-between">
                       <span>80-90% SF:</span>
-                      <span className="text-slate-500">Good shade</span>
+                      <span className="text-text-muted">Good shade</span>
                     </div>
                     <div className="flex justify-between">
                       <span>90%+ SF:</span>
-                      <span className="text-slate-500">Maximum shade</span>
+                      <span className="text-text-muted">Maximum shade</span>
                     </div>
                   </div>
                 </div>
               }
             >
-              <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+              <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                 ?
               </span>
             </Tooltip>
           </div>
           {/* Dynamic Info Message for Extrablock 330 */}
           {selectedFabric.isFireRetardant && (
-            <div className="mb-4 p-3 bg-[#eef5ef] border border-[#2e7d4f] rounded-lg">
+            <div className="mb-4 p-3 bg-surface-soft border border-brand-mid rounded-lg">
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#2e7d4f] flex-shrink-0" />
-                <p className="text-sm text-[#01312D]">
-                  <strong>Important:</strong> Not all {selectedFabric.label} colors are fire retardant. Look for the <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">FR Fabric</span> badge for certified colors, or the <span className="bg-slate-300 text-slate-700 text-xs font-bold px-1.5 py-0.5 rounded">Standard</span> badge for non-FR colors.
+                <Info className="w-4 h-4 text-brand-mid flex-shrink-0" />
+                <p className="text-sm text-brand-green">
+                  <strong>Important:</strong> Not all {selectedFabric.label} colors are fire retardant. Look for the <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">FR Fabric</span> badge for certified colors, or the <span className="bg-slate-300 text-brand-green text-xs font-bold px-1.5 py-0.5 rounded">Standard</span> badge for non-FR colors.
                 </p>
               </div>
             </div>
@@ -383,14 +383,14 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     }}
                     className={`group p-2 rounded-lg transition-all duration-300 w-full ${
                       isSelected
-                       ? 'border-2 border-[#01312D] ring-2 ring-[#01312D] shadow-md'
+                       ? 'border-2 border-brand-green ring-2 ring-brand-green shadow-md'
                         : hasError
                         ? 'ring-2 !ring-red-500 bg-red-50 hover:!ring-red-600 hover:shadow-sm'
-                        : 'ring-1 ring-[#2e7d4f]/30 hover:ring-[#01312D] hover:shadow-sm'
+                        : 'ring-1 ring-brand-mid/30 hover:ring-brand-green hover:shadow-sm'
                     }`}
                   >
                     <div className="relative overflow-hidden">
-                      <div className="relative overflow-hidden pb-[75%] rounded-lg border border-slate-300">
+                      <div className="relative overflow-hidden pb-[75%] rounded-lg border border-border-card">
                         <img
                           src={color.imageUrl}
                           alt={color.name}
@@ -419,14 +419,14 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                             FR Fabric
                           </span>
                         ) : (
-                          <span className="bg-[#F3FFE3] text-[#01312D] text-xs font-bold px-1.5 py-0.5 rounded shadow-md">
+                          <span className="bg-surface-soft text-brand-green text-xs font-bold px-1.5 py-0.5 rounded shadow-md">
                             Standard
                           </span>
                         )}
                       </div>
                     )}
                     
-                    <div className="text-xs font-medium text-[#01312D] leading-tight mt-2">
+                    <div className="text-xs font-medium text-brand-green leading-tight mt-2">
                       {color.name}
                     </div>
                   </button>
@@ -437,7 +437,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
         </div>
       )}
 
-      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
+      <div className="flex flex-col gap-3 pt-4 border-t border-border-card">
         <div className="flex flex-col sm:flex-row gap-4">
           {showBackButton && onPrev && (
             <Button
@@ -460,9 +460,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
               return (
                 <>
                   {incomplete && (
-                    <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                    <div className="text-xs text-text-muted bg-surface-soft px-3 py-2 rounded-lg border border-border-card">
                       <span className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-slate-500" />
+                        <AlertCircle className="w-4 h-4 text-text-muted" />
                         <span>Please select {missingItems.join(' and ')} to continue</span>
                       </span>
                     </div>

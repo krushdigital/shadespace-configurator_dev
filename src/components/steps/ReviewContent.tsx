@@ -534,12 +534,12 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   return (
     <div className="p-6">
       {hasAllEdgeMeasurements && calculations.totalPrice > 0 && (
-        <div className="flex items-center gap-2 bg-[#BFF102]/10 border border-[#BFF102]/40 rounded-lg px-4 py-3 mb-6">
-          <svg className="w-5 h-5 text-[#307C31] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex items-center gap-2 bg-brand-lime/10 border border-[#BFF102]/40 rounded-lg px-4 py-3 mb-6">
+          <svg className="w-5 h-5 text-brand-mid flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
-          <p className="text-sm text-[#01312D]">
-            Your quote is ready! You can now <button type="button" onClick={onSaveQuote} className="font-bold underline text-[#307C31] hover:text-[#1a5c44] transition-colors cursor-pointer">save and receive a detailed PDF quote</button> via email with your specifications, pricing, and a link to resume anytime.
+          <p className="text-sm text-brand-green">
+            Your quote is ready! You can now <button type="button" onClick={onSaveQuote} className="font-bold underline text-brand-mid hover:text-[#1a5c44] transition-colors cursor-pointer">save and receive a detailed PDF quote</button> via email with your specifications, pricing, and a link to resume anytime.
           </p>
         </div>
       )}
@@ -574,7 +574,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             good: 'bg-blue-50 border-blue-200 text-blue-800',
             warning: 'bg-amber-50 border-amber-200 text-amber-800',
             error: 'bg-red-50 border-red-200 text-red-800',
-            pending: 'bg-slate-50 border-slate-200 text-slate-600'
+            pending: 'bg-surface-soft border-border-card text-text-muted'
           };
           return (
             <div className={`p-3 sm:p-4 rounded-xl border ${statusColors[confidence.status]}`}>
@@ -598,7 +598,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           <div className="lg:col-span-2 space-y-6">
             {/* Configuration Summary */}
             {!isMobile && (
-              <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
+              <h4 className="text-sm font-semibold text-brand-green uppercase tracking-wide mb-3">
                 Configuration Summary
               </h4>
             )}
@@ -612,49 +612,49 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 <Card className="p-3 mt-2">
                   <div className="space-y-1.5 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Fabric:</span>
-                      <span className="font-medium text-slate-900">{selectedFabric?.label}</span>
+                      <span className="text-text-muted">Fabric:</span>
+                      <span className="font-medium text-brand-green">{selectedFabric?.label}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Color:</span>
+                      <span className="text-text-muted">Color:</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900">
+                        <span className="font-medium text-brand-green">
                           {config.fabricColor}
                         </span>
                         {selectedColor?.imageUrl && (
                           <img
                             src={selectedColor.imageUrl}
                             alt={config.fabricColor}
-                            className="w-5 h-5 rounded-full border border-slate-300 object-cover"
+                            className="w-5 h-5 rounded-full border border-border-card object-cover"
                           />
                         )}
                       </div>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Edge:</span>
-                      <span className="font-medium text-slate-900">
+                      <span className="text-text-muted">Edge:</span>
+                      <span className="font-medium text-brand-green">
                         {config.edgeType === 'webbing' ? 'Webbing' : 'Cabled'}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Thread:</span>
-                      <span className="font-medium text-slate-900">SolarFix® PTFE</span>
+                      <span className="text-text-muted">Thread:</span>
+                      <span className="font-medium text-brand-green">SolarFix® PTFE</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Corners:</span>
-                      <span className="font-medium text-slate-900">{config.corners}</span>
+                      <span className="text-text-muted">Corners:</span>
+                      <span className="font-medium text-brand-green">{config.corners}</span>
                     </div>
                     {(config.corners < 4 || allDiagonalsEntered) && (
                       <div className="flex justify-between">
-                        <span className="text-slate-600">Area:</span>
-                        <span className="font-medium text-slate-900">
+                        <span className="text-text-muted">Area:</span>
+                        <span className="font-medium text-brand-green">
                           {formatArea(calculations.area * 1000000, config.unit)}
                         </span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Weight:</span>
-                      <span className="font-medium text-slate-900">
+                      <span className="text-text-muted">Weight:</span>
+                      <span className="font-medium text-brand-green">
                         {config.unit === 'imperial'
                           ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
                           : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`
@@ -662,11 +662,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Hardware:</span>
-                      <span className="font-medium text-slate-900">
+                      <span className="text-text-muted">Hardware:</span>
+                      <span className="font-medium text-brand-green">
                         {hardwareMode === 'standard' ? (
                           <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
-                            <span className="font-medium text-slate-900">Hardware Tensioning Kit (included)</span>
+                            <span className="font-medium text-brand-green">Hardware Tensioning Kit (included)</span>
                           </StandardPackPreview>
                         ) : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
                       </span>
@@ -680,33 +680,33 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 {/* Material cluster */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Fabric</span>
-                    <span className="font-medium text-slate-900">{selectedFabric?.label}</span>
+                    <span className="text-text-muted">Fabric</span>
+                    <span className="font-medium text-brand-green">{selectedFabric?.label}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Color</span>
+                    <span className="text-text-muted">Color</span>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-brand-green">
                         {config.fabricColor}
                       </span>
                       {selectedColor?.imageUrl && (
                         <img
                           src={selectedColor.imageUrl}
                           alt={config.fabricColor}
-                          className="w-5 h-5 rounded-full border border-slate-200 object-cover"
+                          className="w-5 h-5 rounded-full border border-border-card object-cover"
                         />
                       )}
                     </div>
                   </div>
                   {selectedColor?.shadeFactor && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Shade Factor</span>
-                      <span className="font-medium text-slate-900">{selectedColor.shadeFactor}%</span>
+                      <span className="text-text-muted">Shade Factor</span>
+                      <span className="font-medium text-brand-green">{selectedColor.shadeFactor}%</span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Thread</span>
-                    <span className="font-medium text-slate-900">SolarFix® PTFE</span>
+                    <span className="text-text-muted">Thread</span>
+                    <span className="font-medium text-brand-green">SolarFix® PTFE</span>
                   </div>
                 </div>
 
@@ -715,8 +715,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 {/* Shape & Structure cluster */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Shape</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-text-muted">Shape</span>
+                    <span className="font-medium text-brand-green">
                       {config.shapeMode === 'fixed' && config.fixedShapeType
                         ? `${config.fixedShapeType === 'right-angle-triangle' ? 'Right Angle Triangle' : config.fixedShapeType.charAt(0).toUpperCase() + config.fixedShapeType.slice(1)}`
                         : `Custom (${config.corners} corners)`
@@ -724,15 +724,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Edge</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-text-muted">Edge</span>
+                    <span className="font-medium text-brand-green">
                       {config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge'}
                     </span>
                   </div>
                   {config.edgeType === 'webbing' && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Webbing</span>
-                      <span className="font-medium text-slate-900">
+                      <span className="text-text-muted">Webbing</span>
+                      <span className="font-medium text-brand-green">
                         {config.unit === 'imperial'
                           ? `${(calculations.webbingWidth * 0.0393701).toFixed(2)}" (${calculations.webbingWidth}mm)`
                           : `${calculations.webbingWidth}mm`
@@ -742,8 +742,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   )}
                   {config.edgeType === 'cabled' && calculations.wireThickness && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Wire</span>
-                      <span className="font-medium text-slate-900">
+                      <span className="text-text-muted">Wire</span>
+                      <span className="font-medium text-brand-green">
                         {config.unit === 'imperial'
                           ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
                           : `${calculations.wireThickness}mm`
@@ -759,21 +759,21 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 <div className="space-y-1.5">
                   {(config.corners < 4 || allDiagonalsEntered) && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Area</span>
-                      <span className="font-medium text-slate-900">
+                      <span className="text-text-muted">Area</span>
+                      <span className="font-medium text-brand-green">
                         {formatArea(calculations.area * 1000000, config.unit)}
                       </span>
                     </div>
                   )}
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Perimeter</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-text-muted">Perimeter</span>
+                    <span className="font-medium text-brand-green">
                       {formatMeasurement(calculations.perimeter * 1000, config.unit)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Weight</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-text-muted">Weight</span>
+                    <span className="font-medium text-brand-green">
                       {config.unit === 'imperial'
                         ? `${(calculations.totalWeightGrams / 1000 * 2.20462).toFixed(1)} lb (${(calculations.totalWeightGrams / 1000).toFixed(1)} kg)`
                         : `${(calculations.totalWeightGrams / 1000).toFixed(1)} kg`
@@ -781,11 +781,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">Hardware</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-text-muted">Hardware</span>
+                    <span className="font-medium text-brand-green">
                       {hardwareMode === 'standard' ? (
                         <StandardPackPreview pack={hardwarePack} itemsById={hardwareItemsById} corners={config.corners}>
-                          <span className="font-medium text-slate-900">Tensioning Kit (included)</span>
+                          <span className="font-medium text-brand-green">Tensioning Kit (included)</span>
                         </StandardPackPreview>
                       ) : hardwareMode === 'manual' ? 'Manual per corner' : 'Not included'}
                     </span>
@@ -846,20 +846,20 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
           <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-6">
             {/* Shade Sail Preview */}
-            <Card className="p-3 sm:p-4 bg-slate-50/80 lg:max-h-[520px] lg:min-h-[400px] flex flex-col overflow-hidden">
+            <Card className="p-3 sm:p-4 bg-surface-soft/80 lg:max-h-[520px] lg:min-h-[400px] flex flex-col overflow-hidden">
               <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                <h4 className="text-sm font-semibold text-brand-green uppercase tracking-wide">
                   Preview
                 </h4>
                 {review3DAvailable && (!isMobile || device3DTier !== 'none') && (
-                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5 sm:p-1">
+                  <div className="flex items-center gap-1 bg-surface-panel rounded-lg p-0.5 sm:p-1">
                     <button
                       onClick={() => setReviewViewMode('plan')}
                       className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-medium transition-all ${
                         reviewViewMode === 'plan'
-                          ? 'bg-white shadow-sm text-slate-900'
-                          : 'text-slate-500 hover:text-slate-700'
+                          ? 'bg-white shadow-sm text-brand-green'
+                          : 'text-text-muted hover:text-brand-green'
                       }`}
                     >
                       <Layers className="w-3.5 h-3.5" />
@@ -869,8 +869,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       onClick={() => setReviewViewMode('3d')}
                       className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-medium transition-all ${
                         reviewViewMode === '3d'
-                          ? 'bg-white shadow-sm text-slate-900'
-                          : 'text-slate-500 hover:text-slate-700'
+                          ? 'bg-white shadow-sm text-brand-green'
+                          : 'text-text-muted hover:text-brand-green'
                       }`}
                     >
                       <Box className="w-3.5 h-3.5" />
@@ -893,7 +893,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     isMobile={isMobile}
                     plainBackground={true}
                   />
-                  <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-400 bg-slate-100 rounded px-2 py-1 w-fit">
+                  <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-400 bg-surface-panel rounded px-2 py-1 w-fit">
                     <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                     <span>Corner labels show edge positions</span>
                   </div>
@@ -901,10 +901,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               ) : (
                 <div className="h-[240px] lg:flex-1 lg:min-h-[300px] lg:h-auto">
                   <Suspense fallback={
-                    <div className="flex items-center justify-center h-full bg-slate-100 rounded-lg">
+                    <div className="flex items-center justify-center h-full bg-surface-panel rounded-lg">
                       <div className="text-center">
-                        <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
-                        <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                        <div className="animate-spin w-8 h-8 border-3 border-border-card border-t-slate-700 rounded-full mx-auto mb-3"></div>
+                        <p className="text-sm text-text-muted">Loading 3D viewer...</p>
                       </div>
                     </div>
                   }>
@@ -929,11 +929,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 /* Fixed shapes: always visible, no accordion */
                 isMobile ? (
                   <div>
-                    <div className="py-2 px-2 text-sm font-medium text-[#01312D]">Measurements</div>
+                    <div className="py-2 px-2 text-sm font-medium text-brand-green">Measurements</div>
                     <Card className="p-3">
                       <div className="space-y-3">
                         <div>
-                          <h6 className="text-xs font-semibold text-slate-700 mb-2">Edges</h6>
+                          <h6 className="text-xs font-semibold text-brand-green mb-2">Edges</h6>
                           <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                             {Array.from({ length: config.corners }, (_, index) => {
                               const nextIndex = (index + 1) % config.corners;
@@ -941,8 +941,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                               const measurement = config.measurements[edgeKey];
                               return (
                                 <div key={edgeKey} className="flex justify-between">
-                                  <span className="text-slate-600">{String.fromCharCode(65 + index)}-{String.fromCharCode(65 + nextIndex)}:</span>
-                                  <span className="font-medium text-slate-900">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                  <span className="text-text-muted">{String.fromCharCode(65 + index)}-{String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-brand-green">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
                                 </div>
                               );
                             })}
@@ -953,11 +953,11 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </div>
                 ) : (
                   <div>
-                    <div className="py-2 px-2 text-sm font-semibold text-[#01312D]">Precise Measurements</div>
+                    <div className="py-2 px-2 text-sm font-semibold text-brand-green">Precise Measurements</div>
                     <Card className="p-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                         <div>
-                          <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths</h6>
+                          <h6 className="text-sm font-medium text-brand-green mb-2">Edge Lengths</h6>
                           <div className="space-y-1 text-sm">
                             {Array.from({ length: config.corners }, (_, index) => {
                               const nextIndex = (index + 1) % config.corners;
@@ -965,8 +965,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                               const measurement = config.measurements[edgeKey];
                               return (
                                 <div key={edgeKey} className="flex items-baseline gap-3">
-                                  <span className="text-slate-600 whitespace-nowrap min-w-[100px]">Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:</span>
-                                  <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                  <span className="text-text-muted whitespace-nowrap min-w-[100px]">Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-brand-green whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
                                 </div>
                               );
                             })}
@@ -988,7 +988,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     <Card className="p-3 mt-2">
                       <div className="space-y-3">
                         <div>
-                          <h6 className="text-xs font-semibold text-slate-700 mb-2">Edges</h6>
+                          <h6 className="text-xs font-semibold text-brand-green mb-2">Edges</h6>
                           <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                             {Array.from({ length: config.corners }, (_, index) => {
                               const nextIndex = (index + 1) % config.corners;
@@ -996,8 +996,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                               const measurement = config.measurements[edgeKey];
                               return (
                                 <div key={edgeKey} className="flex justify-between">
-                                  <span className="text-slate-600">{String.fromCharCode(65 + index)}-{String.fromCharCode(65 + nextIndex)}:</span>
-                                  <span className="font-medium text-slate-900">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                  <span className="text-text-muted">{String.fromCharCode(65 + index)}-{String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-brand-green">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
                                 </div>
                               );
                             })}
@@ -1005,15 +1005,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                         </div>
 
                         {config.corners >= 4 && diagonalMeasurements.length > 0 && (
-                          <div className="pt-2 border-t border-slate-200">
-                            <h6 className="text-xs font-semibold text-slate-700 mb-2">Diagonals</h6>
+                          <div className="pt-2 border-t border-border-card">
+                            <h6 className="text-xs font-semibold text-brand-green mb-2">Diagonals</h6>
                             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                               {diagonalMeasurements.map((diagonal) => {
                                 const measurement = config.measurements[diagonal.key];
                                 return (
                                   <div key={diagonal.key} className="flex justify-between">
-                                    <span className="text-slate-600">{diagonal.key}:</span>
-                                    <span className="font-medium text-slate-900">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                    <span className="text-text-muted">{diagonal.key}:</span>
+                                    <span className="font-medium text-brand-green">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
                                   </div>
                                 );
                               })}
@@ -1033,7 +1033,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     <Card className="p-4 mt-2">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                         <div>
-                          <h6 className="text-sm font-medium text-slate-700 mb-2">Edge Lengths</h6>
+                          <h6 className="text-sm font-medium text-brand-green mb-2">Edge Lengths</h6>
                           <div className="space-y-1 text-sm">
                             {Array.from({ length: config.corners }, (_, index) => {
                               const nextIndex = (index + 1) % config.corners;
@@ -1041,8 +1041,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                               const measurement = config.measurements[edgeKey];
                               return (
                                 <div key={edgeKey} className="flex items-baseline gap-3">
-                                  <span className="text-slate-600 whitespace-nowrap min-w-[100px]">Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:</span>
-                                  <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                  <span className="text-text-muted whitespace-nowrap min-w-[100px]">Edge {String.fromCharCode(65 + index)} → {String.fromCharCode(65 + nextIndex)}:</span>
+                                  <span className="font-medium text-brand-green whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
                                 </div>
                               );
                             })}
@@ -1051,14 +1051,14 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
                         {config.corners >= 4 && diagonalMeasurements.length > 0 && (
                           <div>
-                            <h6 className="text-sm font-medium text-slate-700 mb-2">Diagonal Lengths</h6>
+                            <h6 className="text-sm font-medium text-brand-green mb-2">Diagonal Lengths</h6>
                             <div className="space-y-1 text-sm">
                               {diagonalMeasurements.map((diagonal) => {
                                 const measurement = config.measurements[diagonal.key];
                                 return (
                                   <div key={diagonal.key} className="flex items-baseline gap-3">
-                                    <span className="text-slate-600 whitespace-nowrap min-w-[100px]">Diagonal {diagonal.key}:</span>
-                                    <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
+                                    <span className="text-text-muted whitespace-nowrap min-w-[100px]">Diagonal {diagonal.key}:</span>
+                                    <span className="font-medium text-brand-green whitespace-nowrap tabular-nums">{measurement ? formatMeasurement(measurement, config.unit) : 'Not set'}</span>
                                   </div>
                                 );
                               })}
@@ -1089,9 +1089,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
                           return (
                             <div key={index} className="flex justify-between">
-                              <span className="text-slate-600">{corner}:</span>
+                              <span className="text-text-muted">{corner}:</span>
                               <div className="text-right">
-                                <div className="font-medium text-slate-900">
+                                <div className="font-medium text-brand-green">
                                   {formatMeasurement(height, config.unit)}
                                 </div>
                               </div>
@@ -1116,8 +1116,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
                           return (
                             <div key={index} className="flex items-baseline gap-3">
-                              <span className="text-slate-600 whitespace-nowrap min-w-[120px]">Anchor Point {corner}:</span>
-                              <span className="font-medium text-slate-900 whitespace-nowrap tabular-nums">
+                              <span className="text-text-muted whitespace-nowrap min-w-[120px]">Anchor Point {corner}:</span>
+                              <span className="font-medium text-brand-green whitespace-nowrap tabular-nums">
                                 {formatMeasurement(height, config.unit)} ({type})
                               </span>
                             </div>
@@ -1144,10 +1144,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       {hardwareMode === 'standard' && hardwarePack && (
                         <div>
                           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                            <div className="text-xs font-semibold text-slate-900">Hardware Tensioning Kit</div>
-                            <span className="text-[10px] font-semibold text-[#307C31] bg-[#307C31]/10 px-1.5 py-0.5 rounded-full">Included</span>
+                            <div className="text-xs font-semibold text-brand-green">Hardware Tensioning Kit</div>
+                            <span className="text-[10px] font-semibold text-brand-mid bg-brand-mid/10 px-1.5 py-0.5 rounded-full">Included</span>
                           </div>
-                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                          <div className="border border-border-card rounded-lg overflow-hidden divide-y divide-slate-100">
                             {hardwarePack.items.map((p, idx) => {
                               const it = hardwareItemsById.get(p.catalog_id);
                               if (!it) return null;
@@ -1157,17 +1157,17 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                                     <img src={it.image_url} alt={it.name} className="w-6 h-6 rounded object-cover flex-shrink-0" />
                                   )}
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-medium text-slate-900 truncate">{it.name.replace(/-\d+mm$/, '')}</div>
+                                    <div className="text-xs font-medium text-brand-green truncate">{it.name.replace(/-\d+mm$/, '')}</div>
                                   </div>
-                                  <div className="text-[10px] font-semibold text-slate-600 flex-shrink-0">x {p.qty}</div>
+                                  <div className="text-[10px] font-semibold text-text-muted flex-shrink-0">x {p.qty}</div>
                                 </div>
                               );
                             })}
                           </div>
                           {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
-                            <div className="mt-2 border border-slate-200 rounded-lg px-2 py-1.5">
+                            <div className="mt-2 border border-border-card rounded-lg px-2 py-1.5">
                               <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="text-brand-green">1x Nulan Grease Tube (50ml)</span>
                                 <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
                               </div>
                             </div>
@@ -1176,7 +1176,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       )}
                       {hardwareMode === 'manual' && (
                         <div className="space-y-2">
-                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                          <div className="border border-border-card rounded-lg overflow-hidden divide-y divide-slate-100">
                             {Array.from({ length: config.corners }, (_, i) => {
                               const letter = String.fromCharCode(65 + i);
                               const lines = (config.cornerHardware || {})[i] || [];
@@ -1186,18 +1186,18 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                                   <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center gap-1.5">
                                       <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[9px] font-bold text-white">{letter}</div>
-                                      <div className="text-xs font-semibold text-slate-900">Corner {letter}</div>
+                                      <div className="text-xs font-semibold text-brand-green">Corner {letter}</div>
                                     </div>
                                     <div className="text-xs font-semibold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
                                   </div>
                                   {lines.length === 0 ? (
-                                    <div className="text-[10px] text-slate-500 ml-7">No hardware selected</div>
+                                    <div className="text-[10px] text-text-muted ml-7">No hardware selected</div>
                                   ) : (
-                                    <div className="ml-7 grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 text-[10px] text-slate-700">
+                                    <div className="ml-7 grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 text-[10px] text-brand-green">
                                       {lines.map((l, li) => (
                                         <React.Fragment key={li}>
                                           <span className="truncate">{l.qty}x {l.name}</span>
-                                          <span className="text-slate-500 text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
+                                          <span className="text-text-muted text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
                                         </React.Fragment>
                                       ))}
                                     </div>
@@ -1207,15 +1207,15 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                             })}
                           </div>
                           {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
-                            <div className="border border-slate-200 rounded-lg px-2 py-1.5">
+                            <div className="border border-border-card rounded-lg px-2 py-1.5">
                               <div className="flex items-center justify-between text-xs">
-                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="text-brand-green">1x Nulan Grease Tube (50ml)</span>
                                 <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
                               </div>
                             </div>
                           )}
-                          <div className="flex justify-between items-center rounded-lg bg-slate-100 px-2 py-1">
-                            <span className="text-xs font-semibold text-slate-700">Hardware subtotal</span>
+                          <div className="flex justify-between items-center rounded-lg bg-surface-panel px-2 py-1">
+                            <span className="text-xs font-semibold text-brand-green">Hardware subtotal</span>
                             <span className="text-xs font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
                           </div>
                         </div>
@@ -1233,10 +1233,10 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                       {hardwareMode === 'standard' && hardwarePack && (
                         <div>
                           <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                            <div className="text-sm font-semibold text-slate-900">Hardware Tensioning Kit</div>
-                            <span className="text-xs font-semibold text-[#307C31] bg-[#307C31]/10 px-2 py-0.5 rounded-full">Included in sail price</span>
+                            <div className="text-sm font-semibold text-brand-green">Hardware Tensioning Kit</div>
+                            <span className="text-xs font-semibold text-brand-mid bg-brand-mid/10 px-2 py-0.5 rounded-full">Included in sail price</span>
                           </div>
-                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                          <div className="border border-border-card rounded-lg overflow-hidden divide-y divide-slate-100">
                             {hardwarePack.items.map((p, idx) => {
                               const it = hardwareItemsById.get(p.catalog_id);
                               if (!it) return null;
@@ -1246,27 +1246,27 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                                     <img src={it.image_url} alt={it.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                                   )}
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-medium text-slate-900 truncate">{it.name.replace(/-\d+mm$/, '')}</div>
+                                    <div className="text-sm font-medium text-brand-green truncate">{it.name.replace(/-\d+mm$/, '')}</div>
                                   </div>
-                                  <div className="text-xs font-semibold text-slate-600 flex-shrink-0">x {p.qty}</div>
+                                  <div className="text-xs font-semibold text-text-muted flex-shrink-0">x {p.qty}</div>
                                 </div>
                               );
                             })}
                           </div>
                           {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
-                            <div className="mt-3 border border-slate-200 rounded-lg px-3 py-2.5">
+                            <div className="mt-3 border border-border-card rounded-lg px-3 py-2.5">
                               <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="text-brand-green">1x Nulan Grease Tube (50ml)</span>
                                 <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
                               </div>
-                              <div className="text-xs text-slate-500 mt-0.5">Prevents seizing & ensures correct installation</div>
+                              <div className="text-xs text-text-muted mt-0.5">Prevents seizing & ensures correct installation</div>
                             </div>
                           )}
                         </div>
                       )}
                       {hardwareMode === 'manual' && (
                         <div className="space-y-3">
-                          <div className="border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
+                          <div className="border border-border-card rounded-lg overflow-hidden divide-y divide-slate-100">
                             {Array.from({ length: config.corners }, (_, i) => {
                               const letter = String.fromCharCode(65 + i);
                               const lines = (config.cornerHardware || {})[i] || [];
@@ -1276,18 +1276,18 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                                   <div className="flex items-center justify-between mb-1.5">
                                     <div className="flex items-center gap-2">
                                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{letter}</div>
-                                      <div className="text-sm font-semibold text-slate-900">Corner {letter}</div>
+                                      <div className="text-sm font-semibold text-brand-green">Corner {letter}</div>
                                     </div>
                                     <div className="text-sm font-semibold text-[#D97706]">{formatCurrency(cornerLive, config.currency)}</div>
                                   </div>
                                   {lines.length === 0 ? (
-                                    <div className="text-xs text-slate-500 ml-8">No hardware selected</div>
+                                    <div className="text-xs text-text-muted ml-8">No hardware selected</div>
                                   ) : (
-                                    <div className="ml-8 grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 text-xs text-slate-700">
+                                    <div className="ml-8 grid grid-cols-[1fr_auto] gap-x-4 gap-y-0.5 text-xs text-brand-green">
                                       {lines.map((l, li) => (
                                         <React.Fragment key={li}>
                                           <span className="truncate">{l.qty}x {l.name}{l.sku ? ` (${l.sku})` : ''}</span>
-                                          <span className="text-slate-500 text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
+                                          <span className="text-text-muted text-right">{formatCurrency(livePriceForLine(l), config.currency)}</span>
                                         </React.Fragment>
                                       ))}
                                     </div>
@@ -1297,16 +1297,16 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                             })}
                           </div>
                           {calculations.hardwareBreakdown?.greaseIncluded && calculations.hardwareBreakdown.greaseLivePrice && (
-                            <div className="border border-slate-200 rounded-lg px-3 py-2.5">
+                            <div className="border border-border-card rounded-lg px-3 py-2.5">
                               <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-700">1x Nulan Grease Tube (50ml)</span>
+                                <span className="text-brand-green">1x Nulan Grease Tube (50ml)</span>
                                 <span className="font-semibold text-[#D97706]">{formatCurrency(calculations.hardwareBreakdown.greaseLivePrice, config.currency)}</span>
                               </div>
-                              <div className="text-xs text-slate-500 mt-0.5">Prevents seizing & ensures correct installation</div>
+                              <div className="text-xs text-text-muted mt-0.5">Prevents seizing & ensures correct installation</div>
                             </div>
                           )}
-                          <div className="flex justify-between items-center rounded-lg bg-slate-100 px-3 py-1.5">
-                            <span className="text-sm font-semibold text-slate-700">Hardware subtotal</span>
+                          <div className="flex justify-between items-center rounded-lg bg-surface-panel px-3 py-1.5">
+                            <span className="text-sm font-semibold text-brand-green">Hardware subtotal</span>
                             <span className="text-sm font-bold text-[#D97706]">{formatCurrency(hardwareOnlyDisplay, config.currency)}</span>
                           </div>
                         </div>
@@ -1370,16 +1370,16 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               ? 'bg-red-100 border-red-600 ring-4 ring-red-300 shadow-xl'
               : !allAcknowledgmentsChecked && allDiagonalsEntered
                 ? '!border-red-500 bg-red-50 hover:!border-red-600 shadow-md'
-                : 'bg-slate-50 border-slate-200'
+                : 'bg-surface-soft border-border-card'
             } `}>
-          <h4 className={`${isMobile ? 'text-sm' : 'text-base'} font-semibold text-slate-900 ${isMobile ? 'mb-1' : 'mb-2'}`}>
+          <h4 className={`${isMobile ? 'text-sm' : 'text-base'} font-semibold text-brand-green ${isMobile ? 'mb-1' : 'mb-2'}`}>
             Before we cut your fabric
             {allAcknowledgmentsChecked && (
               <span className="ml-2 text-emerald-600">✓</span>
             )}
           </h4>
           <div className={`${isMobile ? 'space-y-2 text-xs' : 'space-y-4 text-sm'}`}>
-            <ul className={`${isMobile ? 'space-y-1.5 pl-5' : 'space-y-2 pl-6'} list-disc text-slate-700 marker:text-slate-400`}>
+            <ul className={`${isMobile ? 'space-y-1.5 pl-5' : 'space-y-2 pl-6'} list-disc text-brand-green marker:text-slate-400`}>
               <li>{isMobile ? 'Measurements are point-to-point and checked.' : "My measurements are point-to-point and I've double-checked them."}</li>
               <li>
                 {isMobile ? 'Fixing points are in place and sound. ' : 'My fixing points are in place and structurally sound. '}
@@ -1387,7 +1387,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   href="https://shadespace.com/pages/contact"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="font-semibold text-[#307C31] underline hover:text-[#01312D]"
+                  className="font-semibold text-brand-mid underline hover:text-brand-green"
                 >
                   Not sure? Talk to us
                 </a>
@@ -1406,7 +1406,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 ? 'bg-emerald-50 border-emerald-300'
                 : showValidationFeedback && !agreedToAcknowledgments && allDiagonalsEntered
                   ? 'bg-red-50 border-red-400'
-                  : 'bg-white border-slate-300 hover:border-slate-400'
+                  : 'bg-white border-border-card hover:border-slate-400'
             }`}>
               <input
                 type="checkbox"
@@ -1436,7 +1436,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   ? 'text-emerald-800'
                   : showValidationFeedback && !agreedToAcknowledgments && allDiagonalsEntered
                     ? 'text-red-700'
-                    : 'text-slate-800'
+                    : 'text-brand-green'
               }`}>
                 {isMobile
                   ? 'I agree to all acknowledgments above'
@@ -1446,7 +1446,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
             {/* Conditional Height Disclaimer */}
             {config.corners !== 3 && config.measurementOption === 'adjust' && !config.heightsProvidedByUser && (
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-text-muted">
                 <Check size={14} strokeWidth={3} className="text-emerald-500" />
                 <span>{isMobile ? 'Standard manufacturing (no heights)' : 'Heights not provided — standard manufacturing will be used.'}</span>
                 {!isMobile && (
@@ -1454,7 +1454,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     variant="outline"
                     size="sm"
                     onClick={() => onPrev({ navigateToHeights: true })}
-                    className="text-xs py-0.5 px-2 border-slate-300 text-slate-600 hover:bg-slate-50 whitespace-nowrap ml-1"
+                    className="text-xs py-0.5 px-2 border-border-card text-text-muted hover:bg-surface-soft whitespace-nowrap ml-1"
                   >
                     Add Heights
                   </Button>
@@ -1475,7 +1475,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
 
         {/* Action Buttons - Full width on desktop */}
-        <div className="flex flex-col gap-3 pt-4 border-t border-slate-200 mt-6">
+        <div className="flex flex-col gap-3 pt-4 border-t border-border-card mt-6">
           {/* Back button - Full width */}
           {showBackButton && (
             <Button
@@ -1494,7 +1494,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
               variant="outline"
               size="lg"
               onClick={onSaveQuote}
-              className="w-full !border-2 !border-[#307C31] !bg-gradient-to-r !from-[#BFF102]/10 !to-white hover:!from-[#307C31] hover:!to-[#307C31] !text-[#01312D] hover:!text-white transition-all duration-300 flex flex-col items-center justify-center py-4 font-semibold"
+              className="w-full !border-2 !border-[#307C31] !bg-gradient-to-r !from-[#BFF102]/10 !to-white hover:!from-[#307C31] hover:!to-[#307C31] !text-brand-green hover:!text-white transition-all duration-300 flex flex-col items-center justify-center py-4 font-semibold"
             >
               <div className="flex items-center justify-center gap-2">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1514,7 +1514,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             className={`w-full transition-all duration-200 ${buttonShake ? 'shake' : ''} ${
               allAcknowledgmentsChecked && canAddToCart && !loading ? 'pulsate-cta' : ''
             } ${!canAddToCart && !loading
-              ? '!bg-[#01312D]/40 hover:!bg-[#01312D]/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
+              ? '!bg-brand-green/40 hover:!bg-brand-green/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
               : loading
                 ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'
                 : ''

@@ -110,26 +110,25 @@ export function MaterialFinishContent({
   const isComplete = !!config.fabricType && !!config.fabricColor;
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* ── Fabric Type Selection ── */}
       <div className="mb-8">
         {showFabricHint && !config.fabricType && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
+          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-surface-soft border border-brand-mid/30 rounded-full text-xs font-medium text-brand-green">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-mid animate-pulse" />
             Tap to select your fabric material
           </div>
         )}
         <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-          <h4 className="text-lg font-semibold text-[#01312D]">
-            <a href="https://shadespace.com/pages/our-fabrics" target="_blank" rel="noopener noreferrer" className="text-[#01312D] hover:text-[#2e7d4f] transition-colors">
+          <h4 className="text-lg font-bold text-brand-green">
+            <a href="https://shadespace.com/pages/our-fabrics" target="_blank" rel="noopener noreferrer" className="text-brand-green hover:text-brand-mid transition-colors">
               Fabric Material
             </a>
           </h4>
-          {/* Compare Fabrics: hidden on mobile, shown beside heading on desktop */}
           <button
             type="button"
             onClick={() => openComparison()}
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs md:text-sm font-semibold text-[#01312D] border border-[#01312D] hover:bg-[#01312D] hover:text-white px-3 py-1.5 rounded-full transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs md:text-sm font-bold text-brand-green border-2 border-border-card hover:bg-brand-green hover:text-white px-3 py-1.5 rounded-btn transition-colors min-h-[44px]"
           >
             <GitCompare className="w-3.5 h-3.5" />
             Compare Fabrics
@@ -143,12 +142,11 @@ export function MaterialFinishContent({
             return (
               <Card
                 key={fabric.id}
-                className={`relative h-full flex flex-col p-3 cursor-pointer transition-all duration-300 ${
-                  isSelected
-                    ? '!border-2 !border-[#01312D] !ring-2 !ring-[#01312D] shadow-xl transform scale-105'
-                    : hasError
-                    ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600 hover:shadow-lg'
-                    : 'hover:border-[#7bb08f] hover:shadow-lg'
+                selected={isSelected}
+                className={`relative h-full flex flex-col p-3 cursor-pointer ${
+                  hasError && !isSelected
+                    ? '!border-red-500 bg-red-50'
+                    : ''
                 }`}
                 onClick={() => {
                   analytics.fabricTypeSelected(fabric.id, fabric.label);
@@ -157,7 +155,7 @@ export function MaterialFinishContent({
               >
                 <div className="text-center flex flex-col h-full">
                   <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2 min-w-0">
-                    <h5 className="font-semibold text-[#01312D] text-sm md:text-[15px] lg:text-sm leading-tight break-words">{fabric.label}</h5>
+                    <h5 className={`font-bold text-sm md:text-[15px] lg:text-sm leading-tight break-words ${isSelected ? 'text-white' : 'text-brand-green'}`}>{fabric.label}</h5>
                     {fabric.isFireRetardant && (
                       <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-md">FR</span>
                     )}
@@ -218,22 +216,22 @@ export function MaterialFinishContent({
                   <div className="mb-2">
                     {fabric.badgeText && <span className="bg-[#BFF102] text-[#01312D] text-xs font-bold px-2 py-0.5 rounded shadow-md">{fabric.badgeText}</span>}
                   </div>
-                  <p className="text-xs lg:text-[13px] text-[#01312D]/70 mb-2 md:mb-3 line-clamp-3 leading-snug flex-1">{fabric.description}</p>
-                  <div className={`hidden md:block rounded-lg p-2 lg:px-2.5 lg:py-2 transition-all duration-300 mt-auto ${isSelected ? 'bg-gradient-to-r from-[#01312D] to-[#2e7d4f]' : 'bg-[#eef5ef]'}`}>
+                  <p className={`text-xs lg:text-[13px] mb-2 md:mb-3 line-clamp-3 leading-snug flex-1 ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>{fabric.description}</p>
+                  <div className={`hidden md:block rounded-xl p-2 lg:px-2.5 lg:py-2 transition-all duration-200 mt-auto ${isSelected ? 'bg-white/10' : 'bg-surface-soft'}`}>
                     <div className="flex justify-between items-center gap-2">
                       <div className="min-w-0">
-                        <div className={`text-[10px] mb-0.5 ${isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'}`}>Weight</div>
-                        <div className={`font-semibold text-xs lg:text-[13px] whitespace-nowrap ${isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'}`}>{fabric.weightPerSqm} g/m²</div>
+                        <div className={`text-[10px] mb-0.5 ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>Weight</div>
+                        <div className={`font-bold text-xs lg:text-[13px] whitespace-nowrap ${isSelected ? 'text-white' : 'text-brand-green'}`}>{fabric.weightPerSqm} g/m²</div>
                       </div>
                       {fabric.id === 'monotec370' && (
                         <div className="min-w-0 text-center">
-                          <div className={`text-[10px] mb-0.5 ${isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'}`}>Wind rating</div>
-                          <div className={`font-semibold text-xs lg:text-[13px] whitespace-nowrap ${isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'}`}>85 mph</div>
+                          <div className={`text-[10px] mb-0.5 ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>Wind rating</div>
+                          <div className={`font-bold text-xs lg:text-[13px] whitespace-nowrap ${isSelected ? 'text-white' : 'text-brand-green'}`}>85 mph</div>
                         </div>
                       )}
                       <div className="min-w-0 text-right">
-                        <div className={`text-[10px] mb-0.5 ${isSelected ? 'text-[#F3FFE3]/90' : 'text-[#01312D]/60'}`}>Warranty</div>
-                        <div className={`font-semibold text-xs lg:text-[13px] whitespace-nowrap ${isSelected ? 'text-[#F3FFE3]' : 'text-[#01312D]'}`}>
+                        <div className={`text-[10px] mb-0.5 ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>Warranty</div>
+                        <div className={`font-bold text-xs lg:text-[13px] whitespace-nowrap ${isSelected ? 'text-white' : 'text-brand-green'}`}>
                           <a href="https://shadespace.com/pages/warranty" target="_blank" rel="noopener noreferrer" className="hover:underline">{fabric.warrantyYears} Years</a>
                         </div>
                       </div>
@@ -249,7 +247,7 @@ export function MaterialFinishContent({
         <button
           type="button"
           onClick={() => openComparison()}
-          className="sm:hidden mt-4 w-full inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-[#01312D] border border-[#01312D] hover:bg-[#01312D] hover:text-white px-3 py-2.5 rounded-full transition-colors"
+          className="sm:hidden mt-4 w-full inline-flex items-center justify-center gap-1.5 text-sm font-bold text-brand-green border-2 border-border-card hover:bg-brand-green hover:text-white px-3 py-2.5 rounded-btn transition-colors min-h-[44px]"
         >
           <GitCompare className="w-4 h-4" />
           Compare Fabrics
@@ -260,7 +258,7 @@ export function MaterialFinishContent({
       {selectedFabric && (
         <div className="mb-8" id="color-selection" data-guidance-id="color-selection">
           <div className={`flex items-center gap-2 mb-4 px-2 py-1 -mx-2 rounded-lg transition-all duration-300 ${mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'bg-[#BFF102]/10' : ''}`}>
-            <h4 className={`text-lg font-semibold ${mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'shiny-text-guidance' : 'text-[#01312D]'}`}>Choose Color</h4>
+            <h4 className={`text-lg font-bold ${mobileGuidance?.currentHighlightTarget === 'color-selection' ? 'shiny-text-guidance' : 'text-brand-green'}`}>Choose Color</h4>
             <Tooltip
               content={
                 <div>
@@ -278,10 +276,10 @@ export function MaterialFinishContent({
             </Tooltip>
           </div>
           {selectedFabric.isFireRetardant && (
-            <div className="mb-4 p-3 bg-[#eef5ef] border border-[#2e7d4f] rounded-lg">
+            <div className="mb-4 p-3 bg-surface-soft border border-brand-mid/30 rounded-card">
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#2e7d4f] flex-shrink-0" />
-                <p className="text-sm text-[#01312D]">
+                <Info className="w-4 h-4 text-brand-mid flex-shrink-0" />
+                <p className="text-sm text-brand-green">
                   <strong>Important:</strong> Not all {selectedFabric.label} colors are fire retardant. Look for the <span className="bg-orange-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">FR Fabric</span> badge for certified colors, or the <span className="bg-slate-300 text-slate-700 text-xs font-bold px-1.5 py-0.5 rounded">Standard</span> badge for non-FR colors.
                 </p>
               </div>
@@ -298,17 +296,17 @@ export function MaterialFinishContent({
                       analytics.fabricColorSelected(config.fabricType, color.name, color.shadeFactor);
                       updateConfig({ fabricColor: color.name });
                     }}
-                    className={`group p-2 rounded-lg transition-all duration-300 w-full ${
+                    className={`group p-2 rounded-card transition-all duration-200 w-full ${
                       isColorSelected
-                        ? 'border-2 border-[#01312D] ring-2 ring-[#01312D] shadow-md'
+                        ? 'border-2 border-brand-green ring-2 ring-brand-green shadow-md'
                         : hasColorError
-                        ? 'ring-2 !ring-red-500 bg-red-50 hover:!ring-red-600 hover:shadow-sm'
-                        : 'ring-1 ring-[#2e7d4f]/30 hover:ring-[#01312D] hover:shadow-sm'
+                        ? 'ring-2 !ring-red-500 bg-red-50'
+                        : 'ring-1 ring-border-card hover:ring-brand-mid hover:shadow-sm'
                     }`}
                   >
                     <div className="relative overflow-hidden">
-                      <div className="relative overflow-hidden pb-[75%] rounded-lg border border-slate-300">
-                        <img src={color.imageUrl} alt={color.name} className="absolute inset-0 w-full h-full object-cover transition-all duration-300 scale-100 hover:scale-110" loading="lazy" />
+                      <div className="relative overflow-hidden pb-[75%] rounded-xl border border-border-card">
+                        <img src={color.imageUrl} alt={color.name} className="absolute inset-0 w-full h-full object-cover transition-all duration-200" loading="lazy" />
                         {color.shadeFactor && (
                           <div className="absolute bottom-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <span className="text-xs font-thin text-white bg-black bg-opacity-50 px-1 py-0.5 rounded backdrop-blur-sm">SF {color.shadeFactor}%</span>
@@ -317,8 +315,8 @@ export function MaterialFinishContent({
                       </div>
                       {/* Accessibility checkmark overlay for selected color */}
                       {isColorSelected && (
-                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-[#2e7d4f] flex items-center justify-center shadow">
-                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-brand-lime flex items-center justify-center shadow">
+                          <svg className="w-3 h-3 text-brand-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                         </div>
                       )}
                     </div>
@@ -331,7 +329,7 @@ export function MaterialFinishContent({
                         )}
                       </div>
                     )}
-                    <div className="text-xs font-medium text-[#01312D] leading-tight mt-2">{color.name}</div>
+                    <div className="text-xs font-semibold text-brand-green leading-tight mt-2">{color.name}</div>
                   </button>
                 </div>
               );
@@ -341,64 +339,55 @@ export function MaterialFinishContent({
       )}
 
       {/* ── Navigation Footer ── */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
+      <div className="flex flex-col gap-3 pt-6 mt-4 border-t border-border-card">
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">
             {showBackButton && onPrev && <Button variant="outline" size="md" onClick={onPrev} className="flex-1">Back</Button>}
             {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} className="flex-1" />}
           </div>
           {!isComplete && (
-            <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+            <div className="text-xs text-text-muted bg-surface-soft px-3 py-2 rounded-card border border-border-card">
               <span className="flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-slate-500" />
+                <AlertCircle className="w-4 h-4 text-text-muted" />
                 <span>Please select {[!config.fabricType && 'fabric', !config.fabricColor && 'color'].filter(Boolean).join(' and ')} to continue</span>
               </span>
             </div>
           )}
-          {mobileGuidance?.currentHighlightTarget === 'continue-button-material' && isComplete ? (
-            <div className="energy-border-chase-btn w-full" id="continue-button-material" data-guidance-id="continue-button-material">
-              <Button onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }} size="md" className="w-full py-4 sm:py-2">
-                <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}</span>
-              </Button>
-            </div>
-          ) : (
-            <Button
+          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-material' && isComplete ? 'energy-border-chase-btn w-full rounded-btn' : 'w-full'}>
+            <button
+              id="continue-button-material"
+              data-guidance-id="continue-button-material"
               onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }}
-              size="md" id="continue-button-material" data-guidance-id="continue-button-material"
-              className={`w-full py-4 sm:py-2 ${!isComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm ${!isComplete ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
-              <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}</span>
-            </Button>
-          )}
+              <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}</span>
+            </button>
+          </div>
         </div>
 
-        <div className="hidden sm:flex gap-4">
-          {showBackButton && onPrev && <Button variant="outline" size="md" onClick={onPrev} className="w-auto">Back</Button>}
+        <div className="hidden sm:flex items-center gap-4">
+          {showBackButton && onPrev && (
+            <button onClick={onPrev} className="inline-flex items-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
+          )}
           {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} className="w-auto" />}
-          <div className="flex-1 flex flex-col gap-2">
-            {!isComplete && (
-              <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
-                <span className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-slate-500" />
-                  <span>Please select {[!config.fabricType && 'fabric', !config.fabricColor && 'color'].filter(Boolean).join(' and ')} to continue</span>
-                </span>
-              </div>
-            )}
-            {mobileGuidance?.currentHighlightTarget === 'continue-button-material' && isComplete ? (
-              <div className="energy-border-chase-btn flex-1" id="continue-button-material" data-guidance-id="continue-button-material">
-                <Button onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }} size="md" className="w-full">
-                  <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}</span>
-                </Button>
-              </div>
-            ) : (
-              <Button
-                onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }}
-                size="md" id="continue-button-material" data-guidance-id="continue-button-material"
-                className={`flex-1 ${!isComplete ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}</span>
-              </Button>
-            )}
+          <div className="flex-1" />
+          {!isComplete && (
+            <div className="text-xs text-text-muted">
+              <span className="flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Select {[!config.fabricType && 'fabric', !config.fabricColor && 'color'].filter(Boolean).join(' & ')} to continue
+              </span>
+            </div>
+          )}
+          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-material' && isComplete ? 'energy-border-chase-btn rounded-btn' : ''}>
+            <button
+              id="continue-button-material"
+              data-guidance-id="continue-button-material"
+              onClick={() => { const t = (Date.now() - stepStartTime.current) / 1000; analytics.stepCompleted(1, 'material_and_finish', t, { fabric_type: config.fabricType, fabric_color: config.fabricColor }); mobileGuidance?.clearHighlight(); onNext(); }}
+              className={`inline-flex items-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm ${!isComplete ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              <span className="flex flex-col items-center leading-tight"><span>Continue</span>{nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}</span>
+            </button>
           </div>
         </div>
       </div>

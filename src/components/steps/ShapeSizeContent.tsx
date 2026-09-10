@@ -255,7 +255,7 @@ export function ShapeSizeContent({
     : 'Standard geometric shape \u2014 only 1\u20132 measurements needed.';
 
   return (
-    <div className="p-5 sm:p-6 space-y-5">
+    <div className="space-y-5">
       {/* Shape Tile Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-3.5" role="radiogroup" aria-label="Sail shape">
         {SHAPE_TILES.map((tile) => {
@@ -269,34 +269,34 @@ export function ShapeSizeContent({
               aria-checked={isSelected}
               role="radio"
               className={`
-                relative cursor-pointer rounded-2xl px-3 py-5 sm:px-3 sm:py-5
+                relative cursor-pointer rounded-card px-3 py-5 sm:px-3 sm:py-5
                 flex flex-col items-center gap-3 text-center
-                transition-all duration-200
+                transition-all duration-200 min-h-[44px]
                 ${isCustomTile
-                  ? 'bg-[#f2f8f3] border-2 border-dashed col-span-2 sm:col-span-1'
-                  : 'bg-[#fbfdfb] border-2 border-solid'
+                  ? 'bg-surface-soft border-2 border-dashed col-span-2 sm:col-span-1'
+                  : 'bg-white border-2 border-solid'
                 }
                 ${isSelected
-                  ? 'border-[#2e7d4f] shadow-[inset_0_0_0_1px_#2e7d4f]'
+                  ? 'border-brand-green bg-brand-green shadow-md'
                   : tileError
                   ? 'border-red-400 hover:border-red-500'
                   : isCustomTile
-                  ? 'border-[#7bb08f] hover:border-[#2e7d4f]'
-                  : 'border-[#dfe7e1] hover:border-[#7bb08f]'
+                  ? 'border-border-card hover:border-brand-mid'
+                  : 'border-border-card hover:border-brand-mid'
                 }
               `}
             >
               {/* Checkmark badge */}
               {isSelected && (
-                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-[#2e7d4f] text-white text-[13px] font-bold flex items-center justify-center">
+                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-bold flex items-center justify-center">
                   &#10003;
                 </span>
               )}
               <ShapeTileIcon shapeId={tile.id} className="w-[72px] h-[72px] sm:w-[82px] sm:h-[82px]" />
-              <span className="font-bold text-[15px] text-[#01312d] leading-tight">{tile.label}</span>
-              <span className="text-xs text-[#6b8478]">{tile.hint}</span>
+              <span className={`font-bold text-[15px] leading-tight ${isSelected ? 'text-white' : 'text-brand-green'}`}>{tile.label}</span>
+              <span className={`text-xs ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>{tile.hint}</span>
               {isCustomTile && (
-                <span className="inline-block mt-0.5 px-2 py-0.5 text-[11px] font-semibold bg-[#2e7d4f]/15 text-[#2e7d4f] rounded-full">
+                <span className="inline-block mt-0.5 px-2 py-0.5 text-[11px] font-semibold bg-brand-mid/15 text-brand-mid rounded-full">
                   Includes Fit Guarantee
                 </span>
               )}
@@ -312,7 +312,7 @@ export function ShapeSizeContent({
 
       {/* Flow hint bar */}
       {selectedTileId && (
-        <div className="flex items-center gap-2.5 bg-[#eef5ef] rounded-xl px-4 py-3 text-sm text-[#23503f]">
+        <div className="flex items-center gap-2.5 bg-surface-soft rounded-card px-4 py-3 text-sm text-brand-green">
           <span className="text-base">&rarr;</span>
           <span>
             <strong>{flowTitle}</strong>&nbsp;&nbsp;{flowDesc}
@@ -323,7 +323,7 @@ export function ShapeSizeContent({
       {/* Custom Shape: corner picker (shown on both mobile and desktop) */}
       {isCustomSelected && (
         <div id="fixing-points-section">
-          <h4 className="text-lg font-semibold mb-4 text-[#01312d]">
+          <h4 className="text-lg font-bold mb-4 text-brand-green">
             How many fixing points will your shade sail have?
           </h4>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -333,19 +333,19 @@ export function ShapeSizeContent({
               return (
                 <Card
                   key={shape.corners}
-                  className={`p-4 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                  className={`p-4 cursor-pointer transition-all duration-200 min-h-[44px] ${
                     config.corners === shape.corners
-                      ? '!ring-2 !ring-[#01312D] !border-2 !border-[#01312D]'
+                      ? '!bg-brand-green !text-white !border-brand-green shadow-md'
                       : hasError
-                      ? 'border-2 !border-red-500 bg-red-50 hover:!border-red-600'
-                      : 'hover:border-slate-300'
+                      ? 'border-2 !border-red-500 bg-red-50'
+                      : 'hover:border-brand-mid'
                   }`}
                   onClick={() => handleCornerChange(shape.corners)}
                 >
                   <div className="text-center">
-                    <Icon className="w-10 h-10 mx-auto mb-2 text-[#01312d]" aria-label={`${shape.corners} corners shape`} />
-                    <h5 className="font-semibold text-[#01312d] mb-1">{shape.label}</h5>
-                    <p className="text-xs text-[#6b8478]">{shape.description}</p>
+                    <Icon className={`w-10 h-10 mx-auto mb-2 ${config.corners === shape.corners ? 'text-white' : 'text-brand-green'}`} aria-label={`${shape.corners} corners shape`} />
+                    <h5 className={`font-bold mb-1 ${config.corners === shape.corners ? 'text-white' : 'text-brand-green'}`}>{shape.label}</h5>
+                    <p className={`text-xs ${config.corners === shape.corners ? 'text-white/60' : 'text-text-muted'}`}>{shape.description}</p>
                   </div>
                 </Card>
               );
@@ -355,75 +355,52 @@ export function ShapeSizeContent({
       )}
 
       {/* Navigation */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
+      <div className="flex flex-col gap-3 pt-6 mt-2 border-t border-border-card">
         <div className="flex sm:hidden flex-col gap-3">
           <div className="flex gap-3">
             {showBackButton && (
-              <Button variant="outline" size="md" onClick={onPrev} className="flex-1">
-                Back
-              </Button>
+              <button onClick={onPrev} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
             )}
             {onSaveQuote && (
               <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
             )}
           </div>
-          {mobileGuidance?.currentHighlightTarget === 'continue-button-shape-size' ? (
-            <div className="energy-border-chase-btn w-full" id="continue-button-shape-size" data-guidance-id="continue-button-shape-size">
-              <Button onClick={handleContinue} size="md" className={`w-full py-4 ${!isComplete ? 'opacity-50' : ''}`}>
-                <span className="flex flex-col items-center leading-tight">
-                  <span>Continue</span>
-                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                </span>
-              </Button>
-            </div>
-          ) : (
-            <Button
+          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-shape-size' ? 'energy-border-chase-btn w-full rounded-btn' : 'w-full'}>
+            <button
               onClick={handleContinue}
-              size="md"
               id="continue-button-shape-size"
               data-guidance-id="continue-button-shape-size"
-              className={`w-full py-4 ${!isComplete ? 'opacity-50' : ''}`}
+              className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm ${!isComplete ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
               </span>
-            </Button>
-          )}
+            </button>
+          </div>
         </div>
 
-        <div className="hidden sm:flex gap-4">
+        <div className="hidden sm:flex items-center gap-4">
           {showBackButton && (
-            <Button variant="outline" size="md" onClick={onPrev} className="w-auto">
-              Back
-            </Button>
+            <button onClick={onPrev} className="inline-flex items-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
           )}
           {onSaveQuote && (
             <SaveProgressButton onClick={onSaveQuote} className="w-auto" />
           )}
-          {mobileGuidance?.currentHighlightTarget === 'continue-button-shape-size' ? (
-            <div className="energy-border-chase-btn flex-1" id="continue-button-shape-size" data-guidance-id="continue-button-shape-size">
-              <Button onClick={handleContinue} size="md" className={`w-full ${!isComplete ? 'opacity-50' : ''}`}>
-                <span className="flex flex-col items-center leading-tight">
-                  <span>Continue</span>
-                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                </span>
-              </Button>
-            </div>
-          ) : (
-            <Button
+          <div className="flex-1" />
+          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-shape-size' ? 'energy-border-chase-btn rounded-btn' : ''}>
+            <button
               onClick={handleContinue}
-              size="md"
               id="continue-button-shape-size"
               data-guidance-id="continue-button-shape-size"
-              className={`flex-1 ${!isComplete ? 'opacity-50' : ''}`}
+              className={`inline-flex items-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm ${!isComplete ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
               <span className="flex flex-col items-center leading-tight">
                 <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
+                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
               </span>
-            </Button>
-          )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

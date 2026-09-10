@@ -155,7 +155,7 @@ export function FixingPointsContent({
             <div className="space-y-0.5">
               {/* Header with Corner Label */}
               <div className="flex items-center justify-between">
-                <h5 className="font-semibold text-[#01312D] text-sm">
+                <h5 className="font-semibold text-brand-green text-sm">
                   Anchor Point {getCornerLabel(index)}
                 </h5>
               </div>
@@ -163,31 +163,31 @@ export function FixingPointsContent({
               {/* Height Input */}
               <div>
                 <div className="flex items-center gap-1 mb-0.5">
-                  <span className="text-xs font-medium text-[#01312D]">
+                  <span className="text-xs font-medium text-brand-green">
                     <span className="hidden md:inline">Height from Ground or Datum Level</span>
                     <span className="md:hidden">Height from Ground</span>
                   </span>
                   <Tooltip
                     content={
                       <div>
-                        <p className="text-sm text-[#01312D] font-medium mb-2">
+                        <p className="text-sm text-brand-green font-medium mb-2">
                           What is Datum Level?
                         </p>
-                        <p className="text-sm text-[#01312D]/80 mb-3 leading-relaxed">
+                        <p className="text-sm text-brand-green/80 mb-3 leading-relaxed">
                           Datum level is a reference point for measuring heights consistently across your installation. It's typically ground level, but can be any horizontal reference point (like a deck or patio level) that you use for all measurements.
                         </p>
-                        <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-3">
-                          <p className="text-sm text-[#01312D] font-medium mb-2">
+                        <div className="bg-brand-lime/10 border border-[#BFF102] rounded-lg p-3">
+                          <p className="text-sm text-brand-green font-medium mb-2">
                             Need help measuring correctly?
                           </p>
-                          <p className="text-sm text-[#01312D]/80 mb-2">
+                          <p className="text-sm text-brand-green/80 mb-2">
                             Watch our video and follow step-by-step instructions for accurate shade sail measurements.
                           </p>
                           <a
                             href="https://shadespace.com/blogs/how-to/how-to-measure-a-shade-sail"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-sm font-semibold text-[#307C31] hover:text-[#01312D] underline"
+                            className="text-sm font-semibold text-brand-mid hover:text-brand-green underline"
                           >
                             View Measuring Guide →
                           </a>
@@ -195,7 +195,7 @@ export function FixingPointsContent({
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                       ?
                     </span>
                   </Tooltip>
@@ -270,7 +270,7 @@ export function FixingPointsContent({
               {/* Attachment Type - Post and Building side by side */}
               <div>
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-medium text-[#01312D]">
+                  <span className="text-xs font-medium text-brand-green">
                     Attachment Type
                   </span>
                   <Tooltip
@@ -281,16 +281,16 @@ export function FixingPointsContent({
                          alt="Post vs Building attachment example"
                          className="w-full h-auto object-cover rounded-lg mb-3"
                        />
-                        <p className="text-sm text-[#01312D] font-medium mb-1">
+                        <p className="text-sm text-brand-green font-medium mb-1">
                           Attachment Type
                         </p>
-                        <p className="text-sm text-[#01312D]/70">
+                        <p className="text-sm text-brand-green/70">
                           Post: Freestanding pole installation. Building: Attached to wall, roof, or existing structure.
                         </p>
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                       ?
                     </span>
                   </Tooltip>
@@ -303,10 +303,10 @@ export function FixingPointsContent({
                     onClick={() => updateFixingType(index, 'post')}
                     className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                       config.fixingTypes?.[index] === 'post'
-                        ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                        ? 'bg-brand-green text-[#F3FFE3] shadow-md !border-brand-green'
                         : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
                         ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
-                        : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                        : 'bg-white text-brand-green hover:bg-brand-lime/10 border-[#307C31]/30'
                     }`}
                   >
                     Post
@@ -315,10 +315,10 @@ export function FixingPointsContent({
                     onClick={() => updateFixingType(index, 'building')}
                     className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-300 border-2 ${
                       config.fixingTypes?.[index] === 'building'
-                        ? 'bg-[#01312D] text-[#F3FFE3] shadow-md !border-[#01312D]'
+                        ? 'bg-brand-green text-[#F3FFE3] shadow-md !border-brand-green'
                         : validationErrors[`type_${index}`] && !config.fixingTypes?.[index]
                         ? 'bg-red-50 text-red-700 hover:bg-red-100 !border-red-500'
-                        : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-[#307C31]/30'
+                        : 'bg-white text-brand-green hover:bg-brand-lime/10 border-[#307C31]/30'
                     }`}
                   >
                     Building
@@ -333,29 +333,29 @@ export function FixingPointsContent({
       {/* Spacing between anchor points and installation guidelines */}
       <div className="mt-4"></div>
 
-      <Card className="p-3 bg-slate-50 border-slate-200">
-        <h4 className="text-xs md:text-sm font-semibold text-[#01312D] mb-2">
+      <Card className="p-3 bg-surface-soft border-border-card">
+        <h4 className="text-xs md:text-sm font-semibold text-brand-green mb-2">
           Installation Guidelines
         </h4>
         
         {/* Installation Tips Accordion */}
         {/* Basic Guidelines List */}
         <div className="w-full">
-          <ul className="space-y-1 text-xs text-slate-600">
+          <ul className="space-y-1 text-xs text-text-muted">
             <li className="flex items-start">
-              <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 bg-brand-mid rounded-full mt-1.5 mr-2 flex-shrink-0" />
               Heights are measured from ground level to the anchor point
             </li>
             <li className="flex items-start">
-              <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 bg-brand-mid rounded-full mt-1.5 mr-2 flex-shrink-0" />
               Different heights create natural water runoff and proper sail tension
             </li>
             <li className="flex items-start">
-              <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 bg-brand-mid rounded-full mt-1.5 mr-2 flex-shrink-0" />
               Minimum recommended height is {config.unit === 'imperial' ? '7.2ft' : '2.2m'} for pedestrian clearance
             </li>
             <li className="flex items-start">
-              <span className="w-1.5 h-1.5 bg-[#01312D] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+              <span className="w-1.5 h-1.5 bg-brand-green rounded-full mt-1.5 mr-2 flex-shrink-0" />
               Consider wind loads and local building codes - consult professionals for large installations
             </li>
           </ul>

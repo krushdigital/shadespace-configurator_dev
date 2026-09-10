@@ -475,17 +475,17 @@ export function DimensionsContent({
     <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
       {/* Unit Selection Toggle */}
       <div className="mb-4 sm:mb-6">
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+        <div className="bg-surface-soft border border-border-card rounded-lg p-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-[#BFF102] rounded-full"></div>
-              <p className="text-sm text-slate-700">
+              <div className="w-2 h-2 bg-brand-lime rounded-full"></div>
+              <p className="text-sm text-brand-green">
                 Using {config.unit === 'metric' ? 'Metric (mm/m)' : 'Imperial (in/ft)'}
               </p>
             </div>
             <button
               onClick={handleUnitChange}
-              className="text-sm text-[#307C31] hover:text-[#01312D] font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
+              className="text-sm text-brand-mid hover:text-brand-green font-medium underline decoration-dotted underline-offset-2 flex items-center gap-1"
             >
               <RefreshCw className="w-3 h-3" />
               Switch to {alternativeUnitName}
@@ -524,10 +524,10 @@ export function DimensionsContent({
           <button
             type="button"
             onClick={() => setShowSketchModal(true)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border border-[#2e7d4f]/30 bg-[#2e7d4f]/5 hover:bg-[#2e7d4f]/10 hover:border-[#2e7d4f]/50 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border border-brand-mid/30 bg-brand-mid/5 hover:bg-brand-mid/10 hover:border-brand-mid/50 transition-colors text-left"
           >
-            <Upload className="w-4 h-4 text-[#2e7d4f] flex-shrink-0" />
-            <span className="text-sm text-[#01312d]">
+            <Upload className="w-4 h-4 text-brand-mid flex-shrink-0" />
+            <span className="text-sm text-brand-green">
               Have a sketch with measurements? <span className="font-semibold underline underline-offset-2">Upload it</span> and we'll fill these in for you.
             </span>
           </button>
@@ -576,17 +576,17 @@ export function DimensionsContent({
         return (
           <div className="mb-4 sm:mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-lg font-semibold text-slate-900">
+              <h4 className="text-lg font-semibold text-brand-green">
                 Interactive Measurement Guide
               </h4>
               {show3DToggle && (
-                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                <div className="flex items-center gap-1 bg-surface-panel rounded-lg p-1">
                   <button
                     onClick={() => onMobileViewModeChange?.('plan')}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                       mobileViewMode === 'plan'
-                        ? 'bg-white shadow-sm text-slate-900'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'bg-white shadow-sm text-brand-green'
+                        : 'text-text-muted hover:text-brand-green'
                     }`}
                   >
                     <Layers className="w-3.5 h-3.5" />
@@ -601,8 +601,8 @@ export function DimensionsContent({
                     }}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                       mobileViewMode === '3d'
-                        ? 'bg-white shadow-sm text-slate-900'
-                        : 'text-slate-500 hover:text-slate-700'
+                        ? 'bg-white shadow-sm text-brand-green'
+                        : 'text-text-muted hover:text-brand-green'
                     }`}
                   >
                     <Box className="w-3.5 h-3.5" />
@@ -615,10 +615,10 @@ export function DimensionsContent({
             {mobile3DView ? (
               <div className="h-[350px] sm:h-[450px] overflow-hidden rounded-lg">
                 <Suspense fallback={
-                  <div className="flex items-center justify-center h-full bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="flex items-center justify-center h-full bg-surface-soft rounded-lg border border-border-card">
                     <div className="text-center">
-                      <div className="animate-spin w-8 h-8 border-3 border-slate-300 border-t-slate-700 rounded-full mx-auto mb-3"></div>
-                      <p className="text-sm text-slate-500">Loading 3D viewer...</p>
+                      <div className="animate-spin w-8 h-8 border-3 border-border-card border-t-slate-700 rounded-full mx-auto mb-3"></div>
+                      <p className="text-sm text-text-muted">Loading 3D viewer...</p>
                     </div>
                   </div>
                 }>
@@ -740,7 +740,7 @@ export function DimensionsContent({
       <div className="grid grid-cols-1 gap-y-3 sm:gap-y-4">
         {/* Measurement Inputs */}
         <div>
-          <h4 className="text-sm md:text-base lg:text-lg font-semibold text-[#01312D] mt-3 mb-2 sm:mt-4 sm:mb-3">
+          <h4 className="text-sm md:text-base lg:text-lg font-semibold text-brand-green mt-3 mb-2 sm:mt-4 sm:mb-3">
             {config.measurementOption === 'adjust'
               ? `Space Measurements - Distance Between Fixing Points`
               : `Finished Shade Dimensions`}
@@ -895,7 +895,7 @@ export function DimensionsContent({
                   )}
                   <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
                     <div className="flex flex-col">
-                      <h5 className={`text-xs sm:text-sm md:text-base font-medium ${isApproximate ? 'text-amber-900' : 'text-[#01312D]'}`}>
+                      <h5 className={`text-xs sm:text-sm md:text-base font-medium ${isApproximate ? 'text-amber-900' : 'text-brand-green'}`}>
                         Diagonal Measurements {isApproximate && '- Recommended for Accurate Preview'}
                       </h5>
                       <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
@@ -905,25 +905,25 @@ export function DimensionsContent({
                     <Tooltip
                       content={
                         <div>
-                          <p className="text-sm text-[#01312D] font-medium mb-2">
+                          <p className="text-sm text-brand-green font-medium mb-2">
                             Two-Step Process:
                           </p>
                           <div className="space-y-2 mb-3">
                             <div className="flex items-start gap-2">
-                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">1</span>
-                              <p className="text-sm text-[#01312D]/80">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-lime text-brand-green text-xs font-bold flex-shrink-0">1</span>
+                              <p className="text-sm text-brand-green/80">
                                 Enter edge measurements → Get instant pricing
                               </p>
                             </div>
                             <div className="flex items-start gap-2">
-                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#BFF102] text-[#01312D] text-xs font-bold flex-shrink-0">2</span>
-                              <p className="text-sm text-[#01312D]/80">
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand-lime text-brand-green text-xs font-bold flex-shrink-0">2</span>
+                              <p className="text-sm text-brand-green/80">
                                 Add diagonals at checkout → Complete your order
                               </p>
                             </div>
                           </div>
-                          <div className="bg-[#BFF102]/10 border border-[#BFF102] rounded-lg p-2">
-                            <p className="text-sm text-[#01312D]">
+                          <div className="bg-brand-lime/10 border border-[#BFF102] rounded-lg p-2">
+                            <p className="text-sm text-brand-green">
                               <strong>Why are diagonals needed?</strong> They ensure our manufacturing team can create your exact shape with precision accuracy.
                               {config.measurementOption === 'adjust' && (
                                 <span className="block mt-1">
@@ -940,7 +940,7 @@ export function DimensionsContent({
                         </div>
                       }
                     >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                         ?
                       </span>
                     </Tooltip>
@@ -963,8 +963,8 @@ export function DimensionsContent({
                       }
 
                       return groups.map((group) => (
-                        <div key={group.source} className="border border-slate-200 rounded-lg p-3 bg-slate-50/50">
-                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                        <div key={group.source} className="border border-border-card rounded-lg p-3 bg-surface-soft/50">
+                          <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">
                             From corner {group.source}
                           </p>
                           <div className="space-y-2">
@@ -1075,7 +1075,7 @@ export function DimensionsContent({
             good: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', icon: 'text-blue-600', bar: 'bg-blue-500' },
             warning: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', icon: 'text-amber-600', bar: 'bg-amber-500' },
             error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: 'text-red-600', bar: 'bg-red-500' },
-            pending: { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', icon: 'text-slate-400', bar: 'bg-slate-300' }
+            pending: { bg: 'bg-surface-soft', border: 'border-border-card', text: 'text-text-muted', icon: 'text-slate-400', bar: 'bg-slate-300' }
           };
           const colors = colorMap[confidence.status];
           return (
@@ -1123,34 +1123,34 @@ export function DimensionsContent({
               className={`overflow-hidden transition-all duration-300 ${
                 showHeightsSection
                   ? 'border-2 border-[#307C31]'
-                  : 'border border-slate-300'
+                  : 'border border-border-card'
               }`}
             >
               <button
                 onClick={() => setShowHeightsSection(!showHeightsSection)}
-                className="w-full p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50 transition-colors gap-2 sm:gap-3 cursor-pointer"
+                className="w-full p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between hover:bg-surface-soft transition-colors gap-2 sm:gap-3 cursor-pointer"
               >
                 <div className="flex items-start sm:items-center gap-3">
                   <div className="flex-shrink-0 pt-1 sm:pt-0">
                     {showHeightsSection ? (
-                      <ChevronUp className="w-5 h-5 text-[#307C31]" />
+                      <ChevronUp className="w-5 h-5 text-brand-mid" />
                     ) : (
-                      <ChevronDown className="w-5 h-5 text-slate-600" />
+                      <ChevronDown className="w-5 h-5 text-text-muted" />
                     )}
                   </div>
                   <div className="text-left flex-1">
                     <div className="flex items-center gap-2">
-                      <h5 className="text-sm sm:text-base font-semibold text-[#01312D]">
+                      <h5 className="text-sm sm:text-base font-semibold text-brand-green">
                         Height Information {heightRequirement === 'required-at-checkout' ? '(required)' : '(optional)'}
                       </h5>
                       {heightRequirement === 'required-at-checkout' && (
                         <Tooltip
                           content={
                             <div>
-                              <p className="text-xs text-slate-900 font-medium mb-1">
+                              <p className="text-xs text-brand-green font-medium mb-1">
                                 Required at Checkout
                               </p>
-                              <p className="text-xs text-slate-700 leading-relaxed">
+                              <p className="text-xs text-brand-green leading-relaxed">
                                 Shade sails with {config.corners} corners require height measurements for each fixing point before checkout. This ensures proper tension, water runoff, and structural integrity for complex installations. You can add them now or during the review step.
                               </p>
                             </div>
@@ -1162,7 +1162,7 @@ export function DimensionsContent({
                         </Tooltip>
                       )}
                     </div>
-                    <p className="text-sm text-slate-600 mt-1.5">
+                    <p className="text-sm text-text-muted mt-1.5">
                       {heightRequirement === 'required-at-checkout'
                         ? `${config.corners} corner shade sails require height measurements for each fixing point to ensure proper installation`
                         : showHeightsSection
@@ -1174,13 +1174,13 @@ export function DimensionsContent({
               </button>
 
               {showHeightsSection && (
-                <div className="p-3 sm:p-4 border-t border-slate-200 space-y-2 sm:space-y-3">
+                <div className="p-3 sm:p-4 border-t border-border-card space-y-2 sm:space-y-3">
                   {/* Height inputs for each corner */}
                   <div className="space-y-2">
                     {Array.from({ length: config.corners }, (_, index) => (
                       <Card key={index} className="p-2 border-l-4 border-l-[#01312D]">
                         <div className="space-y-1.5">
-                          <h6 className="font-semibold text-[#01312D] text-xs">
+                          <h6 className="font-semibold text-brand-green text-xs">
                             Anchor Point {getCornerLabel(index)}
                           </h6>
 
@@ -1207,22 +1207,22 @@ export function DimensionsContent({
                                 isSuccess={!!(config.fixingHeights[index] && config.fixingHeights[index] > 0)}
                                 label={
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-medium text-[#01312D]">
+                                    <span className="text-xs font-medium text-brand-green">
                                       Height from Ground
                                     </span>
                                     <Tooltip
                                       content={
                                         <div>
-                                          <p className="text-xs text-[#01312D] font-medium mb-1">
+                                          <p className="text-xs text-brand-green font-medium mb-1">
                                             What is this measurement?
                                           </p>
-                                          <p className="text-xs text-[#01312D]/80 leading-relaxed">
+                                          <p className="text-xs text-brand-green/80 leading-relaxed">
                                             Height is measured from a level ground or datum level to the anchor point. This helps ensure proper sail tension and water runoff.
                                           </p>
                                         </div>
                                       }
                                     >
-                                      <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                      <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                                         ?
                                       </span>
                                     </Tooltip>
@@ -1236,22 +1236,22 @@ export function DimensionsContent({
                             {/* Attachment Type */}
                             <div>
                               <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-xs font-medium text-[#01312D]">
+                                <span className="text-xs font-medium text-brand-green">
                                   Attachment Type
                                 </span>
                                 <Tooltip
                                   content={
                                     <div>
-                                      <p className="text-xs text-[#01312D] font-medium mb-1">
+                                      <p className="text-xs text-brand-green font-medium mb-1">
                                         Attachment Type
                                       </p>
-                                      <p className="text-xs text-[#01312D]/70">
+                                      <p className="text-xs text-brand-green/70">
                                         Post: Freestanding pole. Building: Wall, roof, or structure.
                                       </p>
                                     </div>
                                   }
                                 >
-                                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-[#01312D] text-white rounded-full cursor-help hover:bg-[#307C31]">
+                                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
                                     ?
                                   </span>
                                 </Tooltip>
@@ -1264,10 +1264,10 @@ export function DimensionsContent({
                                   onClick={() => updateFixingType(index, 'post')}
                                   className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'post'
-                                      ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      ? 'bg-brand-green text-[#F3FFE3] border-brand-green'
                                       : validationErrors[`attachmentType_${index}`]
                                       ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-400'
-                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
+                                      : 'bg-white text-brand-green hover:bg-brand-lime/10 border-border-card'
                                   }`}
                                 >
                                   Post
@@ -1276,10 +1276,10 @@ export function DimensionsContent({
                                   onClick={() => updateFixingType(index, 'building')}
                                   className={`w-full px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 border ${
                                     config.fixingTypes?.[index] === 'building'
-                                      ? 'bg-[#01312D] text-[#F3FFE3] border-[#01312D]'
+                                      ? 'bg-brand-green text-[#F3FFE3] border-brand-green'
                                       : validationErrors[`attachmentType_${index}`]
                                       ? 'bg-red-50 text-red-700 hover:bg-red-100 border-red-400'
-                                      : 'bg-white text-[#01312D] hover:bg-[#BFF102]/10 border-slate-300'
+                                      : 'bg-white text-brand-green hover:bg-brand-lime/10 border-border-card'
                                   }`}
                                 >
                                   Building
@@ -1296,21 +1296,21 @@ export function DimensionsContent({
                   </div>
 
                   {/* Installation Guidelines */}
-                  <Card className="p-2 sm:p-3 bg-slate-50 border-slate-200">
-                    <h6 className="text-xs md:text-sm font-semibold text-[#01312D] mb-2">
+                  <Card className="p-2 sm:p-3 bg-surface-soft border-border-card">
+                    <h6 className="text-xs md:text-sm font-semibold text-brand-green mb-2">
                       Installation Guidelines
                     </h6>
-                    <ul className="space-y-1 text-xs text-slate-600">
+                    <ul className="space-y-1 text-xs text-text-muted">
                       <li className="flex items-start">
-                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 bg-brand-mid rounded-full mt-1.5 mr-2 flex-shrink-0" />
                         Heights are measured from ground level to the anchor point
                       </li>
                       <li className="flex items-start">
-                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 bg-brand-mid rounded-full mt-1.5 mr-2 flex-shrink-0" />
                         Different heights create natural water runoff and proper sail tension
                       </li>
                       <li className="flex items-start">
-                        <span className="w-1.5 h-1.5 bg-[#307C31] rounded-full mt-1.5 mr-2 flex-shrink-0" />
+                        <span className="w-1.5 h-1.5 bg-brand-mid rounded-full mt-1.5 mr-2 flex-shrink-0" />
                         Minimum recommended height is {config.unit === 'imperial' ? '7.2ft' : '2.2m'} for clearance
                       </li>
                     </ul>
@@ -1322,7 +1322,7 @@ export function DimensionsContent({
         )}
       </div>
 
-      <div className="flex flex-col gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-slate-200 mt-4 sm:mt-6">
+      <div className="flex flex-col gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-border-card mt-4 sm:mt-6">
         {(() => {
           if (config.corners === 0) {
             return null;
@@ -1348,13 +1348,13 @@ export function DimensionsContent({
           return (
             <>
               {hasQuote && (
-                <div className="flex items-center justify-between px-4 py-3 bg-[#F3FFE3] border border-[#307C31]/30 rounded-xl mb-3 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
-                  <span className="text-sm font-medium text-[#01312D]">Sail price estimate</span>
-                  <span className="text-lg font-bold text-[#01312D]">{formatCurrency(sailPrice, config.currency)}</span>
+                <div className="flex items-center justify-between px-4 py-3 bg-surface-soft border border-[#307C31]/30 rounded-xl mb-3 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
+                  <span className="text-sm font-medium text-brand-green">Sail price estimate</span>
+                  <span className="text-lg font-bold text-brand-green">{formatCurrency(sailPrice, config.currency)}</span>
                 </div>
               )}
               {shouldDisable && (
-                <div className="text-xs text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+                <div className="text-xs text-text-muted bg-surface-soft px-3 py-2 rounded-lg border border-border-card">
                   {hasUnacknowledgedTypos ? (
                     <span className="flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-amber-500" />
@@ -1362,7 +1362,7 @@ export function DimensionsContent({
                     </span>
                   ) : missingCount > 0 ? (
                     <span className="flex items-center gap-2">
-                      <AlertCircle className="w-4 h-4 text-slate-500" />
+                      <AlertCircle className="w-4 h-4 text-text-muted" />
                       <span>{missingCount} edge measurement{missingCount !== 1 ? 's' : ''} required to continue</span>
                     </span>
                   ) : null}
