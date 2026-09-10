@@ -287,44 +287,6 @@ export function FixedShapeDimensionsContent({
         </div>
       </div>
 
-      {/* Mobile-only shape preview (desktop uses sticky sidebar) */}
-      {isMobile && (
-        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 mb-6 h-[350px]">
-          {show3D && (
-            <div className="absolute top-2 right-2 z-10 flex gap-1">
-              <button
-                onClick={() => setViewMode('plan')}
-                className={`px-4 py-2.5 text-sm font-medium rounded-lg min-h-[44px] ${viewMode === 'plan' ? 'bg-[#01312D] text-white' : 'bg-white text-gray-600 border'}`}
-              >Plan</button>
-              <button
-                onClick={() => setViewMode('3d')}
-                className={`px-4 py-2.5 text-sm font-medium rounded-lg min-h-[44px] ${viewMode === '3d' ? 'bg-[#01312D] text-white' : 'bg-white text-gray-600 border'}`}
-              >3D</button>
-            </div>
-          )}
-          {viewMode === 'plan' || !show3D ? (
-            <ShapeCanvas
-              config={config}
-              updateConfig={updateConfig}
-              readonly={true}
-              unit={unit}
-              isMobile={isMobile}
-              measurementOption="exact"
-              highlightedMeasurement={highlightedMeasurement}
-              highlightedEdgeKeys={highlightedEdgeKeys}
-            />
-          ) : (
-            <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Loading 3D...</div>}>
-              <ShadeSail3DViewer
-                config={config}
-                highlightedMeasurement={highlightedMeasurement}
-                activeSection="dimensions"
-              />
-            </Suspense>
-          )}
-        </div>
-      )}
-
       {/* Measurement inputs */}
       <div className="space-y-4">
         <div>
@@ -409,6 +371,44 @@ export function FixedShapeDimensionsContent({
           </div>
         )}
       </div>
+
+      {/* Mobile-only shape preview — shown below inputs so fields are immediately visible */}
+      {isMobile && (
+        <div className="relative rounded-xl border border-gray-200 overflow-hidden bg-gray-50 mt-6 h-[280px]">
+          {show3D && (
+            <div className="absolute top-2 right-2 z-10 flex gap-1">
+              <button
+                onClick={() => setViewMode('plan')}
+                className={`px-4 py-2.5 text-sm font-medium rounded-lg min-h-[44px] ${viewMode === 'plan' ? 'bg-[#01312D] text-white' : 'bg-white text-gray-600 border'}`}
+              >Plan</button>
+              <button
+                onClick={() => setViewMode('3d')}
+                className={`px-4 py-2.5 text-sm font-medium rounded-lg min-h-[44px] ${viewMode === '3d' ? 'bg-[#01312D] text-white' : 'bg-white text-gray-600 border'}`}
+              >3D</button>
+            </div>
+          )}
+          {viewMode === 'plan' || !show3D ? (
+            <ShapeCanvas
+              config={config}
+              updateConfig={updateConfig}
+              readonly={true}
+              unit={unit}
+              isMobile={isMobile}
+              measurementOption="exact"
+              highlightedMeasurement={highlightedMeasurement}
+              highlightedEdgeKeys={highlightedEdgeKeys}
+            />
+          ) : (
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">Loading 3D...</div>}>
+              <ShadeSail3DViewer
+                config={config}
+                highlightedMeasurement={highlightedMeasurement}
+                activeSection="dimensions"
+              />
+            </Suspense>
+          )}
+        </div>
+      )}
 
       {/* Switch to custom shape */}
       <button
