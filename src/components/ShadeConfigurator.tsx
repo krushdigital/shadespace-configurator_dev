@@ -27,6 +27,7 @@ import { ShapeCanvas } from './ShapeCanvas';
 import { EXCHANGE_RATES } from '../data/pricing';
 import { getShopifyDisplayCurrency } from '../utils/currencyDetection';
 import { alignStorefrontToCurrency, cartCurrencyMismatches, clearCart } from '../utils/currencySync';
+import { formatCurrency } from '../utils/currencyFormatter';
 
 import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
@@ -2760,8 +2761,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               </div>
             )}
 
-            {/* Step content + optional side panel */}
-            <div className={`${isDiagramStep || isReviewStep ? 'desktop:grid desktop:grid-cols-[1fr_340px] desktop:gap-8' : ''}`}>
+            {/* Step content + side panel */}
+            <div className="desktop:grid desktop:grid-cols-[1fr_340px] desktop:gap-8">
               {/* Current step content */}
               <div className="min-w-0">
                 {ActiveStepComponent && (
@@ -2844,10 +2845,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                 )}
               </div>
 
-              {/* Right summary panel - desktop only (diagram + price) */}
-              {(isDiagramStep || isReviewStep) && !isMobile && (
+              {/* Right summary panel - desktop only */}
+              {!isMobile && (
                 <div className="hidden desktop:block">
                   <div className="sticky top-6 self-start z-10 max-h-[calc(100vh-3rem)] overflow-y-auto space-y-4">
+                    {/* Diagram viewer - shown on diagram steps */}
                     {isDiagramStep && (() => {
                       const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
                       const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
@@ -2982,6 +2984,70 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         isEmailMode={hasAllEdgeMeasurements}
                         adminMode={adminMode}
                       />
+                    )}
+
+                    {/* Price card - shown on all non-review steps when price > 0 */}
+                    {!isReviewStep && calculations.totalPrice > 0 && (
+                      <div className="bg-brand-green rounded-card p-5">
+                        <div className="text-[13px] font-medium text-white/60 mb-1">Estimated total</div>
+                        <div className="text-[28px] font-extrabold text-brand-lime leading-none">
+                          {formatCurrency(calculations.totalPrice, config.currency)}
+                        </div>
+                        {calculations.hardwareBreakdown?.hardwareOnlyLivePrice > 0 && (
+                          <div className="mt-2 text-[13px] text-white/70">
+                            Includes {formatCurrency(calculations.hardwareBreakdown.hardwareOnlyLivePrice, config.currency)} hardware
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Selections summary - shown on all non-review steps */}
+                    {!isReviewStep && (config.fabricType || config.edgeType) && (
+                      <div className="bg-white border-2 border-border-card rounded-card p-4 space-y-2.5">
+                        <h4 className="text-[15px] font-bold text-brand-green">Your selections</h4>
+                        {config.fabricType && (
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-text-muted">Fabric</span>
+                            <span className="font-semibold text-brand-green">{FABRICS.find(f => f.id === config.fabricType)?.label}</span>
+                          </div>
+                        )}
+                        {config.fabricColor && (
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-text-muted">Color</span>
+                            <span className="font-semibold text-brand-green">{config.fabricColor}</span>
+                          </div>
+                        )}
+                        {config.shapeMode && (
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-text-muted">Shape</span>
+                            <span className="font-semibold text-brand-green capitalize">
+                              {config.shapeMode === 'fixed' && config.fixedShapeType ? config.fixedShapeType.replace(/-/g, ' ') : config.shapeMode}
+                            </span>
+                          </div>
+                        )}
+                        {config.corners > 0 && (
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-text-muted">Corners</span>
+                            <span className="font-semibold text-brand-green">{config.corners}</span>
+                          </div>
+                        )}
+                        {config.edgeType && (
+                          <div className="flex justify-between text-[14px]">
+                            <span className="text-text-muted">Edge</span>
+                            <span className="font-semibold text-brand-green capitalize">{config.edgeType}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Fit Guarantee note */}
+                    {config.shapeMode === 'custom' && (
+                      <div className="bg-surface-soft border border-border-card rounded-card p-4">
+                        <div className="text-[14px] font-bold text-brand-green mb-1">Fit Guarantee</div>
+                        <div className="text-[13px] text-text-muted leading-relaxed">
+                          Custom made-to-measure sails are covered by our Fit Guarantee. We will remake at our cost if there is a manufacturing error.
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

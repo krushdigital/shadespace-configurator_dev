@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getPortalRoot } from '../../utils/appScope';
-import { X, ZoomIn, Shield, Zap, Info } from 'lucide-react';
+import { X, ZoomIn } from 'lucide-react';
 import { ConfiguratorState } from '../../types';
-import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
-import { SaveProgressButton } from '../SaveProgressButton';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { analytics } from '../../utils/analytics';
 
@@ -31,17 +29,19 @@ interface EdgeTypeContentProps {
 const EDGE_OPTIONS = [
   {
     id: 'cabled',
-    label: 'Cabled Edge',
-    description: 'Strongest and sleekest -- best for permanent installations.',
+    label: 'Cabled edge',
+    description: 'Strongest and sleekest. Best for permanent installations.',
     longDescription: 'Experience superior durability and a sleek finish with our Cabled Edge reinforcement. A marine-grade stainless steel cable is expertly integrated along the entire perimeter of the shade sail, allowing for precise tensioning during installation. Each corner features uniquely styled stainless steel D-rings, which not only securely house the cable but also contribute to an exceptionally professional appearance and enormous structural strength.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.Configurator.webp?v=1784063875'
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.Configurator.webp?v=1784063875',
+    tag: null,
   },
   {
     id: 'webbing',
-    label: 'Webbing Reinforced',
-    description: 'Easiest to install -- ideal for DIY projects.',
+    label: 'Webbing reinforced',
+    description: 'Easiest to install. Ideal for DIY projects.',
     longDescription: 'Our webbing-reinforced design incorporates a unique method, utilizing an exceptionally strong 48mm (2-inch) polyester webbing expertly integrated within the hemline. This webbing is meticulously pre-set and pre-sewn, ensuring optimal tension is achieved effortlessly once the sail is fully stretched into position. This innovative approach guarantees a hassle-free on-site installation: simply tension from each fixing point and enjoy your perfectly taut shade sail.',
-    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge.Configurator.webp?v=1784063875'
+    imageUrl: 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge.Configurator.webp?v=1784063875',
+    tag: 'Most popular',
   }
 ];
 
@@ -94,24 +94,12 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
     }
   }, [config.edgeType, mobileGuidance?.isGuidanceActive]);
 
-  const [showHint, setShowHint] = useState(false);
-
-  useEffect(() => {
-    if (isStepOpen && !config.edgeType) {
-      const timer = setTimeout(() => setShowHint(true), 600);
-      return () => clearTimeout(timer);
-    } else {
-      setShowHint(false);
-    }
-  }, [config.edgeType, isStepOpen]);
-
   const perimeterMm = useMemo(
     () => getPerimeterMm(config.measurements || {}, config.corners || 0),
     [config.measurements, config.corners]
   );
   const recommendation = useMemo(() => getRecommendation(perimeterMm), [perimeterMm]);
 
-  // Auto-select only when there is a clear recommendation (not "either")
   const hasAutoSelected = useRef(false);
   useEffect(() => {
     if (!config.edgeType && !hasAutoSelected.current && isStepOpen && recommendation !== 'either') {
@@ -130,206 +118,96 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
     onNext();
   };
 
+  const adviceTitle = recommendation === 'cabled'
+    ? 'Cabled edge recommended.'
+    : recommendation === 'webbing'
+    ? 'Webbing reinforced is a great choice.'
+    : 'Either option works well for your sail.';
+  const adviceBody = recommendation === 'cabled'
+    ? `Your sail has a ${perimeterM.toFixed(1)}m perimeter. At this size, a cabled edge provides the structural strength needed.`
+    : recommendation === 'webbing'
+    ? `At ${perimeterM.toFixed(1)}m perimeter, webbing reinforcement is well-suited and the easiest to install.`
+    : `At ${perimeterM.toFixed(1)}m perimeter, both edge types are suitable. Choose based on your preference.`;
+
   return (
-    <div className="p-5 sm:p-6">
-      <div className="mb-6">
-        {showHint && !config.edgeType && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-mid animate-pulse" />
-            Choose your preferred edge style
-          </div>
-        )}
-        <h4 className={`text-lg font-semibold mb-1 ${
-          !config.edgeType && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-[#01312d]'
-        }`}>
-          Edge Finish
-        </h4>
-        <p className="text-sm text-text-muted mb-4">Strongest and sleekest, or easiest to install?</p>
+    <div className="space-y-4">
+      {/* Advice banner */}
+      {perimeterM > 0 && (
+        <div className="bg-surface-soft rounded-[14px] px-4 py-3.5 text-[15px] text-[#23503f] leading-relaxed">
+          <strong>{adviceTitle}</strong> {adviceBody}
+        </div>
+      )}
 
-        {/* Perimeter-based recommendation banner */}
-        {perimeterM > 0 && recommendation === 'cabled' && (
-          <div className="mb-5 flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-            <Shield className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-amber-900">Cabled Edge strongly recommended</p>
-              <p className="text-sm text-amber-700 mt-0.5">
-                Your sail has a {perimeterM.toFixed(1)}m perimeter. For sails this size, a cabled edge provides the structural strength needed to maintain shape and tension over time.
-              </p>
-            </div>
-          </div>
-        )}
-        {perimeterM > 0 && recommendation === 'webbing' && (
-          <div className="mb-5 flex items-start gap-3 p-4 bg-[#eef5ef] border border-[#c5dfc9] rounded-xl">
-            <Zap className="w-5 h-5 text-brand-mid flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-[#1a3d2c]">Webbing Reinforced is a great choice</p>
-              <p className="text-sm text-[#3d6b50] mt-0.5">
-                At {perimeterM.toFixed(1)}m perimeter, your sail is well-suited to webbing reinforcement -- it's the easiest to install and gives excellent results for this size.
-              </p>
-            </div>
-          </div>
-        )}
-        {perimeterM > 0 && recommendation === 'either' && (
-          <div className="mb-5 flex items-start gap-3 p-4 bg-surface-soft border border-border-card rounded-card">
-            <Info className="w-5 h-5 text-text-muted flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-brand-green">Either option works well</p>
-              <p className="text-sm text-text-muted mt-0.5">
-                At {perimeterM.toFixed(1)}m perimeter, both edge types are suitable. Cabled is stronger and sleeker; webbing is easier to install. Choose based on your preference.
-              </p>
-            </div>
-          </div>
-        )}
+      {/* Edge cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {EDGE_OPTIONS.map((edge) => {
+          const isSelected = config.edgeType === edge.id;
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-          {EDGE_OPTIONS.map((edge) => {
-            const hasError = validationErrors.edgeType && !config.edgeType;
-            const isSelected = config.edgeType === edge.id;
-            const isRecommended = recommendation === edge.id;
-
-            return (
-              <div
-                key={edge.id}
-                onClick={() => updateConfig({ edgeType: edge.id })}
-                className={`group relative bg-white rounded-2xl border-2 transition-all duration-200 cursor-pointer overflow-hidden flex flex-col ${
-                  isSelected
-                    ? 'border-brand-green bg-brand-green shadow-md'
-                    : hasError
-                    ? 'border-red-400 bg-red-50'
-                    : 'border-[#dfe7e1] hover:border-[#7bb08f] hover:shadow-md'
-                }`}
-              >
-                {isSelected && (
-                  <span className="absolute top-2 right-2 z-10 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-bold flex items-center justify-center">
-                    &#10003;
-                  </span>
-                )}
-                {isRecommended && !isSelected && perimeterM > 0 && (
-                  <span className="absolute top-2 left-2 z-10 px-2 py-0.5 rounded-full bg-brand-mid text-white text-[10px] font-bold uppercase tracking-wide">
-                    Recommended
-                  </span>
-                )}
-                <div className="relative p-3 pb-0">
-                  <div className="relative rounded-xl overflow-hidden bg-[#eef5ef] aspect-[16/9]">
-                    <img
-                      src={edge.imageUrl}
-                      alt={`${edge.label} example`}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEnlargedImage({ url: edge.imageUrl, label: edge.label });
-                      }}
-                      className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/95 text-brand-green shadow-sm hover:bg-white hover:text-brand-mid transition-colors focus:outline-none focus:ring-2 focus:ring-brand-mid"
-                      aria-label={`Enlarge ${edge.label} image`}
-                    >
-                      <ZoomIn className="w-4 h-4" strokeWidth={2.25} />
-                    </button>
-                  </div>
+          return (
+            <div
+              key={edge.id}
+              onClick={() => updateConfig({ edgeType: edge.id })}
+              className={`relative rounded-card overflow-hidden cursor-pointer transition-all duration-200 ${
+                isSelected
+                  ? 'bg-brand-green text-white border-2 border-brand-green'
+                  : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
+              }`}
+            >
+              {/* Lime check */}
+              {isSelected && (
+                <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center z-10">
+                  &#10003;
                 </div>
+              )}
 
-                <div className="flex items-start justify-between gap-3 p-4 pt-3.5">
-                  <div className="flex-1 min-w-0">
-                    <h5 className="font-bold text-brand-green text-base md:text-lg leading-tight mb-1">
-                      {edge.label}
-                    </h5>
-                    <p className="text-sm text-[#6b8478] leading-relaxed">
-                      {edge.description}
-                    </p>
-                  </div>
-                  <Tooltip
-                    content={
-                      <div>
-                        <p className="text-sm text-text-muted font-medium mb-1">
-                          {edge.label}
-                        </p>
-                        <p className="text-sm text-text-muted">
-                          {edge.longDescription}
-                        </p>
-                        <p className="mt-3 text-sm">
-                          <a
-                            href="https://shadespace.com/pages/styles"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-semibold text-brand-mid hover:text-brand-green hover:underline transition-colors"
-                          >
-                            Learn more about our styles &rarr;
-                          </a>
-                        </p>
-                      </div>
-                    }
-                  >
-                    <span
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex-shrink-0 w-6 h-6 inline-flex items-center justify-center text-xs font-semibold bg-brand-mid text-white rounded-full cursor-help hover:bg-brand-green transition-colors"
-                    >
-                      ?
+              {/* Image */}
+              <div className="relative">
+                <img
+                  src={edge.imageUrl}
+                  alt={`${edge.label} example`}
+                  className="w-full h-[150px] object-cover block bg-border-card"
+                />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEnlargedImage({ url: edge.imageUrl, label: edge.label });
+                  }}
+                  className="absolute top-2.5 right-2.5 w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/90 text-brand-green shadow-sm hover:bg-white transition-colors min-h-[44px] min-w-[44px]"
+                  aria-label={`Enlarge ${edge.label} image`}
+                >
+                  <ZoomIn className="w-4 h-4" strokeWidth={2.25} />
+                </button>
+              </div>
+
+              {/* Text */}
+              <div className="px-4 py-4 pb-4">
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <div className="font-extrabold text-[19px]">{edge.label}</div>
+                  {edge.tag && (
+                    <span className={`text-xs font-bold rounded-full px-2.5 py-0.5 ${
+                      isSelected
+                        ? 'bg-white/20 text-white'
+                        : 'bg-surface-soft text-brand-mid'
+                    }`}>
+                      {edge.tag}
                     </span>
-                  </Tooltip>
+                  )}
+                </div>
+                <div className={`text-[15px] mt-1.5 leading-[1.45] ${isSelected ? 'opacity-90' : 'text-text-muted'}`}>
+                  {edge.description}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="flex flex-col gap-3 pt-6 mt-2 border-t border-border-card">
-        <div className="flex sm:hidden flex-col gap-3">
-          <div className="flex gap-3">
-            {showBackButton && (
-              <button onClick={onPrev} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
-            )}
-            {onSaveQuote && (
-              <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
-            )}
-          </div>
-          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn w-full rounded-btn' : 'w-full'}>
-            <button
-              onClick={handleContinue}
-              disabled={!config.edgeType}
-              id="continue-button-edge"
-              data-guidance-id="continue-button-edge"
-              className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm disabled:bg-state-disabled disabled:cursor-not-allowed`}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-4">
-          {showBackButton && (
-            <button onClick={onPrev} className="inline-flex items-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
-          )}
-          {onSaveQuote && (
-            <SaveProgressButton onClick={onSaveQuote} className="w-auto" />
-          )}
-          <div className="flex-1" />
-          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-edge' ? 'energy-border-chase-btn rounded-btn' : ''}>
-            <button
-              onClick={handleContinue}
-              disabled={!config.edgeType}
-              id="continue-button-edge"
-              data-guidance-id="continue-button-edge"
-              className={`inline-flex items-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm disabled:bg-state-disabled disabled:cursor-not-allowed`}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-
+      {/* Enlarged image modal */}
       {enlargedImage && typeof document !== 'undefined' && createPortal(
         <div
           data-lenis-prevent
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-[fadeIn_0.15s_ease-out]"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-[rgba(1,49,45,0.72)] p-5"
           onClick={() => setEnlargedImage(null)}
           role="dialog"
           aria-modal="true"
@@ -338,7 +216,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); setEnlargedImage(null); }}
-            className="absolute top-4 right-4 w-10 h-10 inline-flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
+            className="absolute top-4 right-4 w-10 h-10 inline-flex items-center justify-center rounded-full border-2 border-white/30 text-white hover:bg-white/10 transition-colors"
             aria-label="Close enlarged image"
           >
             <X className="w-5 h-5" />
@@ -347,7 +225,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
             <img
               src={enlargedImage.url}
               alt={`${enlargedImage.label} - enlarged view`}
-              className="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl bg-white"
+              className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl bg-white"
             />
             <p className="mt-3 text-center text-white font-semibold text-lg">{enlargedImage.label}</p>
           </div>

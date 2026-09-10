@@ -1,10 +1,12 @@
 import React from 'react';
 import { ConfiguratorState, FixedShapeType } from '../../types';
-import { Button } from '../ui/Button';
-import { SaveProgressButton } from '../SaveProgressButton';
-import { Triangle, Square, Hexagon, Ruler, HelpCircle } from 'lucide-react';
-import { SailDimensionsCard, SpaceMeasurementsCard } from './SailMeasurementVisuals';
 import { generateFixedShapePoints } from './FixedShapeDimensionsContent';
+
+import squareIcon from '../../assets/icons/square.svg';
+import rectangleIcon from '../../assets/icons/rectangle.svg';
+import triangleIcon from '../../assets/icons/triangle.svg';
+import rightTriangleIcon from '../../assets/icons/right-triangle.svg';
+import customCombinedIcon from '../../assets/icons/custom-combined.svg';
 
 interface ShapeTypeContentProps {
   config: ConfiguratorState;
@@ -16,78 +18,12 @@ interface ShapeTypeContentProps {
   onSaveQuote?: () => void;
 }
 
-const FIXED_SHAPES: { id: FixedShapeType; label: string; description: string; corners: number }[] = [
-  { id: 'triangle', label: 'Triangle', description: 'Equilateral (all sides equal)', corners: 3 },
-  { id: 'right-angle-triangle', label: 'Right Angle Triangle', description: 'Two sides + calculated hypotenuse', corners: 3 },
-  { id: 'square', label: 'Square', description: 'All sides equal length', corners: 4 },
-  { id: 'rectangle', label: 'Rectangle', description: 'Two pairs of equal sides', corners: 4 },
+const FIXED_SHAPES: { id: FixedShapeType; label: string; hint: string; corners: number; icon: string }[] = [
+  { id: 'square', label: 'Square', hint: '1 measurement', corners: 4, icon: squareIcon },
+  { id: 'rectangle', label: 'Rectangle', hint: '2 measurements', corners: 4, icon: rectangleIcon },
+  { id: 'triangle', label: 'Triangle', hint: '1 measurement', corners: 3, icon: triangleIcon },
+  { id: 'right-angle-triangle', label: 'Right Angle Triangle', hint: '2 measurements', corners: 3, icon: rightTriangleIcon },
 ];
-
-function ShapeIcon({ shape, className }: { shape: FixedShapeType; className?: string }) {
-  const cls = className || 'w-8 h-8';
-  switch (shape) {
-    case 'triangle':
-      return <Triangle className={cls} />;
-    case 'right-angle-triangle':
-      return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 21 L3 3 L21 21 Z" />
-          <rect x="3" y="17" width="4" height="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      );
-    case 'square':
-      return <Square className={cls} />;
-    case 'rectangle':
-      return (
-        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="6" width="20" height="12" rx="1" />
-        </svg>
-      );
-  }
-}
-
-function ModeInfoTooltip({ mode }: { mode: 'standard' | 'custom' }) {
-  const [show, setShow] = React.useState(false);
-  const wrapRef = React.useRef<HTMLDivElement>(null);
-
-  React.useEffect(() => {
-    if (!show) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setShow(false);
-    };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
-    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('touchstart', handler); };
-  }, [show]);
-
-  return (
-    <div ref={wrapRef} className="relative inline-block mt-2">
-      <button
-        type="button"
-        onClick={(e) => { e.stopPropagation(); setShow(v => !v); }}
-        onMouseEnter={() => setShow(true)}
-        onMouseLeave={() => setShow(false)}
-        className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-emerald-700 transition-colors"
-        aria-label={`What does ${mode === 'standard' ? 'standard shape and size' : 'custom made-to-measure'} mean?`}
-      >
-        <HelpCircle className="w-3.5 h-3.5" />
-        <span>What does this mean?</span>
-      </button>
-      {show && (
-        <div
-          className="absolute z-50 left-0 top-full mt-2 shadow-2xl rounded-xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {mode === 'standard' ? (
-            <SailDimensionsCard title={null} />
-          ) : (
-            <SpaceMeasurementsCard title={null} />
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export function ShapeTypeContent({
   config,
@@ -100,6 +36,7 @@ export function ShapeTypeContent({
 }: ShapeTypeContentProps) {
   const selectedMode = config.shapeMode || null;
   const selectedFixedShape = config.fixedShapeType || null;
+  const isCustomSelected = selectedMode === 'custom';
 
   const handleSelectCustom = () => {
     const switchingFromFixed = config.shapeMode === 'fixed';
@@ -133,129 +70,71 @@ export function ShapeTypeContent({
     });
   };
 
-  const isComplete = selectedMode === 'custom' || (selectedMode === 'fixed' && !!selectedFixedShape);
+  const isFixedSelected = (id: FixedShapeType) => selectedMode === 'fixed' && selectedFixedShape === id;
+
+  const flowTitle = isCustomSelected ? 'Custom sail flow' : 'Fixed shape flow';
+  const flowDesc = isCustomSelected
+    ? 'Plot 3\u20138 fixing points, then measure every edge and diagonal. Covered by the Fit Guarantee.'
+    : 'Standard geometric shape \u2014 only 1\u20132 measurements needed.';
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Choose your shape type</h3>
-
-        {/* Side-by-side shape mode buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Custom Shape Option */}
-          <button
-            onClick={handleSelectCustom}
-            className={`text-left p-4 rounded-xl border-2 transition-all duration-200 ${
-              selectedMode === 'custom'
-                ? 'border-emerald-500 bg-emerald-50 shadow-md'
-                : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`p-2 rounded-lg ${selectedMode === 'custom' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
-                <Hexagon className="w-6 h-6" />
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 desktop:grid-cols-5 gap-3">
+        {FIXED_SHAPES.map(shape => {
+          const selected = isFixedSelected(shape.id);
+          return (
+            <button
+              key={shape.id}
+              onClick={() => handleSelectFixedShape(shape.id)}
+              className={`relative cursor-pointer rounded-card p-5 pb-4 flex flex-col items-center gap-3 text-center transition-all duration-200 min-h-[44px] ${
+                selected
+                  ? 'bg-[#fbfdfb] border-[3px] border-brand-mid'
+                  : 'bg-[#fbfdfb] border-2 border-border-card hover:border-[#7bb08f]'
+              }`}
+            >
+              {selected && (
+                <div className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-mid text-white text-[13px] font-bold flex items-center justify-center">
+                  &#10003;
+                </div>
+              )}
+              <img src={shape.icon} alt={`${shape.label} sail`} className="w-[82px] h-[82px]" />
+              <div>
+                <div className="font-bold text-[15px] text-brand-green">{shape.label}</div>
+                <div className="text-xs text-text-muted mt-0.5">{shape.hint}</div>
               </div>
-              <span className="font-semibold text-gray-900 text-base">Custom made-to-measure</span>
-              <div className={`ml-auto w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                selectedMode === 'custom' ? 'border-emerald-500 bg-emerald-500' : 'border-gray-300'
-              }`}>
-                {selectedMode === 'custom' && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">For any irregular shape with 3 to 8 corners. Measure each edge and diagonal of your space for a precise fit.</p>
-            <ModeInfoTooltip mode="custom" />
-            <span className="inline-block mt-2 px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 rounded-full">Includes Fit Guarantee</span>
-          </button>
+            </button>
+          );
+        })}
 
-          {/* Fixed Shape Option */}
-          <button
-            onClick={() => {
-              if (selectedMode !== 'fixed') {
-                updateConfig({ shapeMode: 'fixed', fixedShapeType: null });
-              }
-            }}
-            className={`text-left p-4 rounded-xl border-2 transition-all duration-200 ${
-              selectedMode === 'fixed'
-                ? 'border-blue-500 bg-blue-50/30 shadow-md'
-                : 'border-gray-200 hover:border-gray-300 hover:shadow-sm bg-white'
-            }`}
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`p-2 rounded-lg ${selectedMode === 'fixed' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
-                <Ruler className="w-6 h-6" />
-              </div>
-              <span className="font-semibold text-gray-900 text-base">Standard shape and size</span>
-              <div className={`ml-auto w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                selectedMode === 'fixed' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-              }`}>
-                {selectedMode === 'fixed' && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 leading-relaxed">Standard geometric shapes like triangles, squares, and rectangles. Only 1-2 measurements needed. Ideal for standard sizes.</p>
-            <ModeInfoTooltip mode="standard" />
-          </button>
-        </div>
-
-        {/* Fixed shape sub-options (shown below the grid when Fixed is selected) */}
-        {selectedMode === 'fixed' && (
-          <div className="pt-1">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Select shape</p>
-            <div className="grid grid-cols-2 gap-2.5">
-              {FIXED_SHAPES.map(shape => (
-                <button
-                  key={shape.id}
-                  onClick={() => handleSelectFixedShape(shape.id)}
-                  className={`p-3 rounded-lg border-2 transition-all duration-150 text-left ${
-                    selectedFixedShape === shape.id
-                      ? 'border-blue-500 bg-blue-50 shadow-sm'
-                      : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <ShapeIcon
-                      shape={shape.id}
-                      className={`w-6 h-6 ${selectedFixedShape === shape.id ? 'text-blue-600' : 'text-gray-500'}`}
-                    />
-                    <div>
-                      <span className={`text-sm font-medium ${selectedFixedShape === shape.id ? 'text-blue-900' : 'text-gray-800'}`}>
-                        {shape.label}
-                      </span>
-                      <p className="text-xs text-gray-500 mt-0.5">{shape.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <div className="flex items-center gap-2">
-          {showBackButton && (
-            <Button variant="outline" onClick={onPrev} className="text-sm">
-              Back
-            </Button>
-          )}
-          {onSaveQuote && <SaveProgressButton onClick={onSaveQuote} />}
-        </div>
-        <Button
-          onClick={onNext}
-          disabled={!isComplete}
-          className="text-sm"
+        {/* Custom shape - dashed border */}
+        <button
+          onClick={handleSelectCustom}
+          className={`relative cursor-pointer rounded-card p-5 pb-4 flex flex-col items-center gap-3 text-center transition-all duration-200 min-h-[44px] ${
+            isCustomSelected
+              ? 'bg-[#f2f8f3] border-[3px] border-brand-mid'
+              : 'bg-[#f2f8f3] border-2 border-dashed border-[#7bb08f] hover:border-brand-mid'
+          }`}
         >
-          Continue{nextStepTitle ? ` → ${nextStepTitle}` : ''}
-        </Button>
+          {isCustomSelected && (
+            <div className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-mid text-white text-[13px] font-bold flex items-center justify-center">
+              &#10003;
+            </div>
+          )}
+          <img src={customCombinedIcon} alt="Custom shape sail" className="w-[82px] h-[82px]" />
+          <div>
+            <div className="font-bold text-[15px] text-brand-green">Custom Shape</div>
+            <div className="text-xs text-text-muted mt-0.5">3&ndash;8 fixing points</div>
+          </div>
+        </button>
       </div>
+
+      {/* Flow hint banner */}
+      {(selectedMode === 'fixed' || selectedMode === 'custom') && (
+        <div className="flex items-center gap-2.5 bg-surface-soft rounded-xl px-4 py-3 text-sm text-[#23503f]">
+          <span className="text-base">&rarr;</span>
+          <span><strong>{flowTitle}</strong> &nbsp;{flowDesc}</span>
+        </div>
+      )}
     </div>
   );
 }

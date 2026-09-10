@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { ConfiguratorState } from '../../types';
 import { generateRegularPolygonPoints } from '../../utils/geometry';
-import { Button } from '../ui/Button';
-import { Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
-import { SaveProgressButton } from '../SaveProgressButton';
+
+import points3 from '../../assets/icons/points-3.svg';
+import points4 from '../../assets/icons/points-4.svg';
+import points5 from '../../assets/icons/points-5.svg';
+import points6 from '../../assets/icons/points-6.svg';
+import points7 from '../../assets/icons/points-7.svg';
+import points8 from '../../assets/icons/points-8.svg';
 
 interface CornersContentProps {
   config: ConfiguratorState;
@@ -25,12 +29,12 @@ interface CornersContentProps {
 }
 
 const SHAPE_OPTIONS = [
-  { corners: 3, label: '3 Fixing Points', icon: Triangle, description: 'Classic triangular shade' },
-  { corners: 4, label: '4 Fixing Points', icon: Square, description: 'Most popular choice' },
-  { corners: 5, label: '5 Fixing Points', icon: Pentagon, description: 'Unique five-sided design' },
-  { corners: 6, label: '6 Fixing Points', icon: Hexagon, description: 'Modern hexagonal shape' },
-  { corners: 7, label: '7 Fixing Points', icon: Hexagon, description: 'Extended multi-point design' },
-  { corners: 8, label: '8 Fixing Points', icon: Octagon, description: 'Maximum coverage layout' }
+  { corners: 3, label: '3 points', description: 'Classic triangular shade', icon: points3 },
+  { corners: 4, label: '4 points', description: 'Most popular choice', icon: points4 },
+  { corners: 5, label: '5 points', description: 'Five-sided design', icon: points5 },
+  { corners: 6, label: '6 points', description: 'Hexagonal shape', icon: points6 },
+  { corners: 7, label: '7 points', description: 'Multi-point design', icon: points7 },
+  { corners: 8, label: '8 points', description: 'Maximum coverage', icon: points8 },
 ];
 
 export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepTitle = '', showBackButton = false, validationErrors = {}, isStepOpen = true, onSaveQuote, mobileGuidance }: CornersContentProps) {
@@ -41,10 +45,8 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     }
   }, [config.corners, mobileGuidance?.isGuidanceActive]);
 
-  const generateRegularPoints = generateRegularPolygonPoints;
-
   const handleShapeChange = (corners: number) => {
-    const points = generateRegularPoints(corners);
+    const points = generateRegularPolygonPoints(corners);
     const newHeights = Array(corners).fill(undefined);
     const newTypes = Array(corners).fill('');
     const newOrientations = Array(corners).fill('');
@@ -65,147 +67,44 @@ export function CornersContent({ config, updateConfig, onNext, onPrev, nextStepT
     });
   };
 
-  const [showHint, setShowHint] = useState(false);
-
-  useEffect(() => {
-    if (isStepOpen && !config.corners) {
-      const timer = setTimeout(() => setShowHint(true), 600);
-      return () => clearTimeout(timer);
-    } else {
-      setShowHint(false);
-    }
-  }, [config.corners, isStepOpen]);
-
   return (
-    <div className="p-5 sm:p-6">
-      <div className="mb-6">
-        {showHint && !config.corners && (
-          <div className="guidance-hint mb-3 inline-flex items-center gap-2 px-3 py-1.5 bg-[#eef5ef] border border-[#7bb08f] rounded-full text-xs font-medium text-[#23503f]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2e7d4f] animate-pulse" />
-            Select the number of fixing points for your sail
-          </div>
-        )}
-        <h4 className={`text-lg font-semibold mb-4 ${
-          !config.corners && mobileGuidance?.isGuidanceActive ? 'shiny-text-guidance' : 'text-[#01312d]'
-        }`}>
-          How many fixing points will your shade sail have?
-        </h4>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {SHAPE_OPTIONS.map((shape) => {
-            const Icon = shape.icon;
-            const isSelected = config.corners === shape.corners;
-            const hasError = validationErrors.corners && !config.corners;
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {SHAPE_OPTIONS.map((shape) => {
+          const isSelected = config.corners === shape.corners;
 
-            return (
-              <button
-                key={shape.corners}
-                type="button"
-                className={`relative rounded-2xl border-2 p-4 sm:p-5 text-center transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? 'border-[#2e7d4f] shadow-[inset_0_0_0_1px_#2e7d4f] bg-white'
-                    : hasError
-                    ? 'border-red-400 bg-red-50 hover:border-red-500'
-                    : 'border-[#dfe7e1] bg-white hover:border-[#7bb08f] hover:shadow-md'
-                }`}
-                onClick={() => handleShapeChange(shape.corners)}
-              >
-                {isSelected && (
-                  <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-[#2e7d4f] text-white text-[13px] font-bold flex items-center justify-center">
-                    &#10003;
-                  </span>
-                )}
-                <Icon className="w-10 h-10 mx-auto mb-2 text-[#01312d]" />
-                <h5 className="font-bold text-[15px] text-[#01312d] mb-0.5">
-                  {shape.label}
-                </h5>
-                <p className="text-xs text-[#6b8478]">
-                  {shape.description}
-                </p>
-              </button>
-            );
-          })}
-        </div>
+          return (
+            <button
+              key={shape.corners}
+              type="button"
+              onClick={() => handleShapeChange(shape.corners)}
+              className={`relative rounded-card p-5 pb-4 flex flex-col items-center gap-3 text-center transition-all duration-200 cursor-pointer min-h-[44px] ${
+                isSelected
+                  ? 'bg-[#fbfdfb] border-[3px] border-brand-mid'
+                  : 'bg-[#fbfdfb] border-2 border-border-card hover:border-[#7bb08f]'
+              }`}
+            >
+              {isSelected && (
+                <div className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-mid text-white text-[13px] font-bold flex items-center justify-center">
+                  &#10003;
+                </div>
+              )}
+              <img src={shape.icon} alt={`${shape.label} sail`} className="w-[72px] h-[72px]" />
+              <div>
+                <div className="font-bold text-[15px] text-brand-green">{shape.label}</div>
+                <div className="text-xs text-text-muted mt-0.5">{shape.description}</div>
+              </div>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="flex flex-col gap-3 pt-4 border-t border-[#dfe7e1]">
-        <div className="flex sm:hidden flex-col gap-3">
-          <div className="flex gap-3">
-            {showBackButton && (
-              <Button variant="outline" size="md" onClick={onPrev} className="flex-1">
-                Back
-              </Button>
-            )}
-            {onSaveQuote && (
-              <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
-            )}
-          </div>
-          {mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? (
-            <div className="energy-border-chase-btn w-full" id="continue-button-corners" data-guidance-id="continue-button-corners">
-              <Button
-                onClick={() => { mobileGuidance?.clearHighlight(); onNext(); }}
-                size="md"
-                className={`w-full py-4 ${!config.corners ? 'opacity-50' : ''}`}
-              >
-                <span className="flex flex-col items-center leading-tight">
-                  <span>Continue</span>
-                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                </span>
-              </Button>
-            </div>
-          ) : (
-            <Button
-              onClick={() => { mobileGuidance?.clearHighlight(); onNext(); }}
-              size="md"
-              id="continue-button-corners"
-              data-guidance-id="continue-button-corners"
-              className={`w-full py-4 ${!config.corners ? 'opacity-50' : ''}`}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-              </span>
-            </Button>
-          )}
+      {config.corners >= 3 && (
+        <div className="flex items-center gap-2.5 bg-surface-soft rounded-xl px-4 py-3 text-sm text-[#23503f]">
+          <span className="text-base">&rarr;</span>
+          <span>You&rsquo;ve selected <strong>{config.corners} fixing points</strong>. Next, plot them on the diagram.</span>
         </div>
-
-        <div className="hidden sm:flex gap-4">
-          {showBackButton && (
-            <Button variant="outline" size="md" onClick={onPrev} className="w-auto">
-              Back
-            </Button>
-          )}
-          {onSaveQuote && (
-            <SaveProgressButton onClick={onSaveQuote} className="w-auto" />
-          )}
-          {mobileGuidance?.currentHighlightTarget === 'continue-button-corners' ? (
-            <div className="energy-border-chase-btn flex-1" id="continue-button-corners" data-guidance-id="continue-button-corners">
-              <Button
-                onClick={() => { mobileGuidance?.clearHighlight(); onNext(); }}
-                size="md"
-                className={`w-full ${!config.corners ? 'opacity-50' : ''}`}
-              >
-                <span className="flex flex-col items-center leading-tight">
-                  <span>Continue</span>
-                  {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                </span>
-              </Button>
-            </div>
-          ) : (
-            <Button
-              onClick={() => { mobileGuidance?.clearHighlight(); onNext(); }}
-              size="md"
-              id="continue-button-corners"
-              data-guidance-id="continue-button-corners"
-              className={`flex-1 ${!config.corners ? 'opacity-50' : ''}`}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-              </span>
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
