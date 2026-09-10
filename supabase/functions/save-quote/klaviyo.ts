@@ -17,7 +17,7 @@
 // profiles:write and subscriptions:write scopes).
 
 const KLAVIYO_API = "https://a.klaviyo.com/api";
-const KLAVIYO_REVISION = "2025-07-15";
+const KLAVIYO_REVISION = "2026-07-15";
 // Master email list ("Email List" in Klaviyo) — also the Welcome flow trigger.
 const KLAVIYO_LIST_ID = "URwxNF";
 const TIMEOUT_MS = 6000;
