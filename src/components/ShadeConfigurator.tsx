@@ -2784,8 +2784,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     allAcknowledgmentsChecked={allAcknowledgmentsChecked}
                     canAddToCart={canAddToCart}
                     hasAllEdgeMeasurements={hasAllEdgeMeasurements}
-                    nextStepTitle={getNextStepTitle(index)}
-                    showBackButton={shouldShowBackButton(index)}
+                    nextStepTitle={getNextStepTitle(openStep)}
+                    showBackButton={shouldShowBackButton(openStep)}
                     isMobile={isMobile}
                     isStepOpen={isOpen}
                     setHighlightedMeasurement={setHighlightedMeasurement}
@@ -2793,7 +2793,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     highlightedCorner={highlightedCorner}
                     setHighlightedCorner={setHighlightedCorner}
                     canvasRef={canvasRef}
-                    ref={index === 7 ? reviewContentRef : undefined}
+                    ref={openStep === 7 ? reviewContentRef : undefined}
                     fabrics={FABRICS}
                     loading={loading}
                     setLoading={setLoading}
