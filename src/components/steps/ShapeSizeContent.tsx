@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ConfiguratorState, FixedShapeType } from '../../types';
-import { SaveProgressButton } from '../SaveProgressButton';
+
 import { generateFixedShapePoints } from './FixedShapeDimensionsContent';
 
 import points3 from '../../assets/icons/points-3.svg';
@@ -252,7 +252,7 @@ export function ShapeSizeContent({
   return (
     <div className="space-y-5">
       {/* Fixed shape tiles - 2x2 on mobile, 4-col on desktop */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
         {FIXED_SHAPES.map((tile) => {
           const isSelected = selectedTileId === tile.id;
           return (
@@ -262,23 +262,23 @@ export function ShapeSizeContent({
               onClick={() => handleSelectFixed(tile)}
               aria-checked={isSelected}
               role="radio"
-              className={`relative cursor-pointer rounded-card p-5 pb-4 flex flex-col items-center gap-3 text-center transition-all duration-200 min-h-[44px] ${
+              className={`relative cursor-pointer rounded-card p-[18px_10px_14px] flex flex-col items-center gap-2.5 text-center transition-all duration-200 min-h-[44px] ${
                 isSelected
-                  ? 'bg-brand-green text-white border-2 border-brand-green shadow-md'
+                  ? 'bg-white border-2 border-brand-green'
                   : tileError
                   ? 'bg-white border-2 border-red-400 hover:border-red-500'
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
               }`}
             >
               {isSelected && (
-                <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
+                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-green text-brand-lime text-[13px] font-extrabold flex items-center justify-center">
                   &#10003;
                 </span>
               )}
-              <ShapeTileIcon shapeId={tile.id} selected={isSelected} className="w-[72px] h-[72px] sm:w-[82px] sm:h-[82px]" />
+              <ShapeTileIcon shapeId={tile.id} selected={false} className="w-[76px] h-[76px]" />
               <div>
-                <div className={`font-bold text-[15px] ${isSelected ? 'text-white' : 'text-brand-green'}`}>{tile.label}</div>
-                <div className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>{tile.hint}</div>
+                <div className="font-extrabold text-[16px] text-brand-green">{tile.label}</div>
+                <div className="text-[13px] mt-0.5 text-text-muted">{tile.hint}</div>
               </div>
             </button>
           );
@@ -291,23 +291,25 @@ export function ShapeSizeContent({
         onClick={handleSelectCustom}
         aria-checked={isCustomSelected}
         role="radio"
-        className={`relative w-full cursor-pointer rounded-card p-5 flex items-center gap-5 text-left transition-all duration-200 min-h-[44px] ${
+        className={`relative w-full cursor-pointer rounded-card p-4 flex items-center gap-4 text-left transition-all duration-200 min-h-[44px] ${
           isCustomSelected
-            ? 'bg-brand-green text-white border-2 border-brand-green shadow-md'
+            ? 'bg-brand-green text-white border-2 border-dashed border-brand-green'
             : tileError
             ? 'bg-white border-2 border-dashed border-red-400 hover:border-red-500'
             : 'bg-white border-2 border-dashed border-[#7bb08f] hover:border-brand-mid'
         }`}
       >
         {isCustomSelected && (
-          <span className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
+          <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
             &#10003;
           </span>
         )}
-        <ShapeTileIcon shapeId="custom" selected={isCustomSelected} className="w-[72px] h-[72px] flex-shrink-0" />
+        <div className="w-[68px] h-[68px] rounded-xl bg-white flex items-center justify-center flex-shrink-0">
+          <ShapeTileIcon shapeId="custom" selected={false} className="w-[60px] h-[60px]" />
+        </div>
         <div className="pr-8">
-          <div className={`font-bold text-[17px] ${isCustomSelected ? 'text-white' : 'text-brand-green'}`}>Custom Shape</div>
-          <div className={`text-[14px] mt-0.5 ${isCustomSelected ? 'text-white/70' : 'text-text-muted'}`}>
+          <div className={`font-extrabold text-[17px] ${isCustomSelected ? 'text-white' : 'text-brand-green'}`}>Custom shape</div>
+          <div className={`text-[14px] mt-0.5 ${isCustomSelected ? 'text-white/85' : 'text-text-muted'}`}>
             3&ndash;8 fixing points &middot; Made to measure &middot; Fit Guarantee
           </div>
         </div>
@@ -332,7 +334,7 @@ export function ShapeSizeContent({
           <h4 className="text-lg font-bold mb-4 text-brand-green">
             How many fixing points will your shade sail have?
           </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
             {CORNER_OPTIONS.map((shape) => {
               const isSelected = config.corners === shape.corners;
               const hasError = !!validationErrors.corners && !config.corners;
@@ -341,27 +343,27 @@ export function ShapeSizeContent({
                   key={shape.corners}
                   type="button"
                   onClick={() => handleCornerChange(shape.corners)}
-                  className={`relative rounded-card p-5 pb-4 flex flex-col items-center gap-3 text-center transition-all duration-200 cursor-pointer min-h-[44px] ${
+                  className={`relative rounded-card p-[16px_10px_14px] flex flex-col items-center gap-2 text-center transition-all duration-200 cursor-pointer min-h-[44px] ${
                     isSelected
-                      ? 'bg-brand-green text-white border-2 border-brand-green shadow-md'
+                      ? 'bg-white border-2 border-brand-green'
                       : hasError
                       ? 'bg-white border-2 border-red-400'
                       : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
                   }`}
                 >
                   {isSelected && (
-                    <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
+                    <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-green text-brand-lime text-[13px] font-extrabold flex items-center justify-center">
                       &#10003;
                     </span>
                   )}
                   <img
                     src={shape.icon}
                     alt={`${shape.label} sail`}
-                    className={`w-[72px] h-[72px] ${isSelected ? 'brightness-0 invert' : ''}`}
+                    className="w-[84px] h-[84px]"
                   />
                   <div>
-                    <div className={`font-bold text-[15px] ${isSelected ? 'text-white' : 'text-brand-green'}`}>{shape.label}</div>
-                    <div className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>
+                    <div className="font-extrabold text-[16px] text-brand-green">{shape.label}</div>
+                    <div className="text-[13px] mt-0.5 text-text-muted">
                       {shape.description}
                       {shape.corners === 4 && (
                         <span className="ml-1.5 inline-flex px-1.5 py-0.5 bg-brand-lime text-brand-green text-[9px] font-bold rounded-full align-middle">Popular</span>
@@ -383,55 +385,6 @@ export function ShapeSizeContent({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex flex-col gap-3 pt-6 mt-2 border-t border-border-card">
-        <div className="flex sm:hidden flex-col gap-3">
-          <div className="flex gap-3">
-            {showBackButton && (
-              <button onClick={onPrev} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
-            )}
-            {onSaveQuote && (
-              <SaveProgressButton onClick={onSaveQuote} className="flex-1" />
-            )}
-          </div>
-          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-shape-size' ? 'energy-border-chase-btn w-full rounded-btn' : 'w-full'}>
-            <button
-              onClick={handleContinue}
-              id="continue-button-shape-size"
-              data-guidance-id="continue-button-shape-size"
-              className={`w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm ${!isComplete ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <div className="hidden sm:flex items-center gap-4">
-          {showBackButton && (
-            <button onClick={onPrev} className="inline-flex items-center gap-2 px-4 py-2.5 text-[15px] font-semibold text-text-muted hover:text-brand-green rounded-btn transition-colors min-h-[44px]">Back</button>
-          )}
-          {onSaveQuote && (
-            <SaveProgressButton onClick={onSaveQuote} className="w-auto" />
-          )}
-          <div className="flex-1" />
-          <div className={mobileGuidance?.currentHighlightTarget === 'continue-button-shape-size' ? 'energy-border-chase-btn rounded-btn' : ''}>
-            <button
-              onClick={handleContinue}
-              id="continue-button-shape-size"
-              data-guidance-id="continue-button-shape-size"
-              className={`inline-flex items-center gap-2 px-6 py-3 bg-brand-green text-white text-[16px] font-bold rounded-btn hover:bg-[#012a26] transition-all duration-200 min-h-[44px] shadow-sm ${!isComplete ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <span className="flex flex-col items-center leading-tight">
-                <span>Continue</span>
-                {nextStepTitle && <span className="text-[10px] opacity-70 font-normal">to {nextStepTitle}</span>}
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

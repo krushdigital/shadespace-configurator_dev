@@ -47,7 +47,7 @@ import { toast } from 'react-toastify';
 import { supabase } from '../lib/supabase';
 import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { renderSailPngBlob } from '../utils/renderSvgOffscreen';
-import { Box, Layers, Maximize2 } from 'lucide-react';
+import { Maximize2 } from 'lucide-react';
 import { canRender3D, Device3DTier, supports3DForCorners } from '../utils/canRender3D';
 import { ParsedSketchData } from '../utils/sketchParser';
 import type { AdminProfile } from '../hooks/useAdminProfile';
@@ -2775,8 +2775,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         <StepRail steps={railSteps} onStepClick={handleRailStepClick} onSave={openStep > 0 ? handleSaveQuote : undefined} />
 
         {/* Main content area */}
-        <div className="flex-1 min-w-0">
-          <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8 pb-[140px]">
+        <div className="flex-1 min-w-0 flex flex-col bg-surface-panel">
+          <div className="flex-1 overflow-y-auto">
+          <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8 pb-[140px] w-full">
             {/* Quote Reference */}
             {quoteReference && (
               <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 bg-brand-lime/15 border border-brand-lime/30 rounded-full">
@@ -2831,9 +2832,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               </div>
             )}
 
-            {/* Step content + side panel */}
-            <div className="desktop:grid desktop:grid-cols-[1fr_340px] desktop:gap-8">
-              {/* Current step content */}
+            {/* Step content */}
               <div className="min-w-0">
                 {ActiveStepComponent && (
                   <ActiveStepComponent
@@ -2914,11 +2913,32 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                   />
                 )}
               </div>
+          </div>
+          </div>
 
-              {/* Right summary panel - desktop only, shown on ALL steps */}
-              {!isMobile && (
-                <div className="hidden desktop:block">
-                  <div className="sticky top-6 self-start z-10 max-h-[calc(100vh-3rem)] overflow-y-auto space-y-4">
+          {/* Global sticky bottom bar */}
+          <StepNavigationFooter
+            onNext={isReviewStep ? handleAddToCartFromConfigurator : nextStep}
+            onPrev={prevStep}
+            showBack={shouldShowBackButton(openStep)}
+            nextLabel={footerNextLabel}
+            disableNext={footerDisableNext}
+            disabledHint={footerDisabledHint}
+            priceDisplay={footerPriceDisplay}
+            isReview={isReviewStep}
+          />
+
+          <LoadingOverlay
+            isVisible={showLoadingOverlay}
+            currentStep={loadingStep.text}
+            progress={loadingStep.progress}
+          />
+        </div>
+
+        {/* Right summary panel - desktop only, DIRECT SIBLING */}
+        {!isMobile && (
+          <aside className="hidden desktop:block w-summary flex-shrink-0 bg-white border-l border-border-card sticky top-0 h-screen overflow-y-auto">
+            <div className="p-[28px_24px] flex flex-col gap-4">
                     {/* Sail diagram viewer - always shown */}
                     {isReviewStep ? (
                       <PriceSummaryDisplay
@@ -2936,35 +2956,33 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     ) : (
                       <>
                         {/* Your sail viewer card */}
-                        <div className="bg-white border-2 border-border-card rounded-card p-4">
+                        <div>
                           <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-[15px] font-bold text-brand-green">Your sail</h4>
+                            <h4 className="font-extrabold text-[16px] text-brand-green">Your sail</h4>
                             {config.corners >= 3 && (() => {
                               const desktop3DAvailable = supports3DForCorners(config.corners);
                               if (!desktop3DAvailable) return null;
                               const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
                               return (
-                                <div className="flex items-center gap-1 bg-surface-panel rounded-lg p-0.5">
+                                <div className="flex border-2 border-brand-green rounded-[10px] overflow-hidden">
                                   <button
                                     onClick={() => handleDesktopViewModeChange('plan')}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold transition-all ${
                                       effectiveDesktopView === 'plan'
-                                        ? 'bg-white shadow-sm text-brand-green'
-                                        : 'text-text-muted hover:text-brand-green'
+                                        ? 'bg-brand-green text-white'
+                                        : 'text-brand-green hover:bg-surface-soft'
                                     }`}
                                   >
-                                    <Layers className="w-3.5 h-3.5" />
                                     Plan
                                   </button>
                                   <button
                                     onClick={() => handleDesktopViewModeChange('3d')}
-                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-bold transition-all ${
                                       effectiveDesktopView === '3d'
-                                        ? 'bg-white shadow-sm text-brand-green'
-                                        : 'text-text-muted hover:text-brand-green'
+                                        ? 'bg-brand-green text-white'
+                                        : 'text-brand-green hover:bg-surface-soft'
                                     }`}
                                   >
-                                    <Box className="w-3.5 h-3.5" />
                                     3D
                                   </button>
                                 </div>
@@ -2982,7 +3000,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                             const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
 
                             return (
-                              <>
+                              <div className="bg-surface-panel rounded-card p-[14px]">
                                 {(openStep === 5 || openStep === 6) && effectiveDesktopView === 'plan' && (
                                   <p className="text-sm text-text-muted mb-3">
                                     Hover over a corner below to see which corner you are configuring.
@@ -3057,10 +3075,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                                     </button>
                                   </div>
                                 )}
-                              </>
+                              </div>
                             );
                           })() : (
-                            <div className="bg-surface-panel rounded-xl p-6 text-center">
+                            <div className="bg-surface-panel rounded-card p-6 text-center">
                               <div className="text-[40px] mb-2 opacity-30">&#9651;</div>
                               <p className="text-[14px] text-text-muted leading-relaxed">
                                 Your sail will build visually as you make selections throughout each step.
@@ -3070,102 +3088,58 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         </div>
 
                         {/* Price card */}
-                        <div className="bg-brand-green rounded-card p-5">
+                        <div className="bg-brand-green rounded-card p-[18px_20px]">
                           {calculations.totalPrice > 0 ? (
                             <>
-                              <div className="text-[13px] font-medium text-white/60 mb-1">Estimated total</div>
-                              <div className="text-[28px] font-extrabold text-brand-lime leading-none">
+                              <div className="text-[12px] font-bold text-[#9fc4ad] uppercase tracking-wide">Estimated total</div>
+                              <div className="text-[32px] font-extrabold text-brand-lime leading-none mt-0.5" style={{ letterSpacing: '-0.03em' }}>
                                 {formatCurrency(calculations.totalPrice, config.currency)}
                               </div>
-                              <div className="mt-1.5 text-[12px] text-white/50">All-inclusive to your door</div>
+                              <div className="mt-1 text-[13px] text-[#cfe3d4]">All-inclusive to your door. Updates as you go.</div>
                               {calculations.hardwareBreakdown?.hardwareOnlyLivePrice > 0 && (
-                                <div className="mt-2 text-[13px] text-white/70">
+                                <div className="mt-2 text-[13px] text-[#cfe3d4]">
                                   Includes {formatCurrency(calculations.hardwareBreakdown.hardwareOnlyLivePrice, config.currency)} hardware
                                 </div>
                               )}
                             </>
                           ) : (
-                            <div className="text-[14px] font-medium text-white/60 text-center py-1">
-                              Price appears after sizing
-                            </div>
+                            <>
+                              <div className="text-[12px] font-bold text-[#9fc4ad] uppercase tracking-wide">Estimated total</div>
+                              <div className="text-[14px] text-[#cfe3d4] mt-1">
+                                Price appears after sizing
+                              </div>
+                            </>
                           )}
                         </div>
 
                         {/* Selections summary */}
-                        {(config.fabricType || config.edgeType || config.shapeMode) && (
-                          <div className="bg-white border-2 border-border-card rounded-card p-4 space-y-2.5">
-                            <h4 className="text-[15px] font-bold text-brand-green">Your selections</h4>
-                            {config.fabricType && (
-                              <div className="flex justify-between text-[14px]">
-                                <span className="text-text-muted">Fabric</span>
-                                <span className="font-semibold text-brand-green">{FABRICS.find(f => f.id === config.fabricType)?.label}</span>
-                              </div>
-                            )}
-                            {config.fabricColor && (
-                              <div className="flex justify-between text-[14px]">
-                                <span className="text-text-muted">Color</span>
-                                <span className="font-semibold text-brand-green">{config.fabricColor}</span>
-                              </div>
-                            )}
-                            {config.shapeMode && (
-                              <div className="flex justify-between text-[14px]">
-                                <span className="text-text-muted">Shape</span>
-                                <span className="font-semibold text-brand-green capitalize">
-                                  {config.shapeMode === 'fixed' && config.fixedShapeType ? config.fixedShapeType.replace(/-/g, ' ') : config.shapeMode === 'custom' && config.corners >= 3 ? `Custom ${config.corners}-point` : config.shapeMode}
-                                </span>
-                              </div>
-                            )}
-                            {config.edgeType && (
-                              <div className="flex justify-between text-[14px]">
-                                <span className="text-text-muted">Edge</span>
-                                <span className="font-semibold text-brand-green capitalize">{config.edgeType}</span>
-                              </div>
-                            )}
-                            {config.hardwareSelectionMode && (
-                              <div className="flex justify-between text-[14px]">
-                                <span className="text-text-muted">Hardware</span>
-                                <span className="font-semibold text-brand-green capitalize">{config.hardwareSelectionMode === 'standard' ? 'Hardware kit' : config.hardwareSelectionMode === 'manual' ? 'Manual' : 'None'}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
+                        <div className="flex flex-col">
+                          {[
+                            { label: 'Fabric', value: config.fabricType ? FABRICS.find(f => f.id === config.fabricType)?.label : '\u2014' },
+                            { label: 'Color', value: config.fabricColor || '\u2014' },
+                            { label: 'Shape', value: config.shapeMode ? (config.shapeMode === 'fixed' && config.fixedShapeType ? config.fixedShapeType.replace(/-/g, ' ') : config.shapeMode === 'custom' && config.corners >= 3 ? `Custom ${config.corners}-point` : config.shapeMode) : '\u2014' },
+                            { label: 'Edge', value: config.edgeType ? config.edgeType : '\u2014' },
+                            { label: 'Hardware', value: config.hardwareSelectionMode ? (config.hardwareSelectionMode === 'standard' ? 'Hardware kit' : config.hardwareSelectionMode === 'manual' ? 'Manual' : 'None') : '\u2014' },
+                          ].map((row) => (
+                            <div key={row.label} className="flex justify-between gap-3 text-[14px] py-[9px] border-b border-[#eef2ee]">
+                              <span className="text-text-muted">{row.label}</span>
+                              <span className="font-bold text-right capitalize">{row.value}</span>
+                            </div>
+                          ))}
+                        </div>
 
                         {/* Fit Guarantee note */}
                         {config.shapeMode === 'custom' && (
-                          <div className="bg-surface-soft border border-border-card rounded-card p-4">
-                            <div className="text-[14px] font-bold text-brand-green mb-1">Fit Guarantee</div>
-                            <div className="text-[13px] text-text-muted leading-relaxed">
-                              Custom made-to-measure sails are covered by our Fit Guarantee. We will remake at our cost if there is a manufacturing error.
-                            </div>
+                          <div className="text-[13px] text-[#23503f] bg-surface-soft rounded-xl p-[12px_14px] leading-relaxed">
+                            <strong>Fit Guarantee.</strong> Doesn&rsquo;t fit the space you measured? We remake it free.
                           </div>
                         )}
                       </>
                     )}
                   </div>
-                </div>
+                </aside>
               )}
             </div>
-          </div>
-
-          {/* Global sticky bottom bar */}
-          <StepNavigationFooter
-            onNext={isReviewStep ? handleAddToCartFromConfigurator : nextStep}
-            onPrev={prevStep}
-            showBack={shouldShowBackButton(openStep)}
-            nextLabel={footerNextLabel}
-            disableNext={footerDisableNext}
-            disabledHint={footerDisabledHint}
-            priceDisplay={footerPriceDisplay}
-            isReview={isReviewStep}
-          />
-
-          <LoadingOverlay
-            isVisible={showLoadingOverlay}
-            currentStep={loadingStep.text}
-            progress={loadingStep.progress}
-          />
-        </div>
-      </div>
 
       {/* Unified Save Modal */}
       {adminMode ? (

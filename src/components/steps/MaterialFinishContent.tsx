@@ -217,7 +217,7 @@ export function MaterialFinishContent({
           onMouseEnter={handleCardAreaMouseEnter}
           onMouseLeave={handleCardAreaMouseLeave}
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))' }}>
             {FABRICS.map((fabric) => {
               const isSelected = config.fabricType === fabric.id;
               return (
@@ -301,24 +301,8 @@ export function MaterialFinishContent({
                   </div>
                   <p className={`text-[14px] leading-[1.45] line-clamp-2 ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>{fabric.description}</p>
 
-                  {/* Stats bar */}
-                  <div className={`hidden sm:flex mt-3 rounded-xl p-2 transition-all duration-200 ${isSelected ? 'bg-white/10' : 'bg-surface-soft'}`}>
-                    <div className="flex justify-between items-center gap-2 w-full text-[12px]">
-                      <div className="min-w-0">
-                        <div className={`mb-0.5 ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>Weight</div>
-                        <div className={`font-bold ${isSelected ? 'text-white' : 'text-brand-green'}`}>{fabric.weightPerSqm} g/m&sup2;</div>
-                      </div>
-                      {fabric.id === 'monotec370' && (
-                        <div className="min-w-0 text-center">
-                          <div className={`mb-0.5 ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>Wind</div>
-                          <div className={`font-bold ${isSelected ? 'text-white' : 'text-brand-green'}`}>85 mph</div>
-                        </div>
-                      )}
-                      <div className="min-w-0 text-right">
-                        <div className={`mb-0.5 ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>Warranty</div>
-                        <div className={`font-bold ${isSelected ? 'text-white' : 'text-brand-green'}`}>{fabric.warrantyYears} Yrs</div>
-                      </div>
-                    </div>
+                  <div className={`text-[13px] mt-2 font-semibold ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>
+                    {fabric.weightPerSqm} g/m&sup2; &middot; {fabric.warrantyYears} year warranty
                   </div>
                 </button>
               );
@@ -359,7 +343,7 @@ export function MaterialFinishContent({
           )}
 
           {/* Color swatch grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '14px 12px' }}>
             {selectedFabric.colors.map((color) => {
               const isColorSelected = config.fabricColor === color.name;
               const isHovered = hoveredSwatch === color.name;
@@ -379,7 +363,7 @@ export function MaterialFinishContent({
                       outlineOffset: '3px',
                     } : undefined}
                   >
-                    <div className="relative aspect-square overflow-hidden bg-border-card rounded-t-[14px]">
+                    <div className="relative aspect-square overflow-hidden bg-border-card rounded-[14px]">
                       <img
                         src={color.imageUrl}
                         alt={color.name}
@@ -412,9 +396,7 @@ export function MaterialFinishContent({
                         <Search className="w-3 h-3 text-brand-green" />
                       </button>
                     </div>
-                    <div className={`px-1.5 py-1.5 text-center rounded-b-[14px] ${isColorSelected ? 'bg-brand-green' : 'bg-white'}`}>
-                      <span className={`text-[12px] font-bold leading-tight block truncate ${isColorSelected ? 'text-white' : 'text-brand-green'}`}>{color.name}</span>
-                    </div>
+                    <div className="text-[13px] font-semibold mt-2.5 leading-tight text-center text-brand-green">{color.name}</div>
                   </button>
 
                   {/* Hover tooltip below swatch */}
