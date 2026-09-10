@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e6e9e6; font-family: 'Plus Jakarta Sans', sans-serif; color: #01312d; }
+  a { color: #2e7d4f; } a:hover { color: #01312d; }
+  input { font-family: inherit; }
+</style>
+</helmet>
+
+<section style="padding: 40px 48px 80px; display: flex; flex-direction: column; gap: 28px">
+  <div style="max-width: 900px">
+    <div style="font-size: 13px; font-weight: 700; color: #4c6b60; letter-spacing: 0.08em; text-transform: uppercase">Turn 1 · Three UI directions</div>
+    <div style="font-size: 30px; font-weight: 800; letter-spacing: -0.02em; margin-top: 6px">Same steps, same features &#8212; three visual systems</div>
+    <div style="font-size: 16px; color: #4c6b60; margin-top: 6px; line-height: 1.5">Each direction shows the Dimensions step on desktop (the busiest screen) and Material &amp; Finish on mobile. Every existing feature is kept: unit switch, sketch upload, diagonals, heights, Plan/3D, save progress, price panel, compare fabrics.</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start">
+
+    <!-- ================= 1a  RAIL ================= -->
+    <div id="1a" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="background: #01312d; color: #fff; font-weight: 800; font-size: 14px; padding: 6px 12px; border-radius: 8px">1a</div>
+        <div><div style="font-size: 20px; font-weight: 800">Rail</div><div style="font-size: 14px; color: #4c6b60">Vertical step rail, one active card, quiet whites. Closest to today &#8212; minimal rebuild.</div></div>
+      </div>
+      <div style="display: flex; gap: 24px; align-items: flex-start">
+
+        <div style="width: 1180px; height: 820px; background: #f5f7f5; border-radius: 18px; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; display: grid; grid-template-columns: 260px 1fr 340px; box-shadow: 0 20px 50px rgba(1,49,45,0.15)">
+          <div style="padding: 32px 24px; border-right: 1px solid #e3eae4; display: flex; flex-direction: column; gap: 4px">
+            <div style="font-weight: 800; font-size: 20px; letter-spacing: -0.02em; margin-bottom: 28px">shadespace</div>
+            <div style="display: flex; gap: 14px; align-items: center; padding: 12px 10px; border-radius: 12px"><div style="width: 28px; height: 28px; border-radius: 50%; background: #2e7d4f; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800">&#10003;</div><div style="flex: 1"><div style="font-weight: 700; font-size: 15px">Material</div><div style="font-size: 12px; color: #6b8478">Monotec 370 · Jazzberry</div></div></div>
+            <div style="display: flex; gap: 14px; align-items: center; padding: 12px 10px; border-radius: 12px"><div style="width: 28px; height: 28px; border-radius: 50%; background: #2e7d4f; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800">&#10003;</div><div style="flex: 1"><div style="font-weight: 700; font-size: 15px">Shape</div><div style="font-size: 12px; color: #6b8478">Custom · 4 points</div></div></div>
+            <div style="display: flex; gap: 14px; align-items: center; padding: 12px 10px; border-radius: 12px; background: #fff; border: 1px solid #dfe7e1"><div style="width: 28px; height: 28px; border-radius: 50%; background: #01312d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800">3</div><div style="flex: 1"><div style="font-weight: 700; font-size: 15px">Dimensions</div><div style="font-size: 12px; color: #6b8478">In progress</div></div></div>
+            <div style="display: flex; gap: 14px; align-items: center; padding: 12px 10px; border-radius: 12px; opacity: 0.55"><div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c6d4ca; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">4</div><div style="font-weight: 700; font-size: 15px">Edge style</div></div>
+            <div style="display: flex; gap: 14px; align-items: center; padding: 12px 10px; border-radius: 12px; opacity: 0.55"><div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c6d4ca; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">5</div><div style="font-weight: 700; font-size: 15px">Hardware</div></div>
+            <div style="display: flex; gap: 14px; align-items: center; padding: 12px 10px; border-radius: 12px; opacity: 0.55"><div style="width: 28px; height: 28px; border-radius: 50%; border: 2px solid #c6d4ca; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700">6</div><div style="font-weight: 700; font-size: 15px">Review</div></div>
+            <div style="margin-top: auto; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: #2e7d4f; padding: 10px">&#9873; Save progress</div>
+          </div>
+
+          <div style="padding: 36px 40px; overflow: hidden; display: flex; flex-direction: column; gap: 22px">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 20px">
+              <div><div style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em">Measure each edge</div><div style="font-size: 16px; color: #4c6b60; margin-top: 4px">Fixing point to fixing point. Keep the tape tight.</div></div>
+              <div style="display: flex; flex-shrink: 0; background: #e9efea; border-radius: 10px; padding: 3px"><div style="padding: 8px 16px; border-radius: 8px; background: #fff; font-weight: 700; font-size: 14px; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.08)">ft / in</div><div style="padding: 8px 16px; font-weight: 700; font-size: 14px; white-space: nowrap; color: #4c6b60">metric</div></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; border: 1px dashed #7bb08f; background: #f2f8f3; border-radius: 14px; padding: 14px 18px; font-size: 15px"><span style="font-size: 20px">&#8679;</span><span>Have a sketch with measurements? <strong>Upload it</strong> and we fill these in.</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+              <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 16px 18px"><div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; display: flex; gap: 8px; align-items: center"><span style="background: #01312d; color: #fff; border-radius: 6px; padding: 2px 8px; font-size: 12px">A &#8594; B</span> Edge</div><div style="display: flex; gap: 8px"><div style="flex: 1; border: 2px solid #dfe7e1; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span>12</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">ft</span></div><div style="flex: 1; border: 2px solid #dfe7e1; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span>4</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">in</span></div></div></div>
+              <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 16px 18px"><div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; display: flex; gap: 8px; align-items: center"><span style="background: #01312d; color: #fff; border-radius: 6px; padding: 2px 8px; font-size: 12px">B &#8594; C</span> Edge</div><div style="display: flex; gap: 8px"><div style="flex: 1; border: 2px solid #2e7d4f; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span>9</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">ft</span></div><div style="flex: 1; border: 2px solid #dfe7e1; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span style="color: #c6d4ca">0</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">in</span></div></div></div>
+              <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 16px 18px"><div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; display: flex; gap: 8px; align-items: center"><span style="background: #01312d; color: #fff; border-radius: 6px; padding: 2px 8px; font-size: 12px">C &#8594; D</span> Edge</div><div style="display: flex; gap: 8px"><div style="flex: 1; border: 2px solid #dfe7e1; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span style="color: #c6d4ca">0</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">ft</span></div><div style="flex: 1; border: 2px solid #dfe7e1; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span style="color: #c6d4ca">0</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">in</span></div></div></div>
+              <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 16px 18px"><div style="font-weight: 700; font-size: 15px; margin-bottom: 10px; display: flex; gap: 8px; align-items: center"><span style="background: #01312d; color: #fff; border-radius: 6px; padding: 2px 8px; font-size: 12px">D &#8594; A</span> Edge</div><div style="display: flex; gap: 8px"><div style="flex: 1; border: 2px solid #dfe7e1; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span style="color: #c6d4ca">0</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">ft</span></div><div style="flex: 1; border: 2px solid #dfe7e1; border-radius: 10px; padding: 12px 14px; font-size: 20px; font-weight: 700; display: flex; justify-content: space-between"><span style="color: #c6d4ca">0</span><span style="color: #9aada2; font-size: 14px; font-weight: 600">in</span></div></div></div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 4px">
+              <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 14px 18px; flex: 1; display: flex; justify-content: space-between; align-items: center"><div><div style="font-weight: 700; font-size: 15px">Diagonals</div><div style="font-size: 13px; color: #6b8478">Next screen · 2 to enter</div></div><span style="color: #6b8478">&#8250;</span></div>
+              <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 14px 18px; flex: 1; display: flex; justify-content: space-between; align-items: center"><div><div style="font-weight: 700; font-size: 15px">Heights</div><div style="font-size: 13px; color: #6b8478">Optional for 4 points</div></div><span style="color: #6b8478">&#8250;</span></div>
+            </div>
+            <div style="margin-top: auto; display: flex; gap: 12px; align-items: center">
+              <div style="border: 2px solid #01312d; border-radius: 12px; padding: 14px 26px; font-weight: 700; font-size: 16px">Back</div>
+              <div style="flex: 1; background: #c6d4ca; color: #fff; border-radius: 12px; padding: 15px; font-weight: 700; font-size: 16px; text-align: center">2 more edges to continue</div>
+            </div>
+          </div>
+
+          <div style="padding: 36px 28px; border-left: 1px solid #e3eae4; display: flex; flex-direction: column; gap: 18px">
+            <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 800; font-size: 15px">Your sail</div><div style="display: flex; background: #e9efea; border-radius: 8px; padding: 2px"><div style="padding: 5px 12px; border-radius: 6px; background: #fff; font-weight: 700; font-size: 12px">Plan</div><div style="padding: 5px 12px; font-weight: 700; font-size: 12px; color: #4c6b60">3D</div></div></div>
+            <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 16px">
+              <svg viewBox="0 0 280 220" style="width: 100%; display: block"><polygon points="50,40 235,50 220,185 40,170" fill="#E7F2EA" stroke="#01312d" stroke-width="3" stroke-linejoin="round"></polygon><line x1="50" y1="40" x2="220" y2="185" stroke="#7bb08f" stroke-width="2" stroke-dasharray="6 4"></line><line x1="235" y1="50" x2="40" y2="170" stroke="#7bb08f" stroke-width="2" stroke-dasharray="6 4"></line><line x1="50" y1="40" x2="235" y2="50" stroke="#2e7d4f" stroke-width="5"></line><circle cx="50" cy="40" r="10" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="235" cy="50" r="10" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="220" cy="185" r="10" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="40" cy="170" r="10" fill="#fff" stroke="#01312d" stroke-width="3"></circle><text x="32" y="28" font-size="14" font-weight="800" fill="#01312d">A</text><text x="246" y="40" font-size="14" font-weight="800" fill="#01312d">B</text><text x="234" y="204" font-size="14" font-weight="800" fill="#01312d">C</text><text x="18" y="190" font-size="14" font-weight="800" fill="#01312d">D</text><text x="142" y="32" font-size="12" font-weight="700" fill="#2e7d4f" text-anchor="middle">12' 4"</text></svg>
+            </div>
+            <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 18px">
+              <div style="font-size: 12px; font-weight: 700; color: #6b8478; text-transform: uppercase; letter-spacing: 0.06em">Estimated price</div>
+              <div style="font-size: 30px; font-weight: 800; letter-spacing: -0.03em; margin-top: 2px">US$1,035</div>
+              <div style="font-size: 13px; color: #4c6b60; margin-top: 4px">All-inclusive to your door. Updates as you measure.</div>
+              <div style="border-top: 1px solid #eef2ee; margin: 14px 0"></div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0"><span style="color: #6b8478">Monotec 370</span><span style="font-weight: 700">Jazzberry</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0"><span style="color: #6b8478">Shape</span><span style="font-weight: 700">Custom · 4 pts</span></div>
+              <div style="display: flex; justify-content: space-between; font-size: 14px; padding: 4px 0"><span style="color: #6b8478">Delivery</span><span style="font-weight: 700">Sep 24 &#8211; 29</span></div>
+            </div>
+            <div style="font-size: 13px; color: #23503f; background: #eef5ef; border-radius: 12px; padding: 12px 14px"><strong>Fit Guarantee.</strong> Doesn&#8217;t fit? We remake it free.</div>
+          </div>
+        </div>
+
+        <div style="width: 390px; height: 820px; background: #f5f7f5; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 50px rgba(1,49,45,0.15); display: flex; flex-direction: column; position: relative">
+          <div style="padding: 18px 22px 0; display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 800; font-size: 17px; letter-spacing: -0.02em">shadespace</div><div style="font-size: 13px; font-weight: 700; color: #2e7d4f">Save</div></div>
+          <div style="padding: 16px 22px 0; display: flex; gap: 6px"><div style="flex: 1; height: 6px; border-radius: 3px; background: #01312d"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #dfe7e1"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #dfe7e1"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #dfe7e1"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #dfe7e1"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: #dfe7e1"></div></div>
+          <div style="padding: 20px 22px 0; display: flex; flex-direction: column; gap: 16px; flex: 1; overflow: hidden">
+            <div><div style="font-size: 13px; font-weight: 700; color: #6b8478">Step 1 of 6</div><div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px">Material &amp; finish</div></div>
+            <div style="display: flex; gap: 10px; overflow: hidden">
+              <div style="flex-shrink: 0; width: 150px; background: #fff; border: 2px solid #01312d; border-radius: 14px; padding: 14px"><div style="font-weight: 800; font-size: 15px">Monotec 370</div><div style="display: inline-block; background: #01312d; color: #b5e853; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; margin-top: 6px">Premium</div><div style="font-size: 12px; color: #6b8478; margin-top: 10px">370 g/m² · 15 yr</div></div>
+              <div style="flex-shrink: 0; width: 150px; background: #fff; border: 2px solid #dfe7e1; border-radius: 14px; padding: 14px"><div style="font-weight: 800; font-size: 15px">Commercial 95</div><div style="display: inline-block; background: #eef5ef; color: #23503f; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; margin-top: 6px">Architectural</div><div style="font-size: 12px; color: #6b8478; margin-top: 10px">340 g/m² · 15 yr</div></div>
+              <div style="flex-shrink: 0; width: 150px; background: #fff; border: 2px solid #dfe7e1; border-radius: 14px; padding: 14px"><div style="font-weight: 800; font-size: 15px">ExtraBlock</div></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px"><span style="color: #4c6b60">Swipe for more</span><span style="font-weight: 700; color: #2e7d4f">Compare fabrics &#8250;</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-weight: 800; font-size: 17px">Color</div><div style="font-size: 14px; color: #4c6b60">Jazzberry Purple</div></div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px">
+              <div style="aspect-ratio: 1; border-radius: 12px; background: #1F4A34"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #1c1c1c"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #232D5F"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #8fd12b"></div>
+              <div style="aspect-ratio: 1; border-radius: 12px; background: #9b1420"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #7a3a1e"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #2b62c9"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #4a5561"></div>
+              <div style="aspect-ratio: 1; border-radius: 12px; background: #d9c79a"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #e4531a"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #8a1d4e"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #f0d21c"></div>
+              <div style="aspect-ratio: 1; border-radius: 12px; background: #5b2c86; outline: 3px solid #01312d; outline-offset: 3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800">&#10003;</div><div style="aspect-ratio: 1; border-radius: 12px; background: #4a0f1a"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #efe9d8"></div><div style="aspect-ratio: 1; border-radius: 12px; background: #9a9a9a"></div>
+            </div>
+          </div>
+          <div style="padding: 14px 22px 26px; background: #fff; border-top: 1px solid #dfe7e1"><div style="background: #01312d; color: #fff; border-radius: 14px; padding: 16px; font-weight: 700; font-size: 17px; text-align: center">Continue &#8594; shape</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 1b  EDITORIAL ================= -->
+    <div id="1b" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="background: #01312d; color: #fff; font-weight: 800; font-size: 14px; padding: 6px 12px; border-radius: 8px">1b</div>
+        <div><div style="font-size: 20px; font-weight: 800">Editorial</div><div style="font-size: 14px; color: #4c6b60">Warm paper ground, serif headlines, hairlines instead of boxes. Feels like a premium made-to-order product.</div></div>
+      </div>
+      <div style="display: flex; gap: 24px; align-items: flex-start">
+
+        <div style="width: 1180px; height: 820px; background: #faf8f3; border-radius: 18px; overflow: hidden; font-family: 'Bricolage Grotesque', sans-serif; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(1,49,45,0.15)">
+          <div style="padding: 22px 48px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2ddd0">
+            <div style="font-weight: 800; font-size: 20px; letter-spacing: -0.03em">shadespace</div>
+            <div style="display: flex; gap: 30px; font-size: 14px; font-weight: 600; color: #8a8579">
+              <span style="color: #01312d">Material <span style="color: #2e7d4f">&#10003;</span></span><span style="color: #01312d">Shape <span style="color: #2e7d4f">&#10003;</span></span><span style="color: #01312d; border-bottom: 2px solid #01312d; padding-bottom: 4px">Dimensions</span><span>Edge</span><span>Hardware</span><span>Review</span>
+            </div>
+            <div style="font-size: 14px; font-weight: 700; color: #2e7d4f">Save progress</div>
+          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden">
+            <div style="padding: 44px 48px; display: flex; flex-direction: column; gap: 26px; border-right: 1px solid #e2ddd0">
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: #8a8579; letter-spacing: 0.1em; text-transform: uppercase">Step 3 · Dimensions</div>
+                <div style="font-family: 'Newsreader', serif; font-size: 44px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.05; margin-top: 8px">Measure each edge, fixing point to fixing point.</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <div style="display: flex; gap: 22px; font-size: 15px; font-weight: 700"><span style="border-bottom: 2px solid #01312d; padding-bottom: 3px">Feet &amp; inches</span><span style="color: #8a8579">Metric</span></div>
+                <div style="font-size: 15px; font-weight: 700; color: #2e7d4f">&#8679; Upload a sketch instead</div>
+              </div>
+              <div style="display: flex; flex-direction: column">
+                <div style="display: grid; grid-template-columns: 110px 1fr 1fr; gap: 16px; align-items: center; padding: 16px 0; border-top: 1px solid #e2ddd0"><div style="font-size: 18px; font-weight: 700">A &#8594; B</div><div style="border-bottom: 2px solid #01312d; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span>12</span><span style="font-size: 14px; color: #8a8579">ft</span></div><div style="border-bottom: 2px solid #01312d; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span>4</span><span style="font-size: 14px; color: #8a8579">in</span></div></div>
+                <div style="display: grid; grid-template-columns: 110px 1fr 1fr; gap: 16px; align-items: center; padding: 16px 0; border-top: 1px solid #e2ddd0"><div style="font-size: 18px; font-weight: 700">B &#8594; C</div><div style="border-bottom: 2px solid #2e7d4f; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span>9</span><span style="font-size: 14px; color: #8a8579">ft</span></div><div style="border-bottom: 2px solid #d8d2c2; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #cfc9b9">0</span><span style="font-size: 14px; color: #8a8579">in</span></div></div>
+                <div style="display: grid; grid-template-columns: 110px 1fr 1fr; gap: 16px; align-items: center; padding: 16px 0; border-top: 1px solid #e2ddd0"><div style="font-size: 18px; font-weight: 700">C &#8594; D</div><div style="border-bottom: 2px solid #d8d2c2; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #cfc9b9">0</span><span style="font-size: 14px; color: #8a8579">ft</span></div><div style="border-bottom: 2px solid #d8d2c2; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #cfc9b9">0</span><span style="font-size: 14px; color: #8a8579">in</span></div></div>
+                <div style="display: grid; grid-template-columns: 110px 1fr 1fr; gap: 16px; align-items: center; padding: 16px 0; border-top: 1px solid #e2ddd0; border-bottom: 1px solid #e2ddd0"><div style="font-size: 18px; font-weight: 700">D &#8594; A</div><div style="border-bottom: 2px solid #d8d2c2; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #cfc9b9">0</span><span style="font-size: 14px; color: #8a8579">ft</span></div><div style="border-bottom: 2px solid #d8d2c2; padding: 6px 0; font-size: 26px; font-weight: 600; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #cfc9b9">0</span><span style="font-size: 14px; color: #8a8579">in</span></div></div>
+              </div>
+              <div style="font-size: 15px; color: #6b675c; line-height: 1.5">Then: <strong style="color: #01312d">2 diagonals</strong> · heights are optional for 4 fixing points.</div>
+              <div style="margin-top: auto; display: flex; gap: 14px; align-items: center">
+                <div style="font-size: 16px; font-weight: 700; padding: 14px 6px">&#8592; Back</div>
+                <div style="flex: 1; background: #d8d2c2; color: #fff; border-radius: 999px; padding: 17px; font-weight: 700; font-size: 16px; text-align: center">Enter 2 more edges to continue</div>
+              </div>
+            </div>
+            <div style="padding: 44px 48px; display: flex; flex-direction: column; gap: 24px; background: #f4f1e8">
+              <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-family: 'Newsreader', serif; font-size: 24px">Your sail</div><div style="display: flex; gap: 18px; font-size: 14px; font-weight: 700"><span style="border-bottom: 2px solid #01312d">Plan</span><span style="color: #8a8579">3D</span></div></div>
+              <svg viewBox="0 0 400 300" style="width: 100%; display: block"><polygon points="70,50 340,64 320,258 56,236" fill="#5b2c86" fill-opacity="0.85" stroke="#01312d" stroke-width="3" stroke-linejoin="round"></polygon><line x1="70" y1="50" x2="320" y2="258" stroke="#faf8f3" stroke-width="2" stroke-dasharray="6 5"></line><line x1="340" y1="64" x2="56" y2="236" stroke="#faf8f3" stroke-width="2" stroke-dasharray="6 5"></line><line x1="70" y1="50" x2="340" y2="64" stroke="#b5e853" stroke-width="6"></line><circle cx="70" cy="50" r="11" fill="#faf8f3" stroke="#01312d" stroke-width="3"></circle><circle cx="340" cy="64" r="11" fill="#faf8f3" stroke="#01312d" stroke-width="3"></circle><circle cx="320" cy="258" r="11" fill="#faf8f3" stroke="#01312d" stroke-width="3"></circle><circle cx="56" cy="236" r="11" fill="#faf8f3" stroke="#01312d" stroke-width="3"></circle><text x="48" y="36" font-size="17" font-weight="700" fill="#01312d">A</text><text x="354" y="54" font-size="17" font-weight="700" fill="#01312d">B</text><text x="334" y="282" font-size="17" font-weight="700" fill="#01312d">C</text><text x="30" y="260" font-size="17" font-weight="700" fill="#01312d">D</text><text x="205" y="42" font-size="14" font-weight="700" fill="#01312d" text-anchor="middle">12' 4"</text></svg>
+              <div style="border-top: 1px solid #d8d2c2; padding-top: 22px; display: flex; justify-content: space-between; align-items: flex-end">
+                <div><div style="font-size: 13px; font-weight: 700; color: #8a8579; letter-spacing: 0.1em; text-transform: uppercase">Estimated, all-inclusive</div><div style="font-family: 'Newsreader', serif; font-size: 48px; letter-spacing: -0.02em; line-height: 1; margin-top: 6px">US$1,035</div></div>
+                <div style="text-align: right; font-size: 14px; color: #6b675c; line-height: 1.6">Monotec 370 · Jazzberry Purple<br>Custom · 4 fixing points<br>Delivered Sep 24 &#8211; 29</div>
+              </div>
+              <div style="font-size: 15px; color: #23503f; line-height: 1.5; border-left: 2px solid #2e7d4f; padding-left: 14px"><strong>Fit Guarantee.</strong> If it doesn&#8217;t fit the space you measured, we remake it free and you keep the first one.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width: 390px; height: 820px; background: #faf8f3; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 50px rgba(1,49,45,0.15); display: flex; flex-direction: column; font-family: 'Bricolage Grotesque', sans-serif">
+          <div style="padding: 20px 24px 0; display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 800; font-size: 17px; letter-spacing: -0.03em">shadespace</div><div style="font-size: 13px; font-weight: 700; color: #2e7d4f">Save</div></div>
+          <div style="padding: 24px 24px 0; display: flex; flex-direction: column; gap: 20px; flex: 1; overflow: hidden">
+            <div><div style="font-size: 12px; font-weight: 700; color: #8a8579; letter-spacing: 0.1em; text-transform: uppercase">1 of 6 · Material</div><div style="font-family: 'Newsreader', serif; font-size: 34px; letter-spacing: -0.02em; line-height: 1.05; margin-top: 6px">Choose your fabric and color.</div></div>
+            <div style="display: flex; flex-direction: column">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #e2ddd0"><div><div style="font-weight: 700; font-size: 17px">Monotec 370</div><div style="font-size: 13px; color: #8a8579">Premium · 370 g/m² · 15 yr</div></div><div style="width: 24px; height: 24px; border-radius: 50%; background: #01312d; color: #b5e853; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800">&#10003;</div></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #e2ddd0"><div><div style="font-weight: 700; font-size: 17px">Commercial 95</div><div style="font-size: 13px; color: #8a8579">Architectural · 340 g/m² · 15 yr</div></div><div style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #d8d2c2"></div></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #e2ddd0"><div><div style="font-weight: 700; font-size: 17px">ExtraBlock 330</div><div style="font-size: 13px; color: #8a8579">Fire rated · 330 g/m² · 10 yr</div></div><div style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #d8d2c2"></div></div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #e2ddd0; border-bottom: 1px solid #e2ddd0"><div><div style="font-weight: 700; font-size: 17px">Shadetec 320</div><div style="font-size: 13px; color: #8a8579">Best value · 320 g/m² · 10 yr</div></div><div style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #d8d2c2"></div></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline"><div style="font-weight: 700; font-size: 17px">Color</div><div style="font-size: 14px; color: #6b675c">Jazzberry Purple</div></div>
+            <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px">
+              <div style="aspect-ratio: 1; border-radius: 50%; background: #1F4A34"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #1c1c1c"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #232D5F"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #8fd12b"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #9b1420"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #7a3a1e"></div>
+              <div style="aspect-ratio: 1; border-radius: 50%; background: #2b62c9"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #4a5561"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #d9c79a"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #e4531a"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #8a1d4e"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #f0d21c"></div>
+              <div style="aspect-ratio: 1; border-radius: 50%; background: #5b2c86; outline: 2px solid #01312d; outline-offset: 3px"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #4a0f1a"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #efe9d8"></div><div style="aspect-ratio: 1; border-radius: 50%; background: #9a9a9a"></div>
+            </div>
+          </div>
+          <div style="padding: 14px 24px 26px"><div style="background: #01312d; color: #fff; border-radius: 999px; padding: 17px; font-weight: 700; font-size: 17px; text-align: center">Continue &#8594; shape</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 1c  CANOPY ================= -->
+    <div id="1c" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="background: #01312d; color: #fff; font-weight: 800; font-size: 14px; padding: 6px 12px; border-radius: 8px">1c</div>
+        <div><div style="font-size: 20px; font-weight: 800">Canopy</div><div style="font-size: 14px; color: #4c6b60">Deep green header carries progress and live price; content is one flat surface with big filled selections. Highest contrast for older eyes.</div></div>
+      </div>
+      <div style="display: flex; gap: 24px; align-items: flex-start">
+
+        <div style="width: 1180px; height: 820px; background: #ffffff; border-radius: 18px; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(1,49,45,0.15)">
+          <div style="background: #01312d; color: #fff; padding: 22px 48px; display: flex; align-items: center; justify-content: space-between; gap: 30px">
+            <div style="font-weight: 800; font-size: 20px; letter-spacing: -0.02em">shadespace</div>
+            <div style="display: flex; gap: 8px; align-items: center">
+              <div style="height: 8px; width: 70px; border-radius: 4px; background: #b5e853"></div><div style="height: 8px; width: 70px; border-radius: 4px; background: #b5e853"></div><div style="height: 8px; width: 70px; border-radius: 4px; background: #b5e853; opacity: 0.5"></div><div style="height: 8px; width: 70px; border-radius: 4px; background: rgba(255,255,255,0.18)"></div><div style="height: 8px; width: 70px; border-radius: 4px; background: rgba(255,255,255,0.18)"></div><div style="height: 8px; width: 70px; border-radius: 4px; background: rgba(255,255,255,0.18)"></div>
+              <div style="font-size: 14px; font-weight: 700; margin-left: 12px; color: #cfe3d4">Step 3 of 6 · Dimensions</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 22px"><div style="text-align: right"><div style="font-size: 12px; color: #9fc4ad; font-weight: 600">Estimated · all-inclusive</div><div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #b5e853">US$1,035</div></div><div style="border: 2px solid rgba(255,255,255,0.3); border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 700">Save</div></div>
+          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: 1.1fr 1fr; overflow: hidden">
+            <div style="padding: 40px 48px; display: flex; flex-direction: column; gap: 24px">
+              <div style="display: flex; justify-content: space-between; align-items: flex-end">
+                <div><div style="font-size: 32px; font-weight: 800; letter-spacing: -0.02em">Measure each edge</div><div style="font-size: 17px; color: #4c6b60; margin-top: 4px">Fixing point to fixing point, tape tight.</div></div>
+                <div style="display: flex; border: 2px solid #01312d; border-radius: 12px; overflow: hidden"><div style="padding: 10px 18px; background: #01312d; color: #fff; font-weight: 700; font-size: 15px">ft / in</div><div style="padding: 10px 18px; font-weight: 700; font-size: 15px">metric</div></div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+                <div style="background: #f2f6f3; border-radius: 16px; padding: 18px 20px"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px"><div style="font-weight: 800; font-size: 17px">Edge A &#8594; B</div><div style="width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></div><div style="display: flex; gap: 10px"><div style="flex: 1; background: #fff; border: 2px solid #01312d; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span>12</span><span style="font-size: 14px; color: #6b8478">ft</span></div><div style="flex: 1; background: #fff; border: 2px solid #01312d; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span>4</span><span style="font-size: 14px; color: #6b8478">in</span></div></div></div>
+                <div style="background: #f2f6f3; border-radius: 16px; padding: 18px 20px; outline: 3px solid #b5e853; outline-offset: -3px"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px"><div style="font-weight: 800; font-size: 17px">Edge B &#8594; C</div><div style="font-size: 13px; font-weight: 700; color: #2e7d4f">Now</div></div><div style="display: flex; gap: 10px"><div style="flex: 1; background: #fff; border: 2px solid #2e7d4f; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span>9</span><span style="font-size: 14px; color: #6b8478">ft</span></div><div style="flex: 1; background: #fff; border: 2px solid #dfe7e1; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #c6d4ca">0</span><span style="font-size: 14px; color: #6b8478">in</span></div></div></div>
+                <div style="background: #f2f6f3; border-radius: 16px; padding: 18px 20px"><div style="font-weight: 800; font-size: 17px; margin-bottom: 12px">Edge C &#8594; D</div><div style="display: flex; gap: 10px"><div style="flex: 1; background: #fff; border: 2px solid #dfe7e1; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #c6d4ca">0</span><span style="font-size: 14px; color: #6b8478">ft</span></div><div style="flex: 1; background: #fff; border: 2px solid #dfe7e1; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #c6d4ca">0</span><span style="font-size: 14px; color: #6b8478">in</span></div></div></div>
+                <div style="background: #f2f6f3; border-radius: 16px; padding: 18px 20px"><div style="font-weight: 800; font-size: 17px; margin-bottom: 12px">Edge D &#8594; A</div><div style="display: flex; gap: 10px"><div style="flex: 1; background: #fff; border: 2px solid #dfe7e1; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #c6d4ca">0</span><span style="font-size: 14px; color: #6b8478">ft</span></div><div style="flex: 1; background: #fff; border: 2px solid #dfe7e1; border-radius: 12px; padding: 14px 16px; font-size: 24px; font-weight: 800; display: flex; justify-content: space-between; align-items: baseline"><span style="color: #c6d4ca">0</span><span style="font-size: 14px; color: #6b8478">in</span></div></div></div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 14px; background: #fff; border: 2px dashed #7bb08f; border-radius: 16px; padding: 16px 20px; font-size: 16px"><span style="font-size: 22px">&#8679;</span><span>Have a sketch? <strong>Upload it</strong> and we fill these in for you.</span></div>
+              <div style="margin-top: auto; display: flex; gap: 14px; align-items: center">
+                <div style="border: 2px solid #01312d; border-radius: 14px; padding: 16px 28px; font-weight: 700; font-size: 17px">Back</div>
+                <div style="flex: 1; background: #c6d4ca; color: #fff; border-radius: 14px; padding: 17px; font-weight: 700; font-size: 17px; text-align: center">Enter 2 more edges to continue</div>
+              </div>
+            </div>
+            <div style="background: #f2f6f3; padding: 40px 48px; display: flex; flex-direction: column; gap: 20px">
+              <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 800; font-size: 17px">Live preview</div><div style="display: flex; border: 2px solid #01312d; border-radius: 10px; overflow: hidden"><div style="padding: 7px 14px; background: #01312d; color: #fff; font-weight: 700; font-size: 13px">Plan</div><div style="padding: 7px 14px; font-weight: 700; font-size: 13px">3D</div></div></div>
+              <div style="background: #fff; border-radius: 18px; padding: 24px; flex: 1; display: flex; align-items: center">
+                <svg viewBox="0 0 400 300" style="width: 100%; display: block"><polygon points="70,50 340,64 320,258 56,236" fill="#5b2c86" stroke="#01312d" stroke-width="3" stroke-linejoin="round"></polygon><line x1="70" y1="50" x2="320" y2="258" stroke="#fff" stroke-width="2" stroke-dasharray="6 5" opacity="0.7"></line><line x1="340" y1="64" x2="56" y2="236" stroke="#fff" stroke-width="2" stroke-dasharray="6 5" opacity="0.7"></line><line x1="340" y1="64" x2="320" y2="258" stroke="#b5e853" stroke-width="7"></line><circle cx="70" cy="50" r="12" fill="#01312d"></circle><circle cx="340" cy="64" r="12" fill="#01312d"></circle><circle cx="320" cy="258" r="12" fill="#01312d"></circle><circle cx="56" cy="236" r="12" fill="#01312d"></circle><text x="70" y="55" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">A</text><text x="340" y="69" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">B</text><text x="320" y="263" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">C</text><text x="56" y="241" font-size="13" font-weight="800" fill="#fff" text-anchor="middle">D</text><text x="205" y="40" font-size="14" font-weight="700" fill="#01312d" text-anchor="middle">12' 4"</text><text x="352" y="170" font-size="14" font-weight="800" fill="#2e7d4f">9' ?"</text></svg>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px">
+                <div style="background: #fff; border-radius: 14px; padding: 14px 16px"><div style="font-size: 12px; font-weight: 700; color: #6b8478">Fabric</div><div style="font-weight: 800; font-size: 15px; margin-top: 2px">Monotec 370</div></div>
+                <div style="background: #fff; border-radius: 14px; padding: 14px 16px"><div style="font-size: 12px; font-weight: 700; color: #6b8478">Color</div><div style="font-weight: 800; font-size: 15px; margin-top: 2px; display: flex; align-items: center; gap: 6px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #5b2c86; display: inline-block"></span>Jazzberry</div></div>
+                <div style="background: #fff; border-radius: 14px; padding: 14px 16px"><div style="font-size: 12px; font-weight: 700; color: #6b8478">Delivery</div><div style="font-weight: 800; font-size: 15px; margin-top: 2px">Sep 24 &#8211; 29</div></div>
+              </div>
+              <div style="background: #01312d; color: #cfe3d4; border-radius: 14px; padding: 14px 18px; font-size: 14px; line-height: 1.5"><strong style="color: #b5e853">Fit Guarantee.</strong> Doesn&#8217;t fit the space you measured? We remake it free.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="width: 390px; height: 820px; background: #ffffff; border-radius: 36px; overflow: hidden; box-shadow: 0 20px 50px rgba(1,49,45,0.15); display: flex; flex-direction: column">
+          <div style="background: #01312d; color: #fff; padding: 22px 22px 18px">
+            <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 800; font-size: 17px; letter-spacing: -0.02em">shadespace</div><div style="font-size: 13px; font-weight: 700; color: #b5e853">Save</div></div>
+            <div style="display: flex; gap: 5px; margin-top: 16px"><div style="flex: 1; height: 6px; border-radius: 3px; background: #b5e853"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.2)"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.2)"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.2)"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.2)"></div><div style="flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.2)"></div></div>
+            <div style="font-size: 13px; font-weight: 700; color: #9fc4ad; margin-top: 10px">Step 1 of 6</div>
+            <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-top: 2px">Material &amp; finish</div>
+          </div>
+          <div style="padding: 20px 22px 0; display: flex; flex-direction: column; gap: 14px; flex: 1; overflow: hidden">
+            <div style="background: #01312d; color: #fff; border-radius: 16px; padding: 16px 18px; display: flex; justify-content: space-between; align-items: center"><div><div style="font-weight: 800; font-size: 17px">Monotec 370</div><div style="font-size: 13px; color: #9fc4ad; margin-top: 2px">Premium · 370 g/m² · 15 yr warranty</div></div><div style="width: 26px; height: 26px; border-radius: 50%; background: #b5e853; color: #01312d; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800">&#10003;</div></div>
+            <div style="background: #f2f6f3; border-radius: 16px; padding: 16px 18px; display: flex; justify-content: space-between; align-items: center"><div><div style="font-weight: 800; font-size: 17px">Commercial 95</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Architectural · 340 g/m² · 15 yr</div></div><div style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #c6d4ca"></div></div>
+            <div style="background: #f2f6f3; border-radius: 16px; padding: 16px 18px; display: flex; justify-content: space-between; align-items: center"><div><div style="font-weight: 800; font-size: 17px">ExtraBlock 330</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Fire rated · 330 g/m² · 10 yr</div></div><div style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #c6d4ca"></div></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px"><span style="color: #6b8478">+ Shadetec 320</span><span style="font-weight: 700; color: #2e7d4f">Compare all &#8250;</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 4px"><div style="font-weight: 800; font-size: 17px">Color</div><div style="font-size: 14px; color: #4c6b60">Jazzberry Purple</div></div>
+            <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px">
+              <div style="aspect-ratio: 1; border-radius: 14px; background: #1F4A34"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #1c1c1c"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #232D5F"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #8fd12b"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #9b1420"></div>
+              <div style="aspect-ratio: 1; border-radius: 14px; background: #7a3a1e"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #2b62c9"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #4a5561"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #d9c79a"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #e4531a"></div>
+              <div style="aspect-ratio: 1; border-radius: 14px; background: #8a1d4e"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #f0d21c"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #5b2c86; outline: 3px solid #b5e853; outline-offset: -3px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 18px">&#10003;</div><div style="aspect-ratio: 1; border-radius: 14px; background: #4a0f1a"></div><div style="aspect-ratio: 1; border-radius: 14px; background: #efe9d8"></div>
+            </div>
+          </div>
+          <div style="padding: 14px 22px 26px"><div style="background: #01312d; color: #fff; border-radius: 14px; padding: 17px; font-weight: 700; font-size: 17px; text-align: center">Continue &#8594; shape</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

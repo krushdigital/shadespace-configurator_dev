@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShadeSpace — Choose Your Shape step</title>
+<!--
+  Handoff for Bolt.new
+  - All icons are inline SVG (also usable standalone; see the "ICON LIBRARY" section at the bottom).
+  - Selecting "custom" should route the user to the custom flow (plot 3-8 fixing points,
+    measure every edge & diagonal); any other shape routes to the fixed-shape flow (1-2 measurements).
+  - Brand: deep green #01312d, accent #2e7d4f, fills #E7F2EA.
+-->
+<style>
+  :root {
+    --brand: #01312d;
+    --accent: #2e7d4f;
+    --accent-soft: #7bb08f;
+    --fill: #E7F2EA;
+    --border: #dfe7e1;
+    --muted: #6b8478;
+    --text-soft: #4c6b60;
+  }
+  body { margin: 0; background: #f4f6f4; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: var(--brand); }
+  .step-card { max-width: 1060px; margin: 48px auto; background: #fff; border: 1px solid var(--border); border-radius: 20px; padding: 36px 40px 32px; box-shadow: 0 2px 10px rgba(1,49,45,0.05); }
+  .step-header { display: flex; align-items: center; gap: 16px; }
+  .step-header__num { width: 44px; height: 44px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  .step-header__title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+  .step-header__sub { font-size: 14px; color: var(--text-soft); }
+  .shape-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 26px; }
+  @media (max-width: 800px) { .shape-grid { grid-template-columns: repeat(2, 1fr); } }
+  .shape-tile { position: relative; cursor: pointer; background: #fbfdfb; border: 2px solid var(--border); border-radius: 16px; padding: 22px 12px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; font: inherit; color: inherit; }
+  .shape-tile:hover { border-color: var(--accent-soft); }
+  .shape-tile[data-shape="custom"] { background: #f2f8f3; border-style: dashed; border-color: var(--accent-soft); }
+  .shape-tile.is-selected { border-color: var(--accent); border-style: solid; box-shadow: inset 0 0 0 1px var(--accent); }
+  .shape-tile.is-selected::after { content: '\2713'; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .shape-tile__label { font-weight: 700; font-size: 15px; }
+  .shape-tile__hint { font-size: 12px; color: var(--muted); }
+  .flow-hint { margin-top: 20px; display: flex; align-items: center; gap: 10px; background: #eef5ef; border-radius: 12px; padding: 13px 18px; font-size: 14px; color: #23503f; }
+  .step-actions { display: flex; gap: 12px; margin-top: 26px; }
+  .btn { border-radius: 10px; padding: 12px 28px; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; }
+  .btn--back { background: none; border: 2px solid var(--brand); color: var(--brand); }
+  .btn--continue { flex: 1; background: var(--brand); border: none; color: #fff; }
+  .btn--continue:hover { background: #0a4a41; }
+</style>
+</head>
+<body>
+
+<section class="step-card" aria-labelledby="shape-step-title">
+  <header class="step-header">
+    <div class="step-header__num">2</div>
+    <div>
+      <div class="step-header__title" id="shape-step-title">Shape &amp; Size</div>
+      <div class="step-header__sub">Pick the shape that matches your fixing points</div>
+    </div>
+  </header>
+
+  <div class="shape-grid" role="radiogroup" aria-label="Sail shape">
+      <button class="shape-tile" data-shape="square" type="button">
+        <svg width="82" height="82" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M12,12 Q50,22 88,12 Q78,50 88,88 Q50,78 12,88 Q22,50 12,12 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="12" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="12" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg>
+        <span class="shape-tile__label">Square</span>
+        <span class="shape-tile__hint">1 measurement</span>
+      </button>
+      <button class="shape-tile" data-shape="rectangle" type="button">
+        <svg width="82" height="82" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M6,28 Q50,37 94,28 Q88,50 94,72 Q50,63 6,72 Q12,50 6,28 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><circle cx="6" cy="28" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="94" cy="28" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="94" cy="72" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="6" cy="72" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg>
+        <span class="shape-tile__label">Rectangle</span>
+        <span class="shape-tile__hint">2 measurements</span>
+      </button>
+      <button class="shape-tile" data-shape="triangle" type="button">
+        <svg width="82" height="82" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M50,10 Q63.8,52 93,85 Q50,76 7,85 Q36.2,52 50,10 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><circle cx="50" cy="10" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="93" cy="85" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="7" cy="85" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg>
+        <span class="shape-tile__label">Triangle</span>
+        <span class="shape-tile__hint">1 measurement</span>
+      </button>
+      <button class="shape-tile" data-shape="right-triangle" type="button">
+        <svg width="82" height="82" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M18,12 Q46.9,56.6 88,88 Q49.6,80.7 18,88 Q25,53.8 18,12 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><path d="M28,88 V79 H18" fill="none" stroke="#01312d" stroke-width="2.5"></path><circle cx="18" cy="12" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="18" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg>
+        <span class="shape-tile__label">Right Angle Triangle</span>
+        <span class="shape-tile__hint">2 measurements</span>
+      </button>
+      <button class="shape-tile" data-shape="custom" type="button">
+        <svg width="82" height="82" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><line x1="14" y1="40" x2="14" y2="92" stroke="#01312d" stroke-width="3"></line><line x1="44" y1="16" x2="44" y2="88" stroke="#01312d" stroke-width="3"></line><line x1="88" y1="30" x2="88" y2="90" stroke="#01312d" stroke-width="3"></line><line x1="64" y1="58" x2="64" y2="94" stroke="#01312d" stroke-width="3"></line><path d="M14,40 Q30,32 44,16 Q68,28 88,30 Q74,42 64,58 Q38,54 14,40 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round" stroke-dasharray="7 5"></path><circle cx="14" cy="40" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="44" cy="16" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="30" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="64" cy="58" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg>
+        <span class="shape-tile__label">Custom Shape</span>
+        <span class="shape-tile__hint">3&#8211;8 fixing points</span>
+      </button>
+  </div>
+
+  <div class="flow-hint" id="flow-hint">
+    <span>&#8594;</span>
+    <span><strong id="flow-title">Fixed shape flow</strong> &nbsp;<span id="flow-desc">Standard geometric shape &#8212; only 1&#8211;2 measurements needed.</span></span>
+  </div>
+
+  <div class="step-actions">
+    <button class="btn btn--back" type="button">Back</button>
+    <button class="btn btn--continue" type="button" id="continue-btn">Continue &#8594; dimensions</button>
+  </div>
+</section>
+
+<!-- =============================================================
+     ICON LIBRARY — standalone copies of every icon (100x100 viewBox,
+     scale freely). Delete this section if you only need the step.
+     ============================================================= -->
+<section class="step-card">
+  <div class="step-header__title" style="font-size:18px">Icon library</div>
+  <div class="shape-grid" style="grid-template-columns: repeat(7, 1fr)">
+    <div class="shape-tile" style="cursor:default"><svg width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M12,12 Q50,22 88,12 Q78,50 88,88 Q50,78 12,88 Q22,50 12,12 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><circle cx="12" cy="12" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="12" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="12" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg><span class="shape-tile__hint">square.svg</span></div>
+    <div class="shape-tile" style="cursor:default"><svg width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M6,28 Q50,37 94,28 Q88,50 94,72 Q50,63 6,72 Q12,50 6,28 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><circle cx="6" cy="28" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="94" cy="28" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="94" cy="72" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="6" cy="72" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg><span class="shape-tile__hint">rectangle.svg</span></div>
+    <div class="shape-tile" style="cursor:default"><svg width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M50,10 Q63.8,52 93,85 Q50,76 7,85 Q36.2,52 50,10 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><circle cx="50" cy="10" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="93" cy="85" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="7" cy="85" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg><span class="shape-tile__hint">triangle.svg</span></div>
+    <div class="shape-tile" style="cursor:default"><svg width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M18,12 Q46.9,56.6 88,88 Q49.6,80.7 18,88 Q25,53.8 18,12 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><path d="M28,88 V79 H18" fill="none" stroke="#01312d" stroke-width="2.5"></path><circle cx="18" cy="12" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="18" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="88" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg><span class="shape-tile__hint">right-triangle.svg</span></div>
+    <div class="shape-tile" style="cursor:default"><svg width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><path d="M32,12 Q59.1,24.9 88,24 Q83.1,46.9 92,68 Q70.2,73.1 56,90 Q37.8,69 10,58 Q27.4,37.9 32,12 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round" stroke-dasharray="7 5"></path><circle cx="32" cy="12" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="24" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="92" cy="68" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="56" cy="90" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="10" cy="58" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg><span class="shape-tile__hint">custom.svg</span></div>
+    <div class="shape-tile" style="cursor:default"><svg width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><line x1="15" y1="34" x2="15" y2="90" stroke="#01312d" stroke-width="3"></line><line x1="52" y1="50" x2="52" y2="90" stroke="#01312d" stroke-width="3"></line><line x1="88" y1="24" x2="88" y2="90" stroke="#01312d" stroke-width="3"></line><line x1="6" y1="90" x2="97" y2="90" stroke="#01312d" stroke-width="3" stroke-linecap="round"></line><path d="M15,32 Q33,48 52,50 Q70,44 88,24 Q71,52 52,58 Q33,56 15,40 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round"></path><circle cx="15" cy="34" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="52" cy="50" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="24" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg><span class="shape-tile__hint">custom-heights.svg</span></div>
+    <div class="shape-tile" style="cursor:default"><svg width="72" height="72" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none"><line x1="14" y1="40" x2="14" y2="92" stroke="#01312d" stroke-width="3"></line><line x1="44" y1="16" x2="44" y2="88" stroke="#01312d" stroke-width="3"></line><line x1="88" y1="30" x2="88" y2="90" stroke="#01312d" stroke-width="3"></line><line x1="64" y1="58" x2="64" y2="94" stroke="#01312d" stroke-width="3"></line><path d="M14,40 Q30,32 44,16 Q68,28 88,30 Q74,42 64,58 Q38,54 14,40 Z" fill="#E7F2EA" stroke="#01312d" stroke-width="3.5" stroke-linejoin="round" stroke-dasharray="7 5"></path><circle cx="14" cy="40" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="44" cy="16" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="88" cy="30" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle><circle cx="64" cy="58" r="5" fill="#fff" stroke="#01312d" stroke-width="3"></circle></svg><span class="shape-tile__hint">custom-combined.svg</span></div>
+  </div>
+</section>
+
+<script>
+  const tiles = document.querySelectorAll('.shape-grid[role="radiogroup"] .shape-tile');
+  tiles.forEach(t => t.addEventListener('click', () => {
+    tiles.forEach(x => x.classList.remove('is-selected'));
+    t.classList.add('is-selected');
+    const custom = t.dataset.shape === 'custom';
+    document.getElementById('flow-title').textContent = custom ? 'Custom sail flow' : 'Fixed shape flow';
+    document.getElementById('flow-desc').innerHTML = custom
+      ? 'Plot 3\u20138 fixing points, then measure every edge and diagonal. Covered by the Fit Guarantee.'
+      : 'Standard geometric shape \u2014 only 1\u20132 measurements needed.';
+    document.getElementById('continue-btn').innerHTML = custom ? 'Continue \u2192 plot your fixing points' : 'Continue \u2192 dimensions';
+  }));
+  document.querySelector('[data-shape="square"]').classList.add('is-selected');
+</script>
+</body>
+</html>

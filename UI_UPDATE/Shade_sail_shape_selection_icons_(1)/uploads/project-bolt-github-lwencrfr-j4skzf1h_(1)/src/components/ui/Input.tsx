@@ -1,0 +1,74 @@
+import React, { forwardRef } from 'react';
+import { Check, AlertCircle } from 'lucide-react';
+
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  error?: string;
+  errorKey?: string;
+  isSuccess?: boolean;
+  isSuggestedTypo?: boolean;
+  secondaryValue?: string;
+}
+
+export const Input = forwardRef<HTMLInputElement, InputProps>(({ label, error, errorKey, isSuccess = false, isSuggestedTypo = false, secondaryValue, className = '', ...props }, ref) => {
+  // Prevent scroll wheel from changing number input values
+  const handleWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    if (props.type === 'number') {
+      e.currentTarget.blur();
+    }
+  };
+
+  return (
+    <div>
+      {label && (
+        <label className="block text-xs sm:text-sm font-medium text-[#01312D] mb-1.5 sm:mb-2 flex items-center gap-2">
+          {label}
+          {secondaryValue && (
+            <span className="text-xs font-normal text-[#01312D]/60">
+              ({secondaryValue})
+            </span>
+          )}
+          {error && (
+            <span className="inline-flex items-center justify-center w-4 h-4 text-red-500">
+              <AlertCircle className="w-4 h-4" strokeWidth={2} />
+            </span>
+          )}
+          {isSuggestedTypo && !error && (
+            <span className="inline-flex items-center justify-center w-4 h-4 text-amber-500">
+              <AlertCircle className="w-4 h-4" strokeWidth={2} />
+            </span>
+          )}
+        </label>
+      )}
+      <div className="relative">
+        <input
+          ref={ref}
+          className={`w-full px-2 py-1.5 sm:px-4 sm:py-3 border-2 rounded-lg focus:ring-2 transition-all duration-200 text-[#01312D] text-base shadow-sm hover:shadow-md ${
+            props.type === 'number' ? 'no-spin-arrows ' : ''
+          }${
+            error ? 'border-red-500 bg-red-50 focus:ring-red-500 focus:border-red-500' :
+            isSuggestedTypo ? 'border-amber-500 bg-amber-50 focus:ring-amber-500 focus:border-amber-500' :
+            isSuccess ? 'border-emerald-500 bg-emerald-50/30 focus:ring-emerald-500 focus:border-emerald-500' :
+            'border-slate-300 bg-white focus:ring-[#BFF102] focus:border-[#BFF102]'
+          } ${className}`}
+          {...(error && errorKey ? { 'data-error': errorKey } : {})}
+          onWheel={handleWheel}
+          {...props}
+        />
+        {isSuccess && !error && !isSuggestedTypo && (
+          <div className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <span className="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-5 sm:h-5 rounded-full bg-emerald-500 text-white">
+              <Check className="w-2 h-2 sm:w-3 sm:h-3" strokeWidth={3} />
+            </span>
+          </div>
+        )}
+      </div>
+      {error && (
+        <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" strokeWidth={2} />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+});

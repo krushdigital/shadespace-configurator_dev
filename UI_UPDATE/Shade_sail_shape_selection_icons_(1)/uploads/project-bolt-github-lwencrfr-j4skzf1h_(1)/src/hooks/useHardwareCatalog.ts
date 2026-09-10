@@ -1,0 +1,173 @@
+import { useEffect, useMemo, useState } from 'react';
+import { supabase } from '../lib/supabase';
+
+export interface HardwareCategory {
+  id: string;
+  label: string;
+  display_order: number;
+}
+
+export interface HardwareItem {
+  id: string;
+  shopify_variant_id: string | null;
+  shopify_product_id: string | null;
+  sku: string | null;
+  name: string;
+  short_description: string;
+  long_description: string;
+  material: string;
+  image_url: string;
+  category_id: string | null;
+  price_nzd: number;
+  compare_at_nzd: number | null;
+  prices?: Record<string, number> | null;
+  presentment_synced_at?: string | null;
+  deduction_mm: number;
+  edge_types: string[];
+  display_order: number;
+  admin_hidden?: boolean;
+  is_featured?: boolean;
+  admin_category_override?: string | null;
+  merged_into_id?: string | null;
+  is_active?: boolean;
+  last_synced_at?: string | null;
+}
+
+export interface HardwarePack {
+  id: string;
+  name: string;
+  edge_type: 'webbing' | 'cabled';
+  corners: number;
+  items: Array<{ catalog_id: string; qty: number }>;
+  price_nzd_override: number | null;
+  prices?: Record<string, number> | null;
+}
+
+/**
+ * Live hardware price in the buyer's currency.
+ * Returns the Shopify presentment price captured by the sync function.
+ * Falls back to NZD * exchangeRate when Shopify has not yet provided a
+ * per-currency price (legacy rows without shopify_variant_id).
+ */
+export function getLiveHardwarePrice(
+  item: Pick<HardwareItem, 'prices' | 'price_nzd'>,
+  currency: string,
+  exchangeRateFromNzd: number = 1,
+): number {
+  const map = item.prices || {};
+  const direct = map[currency];
+  if (typeof direct === 'number' && direct > 0) return direct;
+  const nzd = Number(item.price_nzd) || 0;
+  if (currency === 'NZD') return nzd;
+  return nzd * exchangeRateFromNzd;
+}
+
+export function getLivePackPrice(
+  pack: Pick<HardwarePack, 'prices' | 'price_nzd_override'>,
+  currency: string,
+  exchangeRateFromNzd: number = 1,
+): number | null {
+  const map = pack.prices || {};
+  const direct = map[currency];
+  if (typeof direct === 'number' && direct > 0) return direct;
+  if (pack.price_nzd_override == null) return null;
+  const nzd = Number(pack.price_nzd_override) || 0;
+  if (currency === 'NZD') return nzd;
+  return nzd * exchangeRateFromNzd;
+}
+
+export interface HardwareCatalogData {
+  items: HardwareItem[];
+  categories: HardwareCategory[];
+  packs: HardwarePack[];
+  loading: boolean;
+  error: string | null;
+}
+
+const EMPTY: HardwareCatalogData = { items: [], categories: [], packs: [], loading: true, error: null };
+
+export function useHardwareCatalog(): HardwareCatalogData {
+  const [state, setState] = useState<HardwareCatalogData>(EMPTY);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [cats, items, packs] = await Promise.all([
+        supabase.from('hardware_categories').select('id,label,display_order').eq('is_active', true).order('display_order'),
+        supabase
+          .from('hardware_catalog')
+          .select('*')
+          .eq('is_active', true)
+          .eq('admin_hidden', false)
+          .is('merged_into_id', null)
+          .order('display_order'),
+        supabase.from('hardware_packs').select('*').eq('is_active', true),
+      ]);
+      if (cancelled) return;
+      const err = cats.error?.message || items.error?.message || packs.error?.message || null;
+      setState({
+        categories: cats.data || [],
+        items: (items.data as HardwareItem[]) || [],
+        packs: (packs.data as HardwarePack[]) || [],
+        loading: false,
+        error: err,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return state;
+}
+
+export function getDefaultPack(
+  packs: HardwarePack[],
+  edgeType: 'webbing' | 'cabled' | '',
+  corners: number,
+): HardwarePack | null {
+  if (!edgeType || !corners) return null;
+  return packs.find(p => p.edge_type === edgeType && p.corners === corners) || null;
+}
+
+function resolvedCategoryId(it: HardwareItem): string {
+  return it.admin_category_override || it.category_id || '_uncategorised';
+}
+
+export function groupItemsByCategory(items: HardwareItem[], categories: HardwareCategory[]): Array<{ category: HardwareCategory; items: HardwareItem[] }> {
+  const map = new Map<string, HardwareItem[]>();
+  for (const it of items) {
+    const key = resolvedCategoryId(it);
+    const arr = map.get(key) || [];
+    arr.push(it);
+    map.set(key, arr);
+  }
+  for (const arr of map.values()) {
+    arr.sort((a, b) => {
+      const fa = a.is_featured ? 0 : 1;
+      const fb = b.is_featured ? 0 : 1;
+      if (fa !== fb) return fa - fb;
+      return (a.display_order || 0) - (b.display_order || 0);
+    });
+  }
+  const out: Array<{ category: HardwareCategory; items: HardwareItem[] }> = [];
+  for (const cat of categories) {
+    const bucket = map.get(cat.id);
+    if (bucket && bucket.length > 0) out.push({ category: cat, items: bucket });
+  }
+  const misc = map.get('_uncategorised');
+  if (misc && misc.length > 0) out.push({ category: { id: '_uncategorised', label: 'Other', display_order: 9999 }, items: misc });
+  return out;
+}
+
+export function useHardwareSearch(items: HardwareItem[], query: string): HardwareItem[] {
+  return useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(it => {
+      return (
+        it.name.toLowerCase().includes(q) ||
+        (it.sku || '').toLowerCase().includes(q) ||
+        it.short_description.toLowerCase().includes(q)
+      );
+    });
+  }, [items, query]);
+}

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #e9ede9; font-family: 'Plus Jakarta Sans', sans-serif; color: #01312d; font-size: 18px; }
+  a { color: #2e7d4f; } a:hover { color: #01312d; }
+  input, select { font-family: 'Plus Jakarta Sans', sans-serif; }
+</style>
+</helmet>
+<div style="max-width: 430px; margin: 0 auto; min-height: 100vh; background: #fafcfa; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(1,49,45,0.12)">
+
+  <div style="padding: 14px 20px 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+    <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ goBack }}" style="width: 44px; height: 44px; border-radius: 12px; border: 2px solid #dfe7e1; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; background: #fff">&#8592;</div>
+    </sc-if>
+    <sc-if value="{{ noBack }}" hint-placeholder-val="{{ true }}">
+      <div style="width: 44px"></div>
+    </sc-if>
+    <div style="font-size: 15px; font-weight: 700; color: #4c6b60">{{ stepLabel }}</div>
+    <div onClick="{{ saveProgress }}" style="height: 44px; display: flex; align-items: center; padding: 0 12px; border-radius: 12px; font-size: 15px; font-weight: 700; color: #2e7d4f; cursor: pointer">Save</div>
+  </div>
+  <div style="margin: 0 20px 4px; height: 6px; background: #e3eae4; border-radius: 3px; overflow: hidden">
+    <div style="height:6px;background:#01312d;border-radius:3px;width:{{ progressPct }}"></div>
+  </div>
+  <sc-if value="{{ saved }}" hint-placeholder-val="{{ false }}">
+    <div style="margin: 8px 20px 0; background: #eef5ef; border-radius: 12px; padding: 12px 16px; font-size: 15px; color: #23503f">&#10003; Progress saved. We emailed you a link to pick up where you left off.</div>
+  </sc-if>
+
+  <div style="flex: 1; padding: 18px 20px 130px; display: flex; flex-direction: column; gap: 18px">
+
+    <sc-if value="{{ scFabric }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">Choose your fabric</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">Every fabric carries a 10&#8211;15 year warranty.</div>
+      </div>
+      <sc-for list="{{ fabricsList }}" as="f" hint-placeholder-count="4">
+        <div onClick="{{ f.pick }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 18px 18px 16px; cursor: pointer; margin-bottom: 2px">
+          <sc-if value="{{ f.sel }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div><div style="position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <div style="font-size: 19px; font-weight: 800">{{ f.name }}</div>
+            <div style="font-size: 12px; font-weight: 700; background: #eef5ef; color: #23503f; border-radius: 999px; padding: 3px 10px">{{ f.tag }}</div>
+          </div>
+          <div style="font-size: 15px; color: #4c6b60; margin-top: 4px">{{ f.desc }}</div>
+          <div style="font-size: 14px; color: #6b8478; margin-top: 8px; font-weight: 600">{{ f.meta }}</div>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <sc-if value="{{ scColor }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">Choose your color</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">{{ colorSub }}</div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px">
+        <sc-for list="{{ colorsList }}" as="c" hint-placeholder-count="9">
+          <div onClick="{{ c.pick }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 14px; padding: 10px; cursor: pointer; text-align: center">
+            <sc-if value="{{ c.sel }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 14px; pointer-events: none"></div><div style="position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+            <div style="height:56px;border-radius:9px;background:{{ c.css }}"></div>
+            <div style="font-size: 13px; font-weight: 700; margin-top: 7px">{{ c.name }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ scShape }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">What shape do you need?</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">Pick the shape that matches your fixing points.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+        <div onClick="{{ pickSquare }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+          <sc-if value="{{ selSquare }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+          <img src="icons/square.svg" alt="" style="width: 76px; height: 76px">
+          <div><div style="font-weight: 800; font-size: 16px">Square</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">1 measurement</div></div>
+        </div>
+        <div onClick="{{ pickRectangle }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+          <sc-if value="{{ selRectangle }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+          <img src="icons/rectangle.svg" alt="" style="width: 76px; height: 76px">
+          <div><div style="font-weight: 800; font-size: 16px">Rectangle</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">2 measurements</div></div>
+        </div>
+        <div onClick="{{ pickTriangle }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+          <sc-if value="{{ selTriangle }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+          <img src="icons/triangle.svg" alt="" style="width: 76px; height: 76px">
+          <div><div style="font-weight: 800; font-size: 16px">Triangle</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">1 measurement</div></div>
+        </div>
+        <div onClick="{{ pickRight }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+          <sc-if value="{{ selRight }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+          <img src="icons/right-triangle.svg" alt="" style="width: 76px; height: 76px">
+          <div><div style="font-weight: 800; font-size: 16px">Right Angle Triangle</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">2 measurements</div></div>
+        </div>
+      </div>
+      <div onClick="{{ pickCustom }}" style="position: relative; background: #f2f8f3; border: 2px dashed #7bb08f; border-radius: 16px; padding: 16px 18px; cursor: pointer; display: flex; align-items: center; gap: 16px">
+        <sc-if value="{{ selCustom }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+        <img src="icons/custom-combined.svg" alt="" style="width: 64px; height: 64px; flex-shrink: 0">
+        <div><div style="font-weight: 800; font-size: 16px">Custom shape</div><div style="font-size: 14px; color: #4c6b60; margin-top: 2px">Any shape, 3&#8211;8 fixing points, any heights. Includes Fit Guarantee.</div></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ scPoints }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">How many fixing points?</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">Count the posts or wall points your sail will attach to.</div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+        <sc-for list="{{ pointsList }}" as="p" hint-placeholder-count="6">
+          <div onClick="{{ p.pick }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 20px 12px; cursor: pointer; text-align: center">
+            <sc-if value="{{ p.sel }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div></sc-if>
+            <div style="font-size: 30px; font-weight: 800">{{ p.n }}</div>
+            <div style="font-size: 14px; color: #6b8478; margin-top: 2px">{{ p.cap }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ scIntro }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">How to measure</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">Three things to know before you start.</div>
+      </div>
+      <sc-for list="{{ introSteps }}" as="st" hint-placeholder-count="3">
+        <div style="display: flex; gap: 14px; background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 16px 18px; margin-bottom: 2px">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: #01312d; color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{ st.n }}</div>
+          <div style="font-size: 16px; line-height: 1.45; padding-top: 4px">{{ st.text }}</div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ isCustomFlow }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ toggleSketch }}" style="border: 2px dashed #7bb08f; background: #f2f8f3; border-radius: 16px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; cursor: pointer">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: #dcebe0; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0">&#8679;</div>
+          <div><div style="font-weight: 700; font-size: 16px">Have a sketch with measurements?</div><div style="font-size: 14px; color: #4c6b60">Upload a photo and we&#8217;ll fill everything in for you.</div></div>
+        </div>
+        <sc-if value="{{ sketchNote }}"><div style="background: #eef5ef; border-radius: 12px; padding: 12px 16px; font-size: 15px; color: #23503f">&#10003; Sketch received &#8212; we&#8217;ll pre-fill your measurements on the next screens.</div></sc-if>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ scMeasure }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">{{ measureTitle }}</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">{{ measureSub }}</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px">
+          <div style="display: flex; gap: 8px">
+            <sc-for list="{{ viewBtns }}" as="v" hint-placeholder-count="2">
+              <div onClick="{{ v.pick }}" style="padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; background: {{ v.bg }}; color: {{ v.fg }}">{{ v.label }}</div>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 8px">
+            <sc-for list="{{ unitBtns }}" as="u" hint-placeholder-count="2">
+              <div onClick="{{ u.pick }}" style="padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; background: {{ u.bg }}; color: {{ u.fg }}">{{ u.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+        {{ diagram }}
+      </div>
+      <sc-for list="{{ measureList }}" as="m" hint-placeholder-count="3">
+        <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 14px 18px; margin-bottom: 2px">
+          <div style="font-size: 16px; font-weight: 700; margin-bottom: 8px">{{ m.label }}</div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <input type="number" inputMode="decimal" value="{{ m.value }}" onChange="{{ m.onChange }}" placeholder="0" style="flex: 1; min-width: 0; font-size: 22px; font-weight: 700; padding: 12px 14px; border: 2px solid #dfe7e1; border-radius: 12px; color: #01312d; outline: none">
+            <div style="font-size: 18px; font-weight: 700; color: #6b8478; width: 30px">{{ unitSuffix }}</div>
+          </div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ measureNote }}"><div style="background: #eef5ef; border-radius: 12px; padding: 12px 16px; font-size: 15px; color: #23503f">{{ measureNoteText }}</div></sc-if>
+    </sc-if>
+
+    <sc-if value="{{ scHardware }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">Fixing hardware</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">How your sail attaches and tensions at each corner.</div>
+      </div>
+      <sc-for list="{{ hwModes }}" as="h" hint-placeholder-count="3">
+        <div onClick="{{ h.pick }}" style="position: relative; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 16px 18px; cursor: pointer; margin-bottom: 2px">
+          <sc-if value="{{ h.sel }}"><div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div><div style="position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+          <div style="display: flex; align-items: center; gap: 10px"><div style="font-weight: 800; font-size: 17px">{{ h.name }}</div><sc-if value="{{ h.badge }}"><div style="font-size: 12px; font-weight: 700; background: #eef5ef; color: #23503f; border-radius: 999px; padding: 3px 10px">Recommended</div></sc-if></div>
+          <div style="font-size: 15px; color: #4c6b60; margin-top: 4px">{{ h.desc }}</div>
+        </div>
+      </sc-for>
+      <sc-if value="{{ hwManual }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size: 17px; font-weight: 800; margin-top: 6px">Choose for each corner</div>
+        <sc-for list="{{ cornerHwList }}" as="c" hint-placeholder-count="4">
+          <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 2px">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background: #eef5ef; color: #01312d; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{ c.letter }}</div>
+            <select value="{{ c.value }}" onChange="{{ c.onChange }}" style="flex: 1; font-size: 16px; font-weight: 600; padding: 12px; border: 2px solid #dfe7e1; border-radius: 12px; color: #01312d; background: #fff">
+              <option value="turnbuckle">Turnbuckle + D-shackle</option>
+              <option value="shackle">D-shackle only</option>
+              <option value="none">No hardware</option>
+            </select>
+          </div>
+        </sc-for>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ scReview }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.02em">Review your sail</div>
+        <div style="font-size: 16px; color: #4c6b60; margin-top: 4px">Check everything before we cut your fabric.</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 6px 18px">
+        <sc-for list="{{ summaryRows }}" as="r" hint-placeholder-count="6">
+          <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #eef2ee; font-size: 16px">
+            <div style="color: #6b8478">{{ r.k }}</div><div style="font-weight: 700; text-align: right">{{ r.v }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 14px">{{ diagram }}</div>
+      <div style="background: #eef5ef; border-radius: 16px; padding: 16px 18px; font-size: 15px; color: #23503f">
+        <div style="font-weight: 800; margin-bottom: 4px">&#128666; Made and delivered {{ deliveryRange }}</div>
+        Express freight, duties and taxes included. Nothing to pay on delivery.
+      </div>
+      <sc-if value="{{ isCustomFlow }}"><div style="background: #f2f8f3; border: 1px solid #cfe3d4; border-radius: 16px; padding: 16px 18px; font-size: 15px; color: #23503f"><strong>Fit Guarantee.</strong> If your custom sail doesn&#8217;t fit the space you measured, we make you a new one free &#8212; and you keep the first one.</div></sc-if>
+      <sc-for list="{{ acksList }}" as="a" hint-placeholder-count="2">
+        <div onClick="{{ a.toggle }}" style="display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 2px solid #dfe7e1; border-radius: 16px; padding: 16px 18px; cursor: pointer; margin-bottom: 2px">
+          <div style="width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; border: 2px solid {{ a.boxBorder }}; background: {{ a.boxBg }}; color: #fff">{{ a.mark }}</div>
+          <div style="font-size: 16px; line-height: 1.4; padding-top: 2px">{{ a.text }}</div>
+        </div>
+      </sc-for>
+      <div onClick="{{ saveProgress }}" style="border: 2px solid #01312d; color: #01312d; border-radius: 14px; padding: 15px; font-weight: 700; font-size: 17px; text-align: center; cursor: pointer">Save &amp; email my quote</div>
+    </sc-if>
+  </div>
+
+  <div style="position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: center; pointer-events: none">
+    <div style="width: 100%; max-width: 430px; background: #ffffff; border-top: 1px solid #dfe7e1; padding: 14px 20px 22px; display: flex; align-items: center; gap: 14px; pointer-events: auto; box-sizing: border-box">
+      <sc-if value="{{ showPrice }}" hint-placeholder-val="{{ false }}">
+        <div style="flex-shrink: 0">
+          <div style="font-size: 13px; color: #6b8478; font-weight: 600">{{ priceCaption }}</div>
+          <div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em">{{ priceText }}</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ ctaEnabled }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ goNext }}" style="flex: 1; background: #01312d; color: #fff; border-radius: 14px; padding: 16px; font-weight: 700; font-size: 17px; text-align: center; cursor: pointer" style-hover="background: #0a4a41">{{ ctaLabel }}</div>
+      </sc-if>
+      <sc-if value="{{ ctaDisabled }}" hint-placeholder-val="{{ false }}">
+        <div style="flex: 1; background: #c6d4ca; color: #fff; border-radius: 14px; padding: 16px; font-weight: 700; font-size: 16px; text-align: center">{{ ctaHint }}</div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 430, &quot;height&quot;: 900},
+  &quot;startScreen&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;fabric&quot;, &quot;color&quot;, &quot;shape&quot;, &quot;points&quot;, &quot;intro&quot;, &quot;edges&quot;, &quot;diagonals&quot;, &quot;heights&quot;, &quot;size&quot;, &quot;hardware&quot;, &quot;review&quot;], &quot;default&quot;: &quot;fabric&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Preview&quot;}
+}">
+class Component extends DCLogic {
+  state = {
+    screen: 'fabric', fabric: null, color: null,
+    shapeMode: null, fixedShape: null, corners: 4,
+    unit: 'imperial', view: 'plan', sketch: false, saved: false,
+    edges: {}, diags: {}, heights: {}, size: {},
+    hwMode: 'standard', cornerHw: {}, acks: [false, false],
+  };
+  componentDidMount() { if (this.props.startScreen && this.props.startScreen !== 'fabric') this.setState({ screen: this.props.startScreen }); }
+  FABRICS = [
+    { id: 'monotec', name: 'Monotec 370', tag: 'Premium', desc: 'Our strongest knitted fabric. Rated to 85 mph wind.', meta: '370 g/m\u00b2 \u00b7 15 year warranty', rate: 62 },
+    { id: 'comm95', name: 'Commercial 95', tag: 'Architectural', desc: 'Unrivalled UV protection for hot climates.', meta: '340 g/m\u00b2 \u00b7 15 year warranty', rate: 58 },
+    { id: 'extrablock', name: 'ExtraBlock 330', tag: 'Fire rated', desc: 'Robust commercial fabric, fire-rated colors available.', meta: '330 g/m\u00b2 \u00b7 10 year warranty', rate: 52 },
+    { id: 'shadetec', name: 'Shadetec 320', tag: 'Best value', desc: 'High quality shade at the friendliest price.', meta: '320 g/m\u00b2 \u00b7 10 year warranty', rate: 46 },
+  ];
+  COLORS = [
+    { name: 'Beige', css: '#C9C2A6' }, { name: 'Charcoal', css: '#3C3F41' }, { name: 'Navy', css: '#232D3F' },
+    { name: 'Cream', css: '#EDE8D6' }, { name: 'Forest Green', css: '#1F4A34' }, { name: 'Silver', css: '#B9BEC1' },
+    { name: 'Sunblaze', css: '#B4552D' }, { name: 'Dove Blue', css: '#46606E' }, { name: 'Chocolate', css: '#4A3B2A' },
+    { name: 'Lime Green', css: '#7BA03F' }, { name: 'Yellow', css: '#E8C93E' }, { name: 'Pearl Onyx', css: '#D5D7D2' },
+  ];
+  SHAPES = [
+    { id: 'square', name: 'Square', icon: 'icons/square.svg', cap: '1 measurement', fields: ['Side length'] },
+    { id: 'rectangle', name: 'Rectangle', icon: 'icons/rectangle.svg', cap: '2 measurements', fields: ['Width', 'Length'] },
+    { id: 'triangle', name: 'Triangle', icon: 'icons/triangle.svg', cap: '1 measurement', fields: ['Side length'] },
+    { id: 'right', name: 'Right Angle Triangle', icon: 'icons/right-triangle.svg', cap: '2 measurements', fields: ['Side A', 'Side B'] },
+  ];
+  letters(n) { return 'ABCDEFGH'.slice(0, n).split(''); }
+  edgeKeys(n) { const L = this.letters(n); return L.map((l, i) => l + '\u2192' + L[(i + 1) % n]); }
+  diagKeys(n) { if (n < 4) return []; const L = this.letters(n); const seen = {}; const out = [];
+    for (let i = 0; i < n; i++) { const j = (i + 2) % n; const k = [L[i], L[j]].sort().join('\u2192'); if (!seen[k] && j !== i) { seen[k] = 1; out.push(k); } } return out; }
+  flow() {
+    const s = this.state; const f = ['fabric', 'color', 'shape'];
+    if (s.shapeMode === 'custom') { f.push('points', 'intro', 'edges'); if (s.corners >= 4) f.push('diagonals', 'heights'); }
+    else f.push('intro', 'size');
+    f.push('hardware', 'review'); return f;
+  }
+  valid(screen) {
+    const s = this.state;
+    switch (screen) {
+      case 'fabric': return !!s.fabric;
+      case 'color': return !!s.color;
+      case 'shape': return s.shapeMode === 'custom' || !!s.fixedShape;
+      case 'edges': return this.edgeKeys(s.corners).every(k => +s.edges[k] > 0);
+      case 'diagonals': return this.diagKeys(s.corners).every(k => +s.diags[k] > 0);
+      case 'heights': return s.corners === 4 ? true : this.letters(s.corners).every(l => +s.heights[l] > 0);
+      case 'size': { const sh = this.SHAPES.find(x => x.id === s.fixedShape); return sh ? sh.fields.every(f => +s.size[f] > 0) : false; }
+      default: return true;
+    }
+  }
+  toM(v) { return this.state.unit === 'imperial' ? v * 0.3048 : v; }
+  areaM2() {
+    const s = this.state;
+    if (s.shapeMode === 'fixed' && s.fixedShape) {
+      const g = k => this.toM(+s.size[k] || 0);
+      if (s.fixedShape === 'square') { const a = g('Side length'); return a * a; }
+      if (s.fixedShape === 'rectangle') return g('Width') * g('Length');
+      if (s.fixedShape === 'triangle') { const a = g('Side length'); return Math.sqrt(3) / 4 * a * a; }
+      if (s.fixedShape === 'right') return g('Side A') * g('Side B') / 2;
+    }
+    const ks = this.edgeKeys(s.corners); const vals = ks.map(k => +s.edges[k] || 0);
+    if (!vals.every(v => v > 0)) return 0;
+    const e = this.toM(vals.reduce((a, b) => a + b, 0) / vals.length); const n = s.corners;
+    return n * e * e / (4 * Math.tan(Math.PI / n));
+  }
+  price() {
+    const s = this.state; const a = this.areaM2(); if (!a) return 0;
+    const fab = this.FABRICS.find(f => f.id === s.fabric) || this.FABRICS[0];
+    let p = 180 + a * fab.rate;
+    if (s.hwMode === 'standard') p += 90;
+    if (s.hwMode === 'manual') { const n = s.shapeMode === 'custom' ? s.corners : ({ square: 4, rectangle: 4, triangle: 3, right: 3 })[s.fixedShape] || 4;
+      for (let i = 0; i < n; i++) { const v = s.cornerHw[i] || 'turnbuckle'; p += v === 'turnbuckle' ? 30 : v === 'shackle' ? 12 : 0; } }
+    return Math.round(p);
+  }
+  shapePts(w, h) {
+    const s = this.state; const cx = w / 2, cy = h / 2;
+    if (s.shapeMode === 'fixed') {
+      if (s.fixedShape === 'rectangle') return [[cx - 95, cy - 55], [cx + 95, cy - 55], [cx + 95, cy + 55], [cx - 95, cy + 55]];
+      if (s.fixedShape === 'right') return [[cx - 75, cy - 70], [cx - 75, cy + 70], [cx + 85, cy + 70]];
+      if (s.fixedShape === 'triangle') { const n = 3; return this.regular(n, cx, cy, 82); }
+      return this.regular(4, cx, cy, 85);
+    }
+    return this.regular(s.corners, cx, cy, 82);
+  }
+  regular(n, cx, cy, r) { const pts = []; const a0 = -Math.PI / 2 + (n === 4 ? Math.PI / 4 : 0);
+    for (let i = 0; i < n; i++) { const a = a0 + i * 2 * Math.PI / n; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return pts; }
+  makeDiagram() {
+    const R = React.createElement; const s = this.state; const W = 340, H = 230;
+    const pts = this.shapePts(W, H); const n = pts.length; const L = this.letters(n);
+    const kids = [];
+    if (s.view === '3d') {
+      const proj = (p, lift) => [p[0], (p[1] - H / 2) * 0.45 + H / 2 + 40 - lift];
+      const lifts = pts.map((_, i) => { const hv = +s.heights[L[i]]; return hv > 0 ? 40 + Math.min(hv, 20) * 2 : 55 + (i % 2) * 18; });
+      const top = pts.map((p, i) => proj(p, lifts[i]));
+      const ground = pts.map(p => proj(p, 0));
+      kids.push(R('polygon', { key: 'g', points: ground.map(p => p.join(',')).join(' '), fill: '#e3eae4' }));
+      pts.forEach((p, i) => kids.push(R('line', { key: 'p' + i, x1: top[i][0], y1: top[i][1], x2: ground[i][0], y2: ground[i][1], stroke: '#01312d', strokeWidth: 2.5 })));
+      kids.push(R('polygon', { key: 's', points: top.map(p => p.join(',')).join(' '), fill: '#cfe3d4', stroke: '#01312d', strokeWidth: 3, strokeLinejoin: 'round', opacity: 0.95 }));
+      top.forEach((p, i) => { kids.push(R('circle', { key: 'd' + i, cx: p[0], cy: p[1], r: 9, fill: '#01312d' }));
+        kids.push(R('text', { key: 't' + i, x: p[0], y: p[1] + 4, textAnchor: 'middle', fill: '#fff', fontSize: 11, fontWeight: 700 }, L[i])); });
+    } else {
+      kids.push(R('polygon', { key: 's', points: pts.map(p => p.join(',')).join(' '), fill: '#E7F2EA', stroke: '#01312d', strokeWidth: 3, strokeLinejoin: 'round' }));
+      if (s.screen === 'diagonals') this.diagKeys(n).forEach((k, di) => {
+        const [a, b] = k.split('\u2192').map(l => L.indexOf(l));
+        kids.push(R('line', { key: 'dg' + di, x1: pts[a][0], y1: pts[a][1], x2: pts[b][0], y2: pts[b][1], stroke: '#2e7d4f', strokeWidth: 2, strokeDasharray: '6 4' }));
+      });
+      pts.forEach((p, i) => { const ox = (p[0] - W / 2) * 0.18, oy = (p[1] - H / 2) * 0.18;
+        kids.push(R('circle', { key: 'd' + i, cx: p[0], cy: p[1], r: 10, fill: '#fff', stroke: '#01312d', strokeWidth: 3 }));
+        kids.push(R('text', { key: 't' + i, x: p[0] + ox * 1.6, y: p[1] + oy * 1.6 + 5, textAnchor: 'middle', fill: '#01312d', fontSize: 14, fontWeight: 800 }, L[i])); });
+    }
+    return R('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', display: 'block' } }, kids);
+  }
+  renderVals() {
+    const s = this.state; const flow = this.flow(); const idx = flow.indexOf(s.screen);
+    const measureScreens = ['edges', 'diagonals', 'heights', 'size'];
+    const isMeasure = measureScreens.includes(s.screen);
+    const set = (patch) => this.setState(patch);
+    const go = (screen) => set({ screen, saved: false });
+    const cornersN = s.shapeMode === 'custom' ? s.corners : ({ square: 4, rectangle: 4, triangle: 3, right: 3 })[s.fixedShape] || 4;
+    let measureTitle = '', measureSub = '', measureList = [], measureNoteText = '';
+    const suffix = s.unit === 'imperial' ? 'ft' : 'm';
+    const mkField = (label, obj, key, sub) => ({ label, value: s[obj][key] ?? '', onChange: (e) => set({ [obj]: { ...s[obj], [key]: e.target.value } }) });
+    if (s.screen === 'edges') { measureTitle = 'Measure each edge'; measureSub = 'Point to point between fixing points, in ' + (s.unit === 'imperial' ? 'feet' : 'meters') + '.';
+      measureList = this.edgeKeys(s.corners).map(k => mkField('Edge ' + k, 'edges', k)); }
+    if (s.screen === 'diagonals') { measureTitle = 'Now the diagonals'; measureSub = 'Corner to opposite corner. These make sure your sail fits exactly.';
+      measureList = this.diagKeys(s.corners).map(k => mkField('Diagonal ' + k, 'diags', k)); }
+    if (s.screen === 'heights') { measureTitle = 'Fixing point heights'; measureSub = s.corners === 4 ? 'Optional, but recommended \u2014 it helps us shape the sail.' : 'Height of each fixing point above the ground.';
+      measureList = this.letters(s.corners).map(l => mkField('Height at ' + l, 'heights', l));
+      if (s.corners === 4) { measureNoteText = 'You can skip this step \u2014 tap Continue when ready.'; } }
+    if (s.screen === 'size') { const sh = this.SHAPES.find(x => x.id === s.fixedShape); measureTitle = 'Enter your size'; measureSub = 'Measured between your fixing points, in ' + (s.unit === 'imperial' ? 'feet' : 'meters') + '.';
+      measureList = (sh ? sh.fields : []).map(f => mkField(f, 'size', f)); }
+    const priceV = this.price();
+    const showPrice = priceV > 0 && idx >= flow.indexOf(s.shapeMode === 'custom' ? 'edges' : 'size');
+    const canCont = this.valid(s.screen);
+    const nextScreen = flow[idx + 1];
+    const nextNames = { color: 'color', shape: 'shape', points: 'fixing points', intro: 'measuring', edges: 'measurements', diagonals: 'diagonals', heights: 'heights', size: 'size', hardware: 'hardware', review: 'review' };
+    const hints = { fabric: 'Choose a fabric to continue', color: 'Choose a color to continue', shape: 'Choose a shape to continue', edges: 'Enter every edge to continue', diagonals: 'Enter every diagonal to continue', heights: 'Enter every height to continue', size: 'Enter your size to continue' };
+    const isReview = s.screen === 'review';
+    const allAcks = s.acks.every(Boolean);
+    const d1 = new Date(); d1.setDate(d1.getDate() + 11); const d2 = new Date(); d2.setDate(d2.getDate() + 16);
+    const fmt = (d) => d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const fab = this.FABRICS.find(f => f.id === s.fabric);
+    const shName = s.shapeMode === 'custom' ? 'Custom (' + s.corners + ' points)' : (this.SHAPES.find(x => x.id === s.fixedShape) || {}).name || '\u2014';
+    const seg = (sel) => ({ bg: sel ? '#01312d' : '#eef2ee', fg: sel ? '#fff' : '#4c6b60' });
+    return {
+      scFabric: s.screen === 'fabric', scColor: s.screen === 'color', scShape: s.screen === 'shape',
+      scPoints: s.screen === 'points', scIntro: s.screen === 'intro', scMeasure: isMeasure,
+      scHardware: s.screen === 'hardware', scReview: isReview,
+      stepLabel: 'Step ' + (idx + 1) + ' of ' + flow.length,
+      progressPct: Math.round((idx + 1) / flow.length * 100) + '%',
+      canBack: idx > 0, noBack: idx === 0, goBack: () => go(flow[idx - 1]),
+      saved: s.saved, saveProgress: () => set({ saved: true }),
+      fabricsList: this.FABRICS.map(f => ({ ...f, sel: s.fabric === f.id, pick: () => set({ fabric: f.id }) })),
+      colorSub: fab ? fab.name + ' colors' : 'Colors',
+      colorsList: this.COLORS.map(c => ({ ...c, sel: s.color === c.name, pick: () => set({ color: c.name }) })),
+      selSquare: s.shapeMode === 'fixed' && s.fixedShape === 'square', pickSquare: () => set({ shapeMode: 'fixed', fixedShape: 'square' }),
+      selRectangle: s.shapeMode === 'fixed' && s.fixedShape === 'rectangle', pickRectangle: () => set({ shapeMode: 'fixed', fixedShape: 'rectangle' }),
+      selTriangle: s.shapeMode === 'fixed' && s.fixedShape === 'triangle', pickTriangle: () => set({ shapeMode: 'fixed', fixedShape: 'triangle' }),
+      selRight: s.shapeMode === 'fixed' && s.fixedShape === 'right', pickRight: () => set({ shapeMode: 'fixed', fixedShape: 'right' }),
+      selCustom: s.shapeMode === 'custom', pickCustom: () => set({ shapeMode: 'custom', fixedShape: null }),
+      pointsList: [3, 4, 5, 6, 7, 8].map(n => ({ n, cap: n === 3 ? 'Classic triangle' : n === 4 ? 'Most popular' : n + '-sided sail', sel: s.corners === n, pick: () => set({ corners: n }) })),
+      isCustomFlow: s.shapeMode === 'custom',
+      introSteps: (s.shapeMode === 'custom' ? [
+        'Measure between your fixing points \u2014 the exact points the sail will attach to.',
+        'Keep the tape tight and straight. A second pair of hands helps.',
+        'Write each measurement down as you go. We\u2019ll ask for them one screen at a time.',
+      ] : [
+        'Measure the space between your fixing points \u2014 not the sail itself.',
+        'Keep the tape tight and straight. A second pair of hands helps.',
+        'We\u2019ll make the sail slightly smaller so it tensions perfectly in your space.',
+      ]).map((text, i) => ({ n: i + 1, text })),
+      toggleSketch: () => set({ sketch: !s.sketch }), sketchNote: s.sketch,
+      measureTitle, measureSub, measureList, unitSuffix: suffix,
+      measureNote: !!measureNoteText, measureNoteText,
+      viewBtns: [{ label: 'Plan', v: 'plan' }, { label: '3D', v: '3d' }].map(b => ({ label: b.label, pick: () => set({ view: b.v }), ...seg(s.view === b.v) })),
+      unitBtns: [{ label: 'ft', v: 'imperial' }, { label: 'm', v: 'metric' }].map(b => ({ label: b.label, pick: () => set({ unit: b.v }), ...seg(s.unit === b.v) })),
+      diagram: this.makeDiagram(),
+      hwModes: [
+        { id: 'standard', name: 'Standard pack', badge: true, desc: 'Marine-grade turnbuckle and D-shackle for every corner. Fitted right, first time.' },
+        { id: 'manual', name: 'Choose per corner', badge: false, desc: 'Pick different hardware for each fixing point.' },
+        { id: 'none', name: 'Sail only', badge: false, desc: 'I already have my own hardware.' },
+      ].map(h => ({ ...h, sel: s.hwMode === h.id, pick: () => set({ hwMode: h.id }) })),
+      hwManual: s.hwMode === 'manual',
+      cornerHwList: this.letters(cornersN).map((letter, i) => ({ letter, value: s.cornerHw[i] || 'turnbuckle', onChange: (e) => set({ cornerHw: { ...s.cornerHw, [i]: e.target.value } }) })),
+      summaryRows: [
+        { k: 'Fabric', v: fab ? fab.name : '\u2014' }, { k: 'Color', v: s.color || '\u2014' },
+        { k: 'Shape', v: shName },
+        { k: 'Size', v: this.areaM2() ? (s.unit === 'imperial' ? Math.round(this.areaM2() * 10.764) + ' ft\u00b2 approx.' : this.areaM2().toFixed(1) + ' m\u00b2 approx.') : '\u2014' },
+        { k: 'Edge finish', v: 'Webbing reinforced' },
+        { k: 'Hardware', v: s.hwMode === 'standard' ? 'Standard pack' : s.hwMode === 'manual' ? 'Per-corner selection' : 'None' },
+      ],
+      deliveryRange: fmt(d1) + ' \u2013 ' + fmt(d2),
+      acksList: [
+        'My measurements are point-to-point and I\u2019ve double-checked them.',
+        'My fixing points are in place and structurally sound.',
+      ].map((text, i) => ({ text, mark: s.acks[i] ? '\u2713' : '', boxBorder: s.acks[i] ? '#2e7d4f' : '#c6d4ca', boxBg: s.acks[i] ? '#2e7d4f' : '#fff',
+        toggle: () => { const acks = [...s.acks]; acks[i] = !acks[i]; set({ acks }); } })),
+      showPrice, priceCaption: isReview ? 'All-inclusive, to your door' : 'Estimated price',
+      priceText: 'US$' + priceV.toLocaleString(),
+      ctaEnabled: isReview ? allAcks : canCont,
+      ctaDisabled: isReview ? !allAcks : !canCont,
+      ctaLabel: isReview ? 'Add to Cart' : ('Continue' + (nextScreen ? ' \u2192 ' + nextNames[nextScreen] : '')),
+      ctaHint: isReview ? 'Tick both boxes above to continue' : (hints[s.screen] || 'Continue'),
+      goNext: () => { if (isReview) { set({ saved: true }); return; } if (this.valid(s.screen)) go(flow[idx + 1]); },
+    };
+  }
+}
+</script>
+</body>
+</html>

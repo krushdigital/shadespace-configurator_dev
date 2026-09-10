@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #eef2ee; font-family: 'Plus Jakarta Sans', sans-serif; color: #01312d; font-size: 17px; }
+  a { color: #2e7d4f; } a:hover { color: #01312d; }
+  input, select, button { font-family: 'Plus Jakarta Sans', sans-serif; }
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+</style>
+</helmet>
+<div style="min-height: 100vh; display: flex">
+
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+    <div style="width: 250px; flex-shrink: 0; background: #01312d; color: #fff; padding: 28px 18px; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; box-sizing: border-box">
+      <img src="assets/logo-white.png" alt="shadespace" style="height: 30px; width: auto; align-self: flex-start; margin: 0 10px 26px">
+      <sc-for list="{{ railItems }}" as="r" hint-placeholder-count="6">
+        <div onClick="{{ r.go }}" style="display: flex; gap: 12px; align-items: center; padding: 11px 10px; border-radius: 12px; cursor: {{ r.cursor }}; background: {{ r.bg }}; opacity: {{ r.opacity }}">
+          <div style="width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; background: {{ r.dotBg }}; color: {{ r.dotFg }}; border: 2px solid {{ r.dotBorder }}">{{ r.mark }}</div>
+          <div style="min-width: 0"><div style="font-weight: 700; font-size: 15px">{{ r.name }}</div><div style="font-size: 12px; color: #9fc4ad; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ r.sub }}</div></div>
+        </div>
+      </sc-for>
+      <div onClick="{{ saveProgress }}" style="margin-top: auto; font-size: 14px; font-weight: 700; color: #b5e853; padding: 12px 10px; cursor: pointer">&#9873; Save progress</div>
+    </div>
+  </sc-if>
+
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; background: #f5f7f5">
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="background: #01312d; color: #fff; padding: 14px 20px 14px; position: sticky; top: 0; z-index: 5">
+        <div style="display: flex; justify-content: space-between; align-items: center; min-height: 44px">
+          <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}"><div onClick="{{ goBack }}" style="width: 44px; height: 44px; margin-left: -12px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer">&#8592;</div></sc-if>
+          <sc-if value="{{ noBack }}" hint-placeholder-val="{{ true }}"><img src="assets/logo-white.png" alt="shadespace" style="height: 24px; width: auto"></sc-if>
+          <div style="font-size: 13px; font-weight: 700; color: #9fc4ad">{{ groupLabel }}</div>
+          <div onClick="{{ saveProgress }}" style="font-size: 14px; font-weight: 700; color: #b5e853; padding: 10px 0 10px 10px; cursor: pointer">Save</div>
+        </div>
+        <div style="display: flex; gap: 5px; margin-top: 8px">
+          <sc-for list="{{ railItems }}" as="p" hint-placeholder-count="6"><div onClick="{{ p.go }}" style="flex: 1; padding: 6px 0; cursor: {{ p.cursor }}"><div style="height: 6px; border-radius: 3px; background: {{ p.segBg }}"></div><div style="font-size: 10px; font-weight: 700; color: {{ p.segFg }}; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ p.name }}</div></div></sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ saved }}" hint-placeholder-val="{{ false }}">
+      <div style="margin: 16px 24px 0; background: #dcebe0; border-radius: 12px; padding: 12px 16px; font-size: 15px; font-weight: 600">&#10003; Progress saved &#8212; we emailed you a link to pick up where you left off.</div>
+    </sc-if>
+
+    <div style="flex: 1; padding: 28px 24px 140px; max-width: 760px; width: 100%; box-sizing: border-box; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 10px">
+          <div style="font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1">{{ stepTitle }}</div>
+          <div style="position: relative; flex-shrink: 0">
+            <div onMouseEnter="{{ openHelp }}" onMouseLeave="{{ closeHelp }}" onClick="{{ toggleHelp }}" style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #01312d; font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: help; background: {{ helpBtnBg }}; color: {{ helpBtnFg }}">?</div>
+            <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; top: calc(100% + 10px); left: -8px; width: min(360px, 80vw); z-index: 30; background: #01312d; color: #fff; border-radius: 16px; padding: 16px 18px; box-shadow: 0 12px 32px rgba(1,49,45,0.3)">
+                <div style="position: absolute; top: -7px; left: 16px; width: 14px; height: 14px; background: #01312d; transform: rotate(45deg)"></div>
+                <div style="font-weight: 800; font-size: 15px">{{ helpTitle }}</div><div style="font-size: 14px; line-height: 1.5; color: #cfe3d4; margin-top: 4px">{{ helpBody }}</div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="font-size: 16px; color: #4c6b60; line-height: 1.4">{{ stepSub }}</div>
+      </div>
+
+      <sc-if value="{{ scFabric }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ expandFabricsTap }}" style="cursor: pointer; overflow: hidden; max-height: {{ pillsMaxH }}; opacity: {{ pillsOpacity }}; margin-bottom: {{ pillsMb }}; transition: max-height 0.4s ease, opacity 0.3s ease, margin-bottom 0.4s ease">
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding-bottom: 4px">
+            <div style="font-size: 13px; font-weight: 700; color: #6b8478; margin-right: 4px">Fabric:</div>
+            <sc-for list="{{ fabricChips }}" as="f" hint-placeholder-count="4">
+              <div onClick="{{ f.pick }}" onMouseEnter="{{ f.hoverExpand }}" style="padding: 9px 14px; border-radius: 999px; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid #01312d; background: {{ f.bg }}; color: {{ f.fg }}">{{ f.name }}</div>
+            </sc-for>
+            <div style="font-size: 13px; color: #6b8478; margin-left: 4px">{{ pillsHint }}</div>
+          </div>
+        </div>
+        <div onMouseLeave="{{ collapseFabricsHover }}" style="overflow: hidden; max-height: {{ cardsMaxH }}; opacity: {{ cardsOpacity }}; margin-bottom: {{ cardsMb }}; transition: max-height 0.45s ease, opacity 0.35s ease, margin-bottom 0.45s ease">
+        <div style="display: grid; grid-template-columns: {{ fabricCols }}; gap: {{ fabricGap }}">
+          <sc-for list="{{ fabricsList }}" as="f" hint-placeholder-count="4">
+            <div onClick="{{ f.pick }}" onMouseLeave="{{ f.infoOff }}" style="position: relative; z-index: {{ f.z }}; background: {{ f.bg }}; color: {{ f.fg }}; border: 2px solid {{ f.border }}; border-radius: 16px; padding: {{ fabricPad }}; cursor: pointer">
+              <sc-if value="{{ f.sel }}"><div style="position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 50%; background: #b5e853; color: #01312d; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+              <div style="display: flex; align-items: center; gap: 8px; padding-right: 30px"><div style="font-size: 19px; font-weight: 800">{{ f.name }}</div><div style="position: relative; flex-shrink: 0"><div onMouseEnter="{{ f.infoOn }}" style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid currentColor; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center; opacity: 0.7; cursor: help">?</div>
+                <sc-if value="{{ f.infoOpen }}"><div style="position: absolute; top: calc(100% + 8px); left: -8px; width: 280px; z-index: 30; background: #01312d; color: #fff; border-radius: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.5; box-shadow: 0 12px 32px rgba(1,49,45,0.3)"><div style="position: absolute; top: -7px; left: 12px; width: 14px; height: 14px; background: #01312d; transform: rotate(45deg)"></div>{{ f.long }}</div></sc-if></div></div>
+              <div style="display: inline-block; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; margin-top: 6px; background: {{ f.tagBg }}; color: {{ f.tagFg }}">{{ f.tag }}</div>
+              <sc-if value="{{ isDesktop }}"><div style="font-size: 15px; margin-top: 10px; line-height: 1.4; color: {{ f.descFg }}">{{ f.desc }}</div></sc-if>
+              <div style="font-size: 13px; margin-top: {{ fabricMetaMt }}; font-weight: 600; color: {{ f.descFg }}">{{ f.meta }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size: 15px; font-weight: 700; color: #2e7d4f; cursor: pointer; margin-top: 12px; padding-bottom: 4px">Compare all fabrics side by side &#8250;</div>
+        </div>
+        <sc-if value="{{ hasFabric }}" hint-placeholder-val="{{ false }}">
+        <div style="animation: fadeUp 0.45s ease both; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px"><div style="font-size: 20px; font-weight: 800; letter-spacing: -0.02em">Choose your color</div><div style="font-size: 14px; color: #4c6b60">{{ colorCount }}</div></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 14px 12px">
+          <sc-for list="{{ colorsList }}" as="c" hint-placeholder-count="16">
+            <div onClick="{{ c.pick }}" onMouseEnter="{{ c.hover }}" onMouseLeave="{{ c.unhover }}" style="cursor: pointer; text-align: center; position: relative">
+              <div style="aspect-ratio: 1; border-radius: 14px; overflow: hidden; outline: 3px solid {{ c.ring }}; outline-offset: 3px; position: relative; background: {{ c.css }}">
+                <div style="width: 100%; height: 100%; background-image: {{ c.bgImg }}; background-size: 260%; background-position: center; image-rendering: auto"></div>
+                <sc-if value="{{ c.sel }}"><div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center"><div style="width: 30px; height: 30px; border-radius: 50%; background: #01312d; color: #b5e853; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center">&#10003;</div></div></sc-if>
+                <sc-if value="{{ c.fr }}"><div style="position: absolute; top: 6px; left: 6px; background: #e4531a; color: #fff; font-size: 10px; font-weight: 800; border-radius: 4px; padding: 2px 5px">FR</div></sc-if>
+                <div onClick="{{ c.zoom }}" style="position: absolute; bottom: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.55); color: #01312d; display: flex; align-items: center; justify-content: center; cursor: zoom-in; opacity: {{ c.zoomOpacity }}" style-hover="background: rgba(255,255,255,0.95); opacity: 1"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"></circle><line x1="15.5" y1="15.5" x2="21" y2="21"></line></svg></div>
+              </div>
+              <div style="font-size: 13px; font-weight: 600; margin-top: 10px; line-height: 1.2">{{ c.name }}</div>
+              <sc-if value="{{ c.hovered }}"><div style="position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); background: #01312d; color: #fff; border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.45; white-space: nowrap; z-index: 10; box-shadow: 0 8px 24px rgba(1,49,45,0.25); text-align: left"><div style="font-weight: 800; font-size: 14px">{{ c.name }}</div><div style="color: #cfe3d4">Shade factor <strong style="color: #b5e853">{{ c.sf }}</strong></div><div style="color: #cfe3d4">UV block <strong style="color: #fff">{{ c.uv }}</strong>{{ c.frText }}</div></div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ scShape }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px">
+          <div onClick="{{ pick_square }}" style="position: relative; background: #fff; border: 2px solid {{ border_square }}; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+            <sc-if value="{{ sel_square }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+            <img src="icons/square.svg" alt="" style="width: 76px; height: 76px">
+            <div><div style="font-weight: 800; font-size: 16px">Square</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">1 measurement</div></div>
+          </div>
+          <div onClick="{{ pick_rectangle }}" style="position: relative; background: #fff; border: 2px solid {{ border_rectangle }}; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+            <sc-if value="{{ sel_rectangle }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+            <img src="icons/rectangle.svg" alt="" style="width: 76px; height: 76px">
+            <div><div style="font-weight: 800; font-size: 16px">Rectangle</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">2 measurements</div></div>
+          </div>
+          <div onClick="{{ pick_triangle }}" style="position: relative; background: #fff; border: 2px solid {{ border_triangle }}; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+            <sc-if value="{{ sel_triangle }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+            <img src="icons/triangle.svg" alt="" style="width: 76px; height: 76px">
+            <div><div style="font-weight: 800; font-size: 16px">Triangle</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">1 measurement</div></div>
+          </div>
+          <div onClick="{{ pick_right }}" style="position: relative; background: #fff; border: 2px solid {{ border_right }}; border-radius: 16px; padding: 18px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px">
+            <sc-if value="{{ sel_right }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+            <img src="icons/right-triangle.svg" alt="" style="width: 76px; height: 76px">
+            <div><div style="font-weight: 800; font-size: 16px">Right Angle Triangle</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">2 measurements</div></div>
+          </div>
+        </div>
+        <div onClick="{{ pickCustom }}" style="position: relative; background: {{ customBg }}; color: {{ customFg }}; border: 2px dashed {{ customBorder }}; border-radius: 16px; padding: 16px 18px; cursor: pointer; display: flex; align-items: center; gap: 16px">
+          <sc-if value="{{ selCustom }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: 50%; background: #b5e853; color: #01312d; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+          <div style="width: 68px; height: 68px; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><img src="icons/custom-combined.svg" alt="" style="width: 60px; height: 60px"></div>
+          <div><div style="font-weight: 800; font-size: 17px">Custom shape</div><div style="font-size: 14px; margin-top: 2px; opacity: 0.85">Made to measure from your fixing points. 3&#8211;8 points, any heights. Includes the Fit Guarantee.</div></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ scPoints }}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px">
+          <div onClick="{{ pickPts_3 }}" style="position: relative; background: #fff; border: 2px solid {{ borderPts_3 }}; border-radius: 16px; padding: 16px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px"><sc-if value="{{ selPts_3 }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if><img src="icons/points-3.svg" alt="" style="width: 84px; height: 84px"><div><div style="font-weight: 800; font-size: 16px">3 fixing points</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Any triangle</div></div></div>
+          <div onClick="{{ pickPts_4 }}" style="position: relative; background: #fff; border: 2px solid {{ borderPts_4 }}; border-radius: 16px; padding: 16px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px"><sc-if value="{{ selPts_4 }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if><img src="icons/points-4.svg" alt="" style="width: 84px; height: 84px"><div><div style="font-weight: 800; font-size: 16px">4 fixing points</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Most popular</div></div></div>
+          <div onClick="{{ pickPts_5 }}" style="position: relative; background: #fff; border: 2px solid {{ borderPts_5 }}; border-radius: 16px; padding: 16px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px"><sc-if value="{{ selPts_5 }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if><img src="icons/points-5.svg" alt="" style="width: 84px; height: 84px"><div><div style="font-weight: 800; font-size: 16px">5 fixing points</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Heights required</div></div></div>
+          <div onClick="{{ pickPts_6 }}" style="position: relative; background: #fff; border: 2px solid {{ borderPts_6 }}; border-radius: 16px; padding: 16px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px"><sc-if value="{{ selPts_6 }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if><img src="icons/points-6.svg" alt="" style="width: 84px; height: 84px"><div><div style="font-weight: 800; font-size: 16px">6 fixing points</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Heights required</div></div></div>
+          <div onClick="{{ pickPts_7 }}" style="position: relative; background: #fff; border: 2px solid {{ borderPts_7 }}; border-radius: 16px; padding: 16px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px"><sc-if value="{{ selPts_7 }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if><img src="icons/points-7.svg" alt="" style="width: 84px; height: 84px"><div><div style="font-weight: 800; font-size: 16px">7 fixing points</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Heights required</div></div></div>
+          <div onClick="{{ pickPts_8 }}" style="position: relative; background: #fff; border: 2px solid {{ borderPts_8 }}; border-radius: 16px; padding: 16px 10px 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px"><sc-if value="{{ selPts_8 }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #01312d; color: #b5e853; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if><img src="icons/points-8.svg" alt="" style="width: 84px; height: 84px"><div><div style="font-weight: 800; font-size: 16px">8 fixing points</div><div style="font-size: 13px; color: #6b8478; margin-top: 2px">Heights required</div></div></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ scIntro }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ introSteps }}" as="st" hint-placeholder-count="3">
+          <div style="display: flex; gap: 14px; background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 16px 18px">
+            <div style="width: 34px; height: 34px; border-radius: 50%; background: #01312d; color: #b5e853; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{ st.n }}</div>
+            <div style="font-size: 16px; line-height: 1.45; padding-top: 4px">{{ st.text }}</div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ isCustomFlow }}" hint-placeholder-val="{{ false }}">
+          <div onClick="{{ toggleSketch }}" style="border: 2px dashed #7bb08f; background: #eef5ef; border-radius: 16px; padding: 16px 18px; display: flex; align-items: center; gap: 14px; cursor: pointer">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: #01312d; color: #b5e853; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0">&#8679;</div>
+            <div><div style="font-weight: 700; font-size: 16px">Have a sketch with measurements?</div><div style="font-size: 14px; color: #4c6b60">Upload a photo and we fill everything in for you.</div></div>
+          </div>
+          <sc-if value="{{ sketchNote }}"><div style="background: #dcebe0; border-radius: 12px; padding: 12px 16px; font-size: 15px; font-weight: 600">&#10003; Sketch received &#8212; we&#8217;ll pre-fill your measurements.</div></sc-if>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ scMeasure }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ showMeasureBanner }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; gap: 14px; align-items: center; background: #eef5ef; border-radius: 14px; padding: 12px 16px">
+            <div style="width: 64px; height: 50px; flex-shrink: 0; background-image: {{ measureBannerImg }}; background-size: contain; background-repeat: no-repeat; background-position: center"></div>
+            <div style="font-size: 14px; line-height: 1.45; color: #23503f"><strong>{{ measureBannerTitle }}</strong> {{ measureBannerBody }}</div>
+          </div>
+        </sc-if>
+        <div style="display: flex; justify-content: flex-end">
+          <div style="display: flex; border: 2px solid #01312d; border-radius: 12px; overflow: hidden">
+            <sc-for list="{{ unitBtns }}" as="u" hint-placeholder-count="2"><div onClick="{{ u.pick }}" style="padding: 9px 16px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; background: {{ u.bg }}; color: {{ u.fg }}">{{ u.label }}</div></sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ notWide }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 12px">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 4px"><div style="display: flex; border: 2px solid #01312d; border-radius: 10px; overflow: hidden"><sc-for list="{{ viewBtns }}" as="v" hint-placeholder-count="2"><div onClick="{{ v.pick }}" style="padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ v.bg }}; color: {{ v.fg }}">{{ v.label }}</div></sc-for></div></div>
+            <div data-mount="sail-viewer" style="max-width: 380px; margin: 0 auto">{{ diagram }}</div>
+          </div>
+        </sc-if>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px">
+          <sc-for list="{{ measureList }}" as="m" hint-placeholder-count="4">
+            <div style="background: #fff; border: 2px solid {{ m.border }}; border-radius: 16px; padding: 14px 18px">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px"><div style="font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px"><span style="background: #01312d; color: #b5e853; border-radius: 6px; padding: 2px 8px; font-size: 13px">{{ m.tag }}</span>{{ m.label }}</div><sc-if value="{{ m.done }}"><div style="width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if></div>
+              <div style="display: flex; gap: 8px">
+                <div style="flex: 1; min-width: 0; display: flex; align-items: center; border: 2px solid #dfe7e1; border-radius: 12px; padding: 0 12px"><input type="number" inputMode="decimal" value="{{ m.v1 }}" onChange="{{ m.on1 }}" onFocus="{{ m.focus }}" placeholder="0" style="flex: 1; min-width: 0; border: 0; outline: none; font-size: 22px; font-weight: 800; padding: 12px 0; color: #01312d; background: transparent"><span style="font-size: 14px; font-weight: 700; color: #6b8478">{{ unit1 }}</span></div>
+                <sc-if value="{{ imperial }}"><div style="flex: 1; min-width: 0; display: flex; align-items: center; border: 2px solid #dfe7e1; border-radius: 12px; padding: 0 12px"><input type="number" inputMode="decimal" value="{{ m.v2 }}" onChange="{{ m.on2 }}" onFocus="{{ m.focus }}" placeholder="0" style="flex: 1; min-width: 0; border: 0; outline: none; font-size: 22px; font-weight: 800; padding: 12px 0; color: #01312d; background: transparent"><span style="font-size: 14px; font-weight: 700; color: #6b8478">in</span></div></sc-if>
+              </div>
+              <sc-if value="{{ m.hasExtra }}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 8px; margin-top: 10px"><div onClick="{{ m.pickPost }}" style="flex: 1; text-align: center; padding: 9px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid #01312d; background: {{ m.postBg }}; color: {{ m.postFg }}">Post</div><div onClick="{{ m.pickBuilding }}" style="flex: 1; text-align: center; padding: 9px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; border: 2px solid #01312d; background: {{ m.bldBg }}; color: {{ m.bldFg }}">Building</div></div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ measureNote }}"><div style="background: #eef5ef; border-radius: 12px; padding: 12px 16px; font-size: 15px; color: #23503f">{{ measureNoteText }}</div></sc-if>
+        <sc-if value="{{ matchesFixed }}" hint-placeholder-val="{{ false }}"><div style="background: #eef5ef; border: 2px solid #7bb08f; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap"><div><div style="font-weight: 800; font-size: 15px; color: #23503f">&#10003; Your measurements match a {{ matchesName }}</div><div style="font-size: 14px; color: #4c6b60; margin-top: 2px">Standard shapes are simpler &#8212; no diagonals needed.</div></div><div onClick="{{ switchToFixed }}" style="background: #2e7d4f; color: #fff; border-radius: 10px; padding: 9px 14px; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap">Switch to {{ matchesName }}</div></div></sc-if>
+        <sc-if value="{{ scSize }}" hint-placeholder-val="{{ false }}"><div onClick="{{ switchToCustom }}" style="border: 2px dashed #7bb08f; border-radius: 14px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; font-size: 15px"><span style="color: #4c6b60">{{ switchPrompt }}</span><span style="font-weight: 700; color: #2e7d4f; white-space: nowrap">Switch to custom &#8250;</span></div></sc-if>
+      </sc-if>
+
+      <sc-if value="{{ scEdge }}" hint-placeholder-val="{{ false }}">
+        <div style="background: #eef5ef; border-radius: 14px; padding: 14px 18px; font-size: 15px; color: #23503f; line-height: 1.5"><strong>{{ edgeAdviceTitle }}</strong> {{ edgeAdviceBody }}</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px">
+          <div onClick="{{ pickEdge_cabled }}" style="position: relative; background: {{ edgeBg_cabled }}; color: {{ edgeFg_cabled }}; border: 2px solid {{ edgeBorder_cabled }}; border-radius: 16px; overflow: hidden; cursor: pointer">
+            <sc-if value="{{ edgeSel_cabled }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 50%; background: #b5e853; color: #01312d; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; z-index: 1">&#10003;</div></sc-if>
+            <img src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Wire_Edge.Configurator.webp?v=1784063875" alt="" style="width: 100%; height: 150px; object-fit: cover; display: block; background: #dfe7e1">
+            <div style="padding: 16px 18px"><div style="font-weight: 800; font-size: 19px">Cabled edge</div><div style="font-size: 15px; margin-top: 6px; line-height: 1.45; opacity: 0.9">Strongest and sleekest. Best for permanent installations.</div><div style="font-size: 14px; margin-top: 8px; font-weight: 700">{{ cabledSpec }}</div></div>
+          </div>
+          <div onClick="{{ pickEdge_webbing }}" style="position: relative; background: {{ edgeBg_webbing }}; color: {{ edgeFg_webbing }}; border: 2px solid {{ edgeBorder_webbing }}; border-radius: 16px; overflow: hidden; cursor: pointer">
+            <sc-if value="{{ edgeSel_webbing }}" hint-placeholder-val="{{ false }}"><div style="position: absolute; top: 12px; right: 12px; width: 24px; height: 24px; border-radius: 50%; background: #b5e853; color: #01312d; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; z-index: 1">&#10003;</div></sc-if>
+            <img src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Webbing_Edge.Configurator.webp?v=1784063875" alt="" style="width: 100%; height: 150px; object-fit: cover; display: block; background: #dfe7e1">
+            <div style="padding: 16px 18px"><div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap"><div style="font-weight: 800; font-size: 19px">Webbing reinforced</div><div style="font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; background: {{ edgeTagBg_webbing }}; color: {{ edgeTagFg_webbing }}">Most popular</div></div><div style="font-size: 15px; margin-top: 6px; line-height: 1.45; opacity: 0.9">Easiest to install. Ideal for DIY projects.</div><div style="font-size: 14px; margin-top: 8px; font-weight: 700">{{ webbingSpec }}</div></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ scHardware }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ hwModes }}" as="h" hint-placeholder-count="2">
+          <div onClick="{{ h.pick }}" style="position: relative; background: {{ h.bg }}; color: {{ h.fg }}; border: 2px solid {{ h.border }}; border-radius: 16px; padding: 18px 20px; cursor: pointer">
+            <sc-if value="{{ h.sel }}"><div style="position: absolute; top: 14px; right: 14px; width: 24px; height: 24px; border-radius: 50%; background: #b5e853; color: #01312d; font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center">&#10003;</div></sc-if>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-right: 30px"><div style="font-weight: 800; font-size: 18px">{{ h.name }}</div><sc-if value="{{ h.badge }}"><div style="font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; background: {{ h.tagBg }}; color: {{ h.tagFg }}">Recommended</div></sc-if></div>
+            <div style="font-size: 15px; margin-top: 6px; line-height: 1.45; opacity: 0.9">{{ h.desc }}</div>
+            <div style="font-size: 14px; margin-top: 8px; font-weight: 700">{{ h.price }}</div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ hwManual }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size: 17px; font-weight: 800; margin-top: 4px">Choose for each corner <span style="font-size: 13px; font-weight: 700; color: #2e7d4f; background: #eef5ef; border-radius: 999px; padding: 3px 10px; margin-left: 6px">{{ hwConfigured }}</span></div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px">
+            <sc-for list="{{ cornerHwList }}" as="c" hint-placeholder-count="4">
+              <div onMouseEnter="{{ c.focus }}" onClick="{{ c.open }}" style="background: #fff; border: 2px solid {{ c.border }}; border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: #01312d; color: #b5e853; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{ c.letter }}</div>
+                <div style="flex: 1; min-width: 0">
+                  <div style="font-size: 15px; font-weight: 700; color: {{ c.nameColor }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{ c.summary }}</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #b8600b; margin-top: 3px">{{ c.price }}</div>
+                </div>
+                <div style="font-size: 13px; font-weight: 700; color: #2e7d4f; white-space: nowrap">{{ c.action }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div onClick="{{ toggleGrease }}" style="background: #fff; border: 2px solid {{ greaseBorder }}; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; cursor: pointer">
+            <div style="width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; border: 2px solid {{ greaseBorder }}; background: {{ greaseBg }}; color: #01312d">{{ greaseMark }}</div>
+            <div style="flex: 1"><div style="font-weight: 700; font-size: 16px">Nulan Grease Tube (50ml)</div><div style="font-size: 14px; color: #4c6b60">Prevents seizing and ensures correct installation. One per sail.</div></div>
+            <div style="font-weight: 800; font-size: 15px">US$10.94</div>
+          </div>
+          <div style="background: #eef5ef; border-radius: 12px; padding: 12px 18px; display: flex; justify-content: space-between; font-size: 15px"><span style="font-weight: 600; color: #23503f">Hardware cost (added to total)</span><span style="font-weight: 800; color: #b8600b">{{ hwCostText }}</span></div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ scReview }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ notWide }}" hint-placeholder-val="{{ false }}"><div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 12px"><div data-mount="sail-viewer" style="max-width: 380px; margin: 0 auto">{{ diagram }}</div></div></sc-if>
+        <sc-if value="{{ needDiagonals }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #fff; border: 2px solid #e4a11a; border-radius: 16px; padding: 16px 20px">
+            <div style="font-weight: 800; font-size: 16px; color: #8a5a00">&#9888; Diagonal measurements required before checkout</div>
+            <div style="font-size: 14px; color: #4c6b60; margin-top: 4px; line-height: 1.5">Measure corner to opposite corner between fixing points.</div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin-top: 12px">
+              <sc-for list="{{ reviewDiagList }}" as="m" hint-placeholder-count="2">
+                <div><div style="font-size: 14px; font-weight: 700; margin-bottom: 6px">Diagonal {{ m.tag }}</div><div style="display: flex; gap: 8px">
+                  <div style="flex: 1; min-width: 0; display: flex; align-items: center; border: 2px solid #dfe7e1; border-radius: 12px; padding: 0 12px"><input type="number" inputMode="decimal" value="{{ m.v1 }}" onChange="{{ m.on1 }}" placeholder="0" style="flex: 1; min-width: 0; border: 0; outline: none; font-size: 20px; font-weight: 800; padding: 10px 0; color: #01312d; background: transparent"><span style="font-size: 14px; font-weight: 700; color: #6b8478">{{ unit1 }}</span></div>
+                  <sc-if value="{{ imperial }}"><div style="flex: 1; min-width: 0; display: flex; align-items: center; border: 2px solid #dfe7e1; border-radius: 12px; padding: 0 12px"><input type="number" inputMode="decimal" value="{{ m.v2 }}" onChange="{{ m.on2 }}" placeholder="0" style="flex: 1; min-width: 0; border: 0; outline: none; font-size: 20px; font-weight: 800; padding: 10px 0; color: #01312d; background: transparent"><span style="font-size: 14px; font-weight: 700; color: #6b8478">in</span></div></sc-if>
+                </div></div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ heightsSkipped }}" hint-placeholder-val="{{ false }}"><div style="background: #eef5ef; border-radius: 14px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; color: #23503f"><span>Heights not provided &#8212; standard manufacturing will be used.</span><span onClick="{{ goHeights }}" style="font-weight: 700; color: #2e7d4f; cursor: pointer; white-space: nowrap">Add heights &#8250;</span></div></sc-if>
+        <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 6px 20px">
+          <sc-for list="{{ summaryRows }}" as="r" hint-placeholder-count="8">
+            <div style="display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid #eef2ee; font-size: 15px; align-items: center">
+              <div style="color: #6b8478">{{ r.k }}</div><div style="display: flex; align-items: center; gap: 12px"><div style="font-weight: 700; text-align: right">{{ r.v }}</div><div onClick="{{ r.edit }}" style="font-size: 13px; font-weight: 700; color: #2e7d4f; cursor: pointer; padding: 6px 0 6px 6px">Edit</div></div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasMeasures }}"><div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 16px; padding: 16px 20px"><div style="font-weight: 800; font-size: 15px; margin-bottom: 8px">Measurements</div><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 16px; font-size: 15px"><sc-for list="{{ measureRows }}" as="mr" hint-placeholder-count="4"><div style="display: flex; justify-content: space-between"><span style="color: #6b8478">{{ mr.k }}</span><span style="font-weight: 700">{{ mr.v }}</span></div></sc-for></div></div></sc-if>
+        <div style="background: #01312d; color: #fff; border-radius: 16px; padding: 22px 22px 20px; display: flex; flex-direction: column; gap: 14px">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #9fc4ad">All-inclusive price to your door</div>
+            <div style="font-size: 38px; font-weight: 800; letter-spacing: -0.03em; color: #b5e853; line-height: 1.1; margin-top: 2px">{{ priceText }}</div>
+            <div style="font-size: 14px; color: #cfe3d4; margin-top: 6px">Express freight, taxes and duties included. No hidden costs.</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 15px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px">
+            <div style="display: flex; justify-content: space-between; color: #cfe3d4"><span>Shade sail</span><span style="color: #fff; font-weight: 700">{{ sailPriceText }}</span></div>
+            <div style="display: flex; justify-content: space-between; color: #cfe3d4"><span>Hardware</span><span style="color: #fff; font-weight: 700">{{ hwPriceText }}</span></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 15px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 12px">
+            <div style="display: flex; justify-content: space-between; gap: 12px; color: #cfe3d4"><span>Delivered approx.</span><span style="color: #fff; font-weight: 700; text-align: right">{{ deliveryRangeLong }}</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; color: #cfe3d4"><span>Warranty</span><span style="color: #fff; font-weight: 700">{{ warrantyText }} fabric &amp; workmanship</span></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; color: #cfe3d4"><span>Price locked</span><span style="color: #fff; font-weight: 700">30 days</span></div>
+          </div>
+        </div>
+        <sc-if value="{{ isCustomFlow }}"><div style="background: #eef5ef; border-radius: 16px; padding: 16px 18px; font-size: 15px; color: #23503f; line-height: 1.5"><strong>Fit Guarantee.</strong> If your custom sail doesn&#8217;t fit the space you measured, we make you a new one free &#8212; and you keep the first one.</div></sc-if>
+        <sc-for list="{{ acksList }}" as="a" hint-placeholder-count="3">
+          <div onClick="{{ a.toggle }}" style="display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 2px solid {{ a.cardBorder }}; border-radius: 16px; padding: 16px 18px; cursor: pointer">
+            <div style="width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; border: 2px solid {{ a.boxBorder }}; background: {{ a.boxBg }}; color: #01312d">{{ a.mark }}</div>
+            <div style="font-size: 16px; line-height: 1.4; padding-top: 2px">{{ a.text }}</div>
+          </div>
+        </sc-for>
+        <div onClick="{{ saveProgress }}" style="border: 2px solid #01312d; color: #01312d; border-radius: 14px; padding: 15px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer">Save &amp; email my PDF quote</div>
+      </sc-if>
+    </div>
+
+    <div style="position: sticky; bottom: 0; background: #fff; border-top: 1px solid #dfe7e1; padding: 14px 24px 18px">
+      <div style="max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 14px">
+        <sc-if value="{{ showBackBtn }}" hint-placeholder-val="{{ false }}"><div onClick="{{ goBack }}" style="border: 2px solid #01312d; border-radius: 14px; padding: 14px 22px; font-weight: 700; font-size: 16px; cursor: pointer">Back</div></sc-if>
+        <sc-if value="{{ showPriceBar }}" hint-placeholder-val="{{ false }}"><div style="flex-shrink: 0"><div style="font-size: 12px; color: #6b8478; font-weight: 700">Estimated</div><div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em">{{ priceText }}</div></div></sc-if>
+        <sc-if value="{{ ctaEnabled }}" hint-placeholder-val="{{ true }}"><div onClick="{{ goNext }}" style="flex: 1; background: #01312d; color: #fff; border-radius: 14px; padding: 16px; font-weight: 700; font-size: 17px; text-align: center; cursor: pointer" style-hover="background: #0a4a41">{{ ctaLabel }}</div></sc-if>
+        <sc-if value="{{ ctaDisabled }}" hint-placeholder-val="{{ false }}"><div style="flex: 1; background: #c6d4ca; color: #fff; border-radius: 14px; padding: 16px; font-weight: 700; font-size: 16px; text-align: center">{{ ctaHint }}</div></sc-if>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ switchOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSwitch }}" style="position: fixed; inset: 0; background: rgba(1,49,45,0.72); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px">
+      <div onClick="{{ stopClick }}" style="background: #fff; border-radius: 20px; width: min(460px, 100%); padding: 24px 24px 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 30px 80px rgba(0,0,0,0.35); position: relative">
+        <div onClick="{{ closeSwitch }}" style="position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #dfe7e1; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer">&#215;</div>
+        <div><div style="font-size: 22px; font-weight: 800; letter-spacing: -0.02em; padding-right: 48px">{{ switchTitle }}</div><div style="font-size: 15px; color: #4c6b60; margin-top: 6px; line-height: 1.45">{{ switchBody }}</div></div>
+        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: stretch">
+          <div style="border: 2px solid #dfe7e1; border-radius: 14px; padding: 14px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px">
+            <div style="font-size: 11px; font-weight: 800; color: #6b8478; letter-spacing: 0.1em">NOW</div>
+            <div style="width: 84px; height: 66px; background-image: {{ switchNowImg }}; background-size: contain; background-repeat: no-repeat; background-position: center"></div>
+            <div style="font-size: 13px; font-weight: 700; line-height: 1.3">{{ switchNowLabel }}</div>
+          </div>
+          <div style="align-self: center; font-size: 22px; color: #6b8478">&#8594;</div>
+          <div style="border: 2px solid #2e7d4f; background: #eef5ef; border-radius: 14px; padding: 14px 10px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px">
+            <div style="font-size: 11px; font-weight: 800; color: #2e7d4f; letter-spacing: 0.1em">AFTER</div>
+            <div style="width: 84px; height: 66px; background-image: {{ switchAfterImg }}; background-size: contain; background-repeat: no-repeat; background-position: center"></div>
+            <div style="font-size: 13px; font-weight: 700; line-height: 1.3">{{ switchAfterLabel }}</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div onClick="{{ switchFresh }}" style="background: #01312d; color: #fff; border-radius: 14px; padding: 15px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer">Start fresh</div>
+          <sc-if value="{{ switchHasData }}"><div onClick="{{ switchKeep }}" style="border: 2px solid #01312d; color: #01312d; border-radius: 14px; padding: 13px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer">Keep my measurements</div></sc-if>
+          <div onClick="{{ closeSwitch }}" style="text-align: center; font-size: 15px; font-weight: 600; color: #6b8478; padding: 6px; cursor: pointer">Cancel</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hwModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeHwModal }}" style="position: fixed; inset: 0; background: rgba(1,49,45,0.72); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px">
+      <sc-if value="{{ hwHoverOpen }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ stopClick }}" style="width: 300px; flex-shrink: 0; background: #fff; border-radius: 20px; overflow: hidden; margin-right: 16px; box-shadow: 0 30px 80px rgba(0,0,0,0.35); align-self: center">
+          <div style="height: 220px; background: #f5f7f5; display: flex; align-items: center; justify-content: center; background-image: {{ hwHoverImg }}; background-size: contain; background-repeat: no-repeat; background-position: center"><sc-if value="{{ hwHoverNoImg }}"><div style="font-size: 13px; color: #6b8478; font-weight: 600; text-align: center; padding: 20px">Product photo<br>{{ hwHoverName }}</div></sc-if></div>
+          <div style="padding: 16px 18px 18px">
+            <div style="font-size: 11px; font-weight: 800; color: #6b8478; letter-spacing: 0.08em; text-transform: uppercase">{{ hwHoverCat }}</div>
+            <div style="font-size: 17px; font-weight: 800; line-height: 1.2; margin-top: 4px">{{ hwHoverName }}</div>
+            <div style="font-size: 14px; color: #4c6b60; line-height: 1.5; margin-top: 8px">{{ hwHoverDesc }}</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; font-size: 13px">
+              <div style="background: #f5f7f5; border-radius: 10px; padding: 8px 10px"><div style="color: #6b8478; font-weight: 700; font-size: 11px">Material</div><div style="font-weight: 700">{{ hwHoverMaterial }}</div></div>
+              <div style="background: #f5f7f5; border-radius: 10px; padding: 8px 10px"><div style="color: #6b8478; font-weight: 700; font-size: 11px">Size</div><div style="font-weight: 700">{{ hwHoverSize }}</div></div>
+              <div style="background: #f5f7f5; border-radius: 10px; padding: 8px 10px"><div style="color: #6b8478; font-weight: 700; font-size: 11px">Deduction</div><div style="font-weight: 700">{{ hwHoverDeduction }}</div></div>
+              <div style="background: #f5f7f5; border-radius: 10px; padding: 8px 10px"><div style="color: #6b8478; font-weight: 700; font-size: 11px">SKU</div><div style="font-weight: 700">{{ hwHoverSku }}</div></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <div onClick="{{ stopClick }}" style="background: #fff; border-radius: 20px; width: min(560px, 100%); max-height: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.35)">
+        <div style="padding: 20px 22px 14px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #eef2ee">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: #01312d; color: #b5e853; font-weight: 800; font-size: 17px; display: flex; align-items: center; justify-content: center; flex-shrink: 0">{{ hwModalLetter }}</div>
+          <div style="flex: 1"><div style="font-size: 20px; font-weight: 800; letter-spacing: -0.02em">Corner {{ hwModalLetter }} hardware</div><div style="font-size: 14px; color: #4c6b60">Tap items to add them to this corner.</div></div>
+          <div onClick="{{ closeHwModal }}" style="width: 40px; height: 40px; border-radius: 50%; border: 2px solid #dfe7e1; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer">&#215;</div>
+        </div>
+        <div style="padding: 12px 22px"><input type="text" value="{{ hwQuery }}" onChange="{{ setHwQuery }}" placeholder="Search hardware&#8230;" style="width: 100%; box-sizing: border-box; font-size: 15px; padding: 12px 16px; border: 2px solid #dfe7e1; border-radius: 999px; outline: none; color: #01312d"></div>
+        <div style="flex: 1; overflow: auto; padding: 0 22px 12px; display: flex; flex-direction: column; gap: 14px">
+          <sc-for list="{{ hwGroups }}" as="g" hint-placeholder-count="3">
+            <div>
+              <div style="font-size: 11px; font-weight: 800; color: #6b8478; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 0">{{ g.label }}</div>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+                  <div onClick="{{ it.toggle }}" onMouseEnter="{{ it.hoverOn }}" onMouseLeave="{{ it.hoverOff }}" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; border: 2px solid {{ it.border }}; background: {{ it.bg }}; cursor: pointer">
+                    <div style="width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; border: 2px solid {{ it.boxBorder }}; background: {{ it.boxBg }}; color: #01312d">{{ it.mark }}</div>
+                    <div style="flex: 1; min-width: 0"><div style="font-size: 15px; font-weight: 700; line-height: 1.25">{{ it.name }}</div><div style="font-size: 12px; color: #6b8478; margin-top: 2px">{{ it.meta }}</div></div>
+                    <sc-if value="{{ it.on }}"><div onClick="{{ it.dec }}" style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #dfe7e1; display: flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer">&#8722;</div><div style="min-width: 20px; text-align: center; font-weight: 800">{{ it.qty }}</div><div onClick="{{ it.inc }}" style="width: 30px; height: 30px; border-radius: 50%; border: 2px solid #dfe7e1; display: flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer">+</div></sc-if>
+                    <div style="font-size: 14px; font-weight: 800; color: #b8600b; min-width: 68px; text-align: right">{{ it.price }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding: 14px 22px 20px; border-top: 1px solid #eef2ee; display: flex; flex-direction: column; gap: 12px">
+          <div onClick="{{ toggleApplyAll }}" style="display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 15px"><div style="width: 24px; height: 24px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; border: 2px solid {{ applyAllBorder }}; background: {{ applyAllBg }}; color: #01312d">{{ applyAllMark }}</div>Apply to all {{ cornersCount }} corners</div>
+          <div style="display: flex; align-items: center; gap: 14px"><div style="flex-shrink: 0"><div style="font-size: 12px; font-weight: 700; color: #6b8478">Corner total</div><div style="font-size: 20px; font-weight: 800; color: #b8600b">{{ hwModalTotal }}</div></div><div onClick="{{ confirmHwModal }}" style="flex: 1; background: #01312d; color: #fff; border-radius: 14px; padding: 15px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer">Save corner {{ hwModalLetter }}</div></div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ zoomOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeZoom }}" style="position: fixed; inset: 0; background: rgba(1,49,45,0.72); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px">
+      <div onClick="{{ stopClick }}" style="background: #fff; border-radius: 20px; width: min(920px, 100%); max-height: 100%; overflow: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); box-shadow: 0 30px 80px rgba(0,0,0,0.35)">
+        <div style="min-height: 320px; background-image: {{ zoomImg }}; background-size: cover; background-position: center; border-radius: 20px 0 0 20px"></div>
+        <div style="padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 14px; position: relative">
+          <div onClick="{{ closeZoom }}" style="position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 50%; border: 2px solid #dfe7e1; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; color: #01312d">&#215;</div>
+          <div><div style="font-size: 13px; font-weight: 700; color: #6b8478">{{ zoomFabric }}</div><div style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; padding-right: 48px">{{ zoomName }}</div></div>
+          <sc-if value="{{ zoomFr }}"><div style="display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; background: #e4531a; color: #fff; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 4px 10px">FR &#183; Fire retardant</div></sc-if>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+            <div style="background: #f5f7f5; border-radius: 12px; padding: 12px 14px"><div style="font-size: 12px; font-weight: 700; color: #6b8478">Shade factor</div><div style="font-size: 22px; font-weight: 800; color: #01312d">{{ zoomSf }}</div></div>
+            <div style="background: #f5f7f5; border-radius: 12px; padding: 12px 14px"><div style="font-size: 12px; font-weight: 700; color: #6b8478">UV block</div><div style="font-size: 22px; font-weight: 800; color: #01312d">{{ zoomUv }}</div></div>
+            <div style="background: #f5f7f5; border-radius: 12px; padding: 12px 14px"><div style="font-size: 12px; font-weight: 700; color: #6b8478">Weight</div><div style="font-size: 18px; font-weight: 800; color: #01312d">{{ zoomWeight }}</div></div>
+            <div style="background: #f5f7f5; border-radius: 12px; padding: 12px 14px"><div style="font-size: 12px; font-weight: 700; color: #6b8478">Warranty</div><div style="font-size: 18px; font-weight: 800; color: #01312d">{{ zoomWarranty }}</div></div>
+          </div>
+          <div style="font-size: 15px; color: #4c6b60; line-height: 1.5">{{ zoomDesc }}</div>
+          <div style="font-size: 13px; color: #6b8478; line-height: 1.5">Colors vary slightly by screen. Order a free swatch sample if you need an exact match.</div>
+          <div onClick="{{ zoomPick }}" style="margin-top: auto; background: #01312d; color: #fff; border-radius: 14px; padding: 15px; font-weight: 700; font-size: 16px; text-align: center; cursor: pointer">Choose {{ zoomName }}</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isWide }}" hint-placeholder-val="{{ true }}">
+    <div style="width: 340px; flex-shrink: 0; background: #fff; border-left: 1px solid #dfe7e1; padding: 28px 24px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; box-sizing: border-box; overflow: auto">
+      <div style="display: flex; justify-content: space-between; align-items: center"><div style="font-weight: 800; font-size: 16px">Your sail</div><div style="display: flex; border: 2px solid #01312d; border-radius: 10px; overflow: hidden"><sc-for list="{{ viewBtns }}" as="v" hint-placeholder-count="2"><div onClick="{{ v.pick }}" style="padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; background: {{ v.bg }}; color: {{ v.fg }}">{{ v.label }}</div></sc-for></div></div>
+      <div data-mount="sail-viewer" style="background: #f5f7f5; border-radius: 16px; padding: 14px">{{ diagram }}</div>
+      <div style="background: #01312d; color: #fff; border-radius: 16px; padding: 18px 20px">
+        <div style="font-size: 12px; font-weight: 700; color: #9fc4ad; text-transform: uppercase; letter-spacing: 0.06em">{{ priceCaption }}</div>
+        <div style="font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-top: 2px; color: #b5e853">{{ priceText }}</div>
+        <div style="font-size: 13px; color: #cfe3d4; margin-top: 4px">All-inclusive to your door. Updates as you go.</div>
+      </div>
+      <div style="display: flex; flex-direction: column">
+        <sc-for list="{{ sideRows }}" as="r" hint-placeholder-count="6">
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px; padding: 9px 0; border-bottom: 1px solid #eef2ee"><span style="color: #6b8478">{{ r.k }}</span><span style="font-weight: 700; text-align: right">{{ r.v }}</span></div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ isCustomFlow }}" hint-placeholder-val="{{ false }}"><div style="font-size: 13px; color: #23503f; background: #eef5ef; border-radius: 12px; padding: 12px 14px; line-height: 1.5"><strong>Fit Guarantee.</strong> Doesn&#8217;t fit the space you measured? We remake it free.</div></sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;startScreen&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;fabric&quot;, &quot;shape&quot;, &quot;points&quot;, &quot;intro&quot;, &quot;edges&quot;, &quot;diagonals&quot;, &quot;heights&quot;, &quot;size&quot;, &quot;edge&quot;, &quot;hardware&quot;, &quot;review&quot;], &quot;default&quot;: &quot;fabric&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Preview&quot;}
+}">
+class Component extends DCLogic {
+  state = {
+    screen: 'fabric', fabric: null, color: null, shapeMode: null, fixedShape: null, corners: 4,
+    unit: 'imperial', view: 'plan', sketch: false, saved: false, focusKey: null,
+    edges: {}, diags: {}, heights: {}, size: {}, fixTypes: {},
+    edgeType: null, hwMode: null, cornerHw: {}, grease: true, acks: [false, false, false],
+    helpOpen: false, helpPinned: false, fabricInfo: null, hoverColor: null, zoomColor: null, dragPts: {}, fabricsExpanded: true,
+    hwModal: null, hwDraft: {}, hwQuery: '', applyAll: false, hwHover: null, switchTo: null,
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+  };
+  componentDidMount() {
+    this._onResize = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this._onResize); this._onResize();
+    if (this.props.startScreen && this.props.startScreen !== 'fabric') this.setState({ screen: this.props.startScreen });
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this._onResize); }
+  SWATCH = 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/';
+  FABRICS = [
+    { id: 'monotec', name: 'Monotec 370', tag: 'Premium', desc: 'Our strongest knitted fabric. Rated to 85 mph wind.', meta: '370 g/m\u00b2 \u00b7 15 year warranty', rate: 62, uv: '95%+', long: 'Premium knitted HDPE monofilament. Exceptional tear strength and dimensional stability, so it holds tension and shape for years. Best for windy or exposed sites.' },
+    { id: 'comm95', name: 'Commercial 95', tag: 'Architectural', desc: 'Unrivalled UV protection for hot climates.', meta: '340 g/m\u00b2 \u00b7 15 year warranty', rate: 58, uv: '95%+', long: 'Architectural-grade knitted fabric with up to 98% UV block. Cooler underneath, wide color range, popular for schools and public spaces.' },
+    { id: 'extrablock', name: 'ExtraBlock 330', tag: 'Fire rated', desc: 'Robust commercial fabric, fire-rated colors available.', meta: '330 g/m\u00b2 \u00b7 10 year warranty', rate: 52, uv: '98%+', long: 'Robust commercial fabric with fire-retardant colors (marked FR). Choose this where building codes require a fire rating.' },
+    { id: 'shadetec', name: 'Shadetec 320', tag: 'Best value', desc: 'High quality shade at the friendliest price.', meta: '320 g/m\u00b2 \u00b7 10 year warranty', rate: 46, uv: '90%+', long: 'Quality knitted shade cloth at the friendliest price. Great for residential patios and play areas with moderate exposure.' },
+  ];
+  mkPal(rows) { return rows.map(([name, css, file, sf, fr]) => ({ name, css, img: this.SWATCH + file, sf, fr: !!fr })); }
+  PALETTES = {
+    monotec: this.mkPal([['Koonunga Green','#2d6b3f','Monotec_-_Koonunga_Green.webp?v=1755468763',86.1],['Domino Black','#1a1a1a','Monotec_-_Domino_Black.webp?v=1755468763',88.4],['Sheba Navy','#1a237e','Monotec_-_Sheba_Dark_Blue.webp?v=1755468763',86.9],['Lime Fizz','#b2d235','Monotec_-_Lime_Fizz.webp?v=1755468763',84.3],['Candy Red','#c62828','Monotec_-_candy_Red.webp?v=1755468763',81.9],['Marrocan Terracotta','#a0522d','Monotec_-_Marrocan_Terracotta.webp?v=1755468763',82.6],['Bundena Blue','#1565c0','Monotec_-_Bundena_Blue.webp?v=1755468763',83.2],['Graphite Grey','#3c3c3c','Monotec_-_Graphite_Charcoal.webp?v=1755468763',87.0],['Karloo Sand','#c8a96e','Monotec_-_Karloo_Sand.webp?v=1755468763',72.5],['Sherbet Orange','#f4841f','Monotec_-_Sherbet_Orange.webp?v=1755468763',79.4],['Bubblegum Pink','#ec407a','Monotec_-_Bubblegum_Pink.webp?v=1755468763',83.6],['Mellow Haze Yellow','#fdd835','Monotec_-_Mellow_Haze_Yellow.webp?v=1755468763',74.7],['Jazzberry Purple','#6a1b6a','Monotec_-_Jazzberry_Purple.webp?v=1755468763',84.7],['Abaroo Red','#b71c1c','Monotec_-_Abaroo_Red.webp?v=1755468763',83.1],['Chino Cream','#e8d5a3','Monotec_-_Chino_Cream.webp?v=1755468763',70.9],['Titanium','#6e7078','Titanium_-_front.jpg?v=1756426399',84.5]]),
+    comm95: this.mkPal([['Aquamarine','#4db6ac','Aquamarine_-_Front.jpg?v=1778453775',89.5],['Aquatic Blue','#0097a7','Aquatic_Blue_-_Front.jpg?v=1778453773',85.6],['Black','#111111','Black_-_Front.jpg?v=1778453774',94.6],['Bluebird','#42a5f5','Bluebird_-_Front.jpg?v=1778453775',91.2],['Bright Green','#43a047','Bright_Green_-_Front.jpg?v=1778453775',88.6],['Brunswick Green','#1b5e20','Brunswick_Green_-_Front.jpg?v=1778453982',93.8],['Charcoal','#37474f','Charcoal_-_Front.jpg?v=1778453775',93.1],['Cherry Red','#c0392b','Cherry_Red_-_Front.jpg?v=1778453775',78.4],['Deep Ochre','#bf6900','Deep_Ochre_-_Front.jpg?v=1778453775',92.8],['Desert Sand','#c2a278','Desert_Sand_-_Front.jpg?v=1778453775',86.1],['Driftwood','#8b7d6b','Driftwood_-_Front.jpg?v=1778453775',90.0],['Gun Metal','#4a4a50','Gun_Metal_-_Front.jpg?v=1778453774',91.4],['Natural','#ddd0b4','Natural_-_Front.jpg?v=1778453775',76.2],['Navy Blue','#0d3b66','Navy_Blue_-_Front.jpg?v=1778453774',93.6],['Orange','#ef6c00','Orange_-_Front.jpg?v=1778453775',80.6],['Rivergum','#607d5a','Rivergum_-_Front.jpg?v=1778453773',88.7],['Sky Blue','#64b5f6','Sky_Blue_-_Front.jpg?v=1778453773',89.0],['Steel Grey','#6b6b6b','Steel_Grey_-_Front.jpg?v=1778453774',90.9],['Stone','#9e9684','Stone_-_Front.jpg?v=1778453774',89.3],['Turquoise','#00897b','Turquoise_-_Front.jpg?v=1778453773',86.0],['Yellow','#f9a825','Yellow_-_Front_CM95.jpg?v=1778461803',77.6],['White','#fafafa','White_-_Front.jpg?v=1778458804',73.9]]),
+    extrablock: this.mkPal([['Pearl Onyx','#2c2c2c','Extrablock_-_Pearl_Onyx.webp?v=1755468825',86,true],['Chocolate','#4e342e','Extrablock_-_Chocolate.webp?v=1755468825',93,true],['Beige','#c8b88a','Extrablock_-_Beige.webp?v=1755468825',87,false],['Charcoal','#37474f','Extrablock_-_Charcoal.webp?v=1755468825',92,true],['Persian Green','#00695c','Extrablock_-_Persian_Green.webp?v=1755468825',91,true],['Latte','#b08d6e','Extrablock_-_Latte.webp?v=1755468825',80,true],['Yellow','#f9a825','Extrablock_-_Yellow.webp?v=1755468825',75,false],['Navy','#0d2240','Extrablock_-_Navy.webp?v=1755468825',95,true],['Dove Blue','#5c99c5','Extrablock_-_Dove_Blue.webp?v=1755468825',90,true],['Cream','#f5f0e0','Extrablock_-_Cream.webp?v=1755468825',81,false],['Lime Green','#7cb342','Extrablock_-_Lime_Green.webp?v=1755468825',86,true],['Forest Green','#2e7d32','Extrablock_-_Forest_Green.webp?v=1755468825',93,true],['Olive Green','#556b2f','Extrablock_-_Olive_Green.webp?v=1755468825',96,true],['Silver','#bcc0c4','Extrablock_-_Silver.webp?v=1755468825',98,true],['Sunblaze','#ff8f00','Extrablock_-_Sunblaze.webp?v=1755468825',95,true],['Midnight','#191933','Extrablock_-_Midnight.webp?v=1755468825',97,true],['Mint Green','#81c784','Extrablock_-_Mint_Green.webp?v=1755468825',93,true],['Oxide Red','#8b2500','Extrablock_-_Oxide_Red.webp?v=1755468825',88,true],['True Blue','#1976d2','Extrablock_-_True_Blue.webp?v=1755468824',95,true],['Purple','#6a1b9a','Extrablock_-_Purple.webp?v=1755468824',88,true],['Red','#d32f2f','Extrablock_-_Red.webp?v=1755468824',88,false]]),
+    shadetec: this.mkPal([['Canyon Tan','#b8860b','Shadetec_-_Canyon_tan.webp?v=1755468808',92],['Desert Sand','#c2a278','Shadetec_-_Desert_sand.webp?v=1755468808',87],['Deep Sea Navy','#0a1929','Shadetec_-_Deep_Sea_navy.webp?v=1755468808',96],['Forest Green','#2e7d32','Shadetec_-_Forest_green.webp?v=1755468808',95],['Coastal Cream','#f0e8d0','Shadetec_-_Coastal_cream.webp?v=1755468808',77],['Arctic White','#f8f8f8','Shadetec_-_Artic_white.webp?v=1755468808',83.2],['Meadow Green','#4caf50','Shadetec_-_Meadow_green.webp?v=1755468808',91],['River Sand','#a68b5b','Shadetec_-_River_sand.webp?v=1755468808',90],['Ocean Blue','#1565c0','Shadetec_-_Ocean_blue.webp?v=1755468808',93],['Sunshine Yellow','#fbc02d','Shadetec_-_Sunshine_yellow.webp?v=1755468807',80],['Alpine Silver','#a8acb0','Shadetec_-_Alpine_Silver.webp?v=1755468808',94],['Charcoal Grey','#424242','Shadetec_-_Charcoal_Grey.webp?v=1755468807',95],['Carbon Black','#1b1b1b','Shadetec_-_Carbon_black.webp?v=1755468807',97],['Lava Red','#bf360c','Shadetec_-_Lava_red.webp?v=1755468807',91]]),
+  };
+  palette() { return this.PALETTES[this.state.fabric] || this.PALETTES.monotec; }
+  SHAPES = [
+    { id: 'square', name: 'Square', fields: ['Side'], n: 4 }, { id: 'rectangle', name: 'Rectangle', fields: ['Width', 'Depth'], n: 4 },
+    { id: 'triangle', name: 'Triangle', fields: ['Side'], n: 3 }, { id: 'right', name: 'Right Angle Triangle', fields: ['Base', 'Height'], n: 3 },
+  ];
+  GROUPS = [
+    { name: 'Material', screens: ['fabric'] }, { name: 'Shape', screens: ['shape', 'points'] },
+    { name: 'Dimensions', screens: ['intro', 'edges', 'diagonals', 'heights', 'size'] },
+    { name: 'Edge style', screens: ['edge'] }, { name: 'Hardware', screens: ['hardware'] }, { name: 'Review', screens: ['review'] },
+  ];
+  TITLES = {
+    fabric: ['Material & finish', 'Pick a fabric, then a color. Hover a swatch for its shade factor.'],
+    shape: ['What shape do you need?', 'Pick the shape that matches your fixing points.'],
+    points: ['How many fixing points?', 'Count the posts or wall points your sail will attach to.'],
+    intro: ['How to measure', 'Three things to know before you start.'],
+    edges: ['Measure each edge', 'Fixing point to fixing point. Tap a field to see it on the diagram.'],
+    diagonals: ['Now the diagonals', 'Corner to opposite corner. Optional now, required before checkout.'],
+    heights: ['Fixing point heights', ''], size: ['Enter your sail size', 'The finished sail dimensions \u2014 not the distance between your fixing points.'],
+    edge: ['Edge style', 'How the perimeter of your sail is reinforced.'],
+    hardware: ['Fixing hardware', 'Choose a hardware tensioning kit or pick per corner.'],
+    review: ['Review your sail', 'Check everything before we cut your fabric.'],
+  };
+  HELP = {
+    fabric: ['Fabric and color', 'All four fabrics are knitted HDPE that lets wind and heat pass through; heavier fabric means more strength and a longer warranty. Darker colors block more UV and feel cooler underneath \u2014 shade factor is the percentage of sunlight stopped. Colors marked FR are fire-retardant.'],
+    shape: ['Fixed shape or custom?', 'Fixed shapes are made to the exact sail size you enter. Custom is made-to-measure from your fixing points: pick it if edges differ, heights vary, or you have 5 or more points \u2014 custom sails carry the Fit Guarantee.'],
+    points: ['Counting fixing points', 'A fixing point is any post, wall plate or eye bolt the sail will attach to. Count them clockwise \u2014 we label them A, B, C\u2026 in that order on every diagram.'],
+    intro: ['Before you measure', 'Measure between the actual attachment points (the eye of the bolt, the top of the post), not the ground beneath them. Use a tape, keep it straight and tight.'],
+    edges: ['Edge measurements', 'Each edge runs from one fixing point to the next, in order. Enter feet and inches (or meters). The diagram highlights whichever edge you are typing.'],
+    diagonals: ['Why diagonals matter', 'Edges alone can describe many different shapes. Diagonals lock the geometry so we cut the sail to your exact space. Optional now so you can get a price, but required before we cut.'],
+    heights: ['Fixing point heights', 'Height is from the ground to the attachment point. Varying heights create the classic twisted sail look and help rain run off. Tell us if each point is a post or a building.'],
+    size: ['Entering a fixed size', 'Enter the finished sail dimensions you want. Allow roughly 10% of each side for tensioning hardware between the sail and your fixing points. Need uneven edges or varying heights? Switch to Custom.'],
+    edge: ['Webbing or cable?', 'Webbing reinforced is our standard: a 2-inch polyester strap sewn into the hem, easy to install. Cabled edge threads a stainless cable through the hem for a firmer, sleeker curve on larger sails.'],
+    hardware: ['Tensioning hardware', 'The kit gives every corner a turnbuckle and D-shackle sized for your sail. Choose per corner if some points need snap hooks or chain.'],
+    review: ['Before we cut', 'Check every value. Custom sails are made to order and cannot be returned, but the Fit Guarantee means if it does not fit your measured space we remake it free.'],
+  };
+  HW_CATALOG = [
+    { id: 'pipe', cat: 'Turnbuckles', name: 'Pipe Turnbuckle Jaw-Jaw SS 316', meta: 'M10 \u00b7 316 stainless \u00b7 deduction 250 mm', price: 63.56, size: 'M10', ded: '250 mm', sku: 'TB-PJJ-10', desc: 'Closed-body turnbuckle with jaw ends both sides. The workhorse for tensioning a sail corner to a post or pad eye.' },
+    { id: 'tbhook', cat: 'Turnbuckles', name: 'Turnbuckle Hook-Eye SS 316', meta: 'M8 \u00b7 316 stainless \u00b7 deduction 190 mm', price: 38.5, size: 'M8', ded: '190 mm', sku: 'TB-HE-8', desc: 'Lighter open-body turnbuckle. Hook end clips straight onto the sail D-ring; eye end takes a shackle.' },
+    { id: 'dshackle', cat: 'Shackles', name: 'D-Shackle SS 316', meta: '8 mm \u00b7 316 stainless \u00b7 deduction 35 mm', price: 12.4, size: '8 mm', ded: '35 mm', sku: 'SH-D-8', desc: 'Screw-pin D-shackle for joining hardware to the sail corner or fixing point.' },
+    { id: 'bowshackle', cat: 'Shackles', name: 'Bow Shackle SS 316', meta: '10 mm \u00b7 316 stainless \u00b7 deduction 45 mm', price: 14.9, size: '10 mm', ded: '45 mm', sku: 'SH-B-10', desc: 'Wider bow gives room for chain or two fittings to sit side by side.' },
+    { id: 'snap', cat: 'Hooks & chain', name: 'Snap Hook SS 316', meta: '8 mm \u00b7 316 stainless \u00b7 deduction 80 mm', price: 18.2, size: '8 mm', ded: '80 mm', sku: 'HK-SN-8', desc: 'Spring-gate hook for quick release \u2014 handy where the sail comes down seasonally.' },
+    { id: 'chain', cat: 'Hooks & chain', name: 'Chain SS 316 (per 300 mm)', meta: '6 mm \u00b7 316 stainless', price: 9.8, size: '6 mm \u00d7 300 mm', ded: 'per length', sku: 'CH-6-300', desc: 'Bridges a gap when a fixing point sits further away than the turnbuckle can reach.' },
+    { id: 'padeye', cat: 'Fixings', name: 'Pad Eye SS 316', meta: 'Wall / post mount \u00b7 4 screws', price: 16.5, size: '4-hole plate', ded: '\u2014', sku: 'FX-PE-4', desc: 'Plate-mounted eye for walls, fascias or steel posts. Fix with four structural screws.' },
+    { id: 'eyebolt', cat: 'Fixings', name: 'Eye Bolt SS 316', meta: 'M10 \u00d7 100 mm', price: 11.2, size: 'M10 \u00d7 100 mm', ded: '\u2014', sku: 'FX-EB-10', desc: 'Through-bolt eye for timber posts and beams. Use with a backing washer.' },
+  ];
+  HW_IMAGES = {};
+  hwLines(i) { const l = this.state.cornerHw[i]; return l === undefined ? { pipe: 1 } : l; }
+  cornerCost(i) { const lines = this.hwLines(i); return Object.entries(lines).reduce((a, [id, q]) => a + ((this.HW_CATALOG.find(x => x.id === id) || {}).price || 0) * q, 0); }
+  cornerSummary(i) { const lines = this.hwLines(i); const parts = Object.entries(lines).filter(([, q]) => q > 0).map(([id, q]) => q + '\u00d7 ' + (this.HW_CATALOG.find(x => x.id === id) || {}).name); return parts.length ? parts.join(', ') : 'Not configured \u2014 tap to select'; }
+  letters(n) { return 'ABCDEFGH'.slice(0, n).split(''); }
+  edgeKeys(n) { const L = this.letters(n); return L.map((l, i) => l + L[(i + 1) % n]); }
+  diagKeys(n) { if (n < 4) return []; const L = this.letters(n); const out = []; const seen = {};
+    for (let i = 0; i < n; i++) { const j = (i + 2) % n; const k = [L[i], L[j]].sort().join(''); if (!seen[k] && j !== i) { seen[k] = 1; out.push(k); } } return out; }
+  cornersN() { const s = this.state; return s.shapeMode === 'custom' ? s.corners : ((this.SHAPES.find(x => x.id === s.fixedShape) || {}).n || 4); }
+  flow() { const s = this.state; const f = ['fabric', 'shape'];
+    if (s.shapeMode === 'custom') { f.push('points', 'intro', 'edges'); if (s.corners >= 4) f.push('diagonals', 'heights'); } else f.push('intro', 'size');
+    f.push('edge', 'hardware', 'review'); return f; }
+  val(obj, k) { const s = this.state; const v = obj[k]; if (!v) return 0; return s.unit === 'imperial' ? (+v.a || 0) * 0.3048 + (+v.b || 0) * 0.0254 : (+v.a || 0); }
+  filled(obj, k) { const v = obj[k]; return !!v && ((+v.a || 0) > 0 || (+v.b || 0) > 0); }
+  valid(screen) { const s = this.state; const n = s.corners;
+    switch (screen) {
+      case 'fabric': return !!s.fabric && !!s.color;
+      case 'shape': return s.shapeMode === 'custom' || !!s.fixedShape;
+      case 'edges': return this.edgeKeys(n).every(k => this.filled(s.edges, k));
+      case 'heights': return n === 4 ? true : this.letters(n).every(l => this.filled(s.heights, l));
+      case 'size': { const sh = this.SHAPES.find(x => x.id === s.fixedShape); return !!sh && sh.fields.every(f => this.filled(s.size, f)); }
+      case 'edge': return !!s.edgeType; case 'hardware': return !!s.hwMode;
+      default: return true; } }
+  areaM2() { const s = this.state;
+    if (s.shapeMode === 'fixed' && s.fixedShape) { const g = k => this.val(s.size, k);
+      if (s.fixedShape === 'square') return g('Side') ** 2; if (s.fixedShape === 'rectangle') return g('Width') * g('Depth');
+      if (s.fixedShape === 'triangle') return Math.sqrt(3) / 4 * g('Side') ** 2; if (s.fixedShape === 'right') return g('Base') * g('Height') / 2; }
+    if (s.shapeMode !== 'custom') return 0; const ks = this.edgeKeys(s.corners); if (!ks.every(k => this.filled(s.edges, k))) return 0;
+    const e = ks.reduce((a, k) => a + this.val(s.edges, k), 0) / ks.length; const n = s.corners; return n * e * e / (4 * Math.tan(Math.PI / n)); }
+  perimeterM() { const s = this.state; if (s.shapeMode === 'custom') return this.edgeKeys(s.corners).reduce((a, k) => a + this.val(s.edges, k), 0);
+    const g = k => this.val(s.size, k); if (s.fixedShape === 'square') return 4 * g('Side'); if (s.fixedShape === 'rectangle') return 2 * (g('Width') + g('Depth'));
+    if (s.fixedShape === 'triangle') return 3 * g('Side'); if (s.fixedShape === 'right') { const a = g('Base'), b = g('Height'); return a + b + Math.sqrt(a * a + b * b); } return 0; }
+  hwPrice() { const s = this.state; const n = this.cornersN(); if (s.hwMode === 'standard') return 45 * n;
+    if (s.hwMode === 'manual') { let p = s.grease ? 10.94 : 0; for (let i = 0; i < n; i++) p += this.cornerCost(i); return Math.round(p * 100) / 100; } return 0; }
+  price() { const s = this.state; const a = this.areaM2(); if (!a) return 0; const fab = this.FABRICS.find(f => f.id === s.fabric) || this.FABRICS[0];
+    let p = 180 + a * fab.rate; if (s.edgeType === 'cabled') p *= 1.08; return Math.round(p + this.hwPrice()); }
+  shapePts(w, h) { const s = this.state; const cx = w / 2, cy = h / 2;
+    if (s.shapeMode === 'fixed') {
+      if (s.fixedShape === 'rectangle') return [[cx - 100, cy - 60], [cx + 100, cy - 60], [cx + 100, cy + 60], [cx - 100, cy + 60]];
+      if (s.fixedShape === 'right') return [[cx - 80, cy - 75], [cx - 80, cy + 75], [cx + 90, cy + 75]];
+      if (s.fixedShape === 'triangle') return this.regular(3, cx, cy + 12, 88); return this.regular(4, cx, cy, 90); }
+    const n = s.corners; const base = this.regular(n, cx, cy, 86).map((p, i) => [p[0] + ((i * 37) % 23) - 11, p[1] + ((i * 53) % 19) - 9]);
+    return base.map((p, i) => s.dragPts[i] || p); }
+  svgPoint(e, svg) { const r = svg.getBoundingClientRect(); const vb = svg.viewBox.baseVal; return [(e.clientX - r.left) / r.width * vb.width, (e.clientY - r.top) / r.height * vb.height]; }
+  startDrag(i, e) { e.preventDefault(); e.stopPropagation(); const svg = e.currentTarget.ownerSVGElement; const s = this.state; const pts = this.shapePts(340, 240);
+    const move = (ev) => { const [x, y] = this.svgPoint(ev, svg); const next = { ...this.state.dragPts }; pts.forEach((p, j) => { if (!next[j]) next[j] = p; });
+      next[i] = [Math.max(14, Math.min(326, x)), Math.max(14, Math.min(226, y))]; this.setState({ dragPts: next, focusKey: this.letters(s.corners)[i] }); };
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); this.setState({ focusKey: null }); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); }
+  regular(n, cx, cy, r) { const pts = []; const a0 = -Math.PI / 2 + (n === 4 ? Math.PI / 4 : 0);
+    for (let i = 0; i < n; i++) { const a = a0 + i * 2 * Math.PI / n; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return pts; }
+  fmtLen(m) { const s = this.state; if (!m) return ''; if (s.unit === 'metric') return m.toFixed(2) + ' m'; const totalIn = Math.round(m / 0.0254); return Math.floor(totalIn / 12) + "' " + (totalIn % 12) + '"'; }
+  // PLACEHOLDER: in production mount the existing InteractiveMeasurementCanvas (Plan) / ShadeSail3DViewer (3D) at [data-mount="sail-viewer"],
+  // driven by corners, points, measurements (edges/diags), fixingHeights, fabricColor, view and the highlighted key.
+  makeDiagram() {
+    const R = React.createElement; const s = this.state; const W = 340, H = 240;
+    const pts = this.shapePts(W, H); const n = pts.length; const L = this.letters(n); const kids = []; const fk = s.focusKey;
+    const fill = s.color ? ((this.palette().find(c => c.name === s.color) || {}).css || '#E7F2EA') : '#E7F2EA';
+    if (s.view === '3d') {
+      const proj = (p, lift) => [p[0], (p[1] - H / 2) * 0.45 + H / 2 + 45 - lift];
+      const lifts = pts.map((_, i) => { const hv = this.val(s.heights, L[i]); return hv > 0 ? 40 + Math.min(hv, 5) * 8 : 55 + (i % 2) * 18; });
+      const top = pts.map((p, i) => proj(p, lifts[i])); const ground = pts.map(p => proj(p, 0));
+      kids.push(R('polygon', { key: 'g', points: ground.map(p => p.join(',')).join(' '), fill: '#dfe7e1' }));
+      pts.forEach((p, i) => kids.push(R('line', { key: 'p' + i, x1: top[i][0], y1: top[i][1], x2: ground[i][0], y2: ground[i][1], stroke: '#01312d', strokeWidth: 3 })));
+      kids.push(R('polygon', { key: 's', points: top.map(p => p.join(',')).join(' '), fill, fillOpacity: 0.92, stroke: '#01312d', strokeWidth: 3, strokeLinejoin: 'round' }));
+      top.forEach((p, i) => { kids.push(R('circle', { key: 'd' + i, cx: p[0], cy: p[1], r: 10, fill: fk === L[i] ? '#b5e853' : '#01312d' }));
+        kids.push(R('text', { key: 't' + i, x: p[0], y: p[1] + 4, textAnchor: 'middle', fill: fk === L[i] ? '#01312d' : '#fff', fontSize: 11, fontWeight: 800 }, L[i])); });
+    } else {
+      kids.push(R('polygon', { key: 's', points: pts.map(p => p.join(',')).join(' '), fill, fillOpacity: s.color ? 0.85 : 1, stroke: '#01312d', strokeWidth: 3, strokeLinejoin: 'round' }));
+      if (s.screen === 'diagonals' || s.screen === 'review') this.diagKeys(n).forEach((k, di) => { const a = L.indexOf(k[0]), b = L.indexOf(k[1]);
+        kids.push(R('line', { key: 'dg' + di, x1: pts[a][0], y1: pts[a][1], x2: pts[b][0], y2: pts[b][1], stroke: fk === k ? '#b5e853' : '#fff', strokeWidth: fk === k ? 5 : 2, strokeDasharray: '6 4', opacity: 0.9 })); });
+      if (fk && fk.length === 2 && s.screen === 'edges') { const a = L.indexOf(fk[0]), b = L.indexOf(fk[1]); if (a >= 0 && b >= 0) kids.push(R('line', { key: 'hl', x1: pts[a][0], y1: pts[a][1], x2: pts[b][0], y2: pts[b][1], stroke: '#b5e853', strokeWidth: 7, strokeLinecap: 'round' })); }
+      if (s.shapeMode === 'custom') this.edgeKeys(n).forEach((k, i) => { const a = pts[i], b = pts[(i + 1) % n]; const m = this.val(s.edges, k); if (!m) return;
+        const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2; const ox = (mx - W / 2) * 0.3, oy = (my - H / 2) * 0.3;
+        kids.push(R('text', { key: 'el' + i, x: mx + ox, y: my + oy + 4, textAnchor: 'middle', fill: '#01312d', fontSize: 12, fontWeight: 700, stroke: '#f5f7f5', strokeWidth: 4, paintOrder: 'stroke' }, this.fmtLen(m))); });
+      const draggable = s.shapeMode === 'custom' && ['edges', 'diagonals', 'heights'].includes(s.screen);
+      pts.forEach((p, i) => { const g = [R('circle', { key: 'd' + i, cx: p[0], cy: p[1], r: draggable ? 13 : 10, fill: fk === L[i] ? '#b5e853' : '#01312d', stroke: draggable ? '#fff' : 'none', strokeWidth: 2.5 }),
+          R('text', { key: 't' + i, x: p[0], y: p[1] + 4, textAnchor: 'middle', fill: fk === L[i] ? '#01312d' : '#fff', fontSize: 11, fontWeight: 800, pointerEvents: 'none' }, L[i])];
+        kids.push(R('g', { key: 'pt' + i, style: { cursor: draggable ? 'grab' : 'default', touchAction: 'none' }, onPointerDown: draggable ? (e) => this.startDrag(i, e) : undefined }, g)); });
+      if (draggable) kids.push(R('text', { key: 'hint', x: W / 2, y: H - 6, textAnchor: 'middle', fill: '#6b8478', fontSize: 11, fontWeight: 600 }, 'Drag the points to match your space'));
+    }
+    return R('svg', { viewBox: '0 0 ' + W + ' ' + H, style: { width: '100%', display: 'block', userSelect: 'none' } }, kids);
+  }
+  renderVals() {
+    const s = this.state; const flow = this.flow(); const idx = flow.indexOf(s.screen);
+    const isDesktop = s.width >= 900; const isWide = s.width >= 1180;
+    const set = (p) => this.setState(p); const go = (screen) => set({ screen, saved: false, focusKey: null, helpOpen: false, helpPinned: false, fabricInfo: null, hoverColor: null });
+    const n = this.cornersN(); const fab = this.FABRICS.find(f => f.id === s.fabric); const shObj = this.SHAPES.find(x => x.id === s.fixedShape);
+    const imperial = s.unit === 'imperial'; const unit1 = imperial ? 'ft' : 'm'; const isCustom = s.shapeMode === 'custom'; const isReview = s.screen === 'review';
+    const sel = (on) => on ? { bg: '#01312d', fg: '#fff', border: '#01312d', tagBg: '#b5e853', tagFg: '#01312d', descFg: '#cfe3d4' } : { bg: '#fff', fg: '#01312d', border: '#dfe7e1', tagBg: '#eef5ef', tagFg: '#23503f', descFg: '#4c6b60' };
+    const seg = (on) => ({ bg: on ? '#01312d' : '#fff', fg: on ? '#fff' : '#01312d' });
+    const mk = (obj, key, label, tag, extra) => ({ tag, label, v1: (s[obj][key] || {}).a ?? '', v2: (s[obj][key] || {}).b ?? '',
+      on1: (e) => set({ [obj]: { ...s[obj], [key]: { ...(s[obj][key] || {}), a: e.target.value } } }), on2: (e) => set({ [obj]: { ...s[obj], [key]: { ...(s[obj][key] || {}), b: e.target.value } } }),
+      focus: () => set({ focusKey: key }), done: this.filled(s[obj], key), border: s.focusKey === key ? '#01312d' : '#dfe7e1', hasExtra: !!extra });
+    let measureList = [], measureNoteText = '', subOverride = null;
+    if (s.screen === 'edges') measureList = this.edgeKeys(n).map(k => mk('edges', k, 'Edge', k[0] + ' \u2192 ' + k[1]));
+    if (s.screen === 'diagonals') { measureList = this.diagKeys(n).map(k => mk('diags', k, 'Diagonal', k[0] + ' \u2192 ' + k[1])); if (!this.diagKeys(n).every(k => this.filled(s.diags, k))) measureNoteText = 'Don\u2019t have these yet? Continue now and add them at review \u2014 we can\u2019t cut without them.'; }
+    if (s.screen === 'heights') { subOverride = n === 4 ? 'Optional for 4 points, but recommended \u2014 it helps us shape the sail.' : 'Height above ground at each fixing point, and what it attaches to.';
+      measureList = this.letters(n).map(l => { const p = seg(s.fixTypes[l] === 'Post'), b = seg(s.fixTypes[l] === 'Building'); return { ...mk('heights', l, 'Height', l, true), pickPost: () => set({ fixTypes: { ...s.fixTypes, [l]: 'Post' } }), pickBuilding: () => set({ fixTypes: { ...s.fixTypes, [l]: 'Building' } }), postBg: p.bg, postFg: p.fg, bldBg: b.bg, bldFg: b.fg }; });
+      if (n === 4) measureNoteText = 'You can skip this step \u2014 tap Continue when ready.'; }
+    if (s.screen === 'size') measureList = (shObj ? shObj.fields : []).map((f, i) => mk('size', f, f, ['AB', 'BC'][i] || ''));
+    const priceV = this.price(); const showPrice = priceV > 0 && idx >= flow.indexOf(isCustom ? 'edges' : 'size'); const canCont = this.valid(s.screen); const allAcks = s.acks.every(Boolean);
+    const nextNames = { shape: 'shape', points: 'fixing points', intro: 'how to measure', edges: 'measurements', diagonals: 'diagonals', heights: 'heights', size: 'size', edge: 'edge style', hardware: 'hardware', review: 'review' };
+    const hints = { fabric: s.fabric ? 'Choose a color to continue' : 'Choose a fabric to continue', shape: 'Choose a shape to continue', edges: 'Enter every edge to continue', heights: 'Enter every height to continue', size: 'Enter your size to continue', edge: 'Choose an edge style to continue', hardware: 'Choose a hardware option to continue' };
+    const d1 = new Date(); d1.setDate(d1.getDate() + 11); const d2 = new Date(); d2.setDate(d2.getDate() + 16); const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const shName = isCustom ? 'Custom \u00b7 ' + s.corners + ' points' : (shObj ? shObj.name : '\u2014');
+    const hwName = s.hwMode === 'standard' ? 'Tensioning kit' : s.hwMode === 'manual' ? 'Manual per corner' : s.hwMode === 'none' ? 'None' : '\u2014';
+    const edgeName = s.edgeType === 'webbing' ? 'Webbing reinforced' : s.edgeType === 'cabled' ? 'Cabled edge' : '\u2014';
+    const priceText = priceV ? 'US$' + priceV.toLocaleString() : '\u2014';
+    const gi = this.GROUPS.findIndex(g => g.screens.includes(s.screen));
+    const groupSubs = [fab ? fab.name + (s.color ? ' \u00b7 ' + s.color : '') : 'Fabric and color', s.shapeMode ? shName : 'Shape and fixing points', this.areaM2() ? 'Measured' : 'Measurements', s.edgeType ? edgeName : 'Perimeter finish', s.hwMode ? hwName : 'Tensioning kit', 'Confirm and order'];
+    const groupDone = (g) => g.screens.filter(sc => flow.includes(sc)).every(sc => this.valid(sc)) && g.screens.some(sc => flow.includes(sc) && ['fabric','color','shape','edges','size','edge','hardware'].includes(sc) ? this.valid(sc) && (sc !== 'fabric' || !!s.fabric) : true);
+    const reachable = this.GROUPS.map((g, i) => i <= gi || this.GROUPS.slice(0, i).every(pg => groupDone(pg)));
+    const railItems = this.GROUPS.map((g, i) => { const done = i < gi || (i > gi && groupDone(g) && g.name !== 'Review'); const active = i === gi; const first = g.screens.find(sc => flow.includes(sc)); const can = i !== gi && reachable[i];
+      return { name: g.name, sub: groupSubs[i], mark: done ? '\u2713' : String(i + 1), bg: active ? 'rgba(255,255,255,0.1)' : 'transparent', opacity: done || active || can ? 1 : 0.55, cursor: can ? 'pointer' : 'default',
+        dotBg: done ? '#b5e853' : active ? '#fff' : 'transparent', dotFg: done || active ? '#01312d' : '#fff', dotBorder: done ? '#b5e853' : active ? '#fff' : can ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)',
+        segBg: done ? '#b5e853' : active ? 'rgba(181,232,83,0.55)' : 'rgba(255,255,255,0.2)', segFg: active ? '#fff' : done || can ? '#9fc4ad' : 'rgba(255,255,255,0.35)', go: () => { if (can && first) go(first); } }; });
+    const hwModes = [{ id: 'standard', name: 'Hardware tensioning kit', badge: true, desc: 'A curated set for your sail: marine-grade turnbuckle and D-shackle for every corner. Fitted right, first time.', price: 'US$' + (45 * n) + ' for ' + n + ' corners' }, { id: 'manual', name: 'Manual per corner', badge: false, desc: 'Pick specific hardware for each fixing point.', price: 'Priced per item' }];
+    if (!isCustom) hwModes.push({ id: 'none', name: 'No hardware', badge: false, desc: 'Skip this if you already have your own.', price: 'No extra cost' });
+    const perim = this.perimeterM(); const perimText = perim ? (imperial ? Math.round(perim / 0.3048) + "' (" + perim.toFixed(1) + ' m)' : perim.toFixed(1) + ' m') : null;
+    const webbingMm = perim >= 35 ? 63 : 50; const wireMm = perim >= 40 ? 6 : perim >= 30 ? 5 : 4;
+    const edgeAdvice = !perim ? ['Either option works well.', 'Choose based on your preference.'] : perim < 20 ? ['Webbing is ideal for this size.', 'At ' + perimText + ' perimeter, webbing gives plenty of strength and is the easiest to install.'] : perim <= 40 ? ['Either option works well.', 'At ' + perimText + ' perimeter both edge types suit. Cabled is stronger and sleeker; webbing is easier to install.'] : ['Cabled edge recommended.', 'At ' + perimText + ' perimeter a stainless cable keeps large sails crisp under tension.'];
+    const diagsDone = !isCustom || n < 4 || this.diagKeys(n).every(k => this.filled(s.diags, k));
+    const heightsSkipped = isCustom && n === 4 && !this.letters(n).some(l => this.filled(s.heights, l));
+    const sailPrice = priceV ? priceV - this.hwPrice() : 0; const colorObj = this.palette().find(c => c.name === s.color);
+    const summaryRows = [
+      { k: 'Fabric', v: fab ? fab.name : '\u2014', go: 'fabric' }, { k: 'Color', v: s.color || '\u2014', go: 'fabric' }, { k: 'Shade factor', v: colorObj ? colorObj.sf + '%' : '\u2014', go: 'fabric' },
+      { k: 'Thread', v: 'SolarFix\u00ae PTFE', go: 'edge' }, { k: 'Shape', v: shName, go: 'shape' }, { k: 'Perimeter', v: perimText || '\u2014', go: isCustom ? 'edges' : 'size' },
+      { k: 'Area', v: this.areaM2() ? (imperial ? Math.round(this.areaM2() * 10.764) + ' ft\u00b2' : this.areaM2().toFixed(1) + ' m\u00b2') : '\u2014', go: isCustom ? 'edges' : 'size' },
+      { k: 'Edge style', v: edgeName, go: 'edge' }, { k: s.edgeType === 'cabled' ? 'Wire' : 'Webbing', v: s.edgeType === 'cabled' ? wireMm + ' mm' : webbingMm + ' mm', go: 'edge' },
+      { k: 'Weight', v: this.areaM2() ? (imperial ? (this.areaM2() * 0.37 * 2.2 + n * 0.4).toFixed(1) + ' lb' : (this.areaM2() * 0.37 + n * 0.2).toFixed(1) + ' kg') : '\u2014', go: isCustom ? 'edges' : 'size' },
+      { k: 'Hardware', v: hwName, go: 'hardware' },
+    ].map(r => ({ ...r, edit: () => go(r.go) }));
+    const measureRows = isCustom ? [...this.edgeKeys(n).map(k => ({ k: 'Edge ' + k[0] + '\u2192' + k[1], v: this.fmtLen(this.val(s.edges, k)) || '\u2014' })), ...this.diagKeys(n).map(k => ({ k: 'Diag ' + k[0] + '\u2192' + k[1], v: this.fmtLen(this.val(s.diags, k)) || 'Not set' }))]
+      : (shObj ? shObj.fields.map(f => ({ k: f, v: this.fmtLen(this.val(s.size, f)) || '\u2014' })) : []);
+    const t = this.TITLES[s.screen] || ['', '']; const h = this.HELP[s.screen] || ['', '']; const zc = this.palette().find(c => c.name === s.zoomColor);
+    return {
+      isDesktop, isMobile: !isDesktop, isWide, notWide: !isWide,
+      scFabric: s.screen === 'fabric', scColor: s.screen === 'color', scShape: s.screen === 'shape', scPoints: s.screen === 'points', scIntro: s.screen === 'intro',
+      scMeasure: ['edges', 'diagonals', 'heights', 'size'].includes(s.screen), scSize: s.screen === 'size', scEdge: s.screen === 'edge', scHardware: s.screen === 'hardware', scReview: isReview,
+      stepTitle: t[0], stepSub: subOverride || t[1], helpTitle: h[0], helpBody: h[1], helpOpen: s.helpOpen || s.helpPinned,
+      openHelp: () => set({ helpOpen: true }), closeHelp: () => set({ helpOpen: false }), toggleHelp: () => set({ helpPinned: !s.helpPinned }),
+      helpBtnBg: (s.helpOpen || s.helpPinned) ? '#01312d' : 'transparent', helpBtnFg: (s.helpOpen || s.helpPinned) ? '#b5e853' : '#01312d',
+      railItems, groupLabel: 'Step ' + (idx + 1) + ' of ' + flow.length,
+      progressSegs: this.GROUPS.map((g, i) => ({ bg: i < gi ? '#b5e853' : i === gi ? 'rgba(181,232,83,0.55)' : 'rgba(255,255,255,0.2)' })),
+      canBack: idx > 0, noBack: idx === 0, showBackBtn: isDesktop && idx > 0, goBack: () => go(flow[idx - 1]),
+      saved: s.saved, saveProgress: () => set({ saved: true }),
+      fabricsList: this.FABRICS.map(f => ({ ...f, sel: s.fabric === f.id, pick: () => set({ fabric: f.id, color: s.fabric === f.id ? s.color : null, fabricsExpanded: false, fabricInfo: null }), infoOpen: s.fabricInfo === f.id, z: s.fabricInfo === f.id ? 20 : 1, infoOn: () => set({ fabricInfo: f.id }), infoOff: () => set({ fabricInfo: null }), ...sel(s.fabric === f.id) })),
+      fabricChips: this.FABRICS.map(f => ({ name: f.name, pick: (e) => { e.stopPropagation(); set({ fabric: f.id, color: s.fabric === f.id ? s.color : null, fabricsExpanded: false }); }, hoverExpand: () => { if (isDesktop && f.id !== s.fabric) set({ fabricsExpanded: true }); }, ...seg(s.fabric === f.id) })),
+      hasFabric: !!s.fabric,
+      ...(() => { const exp = !s.fabric || s.fabricsExpanded; const col = !!s.fabric && !s.fabricsExpanded;
+        return { cardsMaxH: exp ? '1200px' : '0px', cardsOpacity: exp ? 1 : 0, cardsMb: exp ? '0px' : '-20px', pillsMaxH: col ? '120px' : '0px', pillsOpacity: col ? 1 : 0, pillsMb: col ? '0px' : '-20px' }; })(),
+      expandFabricsTap: () => { if (!isDesktop) set({ fabricsExpanded: true }); },
+      collapseFabricsHover: () => { if (isDesktop && s.fabric) set({ fabricsExpanded: false, fabricInfo: null }); },
+      pillsHint: isDesktop ? 'Hover another fabric to compare' : 'Tap to change fabric',
+      fabricCols: isDesktop ? 'repeat(auto-fill, minmax(230px, 1fr))' : '1fr', fabricGap: isDesktop ? '12px' : '8px', fabricPad: isDesktop ? '18px 18px 16px' : '12px 16px', fabricMetaMt: isDesktop ? '10px' : '4px',
+      colorCount: this.palette().length + ' colors' + (s.color ? ' \u00b7 ' + s.color : ''),
+      colorsList: this.palette().map(c => ({ ...c, sel: s.color === c.name, ring: s.color === c.name ? '#01312d' : 'transparent', pick: () => set({ color: c.name }), hovered: s.hoverColor === c.name, hover: () => set({ hoverColor: c.name }), unhover: () => set({ hoverColor: null }), bgImg: 'url(' + c.img + ')', sf: c.sf + '%', uv: fab ? fab.uv : '95%+', frText: c.fr ? ' \u00b7 Fire retardant' : '', zoomOpacity: s.hoverColor === c.name ? 1 : 0.55, zoom: (e) => { e.stopPropagation(); set({ zoomColor: c.name, hoverColor: null }); } })),
+      zoomOpen: !!zc, closeZoom: () => set({ zoomColor: null }), stopClick: (e) => e.stopPropagation(),
+      zoomImg: zc ? 'url(' + zc.img + ')' : 'none', zoomName: zc ? zc.name : '', zoomFabric: fab ? fab.name : '', zoomFr: !!(zc && zc.fr),
+      zoomSf: zc ? zc.sf + '%' : '', zoomUv: fab ? fab.uv : '', zoomWeight: fab ? fab.meta.split(' \u00b7 ')[0] : '', zoomWarranty: fab ? fab.meta.split(' \u00b7 ')[1] : '', zoomDesc: fab ? fab.long : '',
+      zoomPick: () => set({ color: zc ? zc.name : s.color, zoomColor: null }),
+      ...Object.fromEntries(this.SHAPES.flatMap(sh => { const on = s.shapeMode === 'fixed' && s.fixedShape === sh.id; return [['sel_' + sh.id, on], ['border_' + sh.id, on ? '#01312d' : '#dfe7e1'], ['pick_' + sh.id, () => set({ shapeMode: 'fixed', fixedShape: sh.id })]]; })),
+      selCustom: isCustom, customBg: isCustom ? '#01312d' : '#eef5ef', customFg: isCustom ? '#fff' : '#01312d', customBorder: isCustom ? '#01312d' : '#7bb08f', pickCustom: () => set({ shapeMode: 'custom', fixedShape: null }),
+      ...Object.fromEntries([3, 4, 5, 6, 7, 8].flatMap(k => [['selPts_' + k, s.corners === k], ['borderPts_' + k, s.corners === k ? '#01312d' : '#dfe7e1'], ['pickPts_' + k, () => set({ corners: k, edges: {}, diags: {}, heights: {}, cornerHw: {}, dragPts: {} })]])),
+      isCustomFlow: isCustom,
+      introSteps: (isCustom ? ['Measure between your fixing points \u2014 the exact points the sail will attach to.', 'Keep the tape tight and straight. A second pair of hands helps.', 'Write each number down as you go. We ask for them a few at a time.']
+        : ['Enter the finished sail size you want, not the space between fixing points.', 'Allow roughly 10% of each side for tensioning hardware.', 'Not perfectly square, or need varying heights? You can switch to Custom on the next screen.']).map((text, i) => ({ n: i + 1, text })),
+      toggleSketch: () => set({ sketch: !s.sketch }), sketchNote: s.sketch,
+      measureList, imperial, unit1, measureNote: !!measureNoteText, measureNoteText,
+      switchPrompt: (s.fixedShape === 'triangle' || s.fixedShape === 'right') ? 'Need a different shape triangle?' : 'Not perfectly ' + (s.fixedShape === 'square' ? 'square' : 'rectangular') + ', or need varying heights?',
+      switchToCustom: () => set({ switchTo: 'custom' }),
+      ...(() => { const toCustom = s.switchTo === 'custom'; const hasData = toCustom ? (shObj ? shObj.fields.some(f => this.filled(s.size, f)) : false) : this.edgeKeys(n).some(k => this.filled(s.edges, k));
+        const doSwitch = (keep) => { const sailImg = 'icons/measure-sail.svg';
+          if (toCustom) { const edges = {}; if (keep && shObj) { const ks = this.edgeKeys(shObj.n); const vals = shObj.fields.map(f => s.size[f]);
+              ks.forEach((k, i) => { edges[k] = shObj.id === 'square' || shObj.id === 'triangle' ? vals[0] : shObj.id === 'rectangle' ? vals[i % 2] : (i === 0 ? vals[0] : i === 2 ? vals[1] : { a: '', b: '' }); }); }
+            set({ shapeMode: 'custom', fixedShape: null, corners: shObj ? shObj.n : 4, edges, diags: {}, heights: {}, dragPts: {}, screen: 'points', switchTo: null, helpOpen: false, helpPinned: false }); }
+          else { const target = n === 3 ? 'triangle' : 'square'; const tsh = this.SHAPES.find(x => x.id === target); const size = {}; if (keep) { const ks = this.edgeKeys(n); tsh.fields.forEach((f, i) => { size[f] = s.edges[ks[i]] || { a: '', b: '' }; }); }
+            set({ shapeMode: 'fixed', fixedShape: target, size, screen: 'size', switchTo: null, helpOpen: false, helpPinned: false }); } };
+        return { switchOpen: !!s.switchTo, closeSwitch: () => set({ switchTo: null }), switchHasData: hasData,
+          switchTitle: toCustom ? 'Switch to custom made-to-measure?' : 'Switch to standard shape and size?',
+          switchBody: toCustom ? 'Instead of entering the sail\u2019s own size, you\u2019ll enter the distance between the points where it attaches. We size the sail to fit that space.' : 'Instead of measuring between attachment points, you\u2019ll enter the finished size of the sail itself.',
+          switchNowImg: toCustom ? 'url(icons/measure-sail.svg)' : 'url(icons/measure-space.svg)', switchAfterImg: toCustom ? 'url(icons/measure-space.svg)' : 'url(icons/measure-sail.svg)',
+          switchNowLabel: toCustom ? 'Sail dimensions' : 'Fixing point distances', switchAfterLabel: toCustom ? 'Fixing point distances' : 'Sail dimensions',
+          switchFresh: () => doSwitch(false), switchKeep: () => doSwitch(true) }; })(),
+      matchesFixed: isCustom && s.screen === 'edges' && (n === 4 || n === 3) && (() => { const ks = this.edgeKeys(n); const v = ks.map(k => this.val(s.edges, k)); return v.every(x => x > 0) && Math.max(...v) - Math.min(...v) < 0.02; })(),
+      matchesName: n === 3 ? 'Triangle' : 'Square', switchToFixed: () => set({ switchTo: 'fixed' }),
+      showMeasureBanner: s.screen === 'edges' || s.screen === 'size', measureBannerImg: isCustom ? 'url(icons/measure-space.svg)' : 'url(icons/measure-sail.svg)',
+      measureBannerTitle: isCustom ? 'Measure between your fixing points.' : 'Enter the finished sail size.',
+      measureBannerBody: isCustom ? 'Enter the distance from fixing point to fixing point (where the shade attaches). We calculate the sail size to fit, allowing for tensioning hardware.' : 'These are the actual dimensions of the shade sail itself, not the distance between your fixing points.',
+      unitBtns: [{ label: 'ft / in', v: 'imperial' }, { label: 'metric', v: 'metric' }].map(b => ({ label: b.label, pick: () => set({ unit: b.v }), ...seg(s.unit === b.v) })),
+      viewBtns: [{ label: 'Plan', v: 'plan' }, { label: '3D', v: '3d' }].map(b => ({ label: b.label, pick: () => set({ view: b.v }), ...seg(s.view === b.v) })),
+      diagram: this.makeDiagram(),
+      edgeAdviceTitle: edgeAdvice[0], edgeAdviceBody: edgeAdvice[1], webbingSpec: webbingMm + ' mm polyester webbing \u00b7 included', cabledSpec: wireMm + ' mm stainless cable \u00b7 + about 8%',
+      ...Object.fromEntries(['webbing', 'cabled'].flatMap(id => { const st = sel(s.edgeType === id); return [['edgeSel_' + id, s.edgeType === id], ['edgeBg_' + id, st.bg], ['edgeFg_' + id, st.fg], ['edgeBorder_' + id, st.border], ['edgeTagBg_' + id, st.tagBg], ['edgeTagFg_' + id, st.tagFg], ['pickEdge_' + id, () => set({ edgeType: id })]]; })),
+      hwModes: hwModes.map(hm => ({ ...hm, sel: s.hwMode === hm.id, pick: () => set({ hwMode: hm.id }), ...sel(s.hwMode === hm.id) })),
+      hwManual: s.hwMode === 'manual', hwConfigured: this.letters(n).filter((_, i) => this.cornerCost(i) > 0).length + '/' + n + ' configured', hwCostText: 'US$' + this.hwPrice().toFixed(2),
+      cornerHwList: this.letters(n).map((letter, i) => { const cost = this.cornerCost(i); return { letter, summary: this.cornerSummary(i), nameColor: cost > 0 ? '#01312d' : '#b8600b', price: cost > 0 ? 'US$' + cost.toFixed(2) : '', action: cost > 0 ? 'Change' : 'Select', border: s.focusKey === letter ? '#01312d' : '#dfe7e1', focus: () => set({ focusKey: letter }), open: () => set({ hwModal: i, hwDraft: { ...this.hwLines(i) }, hwQuery: '', applyAll: false }) }; }),
+      hwModalOpen: s.hwModal !== null, hwModalLetter: s.hwModal !== null ? this.letters(n)[s.hwModal] : '', closeHwModal: () => set({ hwModal: null }), cornersCount: n,
+      hwQuery: s.hwQuery, setHwQuery: (e) => set({ hwQuery: e.target.value }),
+      hwGroups: (() => { const q = s.hwQuery.trim().toLowerCase(); const items = this.HW_CATALOG.filter(it => !q || it.name.toLowerCase().includes(q) || it.cat.toLowerCase().includes(q)); const cats = [...new Set(items.map(it => it.cat))];
+        return cats.map(cat => ({ label: cat, items: items.filter(it => it.cat === cat).map(it => { const qty = s.hwDraft[it.id] || 0; const on = qty > 0;
+          const upd = (nq) => { const d = { ...s.hwDraft }; if (nq <= 0) delete d[it.id]; else d[it.id] = Math.min(99, nq); set({ hwDraft: d }); };
+          return { ...it, on, qty, mark: on ? '\u2713' : '', border: on ? '#01312d' : '#dfe7e1', bg: on ? '#eef5ef' : '#fff', boxBorder: on ? '#01312d' : '#c6d4ca', boxBg: on ? '#b5e853' : '#fff',
+            price: 'US$' + (it.price * Math.max(qty, 1)).toFixed(2), toggle: () => upd(on ? 0 : 1), inc: (e) => { e.stopPropagation(); upd(qty + 1); }, dec: (e) => { e.stopPropagation(); upd(qty - 1); },
+            hoverOn: () => set({ hwHover: it.id }), hoverOff: () => set({ hwHover: null }) }; }) })); })(),
+      ...(() => { const hv = this.HW_CATALOG.find(x => x.id === s.hwHover); const img = hv ? this.HW_IMAGES[hv.id] : null;
+        return { hwHoverOpen: !!hv && s.width >= 900, hwHoverName: hv ? hv.name : '', hwHoverCat: hv ? hv.cat : '', hwHoverDesc: hv ? hv.desc : '', hwHoverMaterial: '316 stainless', hwHoverSize: hv ? hv.size : '', hwHoverDeduction: hv ? hv.ded : '', hwHoverSku: hv ? hv.sku : '', hwHoverImg: img ? 'url(' + img + ')' : 'none', hwHoverNoImg: !img }; })(),
+      hwModalTotal: 'US$' + Object.entries(s.hwDraft).reduce((a, [id, q]) => a + ((this.HW_CATALOG.find(x => x.id === id) || {}).price || 0) * q, 0).toFixed(2),
+      toggleApplyAll: () => set({ applyAll: !s.applyAll }), applyAllBorder: s.applyAll ? '#01312d' : '#c6d4ca', applyAllBg: s.applyAll ? '#b5e853' : '#fff', applyAllMark: s.applyAll ? '\u2713' : '',
+      confirmHwModal: () => { const next = { ...s.cornerHw }; if (s.applyAll) { for (let i = 0; i < n; i++) next[i] = { ...s.hwDraft }; } else next[s.hwModal] = { ...s.hwDraft }; set({ cornerHw: next, hwModal: null }); },
+      toggleGrease: () => set({ grease: !s.grease }), greaseBorder: s.grease ? '#01312d' : '#dfe7e1', greaseBg: s.grease ? '#b5e853' : '#fff', greaseMark: s.grease ? '\u2713' : '',
+      needDiagonals: isReview && !diagsDone, heightsSkipped: isReview && heightsSkipped, goHeights: () => go('heights'),
+      reviewDiagList: isCustom && n >= 4 ? this.diagKeys(n).map(k => mk('diags', k, 'Diagonal', k[0] + ' \u2192 ' + k[1])) : [],
+      summaryRows, hasMeasures: measureRows.length > 0, measureRows,
+      sideRows: [{ k: 'Fabric', v: fab ? fab.name : '\u2014' }, { k: 'Color', v: s.color || '\u2014' }, { k: 'Shape', v: s.shapeMode ? shName : '\u2014' }, { k: 'Edge', v: edgeName }, { k: 'Hardware', v: hwName }, { k: 'Delivery', v: fmt(d1) + ' \u2013 ' + fmt(d2) }],
+      deliveryRange: fmt(d1) + ' \u2013 ' + fmt(d2), deliveryRangeLong: d1.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' \u2013 ' + d2.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      warrantyText: fab ? (fab.meta.split(' \u00b7 ')[1] || '').replace(' warranty', '') : '10\u201315 year', sailPriceText: sailPrice ? 'US$' + sailPrice.toLocaleString() : '\u2014', hwPriceText: this.hwPrice() ? 'US$' + this.hwPrice().toLocaleString() : 'US$0',
+      acksList: [isCustom ? 'My measurements are point-to-point and I\u2019ve double-checked them.' : 'I\u2019ve entered the finished sail size I want and double-checked it.', 'My fixing points are in place and structurally sound.', isCustom ? 'This sail is made for me and can\u2019t be returned \u2014 backed by the Fit Guarantee.' : 'This sail is made to my size and can\u2019t be returned.']
+        .map((text, i) => ({ text, mark: s.acks[i] ? '\u2713' : '', boxBorder: s.acks[i] ? '#01312d' : '#c6d4ca', boxBg: s.acks[i] ? '#b5e853' : '#fff', cardBorder: s.acks[i] ? '#01312d' : '#dfe7e1', toggle: () => { const acks = [...s.acks]; acks[i] = !acks[i]; set({ acks }); } })),
+      showPriceBar: showPrice && !isWide && !isReview, priceCaption: showPrice ? 'Estimated price' : 'Price appears after sizing', priceText,
+      ctaEnabled: isReview ? (allAcks && diagsDone) : canCont, ctaDisabled: isReview ? !(allAcks && diagsDone) : !canCont,
+      ctaLabel: isReview ? 'Add to cart \u00b7 ' + priceText : 'Continue \u2192 ' + (nextNames[flow[idx + 1]] || ''),
+      ctaHint: isReview ? (!diagsDone ? 'Enter diagonals to add to cart' : 'Tick all three boxes to continue') : (hints[s.screen] || 'Continue'),
+      goNext: () => { if (isReview) { set({ saved: true }); return; } if (this.valid(s.screen)) go(flow[idx + 1]); },
+    };
+  }
+}
+</script>
+</body>
+</html>

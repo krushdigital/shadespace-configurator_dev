@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #f4f6f4; font-family: 'Plus Jakarta Sans', sans-serif; color: #01312d; }
+  a { color: #2e7d4f; } a:hover { color: #01312d; }
+</style>
+</helmet>
+<div style="max-width: 1060px; margin: 0 auto; padding: 48px 24px 64px; display: flex; flex-direction: column; gap: 40px">
+
+  <div style="background: #ffffff; border: 1px solid #dfe7e1; border-radius: 20px; padding: 36px 40px 32px; box-shadow: 0 2px 10px rgba(1,49,45,0.05)">
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 6px">
+      <div style="width: 44px; height: 44px; border-radius: 50%; background: #01312d; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px">2</div>
+      <div>
+        <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Shape &amp; Size</div>
+        <div style="font-size: 14px; color: #4c6b60">Pick the shape that matches your fixing points</div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 26px">
+
+      <div onClick="{{ pickSquare }}" style="position: relative; cursor: pointer; background: #fbfdfb; border: 2px solid #dfe7e1; border-radius: 16px; padding: 22px 12px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center" style-hover="border-color: #7bb08f">
+        <sc-if value="{{ selSquare }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div>
+          <div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div>
+        </sc-if>
+        <img src="icons/square.svg" alt="Square sail" style="width: 82px; height: 82px">
+        <div>
+          <div style="font-weight: 700; font-size: 15px">Square</div>
+          <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; color: #6b8478; margin-top: 3px">1 measurement</div></sc-if>
+        </div>
+      </div>
+
+      <div onClick="{{ pickRectangle }}" style="position: relative; cursor: pointer; background: #fbfdfb; border: 2px solid #dfe7e1; border-radius: 16px; padding: 22px 12px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center" style-hover="border-color: #7bb08f">
+        <sc-if value="{{ selRectangle }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div>
+          <div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div>
+        </sc-if>
+        <img src="icons/rectangle.svg" alt="Rectangle sail" style="width: 82px; height: 82px">
+        <div>
+          <div style="font-weight: 700; font-size: 15px">Rectangle</div>
+          <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; color: #6b8478; margin-top: 3px">2 measurements</div></sc-if>
+        </div>
+      </div>
+
+      <div onClick="{{ pickTriangle }}" style="position: relative; cursor: pointer; background: #fbfdfb; border: 2px solid #dfe7e1; border-radius: 16px; padding: 22px 12px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center" style-hover="border-color: #7bb08f">
+        <sc-if value="{{ selTriangle }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div>
+          <div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div>
+        </sc-if>
+        <img src="icons/triangle.svg" alt="Triangle sail" style="width: 82px; height: 82px">
+        <div>
+          <div style="font-weight: 700; font-size: 15px">Triangle</div>
+          <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; color: #6b8478; margin-top: 3px">1 measurement</div></sc-if>
+        </div>
+      </div>
+
+      <div onClick="{{ pickRight }}" style="position: relative; cursor: pointer; background: #fbfdfb; border: 2px solid #dfe7e1; border-radius: 16px; padding: 22px 12px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center" style-hover="border-color: #7bb08f">
+        <sc-if value="{{ selRight }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div>
+          <div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div>
+        </sc-if>
+        <img src="icons/right-triangle.svg" alt="Right angle triangle sail" style="width: 82px; height: 82px">
+        <div>
+          <div style="font-weight: 700; font-size: 15px">Right Angle Triangle</div>
+          <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; color: #6b8478; margin-top: 3px">2 measurements</div></sc-if>
+        </div>
+      </div>
+
+      <div onClick="{{ pickCustom }}" style="position: relative; cursor: pointer; background: #f2f8f3; border: 2px dashed #7bb08f; border-radius: 16px; padding: 22px 12px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center" style-hover="border-color: #2e7d4f">
+        <sc-if value="{{ selCustom }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; inset: -2px; border: 3px solid #2e7d4f; border-radius: 16px; pointer-events: none"></div>
+          <div style="position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: #2e7d4f; color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center">&#10003;</div>
+        </sc-if>
+        <sc-if value="{{ customOutline }}" hint-placeholder-val="{{ false }}">
+          <img src="icons/custom.svg" alt="Custom shape sail" style="width: 82px; height: 82px">
+        </sc-if>
+        <sc-if value="{{ customProfile }}" hint-placeholder-val="{{ false }}">
+          <img src="icons/custom-heights.svg" alt="Custom sail with varying post heights" style="width: 82px; height: 82px">
+        </sc-if>
+        <sc-if value="{{ customCombined }}" hint-placeholder-val="{{ true }}">
+          <img src="icons/custom-combined.svg" alt="Custom irregular sail with varying post heights" style="width: 82px; height: 82px">
+        </sc-if>
+        <div>
+          <div style="font-weight: 700; font-size: 15px">Custom Shape</div>
+          <sc-if value="{{ showHints }}" hint-placeholder-val="{{ true }}"><div style="font-size: 12px; color: #6b8478; margin-top: 3px">3&#8211;8 fixing points</div></sc-if>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; display: flex; align-items: center; gap: 10px; background: #eef5ef; border-radius: 12px; padding: 13px 18px; font-size: 14px; color: #23503f">
+      <span style="font-size: 16px">&#8594;</span>
+      <span><strong>{{ flowTitle }}</strong> &nbsp;{{ flowDesc }}</span>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 26px">
+      <div style="border: 2px solid #01312d; color: #01312d; border-radius: 10px; padding: 12px 28px; font-weight: 700; font-size: 15px; cursor: pointer">Back</div>
+      <div style="flex: 1; background: #01312d; color: #fff; border-radius: 10px; padding: 12px 28px; font-weight: 700; font-size: 15px; text-align: center; cursor: pointer" style-hover="background: #0a4a41">{{ continueLabel }}</div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size: 18px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 4px">Icon set</div>
+    <div style="font-size: 13px; color: #4c6b60; margin-bottom: 16px">SVG files in <span style="font-family: monospace">icons/</span> &#8212; three options for the custom tile.</div>
+    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px">
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 20px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <img src="icons/square.svg" alt="" style="width: 72px; height: 72px">
+        <div style="font-size: 12px; font-weight: 600">square.svg</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 20px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <img src="icons/rectangle.svg" alt="" style="width: 72px; height: 72px">
+        <div style="font-size: 12px; font-weight: 600">rectangle.svg</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 20px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <img src="icons/triangle.svg" alt="" style="width: 72px; height: 72px">
+        <div style="font-size: 12px; font-weight: 600">triangle.svg</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 20px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <img src="icons/right-triangle.svg" alt="" style="width: 72px; height: 72px">
+        <div style="font-size: 12px; font-weight: 600">right-triangle.svg</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 20px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <img src="icons/custom-combined.svg" alt="" style="width: 72px; height: 72px">
+        <div style="font-size: 12px; font-weight: 600">custom-combined.svg</div>
+        <div style="font-size: 11px; color: #6b8478">irregular + heights</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 20px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <img src="icons/custom.svg" alt="" style="width: 72px; height: 72px">
+        <div style="font-size: 12px; font-weight: 600">custom.svg</div>
+        <div style="font-size: 11px; color: #6b8478">irregular outline</div>
+      </div>
+      <div style="background: #fff; border: 1px solid #dfe7e1; border-radius: 14px; padding: 20px 10px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+        <img src="icons/custom-heights.svg" alt="" style="width: 72px; height: 72px">
+        <div style="font-size: 12px; font-weight: 600">custom-heights.svg</div>
+        <div style="font-size: 11px; color: #6b8478">varying post heights</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;customIcon&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;combined&quot;, &quot;irregular outline&quot;, &quot;varying heights&quot;], &quot;default&quot;: &quot;combined&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Step&quot;},
+  &quot;showHints&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Step&quot;}
+}">
+class Component extends DCLogic {
+  state = { selected: 'square' };
+  renderVals() {
+    const sel = this.state.selected;
+    const pick = (s) => () => this.setState({ selected: s });
+    const custom = sel === 'custom';
+    const customIcon = this.props.customIcon ?? 'combined';
+    return {
+      selSquare: sel === 'square', selRectangle: sel === 'rectangle',
+      selTriangle: sel === 'triangle', selRight: sel === 'right', selCustom: custom,
+      pickSquare: pick('square'), pickRectangle: pick('rectangle'),
+      pickTriangle: pick('triangle'), pickRight: pick('right'), pickCustom: pick('custom'),
+      showHints: this.props.showHints ?? true,
+      customOutline: customIcon === 'irregular outline',
+      customProfile: customIcon === 'varying heights',
+      customCombined: customIcon === 'combined',
+      flowTitle: custom ? 'Custom sail flow' : 'Fixed shape flow',
+      flowDesc: custom
+        ? 'Plot 3\u20138 fixing points, then measure every edge and diagonal. Covered by the Fit Guarantee.'
+        : 'Standard geometric shape \u2014 only 1\u20132 measurements needed.',
+      continueLabel: custom ? 'Continue \u2192 plot your fixing points' : 'Continue \u2192 dimensions',
+    };
+  }
+}
+</script>
+</body>
+</html>
