@@ -4,6 +4,8 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { PriceSummaryDisplay } from './PriceSummaryDisplay';
 import { StepRail, MobileHeader } from './StepNavigation';
+import { StepNavigationFooter } from './StepNavigationFooter';
+import { HelpPopover, STEP_HELP_CONTENT } from './HelpPopover';
 import { MaterialFinishContent } from './steps/MaterialFinishContent';
 import { ShapeSizeContent } from './steps/ShapeSizeContent';
 import { DimensionsContent } from './steps/DimensionsContent';
@@ -2678,12 +2680,37 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const currentDisplayStep = visibleSteps.findIndex(s => s.originalIndex === openStep);
   const totalVisibleSteps = visibleSteps.length;
 
+  const getRailSubtitle = (stepIndex: number): string => {
+    switch (stepIndex) {
+      case 0:
+        if (config.fabricType && config.fabricColor) {
+          const fab = FABRICS.find(f => f.id === config.fabricType);
+          return `${fab?.label || config.fabricType}, ${config.fabricColor}`;
+        }
+        return 'Select fabric and color';
+      case 1:
+        if (config.shapeMode === 'fixed' && config.fixedShapeType)
+          return config.fixedShapeType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        if (config.shapeMode === 'custom' && config.corners >= 3)
+          return `Custom ${config.corners}-point`;
+        return 'Choose your shape';
+      case 2: case 3: return 'Set measurements';
+      case 4: return config.edgeType ? (config.edgeType === 'cabled' ? 'Cabled edge' : 'Webbing reinforced') : 'Choose edge style';
+      case 5: case 6: return config.hardwareSelectionMode ? (config.hardwareSelectionMode === 'standard' ? 'Hardware kit' : config.hardwareSelectionMode === 'manual' ? 'Manual selection' : 'No hardware') : 'Choose hardware';
+      case 7: return 'Confirm your order';
+      default: return '';
+    }
+  };
+
   const railSteps = visibleSteps.map((s) => ({
     label: s.title,
+    subtitle: getRailSubtitle(s.originalIndex),
     completed: s.originalIndex < config.step,
     current: s.originalIndex === openStep,
     accessible: s.originalIndex <= config.step,
   }));
+
+  const mobileStepLabels = visibleSteps.map(s => s.title);
 
   const handleRailStepClick = (displayIndex: number) => {
     const step = visibleSteps[displayIndex];
@@ -2696,22 +2723,60 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const isReviewStep = openStep === 7;
   const ActiveStepComponent = steps[openStep]?.component;
 
+  // Compute footer state per step
+  const footerNextLabel = isReviewStep
+    ? `Add to cart${calculations.totalPrice > 0 ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
+    : `Continue \u2192 ${getNextStepTitle(openStep)}`;
+
+  const footerDisableNext = (() => {
+    switch (openStep) {
+      case 0: return !config.fabricType || !config.fabricColor;
+      case 1: return !config.shapeMode || (config.shapeMode === 'custom' && (config.corners < 3 || config.corners > 8)) || (config.shapeMode === 'fixed' && !config.fixedShapeType);
+      case 7: return !canAddToCart;
+      default: return false;
+    }
+  })();
+
+  const footerDisabledHint = (() => {
+    switch (openStep) {
+      case 0:
+        if (!config.fabricType) return 'Choose a fabric to continue';
+        if (!config.fabricColor) return 'Choose a color to continue';
+        return '';
+      case 1:
+        if (!config.shapeMode) return 'Choose a shape to continue';
+        if (config.shapeMode === 'custom' && config.corners < 3) return 'Select fixing points';
+        return 'Select a shape';
+      case 7:
+        if (!allDiagonalsEntered) return 'Enter diagonals to continue';
+        if (!allAcknowledgmentsChecked && config.shapeMode !== 'fixed') return 'Accept all acknowledgements';
+        return '';
+      default: return '';
+    }
+  })();
+
+  const footerPriceDisplay = calculations.totalPrice > 0
+    ? formatCurrency(calculations.totalPrice, config.currency)
+    : undefined;
+
   return (
     <>
       {/* Mobile Header with progress */}
       <MobileHeader
         currentStep={currentDisplayStep + 1}
         totalSteps={totalVisibleSteps}
+        stepLabels={mobileStepLabels}
         onSave={openStep > 0 ? handleSaveQuote : undefined}
+        onStepClick={handleRailStepClick}
       />
 
       <div className="flex min-h-screen bg-surface-panel">
         {/* Left Rail Navigation - tablet+ */}
-        <StepRail steps={railSteps} onStepClick={handleRailStepClick} />
+        <StepRail steps={railSteps} onStepClick={handleRailStepClick} onSave={openStep > 0 ? handleSaveQuote : undefined} />
 
         {/* Main content area */}
         <div className="flex-1 min-w-0">
-          <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8">
+          <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8 pb-[140px]">
             {/* Quote Reference */}
             {quoteReference && (
               <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 bg-brand-lime/15 border border-brand-lime/30 rounded-full">
@@ -2738,9 +2803,14 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
             {/* Step heading */}
             <div className="mb-6">
-              <h1 className="text-heading font-extrabold text-brand-green leading-tight">
-                {steps[openStep]?.title}
-              </h1>
+              <div className="flex items-center gap-0">
+                <h1 className="text-heading font-extrabold text-brand-green leading-tight">
+                  {steps[openStep]?.title}
+                </h1>
+                {STEP_HELP_CONTENT[openStep] && (
+                  <HelpPopover content={STEP_HELP_CONTENT[openStep]} />
+                )}
+              </div>
               <p className="mt-1 text-text-muted text-base">
                 {steps[openStep]?.subtitle}
               </p>
@@ -2845,133 +2915,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                 )}
               </div>
 
-              {/* Right summary panel - desktop only */}
+              {/* Right summary panel - desktop only, shown on ALL steps */}
               {!isMobile && (
                 <div className="hidden desktop:block">
                   <div className="sticky top-6 self-start z-10 max-h-[calc(100vh-3rem)] overflow-y-auto space-y-4">
-                    {/* Diagram viewer - shown on diagram steps */}
-                    {isDiagramStep && (() => {
-                      const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
-                      const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
-                      const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
-                      const desktopProvidedDiagonals = desktopDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
-                      const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals && desktopMinDiagonals > 0;
-                      const desktop3DAvailable = supports3DForCorners(config.corners);
-                      const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
-
-                      return (
-                        <div className="bg-white border-2 border-border-card rounded-card p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-[15px] font-bold text-brand-green">
-                              {(openStep === 5 || openStep === 6) ? 'Sail Diagram' : 'Measurement Guide'}
-                            </h4>
-                            {desktop3DAvailable && (
-                              <div className="flex items-center gap-1 bg-surface-panel rounded-lg p-0.5">
-                                <button
-                                  onClick={() => handleDesktopViewModeChange('plan')}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                                    effectiveDesktopView === 'plan'
-                                      ? 'bg-white shadow-sm text-brand-green'
-                                      : 'text-text-muted hover:text-brand-green'
-                                  }`}
-                                >
-                                  <Layers className="w-3.5 h-3.5" />
-                                  Plan
-                                </button>
-                                <button
-                                  onClick={() => handleDesktopViewModeChange('3d')}
-                                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
-                                    effectiveDesktopView === '3d'
-                                      ? 'bg-white shadow-sm text-brand-green'
-                                      : 'text-text-muted hover:text-brand-green'
-                                  }`}
-                                >
-                                  <Box className="w-3.5 h-3.5" />
-                                  3D
-                                </button>
-                              </div>
-                            )}
-                          </div>
-
-                          {(openStep === 5 || openStep === 6) && effectiveDesktopView === 'plan' && (
-                            <p className="text-sm text-text-muted mb-3">
-                              Hover over a corner below to see which corner you are configuring.
-                            </p>
-                          )}
-
-                          {effectiveDesktopView === 'plan' ? (
-                            (openStep === 2 || openStep === 3) ? (
-                              <div>
-                                <ShapeCanvas
-                                  config={config}
-                                  updateConfig={updateConfig}
-                                  readonly={false}
-                                  snapToGrid={true}
-                                  highlightedMeasurement={highlightedMeasurement}
-                                  highlightedCorner={highlightedCorner}
-                                  highlightedEdgeKeys={fixedEdgeKeys}
-                                  isMobile={isMobile}
-                                  measurementOption={config.measurementOption}
-                                  unit={config.unit}
-                                />
-                                {config.corners >= 4 && (
-                                  <div className="mt-3">
-                                    <ShapeModeToggle
-                                      isAutoMode={!config.hasManuallyAdjustedShape}
-                                      onToggle={(isAuto) => handleToggleMode(isAuto)}
-                                      corners={config.corners}
-                                      hasEnoughDiagonals={desktopHasEnoughDiagonals}
-                                      shapeAccuracy={desktopShapeAccuracy.accuracy}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <ShapeCanvas
-                                config={config}
-                                updateConfig={updateConfig}
-                                readonly={true}
-                                snapToGrid={true}
-                                highlightedMeasurement={highlightedMeasurement}
-                                highlightedCorner={highlightedCorner}
-                                highlightedEdgeKeys={fixedEdgeKeys}
-                                isMobile={isMobile}
-                                measurementOption={config.measurementOption}
-                                unit={config.unit}
-                              />
-                            )
-                          ) : (
-                            <div className="h-[400px] relative group/viewer3d">
-                              <Suspense fallback={
-                                <div className="flex items-center justify-center h-full bg-surface-panel rounded-lg border border-border-card">
-                                  <div className="text-center">
-                                    <div className="animate-spin w-8 h-8 border-3 border-border-card border-t-brand-green rounded-full mx-auto mb-3"></div>
-                                    <p className="text-sm text-text-muted">Loading 3D viewer...</p>
-                                  </div>
-                                </div>
-                              }>
-                                <ShadeSail3DViewer
-                                  ref={viewer3DRef}
-                                  config={config}
-                                  highlightedMeasurement={highlightedMeasurement}
-                                  highlightedCorner={highlightedCorner}
-                                  activeSection={(openStep === 5 || openStep === 6) ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
-                                />
-                              </Suspense>
-                              <button
-                                onClick={() => setIs3DExpanded(true)}
-                                className="absolute bottom-3 right-3 p-2 bg-white/90 hover:bg-white rounded-lg shadow-md border border-border-card text-text-muted hover:text-brand-green transition-all duration-150 sm:opacity-0 sm:group-hover/viewer3d:opacity-100 sm:focus:opacity-100 z-10"
-                                title="Expand 3D viewer"
-                              >
-                                <Maximize2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-
-                    {isReviewStep && (
+                    {/* Sail diagram viewer - always shown */}
+                    {isReviewStep ? (
                       <PriceSummaryDisplay
                         config={config}
                         calculations={calculations}
@@ -2984,76 +2933,231 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         isEmailMode={hasAllEdgeMeasurements}
                         adminMode={adminMode}
                       />
-                    )}
+                    ) : (
+                      <>
+                        {/* Your sail viewer card */}
+                        <div className="bg-white border-2 border-border-card rounded-card p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-[15px] font-bold text-brand-green">Your sail</h4>
+                            {config.corners >= 3 && (() => {
+                              const desktop3DAvailable = supports3DForCorners(config.corners);
+                              if (!desktop3DAvailable) return null;
+                              const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
+                              return (
+                                <div className="flex items-center gap-1 bg-surface-panel rounded-lg p-0.5">
+                                  <button
+                                    onClick={() => handleDesktopViewModeChange('plan')}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                      effectiveDesktopView === 'plan'
+                                        ? 'bg-white shadow-sm text-brand-green'
+                                        : 'text-text-muted hover:text-brand-green'
+                                    }`}
+                                  >
+                                    <Layers className="w-3.5 h-3.5" />
+                                    Plan
+                                  </button>
+                                  <button
+                                    onClick={() => handleDesktopViewModeChange('3d')}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+                                      effectiveDesktopView === '3d'
+                                        ? 'bg-white shadow-sm text-brand-green'
+                                        : 'text-text-muted hover:text-brand-green'
+                                    }`}
+                                  >
+                                    <Box className="w-3.5 h-3.5" />
+                                    3D
+                                  </button>
+                                </div>
+                              );
+                            })()}
+                          </div>
 
-                    {/* Price card - shown on all non-review steps when price > 0 */}
-                    {!isReviewStep && calculations.totalPrice > 0 && (
-                      <div className="bg-brand-green rounded-card p-5">
-                        <div className="text-[13px] font-medium text-white/60 mb-1">Estimated total</div>
-                        <div className="text-[28px] font-extrabold text-brand-lime leading-none">
-                          {formatCurrency(calculations.totalPrice, config.currency)}
+                          {config.corners >= 3 ? (() => {
+                            const desktopShapeAccuracy = getShapeAccuracy(config.measurements, config.corners);
+                            const desktopDiagonalKeys = config.corners >= 4 ? getDiagonalKeysForCorners(config.corners) : [];
+                            const desktopMinDiagonals = config.corners >= 4 ? config.corners - 3 : 0;
+                            const desktopProvidedDiagonals = desktopDiagonalKeys.filter(key => config.measurements[key] && config.measurements[key] > 0).length;
+                            const desktopHasEnoughDiagonals = desktopProvidedDiagonals >= desktopMinDiagonals && desktopMinDiagonals > 0;
+                            const desktop3DAvailable = supports3DForCorners(config.corners);
+                            const effectiveDesktopView = desktop3DAvailable ? desktopViewMode : 'plan';
+
+                            return (
+                              <>
+                                {(openStep === 5 || openStep === 6) && effectiveDesktopView === 'plan' && (
+                                  <p className="text-sm text-text-muted mb-3">
+                                    Hover over a corner below to see which corner you are configuring.
+                                  </p>
+                                )}
+
+                                {effectiveDesktopView === 'plan' ? (
+                                  isDiagramStep ? (
+                                    <div>
+                                      <ShapeCanvas
+                                        config={config}
+                                        updateConfig={updateConfig}
+                                        readonly={openStep !== 2 && openStep !== 3}
+                                        snapToGrid={true}
+                                        highlightedMeasurement={highlightedMeasurement}
+                                        highlightedCorner={highlightedCorner}
+                                        highlightedEdgeKeys={fixedEdgeKeys}
+                                        isMobile={isMobile}
+                                        measurementOption={config.measurementOption}
+                                        unit={config.unit}
+                                      />
+                                      {(openStep === 2 || openStep === 3) && config.corners >= 4 && (
+                                        <div className="mt-3">
+                                          <ShapeModeToggle
+                                            isAutoMode={!config.hasManuallyAdjustedShape}
+                                            onToggle={(isAuto) => handleToggleMode(isAuto)}
+                                            corners={config.corners}
+                                            hasEnoughDiagonals={desktopHasEnoughDiagonals}
+                                            shapeAccuracy={desktopShapeAccuracy.accuracy}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <ShapeCanvas
+                                      config={config}
+                                      updateConfig={updateConfig}
+                                      readonly={true}
+                                      snapToGrid={true}
+                                      highlightedMeasurement={highlightedMeasurement}
+                                      highlightedCorner={highlightedCorner}
+                                      highlightedEdgeKeys={fixedEdgeKeys}
+                                      isMobile={isMobile}
+                                      measurementOption={config.measurementOption}
+                                      unit={config.unit}
+                                    />
+                                  )
+                                ) : (
+                                  <div className="h-[400px] relative group/viewer3d">
+                                    <Suspense fallback={
+                                      <div className="flex items-center justify-center h-full bg-surface-panel rounded-lg border border-border-card">
+                                        <div className="text-center">
+                                          <div className="animate-spin w-8 h-8 border-3 border-border-card border-t-brand-green rounded-full mx-auto mb-3"></div>
+                                          <p className="text-sm text-text-muted">Loading 3D viewer...</p>
+                                        </div>
+                                      </div>
+                                    }>
+                                      <ShadeSail3DViewer
+                                        ref={viewer3DRef}
+                                        config={config}
+                                        highlightedMeasurement={highlightedMeasurement}
+                                        highlightedCorner={highlightedCorner}
+                                        activeSection={(openStep === 5 || openStep === 6) ? 'hardware' : isHeightsSectionOpen ? 'heights' : 'dimensions'}
+                                      />
+                                    </Suspense>
+                                    <button
+                                      onClick={() => setIs3DExpanded(true)}
+                                      className="absolute bottom-3 right-3 p-2 bg-white/90 hover:bg-white rounded-lg shadow-md border border-border-card text-text-muted hover:text-brand-green transition-all duration-150 sm:opacity-0 sm:group-hover/viewer3d:opacity-100 sm:focus:opacity-100 z-10"
+                                      title="Expand 3D viewer"
+                                    >
+                                      <Maximize2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })() : (
+                            <div className="bg-surface-panel rounded-xl p-6 text-center">
+                              <div className="text-[40px] mb-2 opacity-30">&#9651;</div>
+                              <p className="text-[14px] text-text-muted leading-relaxed">
+                                Your sail will build visually as you make selections throughout each step.
+                              </p>
+                            </div>
+                          )}
                         </div>
-                        {calculations.hardwareBreakdown?.hardwareOnlyLivePrice > 0 && (
-                          <div className="mt-2 text-[13px] text-white/70">
-                            Includes {formatCurrency(calculations.hardwareBreakdown.hardwareOnlyLivePrice, config.currency)} hardware
-                          </div>
-                        )}
-                      </div>
-                    )}
 
-                    {/* Selections summary - shown on all non-review steps */}
-                    {!isReviewStep && (config.fabricType || config.edgeType) && (
-                      <div className="bg-white border-2 border-border-card rounded-card p-4 space-y-2.5">
-                        <h4 className="text-[15px] font-bold text-brand-green">Your selections</h4>
-                        {config.fabricType && (
-                          <div className="flex justify-between text-[14px]">
-                            <span className="text-text-muted">Fabric</span>
-                            <span className="font-semibold text-brand-green">{FABRICS.find(f => f.id === config.fabricType)?.label}</span>
-                          </div>
-                        )}
-                        {config.fabricColor && (
-                          <div className="flex justify-between text-[14px]">
-                            <span className="text-text-muted">Color</span>
-                            <span className="font-semibold text-brand-green">{config.fabricColor}</span>
-                          </div>
-                        )}
-                        {config.shapeMode && (
-                          <div className="flex justify-between text-[14px]">
-                            <span className="text-text-muted">Shape</span>
-                            <span className="font-semibold text-brand-green capitalize">
-                              {config.shapeMode === 'fixed' && config.fixedShapeType ? config.fixedShapeType.replace(/-/g, ' ') : config.shapeMode}
-                            </span>
-                          </div>
-                        )}
-                        {config.corners > 0 && (
-                          <div className="flex justify-between text-[14px]">
-                            <span className="text-text-muted">Corners</span>
-                            <span className="font-semibold text-brand-green">{config.corners}</span>
-                          </div>
-                        )}
-                        {config.edgeType && (
-                          <div className="flex justify-between text-[14px]">
-                            <span className="text-text-muted">Edge</span>
-                            <span className="font-semibold text-brand-green capitalize">{config.edgeType}</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Fit Guarantee note */}
-                    {config.shapeMode === 'custom' && (
-                      <div className="bg-surface-soft border border-border-card rounded-card p-4">
-                        <div className="text-[14px] font-bold text-brand-green mb-1">Fit Guarantee</div>
-                        <div className="text-[13px] text-text-muted leading-relaxed">
-                          Custom made-to-measure sails are covered by our Fit Guarantee. We will remake at our cost if there is a manufacturing error.
+                        {/* Price card */}
+                        <div className="bg-brand-green rounded-card p-5">
+                          {calculations.totalPrice > 0 ? (
+                            <>
+                              <div className="text-[13px] font-medium text-white/60 mb-1">Estimated total</div>
+                              <div className="text-[28px] font-extrabold text-brand-lime leading-none">
+                                {formatCurrency(calculations.totalPrice, config.currency)}
+                              </div>
+                              <div className="mt-1.5 text-[12px] text-white/50">All-inclusive to your door</div>
+                              {calculations.hardwareBreakdown?.hardwareOnlyLivePrice > 0 && (
+                                <div className="mt-2 text-[13px] text-white/70">
+                                  Includes {formatCurrency(calculations.hardwareBreakdown.hardwareOnlyLivePrice, config.currency)} hardware
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="text-[14px] font-medium text-white/60 text-center py-1">
+                              Price appears after sizing
+                            </div>
+                          )}
                         </div>
-                      </div>
+
+                        {/* Selections summary */}
+                        {(config.fabricType || config.edgeType || config.shapeMode) && (
+                          <div className="bg-white border-2 border-border-card rounded-card p-4 space-y-2.5">
+                            <h4 className="text-[15px] font-bold text-brand-green">Your selections</h4>
+                            {config.fabricType && (
+                              <div className="flex justify-between text-[14px]">
+                                <span className="text-text-muted">Fabric</span>
+                                <span className="font-semibold text-brand-green">{FABRICS.find(f => f.id === config.fabricType)?.label}</span>
+                              </div>
+                            )}
+                            {config.fabricColor && (
+                              <div className="flex justify-between text-[14px]">
+                                <span className="text-text-muted">Color</span>
+                                <span className="font-semibold text-brand-green">{config.fabricColor}</span>
+                              </div>
+                            )}
+                            {config.shapeMode && (
+                              <div className="flex justify-between text-[14px]">
+                                <span className="text-text-muted">Shape</span>
+                                <span className="font-semibold text-brand-green capitalize">
+                                  {config.shapeMode === 'fixed' && config.fixedShapeType ? config.fixedShapeType.replace(/-/g, ' ') : config.shapeMode === 'custom' && config.corners >= 3 ? `Custom ${config.corners}-point` : config.shapeMode}
+                                </span>
+                              </div>
+                            )}
+                            {config.edgeType && (
+                              <div className="flex justify-between text-[14px]">
+                                <span className="text-text-muted">Edge</span>
+                                <span className="font-semibold text-brand-green capitalize">{config.edgeType}</span>
+                              </div>
+                            )}
+                            {config.hardwareSelectionMode && (
+                              <div className="flex justify-between text-[14px]">
+                                <span className="text-text-muted">Hardware</span>
+                                <span className="font-semibold text-brand-green capitalize">{config.hardwareSelectionMode === 'standard' ? 'Hardware kit' : config.hardwareSelectionMode === 'manual' ? 'Manual' : 'None'}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Fit Guarantee note */}
+                        {config.shapeMode === 'custom' && (
+                          <div className="bg-surface-soft border border-border-card rounded-card p-4">
+                            <div className="text-[14px] font-bold text-brand-green mb-1">Fit Guarantee</div>
+                            <div className="text-[13px] text-text-muted leading-relaxed">
+                              Custom made-to-measure sails are covered by our Fit Guarantee. We will remake at our cost if there is a manufacturing error.
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
               )}
             </div>
           </div>
+
+          {/* Global sticky bottom bar */}
+          <StepNavigationFooter
+            onNext={isReviewStep ? handleAddToCartFromConfigurator : nextStep}
+            onPrev={prevStep}
+            showBack={shouldShowBackButton(openStep)}
+            nextLabel={footerNextLabel}
+            disableNext={footerDisableNext}
+            disabledHint={footerDisabledHint}
+            priceDisplay={footerPriceDisplay}
+            isReview={isReviewStep}
+          />
 
           <LoadingOverlay
             isVisible={showLoadingOverlay}

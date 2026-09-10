@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ConfiguratorState, FixedShapeType } from '../../types';
-import { Button } from '../ui/Button';
-import { Card } from '../ui/Card';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { Triangle, Square, Pentagon, Hexagon, Octagon } from 'lucide-react';
 import { generateFixedShapePoints } from './FixedShapeDimensionsContent';
+
+import points3 from '../../assets/icons/points-3.svg';
+import points4 from '../../assets/icons/points-4.svg';
+import points5 from '../../assets/icons/points-5.svg';
+import points6 from '../../assets/icons/points-6.svg';
+import points7 from '../../assets/icons/points-7.svg';
+import points8 from '../../assets/icons/points-8.svg';
 
 interface ShapeSizeContentProps {
   config: ConfiguratorState;
@@ -26,83 +30,86 @@ interface ShapeSizeContentProps {
 }
 
 const CORNER_OPTIONS = [
-  { corners: 3, label: '3 Fixing Points', icon: Triangle, description: 'Classic triangular shade' },
-  { corners: 4, label: '4 Fixing Points', icon: Square, description: 'Most popular choice' },
-  { corners: 5, label: '5 Fixing Points', icon: Pentagon, description: 'Unique five-sided design' },
-  { corners: 6, label: '6 Fixing Points', icon: Hexagon, description: 'Modern hexagonal shape' },
-  { corners: 7, label: '7 Fixing Points', icon: Hexagon, description: 'Extended multi-point design' },
-  { corners: 8, label: '8 Fixing Points', icon: Octagon, description: 'Maximum coverage layout' },
+  { corners: 3, label: '3 points', description: 'Any triangle', icon: points3 },
+  { corners: 4, label: '4 points', description: 'Most popular', icon: points4 },
+  { corners: 5, label: '5 points', description: 'Heights required', icon: points5 },
+  { corners: 6, label: '6 points', description: 'Heights required', icon: points6 },
+  { corners: 7, label: '7 points', description: 'Heights required', icon: points7 },
+  { corners: 8, label: '8 points', description: 'Heights required', icon: points8 },
 ];
 
 interface ShapeTile {
-  id: FixedShapeType | 'custom';
+  id: FixedShapeType;
   label: string;
   hint: string;
-  corners?: number;
+  corners: number;
 }
 
-const SHAPE_TILES: ShapeTile[] = [
+const FIXED_SHAPES: ShapeTile[] = [
   { id: 'square', label: 'Square', hint: '1 measurement', corners: 4 },
   { id: 'rectangle', label: 'Rectangle', hint: '2 measurements', corners: 4 },
   { id: 'triangle', label: 'Triangle', hint: '1 measurement', corners: 3 },
   { id: 'right-angle-triangle', label: 'Right Angle Triangle', hint: '2 measurements', corners: 3 },
-  { id: 'custom', label: 'Custom Shape', hint: '3\u20138 fixing points' },
 ];
 
-function ShapeTileIcon({ shapeId, className }: { shapeId: string; className?: string }) {
+function ShapeTileIcon({ shapeId, selected, className }: { shapeId: string; selected?: boolean; className?: string }) {
   const cls = className || 'w-[72px] h-[72px]';
+  const stroke = selected ? '#ffffff' : '#01312d';
+  const fill = selected ? 'rgba(255,255,255,0.15)' : '#E7F2EA';
+  const dotFill = selected ? 'rgba(255,255,255,0.3)' : '#fff';
+
   switch (shapeId) {
     case 'square':
       return (
         <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12,12 Q50,22 88,12 Q78,50 88,88 Q50,78 12,88 Q22,50 12,12 Z" fill="#E7F2EA" stroke="#01312d" strokeWidth="3.5" strokeLinejoin="round" />
-          <circle cx="12" cy="12" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="88" cy="12" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="88" cy="88" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="12" cy="88" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
+          <path d="M12,12 Q50,22 88,12 Q78,50 88,88 Q50,78 12,88 Q22,50 12,12 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
+          <circle cx="12" cy="12" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="88" cy="12" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="88" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="12" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
         </svg>
       );
     case 'rectangle':
       return (
         <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6,28 Q50,37 94,28 Q88,50 94,72 Q50,63 6,72 Q12,50 6,28 Z" fill="#E7F2EA" stroke="#01312d" strokeWidth="3.5" strokeLinejoin="round" />
-          <circle cx="6" cy="28" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="94" cy="28" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="94" cy="72" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="6" cy="72" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
+          <path d="M6,28 Q50,37 94,28 Q88,50 94,72 Q50,63 6,72 Q12,50 6,28 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
+          <circle cx="6" cy="28" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="94" cy="28" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="94" cy="72" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="6" cy="72" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
         </svg>
       );
     case 'triangle':
       return (
         <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50,10 Q63.8,52 93,85 Q50,76 7,85 Q36.2,52 50,10 Z" fill="#E7F2EA" stroke="#01312d" strokeWidth="3.5" strokeLinejoin="round" />
-          <circle cx="50" cy="10" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="93" cy="85" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="7" cy="85" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
+          <path d="M50,10 Q63.8,52 93,85 Q50,76 7,85 Q36.2,52 50,10 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
+          <circle cx="50" cy="10" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="93" cy="85" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="7" cy="85" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
         </svg>
       );
     case 'right-angle-triangle':
       return (
         <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18,12 Q46.9,56.6 88,88 Q49.6,80.7 18,88 Q25,53.8 18,12 Z" fill="#E7F2EA" stroke="#01312d" strokeWidth="3.5" strokeLinejoin="round" />
-          <path d="M28,88 V79 H18" fill="none" stroke="#01312d" strokeWidth="2.5" />
-          <circle cx="18" cy="12" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="18" cy="88" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="88" cy="88" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
+          <path d="M18,12 Q46.9,56.6 88,88 Q49.6,80.7 18,88 Q25,53.8 18,12 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
+          <path d="M28,88 V79 H18" fill="none" stroke={stroke} strokeWidth="2.5" />
+          <circle cx="18" cy="12" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="18" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="88" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
         </svg>
       );
     case 'custom':
       return (
         <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line x1="14" y1="40" x2="14" y2="92" stroke="#01312d" strokeWidth="3" />
-          <line x1="44" y1="16" x2="44" y2="88" stroke="#01312d" strokeWidth="3" />
-          <line x1="88" y1="30" x2="88" y2="90" stroke="#01312d" strokeWidth="3" />
-          <line x1="64" y1="58" x2="64" y2="94" stroke="#01312d" strokeWidth="3" />
-          <path d="M14,40 Q30,32 44,16 Q68,28 88,30 Q74,42 64,58 Q38,54 14,40 Z" fill="#E7F2EA" stroke="#01312d" strokeWidth="3.5" strokeLinejoin="round" strokeDasharray="7 5" />
-          <circle cx="14" cy="40" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="44" cy="16" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="88" cy="30" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
-          <circle cx="64" cy="58" r="5" fill="#fff" stroke="#01312d" strokeWidth="3" />
+          <line x1="14" y1="40" x2="14" y2="92" stroke={stroke} strokeWidth="3" />
+          <line x1="44" y1="16" x2="44" y2="88" stroke={stroke} strokeWidth="3" />
+          <line x1="88" y1="30" x2="88" y2="90" stroke={stroke} strokeWidth="3" />
+          <line x1="64" y1="58" x2="64" y2="94" stroke={stroke} strokeWidth="3" />
+          <path d="M14,40 Q30,32 44,16 Q68,28 88,30 Q74,42 64,58 Q38,54 14,40 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" strokeDasharray="7 5" />
+          <circle cx="14" cy="40" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="44" cy="16" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="88" cy="30" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
+          <circle cx="64" cy="58" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
         </svg>
       );
     default:
@@ -167,7 +174,6 @@ export function ShapeSizeContent({
 }: ShapeSizeContentProps) {
   const [tileError, setTileError] = useState(false);
 
-  // Determine current selection from config
   const selectedTileId: string | null =
     config.shapeMode === 'fixed' && config.fixedShapeType
       ? config.fixedShapeType
@@ -177,12 +183,8 @@ export function ShapeSizeContent({
 
   const isCustomSelected = selectedTileId === 'custom';
   const isFixedSelected = selectedTileId !== null && !isCustomSelected;
+  const isComplete = (isCustomSelected && config.corners >= 3) || isFixedSelected;
 
-  // Determine if step is complete enough to continue
-  const isComplete =
-    (isCustomSelected && config.corners >= 3) || isFixedSelected;
-
-  // Mobile guidance: scroll to continue when sub-selection is complete
   useEffect(() => {
     if (mobileGuidance?.isGuidanceActive && isComplete) {
       mobileGuidance.scrollToElement('continue-button-shape-size', 400);
@@ -190,45 +192,41 @@ export function ShapeSizeContent({
     }
   }, [isComplete, mobileGuidance?.isGuidanceActive]);
 
-  const handleSelectTile = (tile: ShapeTile) => {
+  const handleSelectFixed = (tile: ShapeTile) => {
     setTileError(false);
-    if (tile.id === 'custom') {
-      updateConfig({
-        shapeMode: 'custom',
-        fixedShapeType: null,
-        measurementOption: 'adjust',
-        hardwareSelectionMode: 'standard',
-      });
-      mobileGuidance?.scrollToElement('fixing-points-section', 300);
-    } else {
-      const shapeChanged = tile.id !== config.fixedShapeType;
-      updateConfig({
-        shapeMode: 'fixed',
-        fixedShapeType: tile.id as FixedShapeType,
-        corners: tile.corners!,
-        measurementOption: 'exact',
-        hardwareSelectionMode: 'none',
-        ...(shapeChanged ? { measurements: {}, points: generateFixedShapePoints(tile.id as FixedShapeType, {}) } : {}),
-      });
-      mobileGuidance?.scrollToElement('continue-button-shape-size', 300);
-    }
+    const shapeChanged = tile.id !== config.fixedShapeType;
+    updateConfig({
+      shapeMode: 'fixed',
+      fixedShapeType: tile.id,
+      corners: tile.corners,
+      measurementOption: 'exact',
+      hardwareSelectionMode: 'none',
+      ...(shapeChanged ? { measurements: {}, points: generateFixedShapePoints(tile.id, {}) } : {}),
+    });
+    mobileGuidance?.scrollToElement('continue-button-shape-size', 300);
+  };
+
+  const handleSelectCustom = () => {
+    setTileError(false);
+    updateConfig({
+      shapeMode: 'custom',
+      fixedShapeType: null,
+      measurementOption: 'adjust',
+      hardwareSelectionMode: 'standard',
+    });
+    mobileGuidance?.scrollToElement('fixing-points-section', 300);
   };
 
   const handleCornerChange = (corners: number) => {
     const points = generateRegularPoints(corners);
-    const newHeights = Array(corners).fill(undefined);
-    const newTypes = Array(corners).fill('');
-    const newOrientations = Array(corners).fill('');
-    const newAttachmentTypes = Array(corners).fill('');
-
     updateConfig({
       corners,
       points,
       measurements: {},
-      fixingHeights: newHeights,
-      fixingTypes: newTypes,
-      eyeOrientations: newOrientations,
-      attachmentTypes: newAttachmentTypes,
+      fixingHeights: Array(corners).fill(undefined),
+      fixingTypes: Array(corners).fill(''),
+      eyeOrientations: Array(corners).fill(''),
+      attachmentTypes: Array(corners).fill(''),
       fixingPointsInstalled: undefined,
       diagonalsInitiallyProvided: undefined,
       heightsProvidedByUser: undefined,
@@ -241,14 +239,11 @@ export function ShapeSizeContent({
       setTileError(true);
       return;
     }
-    if (isCustomSelected && !config.corners) {
-      return;
-    }
+    if (isCustomSelected && !config.corners) return;
     mobileGuidance?.clearHighlight();
     onNext();
   };
 
-  // Flow hint text
   const flowTitle = isCustomSelected ? 'Custom sail flow' : 'Fixed shape flow';
   const flowDesc = isCustomSelected
     ? 'Plot 3\u20138 fixing points, then measure every edge and diagonal. Covered by the Fit Guarantee.'
@@ -256,54 +251,67 @@ export function ShapeSizeContent({
 
   return (
     <div className="space-y-5">
-      {/* Shape Tile Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-3.5" role="radiogroup" aria-label="Sail shape">
-        {SHAPE_TILES.map((tile) => {
+      {/* Fixed shape tiles - 2x2 on mobile, 4-col on desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {FIXED_SHAPES.map((tile) => {
           const isSelected = selectedTileId === tile.id;
-          const isCustomTile = tile.id === 'custom';
           return (
             <button
               key={tile.id}
               type="button"
-              onClick={() => handleSelectTile(tile)}
+              onClick={() => handleSelectFixed(tile)}
               aria-checked={isSelected}
               role="radio"
-              className={`
-                relative cursor-pointer rounded-card px-3 py-5 sm:px-3 sm:py-5
-                flex flex-col items-center gap-3 text-center
-                transition-all duration-200 min-h-[44px]
-                ${isCustomTile
-                  ? 'bg-surface-soft border-2 border-dashed col-span-2 sm:col-span-1'
-                  : 'bg-white border-2 border-solid'
-                }
-                ${isSelected
-                  ? 'border-brand-green bg-brand-green shadow-md'
+              className={`relative cursor-pointer rounded-card p-5 pb-4 flex flex-col items-center gap-3 text-center transition-all duration-200 min-h-[44px] ${
+                isSelected
+                  ? 'bg-brand-green text-white border-2 border-brand-green shadow-md'
                   : tileError
-                  ? 'border-red-400 hover:border-red-500'
-                  : isCustomTile
-                  ? 'border-border-card hover:border-brand-mid'
-                  : 'border-border-card hover:border-brand-mid'
-                }
-              `}
+                  ? 'bg-white border-2 border-red-400 hover:border-red-500'
+                  : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
+              }`}
             >
-              {/* Checkmark badge */}
               {isSelected && (
-                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-bold flex items-center justify-center">
+                <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
                   &#10003;
                 </span>
               )}
-              <ShapeTileIcon shapeId={tile.id} className="w-[72px] h-[72px] sm:w-[82px] sm:h-[82px]" />
-              <span className={`font-bold text-[15px] leading-tight ${isSelected ? 'text-white' : 'text-brand-green'}`}>{tile.label}</span>
-              <span className={`text-xs ${isSelected ? 'text-white/60' : 'text-text-muted'}`}>{tile.hint}</span>
-              {isCustomTile && (
-                <span className="inline-block mt-0.5 px-2 py-0.5 text-[11px] font-semibold bg-brand-mid/15 text-brand-mid rounded-full">
-                  Includes Fit Guarantee
-                </span>
-              )}
+              <ShapeTileIcon shapeId={tile.id} selected={isSelected} className="w-[72px] h-[72px] sm:w-[82px] sm:h-[82px]" />
+              <div>
+                <div className={`font-bold text-[15px] ${isSelected ? 'text-white' : 'text-brand-green'}`}>{tile.label}</div>
+                <div className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>{tile.hint}</div>
+              </div>
             </button>
           );
         })}
       </div>
+
+      {/* Custom shape - full-width row below */}
+      <button
+        type="button"
+        onClick={handleSelectCustom}
+        aria-checked={isCustomSelected}
+        role="radio"
+        className={`relative w-full cursor-pointer rounded-card p-5 flex items-center gap-5 text-left transition-all duration-200 min-h-[44px] ${
+          isCustomSelected
+            ? 'bg-brand-green text-white border-2 border-brand-green shadow-md'
+            : tileError
+            ? 'bg-white border-2 border-dashed border-red-400 hover:border-red-500'
+            : 'bg-white border-2 border-dashed border-[#7bb08f] hover:border-brand-mid'
+        }`}
+      >
+        {isCustomSelected && (
+          <span className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
+            &#10003;
+          </span>
+        )}
+        <ShapeTileIcon shapeId="custom" selected={isCustomSelected} className="w-[72px] h-[72px] flex-shrink-0" />
+        <div className="pr-8">
+          <div className={`font-bold text-[17px] ${isCustomSelected ? 'text-white' : 'text-brand-green'}`}>Custom Shape</div>
+          <div className={`text-[14px] mt-0.5 ${isCustomSelected ? 'text-white/70' : 'text-text-muted'}`}>
+            3&ndash;8 fixing points &middot; Made to measure &middot; Fit Guarantee
+          </div>
+        </div>
+      </button>
 
       {/* Validation error */}
       {tileError && !selectedTileId && (
@@ -312,45 +320,66 @@ export function ShapeSizeContent({
 
       {/* Flow hint bar */}
       {selectedTileId && (
-        <div className="flex items-center gap-2.5 bg-surface-soft rounded-card px-4 py-3 text-sm text-brand-green">
+        <div className="flex items-center gap-2.5 bg-surface-soft rounded-xl px-4 py-3 text-sm text-[#23503f]">
           <span className="text-base">&rarr;</span>
-          <span>
-            <strong>{flowTitle}</strong>&nbsp;&nbsp;{flowDesc}
-          </span>
+          <span><strong>{flowTitle}</strong>&nbsp;&nbsp;{flowDesc}</span>
         </div>
       )}
 
-      {/* Custom Shape: corner picker (shown on both mobile and desktop) */}
+      {/* Custom Shape: corner picker */}
       {isCustomSelected && (
         <div id="fixing-points-section">
           <h4 className="text-lg font-bold mb-4 text-brand-green">
             How many fixing points will your shade sail have?
           </h4>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {CORNER_OPTIONS.map((shape) => {
-              const Icon = shape.icon;
-              const hasError = validationErrors.corners && !config.corners;
+              const isSelected = config.corners === shape.corners;
+              const hasError = !!validationErrors.corners && !config.corners;
               return (
-                <Card
+                <button
                   key={shape.corners}
-                  className={`p-4 cursor-pointer transition-all duration-200 min-h-[44px] ${
-                    config.corners === shape.corners
-                      ? '!bg-brand-green !text-white !border-brand-green shadow-md'
-                      : hasError
-                      ? 'border-2 !border-red-500 bg-red-50'
-                      : 'hover:border-brand-mid'
-                  }`}
+                  type="button"
                   onClick={() => handleCornerChange(shape.corners)}
+                  className={`relative rounded-card p-5 pb-4 flex flex-col items-center gap-3 text-center transition-all duration-200 cursor-pointer min-h-[44px] ${
+                    isSelected
+                      ? 'bg-brand-green text-white border-2 border-brand-green shadow-md'
+                      : hasError
+                      ? 'bg-white border-2 border-red-400'
+                      : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
+                  }`}
                 >
-                  <div className="text-center">
-                    <Icon className={`w-10 h-10 mx-auto mb-2 ${config.corners === shape.corners ? 'text-white' : 'text-brand-green'}`} aria-label={`${shape.corners} corners shape`} />
-                    <h5 className={`font-bold mb-1 ${config.corners === shape.corners ? 'text-white' : 'text-brand-green'}`}>{shape.label}</h5>
-                    <p className={`text-xs ${config.corners === shape.corners ? 'text-white/60' : 'text-text-muted'}`}>{shape.description}</p>
+                  {isSelected && (
+                    <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
+                      &#10003;
+                    </span>
+                  )}
+                  <img
+                    src={shape.icon}
+                    alt={`${shape.label} sail`}
+                    className={`w-[72px] h-[72px] ${isSelected ? 'brightness-0 invert' : ''}`}
+                  />
+                  <div>
+                    <div className={`font-bold text-[15px] ${isSelected ? 'text-white' : 'text-brand-green'}`}>{shape.label}</div>
+                    <div className={`text-xs mt-0.5 ${isSelected ? 'text-white/70' : 'text-text-muted'}`}>
+                      {shape.description}
+                      {shape.corners === 4 && (
+                        <span className="ml-1.5 inline-flex px-1.5 py-0.5 bg-brand-lime text-brand-green text-[9px] font-bold rounded-full align-middle">Popular</span>
+                      )}
+                    </div>
                   </div>
-                </Card>
+                </button>
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Fixing points hint */}
+      {isCustomSelected && config.corners >= 3 && (
+        <div className="flex items-center gap-2.5 bg-surface-soft rounded-xl px-4 py-3 text-sm text-[#23503f]">
+          <span className="text-base">&rarr;</span>
+          <span>You&rsquo;ve selected <strong>{config.corners} fixing points</strong>. Next, plot them on the diagram.</span>
         </div>
       )}
 
