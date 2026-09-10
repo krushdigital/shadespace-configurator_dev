@@ -1131,7 +1131,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             )}
 
             {/* Selected Hardware - Collapsible (hidden for fixed shapes) */}
-            {!isFixedShape && hardwareMode !== 'none' && (
+            {hardwareMode !== 'none' && (
               <div>
                 {isMobile ? (
                   <AccordionItem

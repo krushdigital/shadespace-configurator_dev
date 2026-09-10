@@ -105,7 +105,7 @@ export function PriceSummaryDisplay({
                 </a>
               </p>
             </div>
-            {calculations.totalPrice > 0 && hardwareMode === 'manual' && (
+            {calculations.totalPrice > 0 && hardwareMode !== 'none' && (
               <div className={`mt-4 pt-3 border-t space-y-1.5 ${
                 isMobile ? 'border-white/20' : 'border-slate-200'
               }`}>
