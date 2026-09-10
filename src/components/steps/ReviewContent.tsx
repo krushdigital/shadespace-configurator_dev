@@ -846,34 +846,34 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
           <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-6">
             {/* Shade Sail Preview */}
-            <Card className="p-4 bg-slate-50/80 max-h-[320px] lg:max-h-[520px] lg:min-h-[400px] flex flex-col overflow-hidden">
+            <Card className="p-3 sm:p-4 bg-slate-50/80 lg:max-h-[520px] lg:min-h-[400px] flex flex-col overflow-hidden">
               <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <h4 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
                   Preview
                 </h4>
                 {review3DAvailable && (!isMobile || device3DTier !== 'none') && (
-                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                  <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5 sm:p-1">
                     <button
                       onClick={() => setReviewViewMode('plan')}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-medium transition-all ${
                         reviewViewMode === 'plan'
                           ? 'bg-white shadow-sm text-slate-900'
                           : 'text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Layers className="w-3.5 h-3.5" />
                       Plan
                     </button>
                     <button
                       onClick={() => setReviewViewMode('3d')}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-medium transition-all ${
                         reviewViewMode === '3d'
                           ? 'bg-white shadow-sm text-slate-900'
                           : 'text-slate-500 hover:text-slate-700'
                       }`}
                     >
-                      <Box className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Box className="w-3.5 h-3.5" />
                       3D
                     </button>
                   </div>
@@ -893,9 +893,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     isMobile={isMobile}
                     plainBackground={true}
                   />
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 bg-slate-100 rounded px-2 py-1 w-fit">
+                  <div className="mt-1.5 sm:mt-2 flex items-center gap-1.5 text-[10px] sm:text-xs text-slate-400 bg-slate-100 rounded px-2 py-1 w-fit">
                     <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
-                    <span>Visual reference — corner labels show edge positions</span>
+                    <span>Corner labels show edge positions</span>
                   </div>
                 </>
               ) : (

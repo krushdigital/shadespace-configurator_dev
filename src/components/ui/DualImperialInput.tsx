@@ -242,9 +242,9 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
 
       <div className="relative">
         {displayMode === 'feet-inches' ? (
-          <div className="flex items-stretch gap-1 sm:gap-2">
-            <div className="flex-1 flex items-stretch gap-1 sm:gap-2">
-              <div className="flex-1 relative">
+          <div className="flex items-stretch gap-1.5 sm:gap-2">
+            <div className="flex-1 flex items-stretch gap-1.5 sm:gap-2">
+              <div className="flex-1 min-w-[70px] relative">
                 <Input
                   type="text"
                   inputMode="decimal"
@@ -264,7 +264,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 </span>
               </div>
 
-              <div className="flex-1 relative">
+              <div className="flex-1 min-w-[70px] relative">
                 <Input
                   type="text"
                   inputMode="decimal"
@@ -289,10 +289,10 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
                 type="button"
                 onClick={toggleDisplayMode}
                 aria-label="Switch to inches only"
-                className="shrink-0 inline-flex items-center justify-center w-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
+                className="shrink-0 inline-flex items-center justify-center w-9 sm:w-11 border border-slate-300 text-[#01312D]/70 hover:text-[#01312D] hover:bg-slate-100 rounded-lg transition-colors"
                 title="Switch to inches only"
               >
-                <ArrowRightLeft className="w-4 h-4" />
+                <ArrowRightLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
             )}
           </div>
