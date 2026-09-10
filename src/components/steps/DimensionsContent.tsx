@@ -818,7 +818,7 @@ export function DimensionsContent({
                      <div className="mt-1.5 p-2 sm:mt-2 sm:p-3 bg-amber-50 border border-amber-200 rounded-lg">
                        <div className="flex flex-col gap-2">
                          <p className="text-sm text-amber-800 w-full">
-                          <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[edgeKey], config.unit, true)}?
+                          <strong>Possible typo:</strong> Did you mean {formatMeasurement(typoSuggestions[edgeKey], config.unit)}?
                          </p>
                          <div className="flex gap-2">
                            <button

@@ -197,30 +197,17 @@ export function validateMeasurements(measurements: {[key: string]: number}, corn
         // Imperial typo detection - value is stored in mm, convert to inches for logic
         const valueInInches = value * MM_TO_INCHES;
         
-        // Enhanced imperial typo detection logic (mirroring metric logic but for inches)
+        // The DualImperialInput already converts feet->inches correctly, so do NOT
+        // second-guess values in the normal shade sail range (79-591 inches / ~6-49 ft).
+        // Only flag truly extreme outliers that indicate a clear data entry mistake.
         
         // For very large numbers (>10000"), try division by 100 to get into typical range
         if (valueInInches >= 10000 && valueInInches / 100 >= TYPICAL_MIN_INCHES && valueInInches / 100 <= TYPICAL_MAX_INCHES) {
           typoSuggestions[key] = (valueInInches / 100) * INCHES_TO_MM;
           hasTypoSuggestion = true;
         }
-        // Single digit (1-9") -> multiply by 12 (user entered feet instead of inches)
-        else if (valueInInches >= 1 && valueInInches <= 9 && valueInInches * 12 >= TYPICAL_MIN_INCHES && valueInInches * 12 <= TYPICAL_MAX_INCHES) {
-          typoSuggestions[key] = (valueInInches * 12) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
-        // Double digit (10-50") -> could be feet instead of inches
-        else if (valueInInches >= 10 && valueInInches <= 50 && valueInInches * 12 >= TYPICAL_MIN_INCHES && valueInInches * 12 <= TYPICAL_MAX_INCHES) {
-          typoSuggestions[key] = (valueInInches * 12) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
-        // Large values (1000-9999") -> divide by 10 (extra digit typo)
-        else if (valueInInches > 1000 && valueInInches / 10 >= TYPICAL_MIN_INCHES && valueInInches / 10 <= TYPICAL_MAX_INCHES) {
-          typoSuggestions[key] = (valueInInches / 10) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
-        // Medium values (600-999") -> divide by 10 (e.g., 720" -> 72")
-        else if (valueInInches >= 600 && valueInInches <= 999 && valueInInches / 10 >= TYPICAL_MIN_INCHES && valueInInches / 10 <= TYPICAL_MAX_INCHES) {
+        // Very large values (>2000") -> divide by 10 (extra digit typo, e.g. 3840" -> 384")
+        else if (valueInInches > 2000 && valueInInches / 10 >= TYPICAL_MIN_INCHES && valueInInches / 10 <= TYPICAL_MAX_INCHES) {
           typoSuggestions[key] = (valueInInches / 10) * INCHES_TO_MM;
           hasTypoSuggestion = true;
         }
@@ -539,30 +526,16 @@ export function validateHeights(heights: number[], unit: 'metric' | 'imperial'):
         // Imperial typo detection for heights - height is stored in mm, convert to inches for logic
         const heightInInches = height * MM_TO_INCHES;
         
-        // Enhanced imperial height typo detection logic (mirroring metric logic but for inches)
+        // The DualImperialInput already converts feet->inches correctly, so do NOT
+        // second-guess values in the normal height range. Only flag extreme outliers.
         
         // For very large numbers (>10000"), try division by 100 to get into typical range
         if (heightInInches >= 10000 && heightInInches / 100 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches / 100 <= TYPICAL_HEIGHT_MAX_INCHES) {
           typoSuggestions[heightKey] = (heightInInches / 100) * INCHES_TO_MM;
           hasTypoSuggestion = true;
         }
-        // Single digit (1-9") -> multiply by 12 (user entered feet instead of inches)
-        else if (heightInInches >= 1 && heightInInches <= 9 && heightInInches * 12 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches * 12 <= TYPICAL_HEIGHT_MAX_INCHES) {
-          typoSuggestions[heightKey] = (heightInInches * 12) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
-        // Double digit (10-30") -> could be feet instead of inches
-        else if (heightInInches >= 10 && heightInInches <= 30 && heightInInches * 12 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches * 12 <= TYPICAL_HEIGHT_MAX_INCHES) {
-          typoSuggestions[heightKey] = (heightInInches * 12) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
-        // Large values (500-9999") -> divide by 10 (extra digit typo)
-        else if (heightInInches > 500 && heightInInches / 10 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches / 10 <= TYPICAL_HEIGHT_MAX_INCHES) {
-          typoSuggestions[heightKey] = (heightInInches / 10) * INCHES_TO_MM;
-          hasTypoSuggestion = true;
-        }
-        // Medium values (316-499") -> divide by 10 (e.g., 360" -> 36")
-        else if (heightInInches >= 316 && heightInInches <= 499 && heightInInches / 10 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches / 10 <= TYPICAL_HEIGHT_MAX_INCHES) {
+        // Very large values (>1000") -> divide by 10 (extra digit typo, e.g. 1200" -> 120")
+        else if (heightInInches > 1000 && heightInInches / 10 >= TYPICAL_HEIGHT_MIN_INCHES && heightInInches / 10 <= TYPICAL_HEIGHT_MAX_INCHES) {
           typoSuggestions[heightKey] = (heightInInches / 10) * INCHES_TO_MM;
           hasTypoSuggestion = true;
         }
