@@ -2733,8 +2733,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   const handleRailStepClick = (displayIndex: number) => {
     const step = visibleSteps[displayIndex];
-    if (step && step.originalIndex <= config.step) {
-      toggleStep(step.originalIndex);
+    if (step && step.originalIndex <= config.step && step.originalIndex !== openStep) {
+      const centeredPoints = centerShape(config.points);
+      updateConfig({ points: centeredPoints });
+      setOpenStep(step.originalIndex);
+      setTimeout(() => {
+        smoothScrollToStep(step.originalIndex);
+      }, isMobile ? 400 : 350);
     }
   };
 
