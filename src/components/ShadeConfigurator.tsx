@@ -1979,12 +1979,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   const isStepComplete = (step: number): boolean => {
     switch (step) {
-      case 0: // Material & Finish
-        return !!config.fabricType && !!config.fabricColor;
-      case 1: // Shape & Size
+      case 0: // Shape & Size
         if (config.shapeMode === 'custom') return config.corners >= 3 && config.corners <= 8;
         if (config.shapeMode === 'fixed') return !!config.fixedShapeType;
         return false;
+      case 1: // Fabric & Finish
+        return !!config.fabricType && !!config.fabricColor;
       case 2: // Dimensions (custom)
         if (config.corners === 0) return false;
         let edgeCount = 0;
@@ -2085,15 +2085,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     const suggestions: { [key: string]: number } = {};
 
     switch (openStep) {
-      case 0: // Material & Finish
-        if (!config.fabricType) {
-          errors.fabricType = 'Please select a fabric type';
-        }
-        if (!config.fabricColor || config.fabricColor === '') {
-          errors.fabricColor = 'Please select a fabric color';
-        }
-        break;
-      case 1: // Shape & Size
+      case 0: // Shape & Size
         if (config.shapeMode === 'custom') {
           if (config.corners < 3 || config.corners > 8) {
             errors.corners = 'Please select the number of fixing points (3-8)';
@@ -2104,6 +2096,14 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           }
         } else {
           errors.shapeMode = 'Please select a shape type';
+        }
+        break;
+      case 1: // Fabric & Finish
+        if (!config.fabricType) {
+          errors.fabricType = 'Please select a fabric type';
+        }
+        if (!config.fabricColor || config.fabricColor === '') {
+          errors.fabricColor = 'Please select a fabric color';
         }
         break;
       case 2: // Dimensions (custom)
@@ -2213,7 +2213,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     }
 
     // If fixed shape selected at step 1, auto-set unit and measurementOption since those steps are skipped
-    if (openStep === 1 && config.shapeMode === 'fixed') {
+    if (openStep === 0 && config.shapeMode === 'fixed') {
       if (!config.unit) {
         const autoUnit = config.currency === 'USD' ? 'imperial' : 'metric';
         updateConfig({ unit: autoUnit, measurementOption: 'adjust' });
@@ -2225,7 +2225,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     // If no validation errors, proceed to next step
     const nextStepIndex = getActualNextStep(openStep);
 
-    const stepNames = ['Material & Finish', 'Shape & Size', 'Dimensions', 'Fixed Dimensions', 'Hardware', 'Fixed Hardware', 'Review & Purchase'];
+    const stepNames = ['Shape & Size', 'Fabric & Finish', 'Dimensions', 'Fixed Dimensions', 'Edge Style', 'Hardware', 'Fixed Hardware', 'Review & Purchase'];
     eventTrackers.stepChange(nextStepIndex, stepNames[nextStepIndex] || `Step ${nextStepIndex}`, 'forward', {
       fabricType: config.fabricType,
       fabricColor: config.fabricColor,
@@ -2294,17 +2294,17 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   const getStepSelection = (step: number): string => {
     switch (step) {
-      case 0: // Material & Finish
-        const fabric = FABRICS.find(f => f.id === config.fabricType);
-        const colorText = config.fabricColor ? ` - ${config.fabricColor}` : '';
-        return fabric ? `${fabric.label}${colorText}` : 'Not selected';
-      case 1: // Shape & Size
+      case 0: // Shape & Size
         if (config.shapeMode === 'custom') return config.corners ? `Custom made-to-measure - ${config.corners} points` : 'Custom made-to-measure';
         if (config.shapeMode === 'fixed' && config.fixedShapeType) {
           const labels: Record<string, string> = { triangle: 'Triangle', 'right-angle-triangle': 'Right Angle Triangle', square: 'Square', rectangle: 'Rectangle' };
           return `Standard - ${labels[config.fixedShapeType]}`;
         }
         return 'Not selected';
+      case 1: // Fabric & Finish
+        const fabric = FABRICS.find(f => f.id === config.fabricType);
+        const colorText = config.fabricColor ? ` - ${config.fabricColor}` : '';
+        return fabric ? `${fabric.label}${colorText}` : 'Not selected';
       case 2: // Dimensions (custom)
         {
           let edgeCount = 0;
@@ -2350,8 +2350,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Define step titles for navigation with dynamic skipping
   const getNextStepTitle = (currentStep: number): string => {
     const stepSubtitles = [
-      'Material & Finish',
       'Shape & Size',
+      'Fabric & Finish',
       'Dimensions',
       'Dimensions',
       'Edge Style',
@@ -2367,14 +2367,14 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   const steps = [
     {
-      title: 'Material & Finish',
-      subtitle: 'Select fabric and color',
-      component: MaterialFinishContent
-    },
-    {
       title: 'Shape & Size',
       subtitle: 'Choose your shade sail shape',
       component: ShapeSizeContent
+    },
+    {
+      title: 'Fabric & Finish',
+      subtitle: 'Select fabric and color',
+      component: MaterialFinishContent
     },
     {
       title: 'Dimensions',
@@ -2702,17 +2702,17 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const getRailSubtitle = (stepIndex: number): string => {
     switch (stepIndex) {
       case 0:
-        if (config.fabricType && config.fabricColor) {
-          const fab = FABRICS.find(f => f.id === config.fabricType);
-          return `${fab?.label || config.fabricType}, ${config.fabricColor}`;
-        }
-        return 'Select fabric and color';
-      case 1:
         if (config.shapeMode === 'fixed' && config.fixedShapeType)
           return config.fixedShapeType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         if (config.shapeMode === 'custom' && config.corners >= 3)
           return `Custom ${config.corners}-point`;
         return 'Choose your shape';
+      case 1:
+        if (config.fabricType && config.fabricColor) {
+          const fab = FABRICS.find(f => f.id === config.fabricType);
+          return `${fab?.label || config.fabricType}, ${config.fabricColor}`;
+        }
+        return 'Select fabric and color';
       case 2: case 3: return 'Set measurements';
       case 4: return config.edgeType ? (config.edgeType === 'cabled' ? 'Cabled edge' : 'Webbing reinforced') : 'Choose edge style';
       case 5: case 6: return config.hardwareSelectionMode ? (config.hardwareSelectionMode === 'standard' ? 'Hardware kit' : config.hardwareSelectionMode === 'manual' ? 'Manual selection' : 'No hardware') : 'Choose hardware';
@@ -2749,13 +2749,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   // Compute footer state per step
   const footerNextLabel = isReviewStep
-    ? `Add to cart${calculations.totalPrice > 0 ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
+    ? `Add to cart${calculations.totalPrice > 0 && hasAllEdgeMeasurements ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
     : `Continue > ${getNextStepTitle(openStep)}`;
 
   const footerDisableNext = (() => {
     switch (openStep) {
-      case 0: return !config.fabricType || !config.fabricColor;
-      case 1: return !config.shapeMode || (config.shapeMode === 'custom' && (config.corners < 3 || config.corners > 8)) || (config.shapeMode === 'fixed' && !config.fixedShapeType);
+      case 0: return !config.shapeMode || (config.shapeMode === 'custom' && (config.corners < 3 || config.corners > 8)) || (config.shapeMode === 'fixed' && !config.fixedShapeType);
+      case 1: return !config.fabricType || !config.fabricColor;
       case 7: return !canAddToCart;
       default: return false;
     }
@@ -2764,13 +2764,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const footerDisabledHint = (() => {
     switch (openStep) {
       case 0:
-        if (!config.fabricType) return 'Choose a fabric to continue';
-        if (!config.fabricColor) return 'Choose a color to continue';
-        return '';
-      case 1:
         if (!config.shapeMode) return 'Choose a shape to continue';
         if (config.shapeMode === 'custom' && config.corners < 3) return 'Select fixing points';
         return 'Select a shape';
+      case 1:
+        if (!config.fabricType) return 'Choose a fabric to continue';
+        if (!config.fabricColor) return 'Choose a color to continue';
+        return '';
       case 7:
         if (!allDiagonalsEntered) return 'Enter diagonals to continue';
         if (!allAcknowledgmentsChecked && config.shapeMode !== 'fixed') return 'Accept all acknowledgements';
@@ -2779,7 +2779,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     }
   })();
 
-  const footerPriceDisplay = calculations.totalPrice > 0
+  const footerPriceDisplay = calculations.totalPrice > 0 && hasAllEdgeMeasurements
     ? formatCurrency(calculations.totalPrice, config.currency)
     : undefined;
 
@@ -2794,7 +2794,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         onStepClick={handleRailStepClick}
       />
 
-      <div className="flex min-h-screen bg-surface-panel">
+      <div className="flex bg-surface-panel">
         {/* Left Rail Navigation - tablet+ */}
         <StepRail steps={railSteps} onStepClick={handleRailStepClick} onSave={openStep > 0 ? handleSaveQuote : undefined} />
 

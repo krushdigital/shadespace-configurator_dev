@@ -126,10 +126,7 @@ export function DimensionsContent({
   const activeEditFieldRef = React.useRef<string | null>(null);
   const pendingGeometryErrorRef = React.useRef<string | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
-  const [showMeasureGuide, setShowMeasureGuide] = useState(() => {
-    const key = `htmDismissed_custom_${config.corners}`;
-    return !sessionStorage.getItem(key);
-  });
+  const [showMeasureGuide, setShowMeasureGuide] = useState(true);
   const [showMeasureModal, setShowMeasureModal] = useState(false);
   const matchingFixedShape = React.useMemo(
     () => config.shapeMode === 'custom' ? detectMatchingFixedShape(config.measurements, config.corners) : null,
@@ -480,9 +477,8 @@ export function DimensionsContent({
   }, [config.measurements, config.corners, updateConfig]);
 
   const dismissMeasureGuide = useCallback(() => {
-    sessionStorage.setItem(`htmDismissed_custom_${config.corners}`, '1');
     setShowMeasureGuide(false);
-  }, [config.corners]);
+  }, []);
 
   useEffect(() => {
     if (!props_measureGuideDismissRef) return;

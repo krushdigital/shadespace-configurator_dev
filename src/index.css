@@ -68,12 +68,7 @@ body,
 
 html {
   scroll-padding-top: 100px;
-  min-height: 100vh;
   overflow-x: hidden;
-}
-
-body {
-  min-height: 100vh;
 }
 
 /* Hide number input spinner arrows */

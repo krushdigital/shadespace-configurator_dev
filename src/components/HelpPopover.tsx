@@ -156,14 +156,14 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
 export const STEP_HELP_CONTENT: Record<number, React.ReactNode> = {
   0: (
     <div>
-      <p className="font-semibold mb-2">Choosing your fabric</p>
-      <p>We offer a range of shade fabrics to suit different needs. Each fabric has unique properties including UV block rating, shade factor, and fire retardancy. Choose based on your priorities: maximum shade, fire safety, or the best value.</p>
+      <p className="font-semibold mb-2">Shape selection</p>
+      <p>Choose a standard shape (square, rectangle, triangle) for a precise fit, or select Custom to create any shape with 3-8 fixing points. Custom shapes are made to measure and covered by our Fit Guarantee.</p>
     </div>
   ),
   1: (
     <div>
-      <p className="font-semibold mb-2">Shape selection</p>
-      <p>Choose a standard shape (square, rectangle, triangle) for a precise fit, or select Custom to create any shape with 3-8 fixing points. Custom shapes are made to measure and covered by our Fit Guarantee.</p>
+      <p className="font-semibold mb-2">Choosing your fabric</p>
+      <p>We offer a range of shade fabrics to suit different needs. Each fabric has unique properties including UV block rating, shade factor, and fire retardancy. Choose based on your priorities: maximum shade, fire safety, or the best value.</p>
     </div>
   ),
   2: (

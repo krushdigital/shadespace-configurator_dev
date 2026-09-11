@@ -248,16 +248,12 @@ export function FixedShapeDimensionsContent({
     }
   }, [highlightedMeasurement, shape]);
 
-  const [showMeasureGuide, setShowMeasureGuide] = React.useState(() => {
-    const key = `htmDismissed_fixed_${shape}`;
-    return !sessionStorage.getItem(key);
-  });
+  const [showMeasureGuide, setShowMeasureGuide] = React.useState(true);
   const [showMeasureModal, setShowMeasureModal] = React.useState(false);
 
   const dismissMeasureGuide = React.useCallback(() => {
-    sessionStorage.setItem(`htmDismissed_fixed_${shape}`, '1');
     setShowMeasureGuide(false);
-  }, [shape]);
+  }, []);
 
   React.useEffect(() => {
     if (!props_measureGuideDismissRef) return;
