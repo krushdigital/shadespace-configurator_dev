@@ -38,7 +38,7 @@ export default {
       },
       spacing: {
         rail: '250px',
-        summary: '340px',
+        summary: '390px',
       },
       screens: {
         tablet: '900px',

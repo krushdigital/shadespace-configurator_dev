@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -97,6 +97,36 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 900);
+  const [summaryWidth, setSummaryWidth] = useState(390);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartWidthRef = useRef(390);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    dragStartXRef.current = e.clientX;
+    dragStartWidthRef.current = summaryWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const delta = dragStartXRef.current - ev.clientX;
+      const next = Math.min(Math.max(dragStartWidthRef.current + delta, 320), window.innerWidth * 0.5);
+      setSummaryWidth(next);
+    };
+    const onUp = () => {
+      isDraggingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [summaryWidth]);
+
   const [device3DTier, setDevice3DTier] = useState<Device3DTier>(() => canRender3D());
   const [mobileViewMode, setMobileViewMode] = useState<'plan' | '3d'>('plan');
   // Once the user picks a view, stop auto-applying the 3D default (their choice sticks).
@@ -2924,7 +2954,17 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
         {/* Right summary panel - desktop only, DIRECT SIBLING */}
         {!isMobile && (
-          <aside className="hidden desktop:block w-summary flex-shrink-0 bg-white border-l border-border-card sticky top-0 h-screen overflow-y-auto">
+          <>
+            <div
+              onMouseDown={handleResizeStart}
+              className="hidden desktop:flex w-[6px] flex-shrink-0 cursor-col-resize items-center justify-center sticky top-0 h-screen bg-transparent hover:bg-border-card/50 active:bg-border-card transition-colors group z-10"
+            >
+              <div className="w-[2px] h-8 rounded-full bg-border-card group-hover:bg-brand-green/30 group-active:bg-brand-green/50 transition-colors" />
+            </div>
+            <aside
+              className="hidden desktop:block flex-shrink-0 bg-white border-l border-border-card sticky top-0 h-screen overflow-y-auto"
+              style={{ width: summaryWidth }}
+            >
             <div className="p-[28px_24px] flex flex-col gap-4">
                     {/* Sail diagram viewer - always shown */}
                     {isReviewStep ? (
@@ -3125,7 +3165,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     )}
                   </div>
                 </aside>
-              )}
+              </>
+            )}
             </div>
 
       {/* Unified Save Modal */}
