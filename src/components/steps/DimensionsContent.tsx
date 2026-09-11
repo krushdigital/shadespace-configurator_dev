@@ -69,6 +69,7 @@ interface DimensionsContentProps {
   onSketchApply?: (data: ParsedSketchData) => void;
   onSwitchToFixed?: (shape: import('../../types').FixedShapeType, keepMeasurements: boolean) => void;
   measureGuideDismissRef?: React.MutableRefObject<(() => void) | null>;
+  onMeasureGuideVisibilityChange?: (visible: boolean) => void;
 }
 
 export function DimensionsContent({
@@ -109,6 +110,7 @@ export function DimensionsContent({
   onSketchApply,
   onSwitchToFixed,
   measureGuideDismissRef: props_measureGuideDismissRef,
+  onMeasureGuideVisibilityChange,
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
@@ -485,6 +487,10 @@ export function DimensionsContent({
     props_measureGuideDismissRef.current = showMeasureGuide ? dismissMeasureGuide : null;
     return () => { props_measureGuideDismissRef.current = null; };
   }, [showMeasureGuide, dismissMeasureGuide, props_measureGuideDismissRef]);
+
+  useEffect(() => {
+    onMeasureGuideVisibilityChange?.(showMeasureGuide);
+  }, [showMeasureGuide, onMeasureGuideVisibilityChange]);
 
   if (showMeasureGuide) {
     return (

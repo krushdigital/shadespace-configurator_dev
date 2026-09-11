@@ -215,6 +215,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
   const measureGuideDismissRef = useRef<(() => void) | null>(null);
+  const [isMeasureGuideVisible, setIsMeasureGuideVisible] = useState(false);
   // 3D viewer ref for screenshot capture
   const viewer3DRef = useRef<{ capture3DScreenshot: () => Promise<string | null> }>(null);
   const [is3DExpanded, setIs3DExpanded] = useState(false);
@@ -2750,7 +2751,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Compute footer state per step
   const footerNextLabel = isReviewStep
     ? `Add to cart${calculations.totalPrice > 0 && hasAllEdgeMeasurements ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
-    : `Continue > ${getNextStepTitle(openStep)}`;
+    : (openStep === 2 && isMeasureGuideVisible)
+      ? `Continue > Dimensions`
+      : `Continue > ${getNextStepTitle(openStep)}`;
 
   const footerDisableNext = (() => {
     switch (openStep) {
@@ -2889,6 +2892,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     setHighlightedCorner={setHighlightedCorner}
                     canvasRef={canvasRef}
                     measureGuideDismissRef={measureGuideDismissRef}
+                    onMeasureGuideVisibilityChange={setIsMeasureGuideVisible}
                     ref={openStep === 7 ? reviewContentRef : undefined}
                     fabrics={FABRICS}
                     loading={loading}
