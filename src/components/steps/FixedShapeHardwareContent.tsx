@@ -345,42 +345,6 @@ export function FixedShapeHardwareContent({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex flex-col gap-3 pt-4 border-t border-border-card">
-        {(showBackButton || onSaveQuote) && (
-          <div className="grid grid-cols-2 gap-2">
-            {showBackButton && (
-              <Button variant="outline" onClick={onPrev} className="text-sm w-full">
-                Back
-              </Button>
-            )}
-            {onSaveQuote && (
-              <SaveProgressButton onClick={onSaveQuote} className="w-full" />
-            )}
-          </div>
-        )}
-        {mobileGuidance?.currentHighlightTarget === 'continue-button-hardware' ? (
-          <div className="energy-border-chase-btn w-full" id="continue-button-hardware" data-guidance-id="continue-button-hardware">
-            <Button
-              onClick={() => { mobileGuidance?.clearHighlight(); onNext?.(); }}
-              disabled={mode === 'manual' && !allManualConfigured}
-              className="text-sm w-full py-4"
-            >
-              Continue{nextStepTitle ? ` \u2192 ${nextStepTitle}` : ''}
-            </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={() => { mobileGuidance?.clearHighlight(); onNext?.(); }}
-            id="continue-button-hardware"
-            data-guidance-id="continue-button-hardware"
-            disabled={mode === 'manual' && !allManualConfigured}
-            className="text-sm w-full py-4"
-          >
-            Continue{nextStepTitle ? ` \u2192 ${nextStepTitle}` : ''}
-          </Button>
-        )}
-      </div>
 
       {/* Hardware Selection Modal - per corner */}
       {!loading && modalCorner !== null && (

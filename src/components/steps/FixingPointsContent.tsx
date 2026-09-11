@@ -363,69 +363,7 @@ export function FixingPointsContent({
       </Card>
 
 
-      <div className="flex flex-col gap-4 pt-4 border-t border-[#307C31]/30 w-full">
-        {(() => {
-          return (
-            <>
-              {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
-              <div className="flex sm:hidden flex-col gap-3">
-                <div className="flex gap-3">
-                  {showBackButton && (
-                    <Button
-                      variant="outline"
-                      size="md"
-                      onClick={onPrev}
-                      className="flex-1"
-                    >
-                      Back
-                    </Button>
-                  )}
-                  {onSaveQuote && (
-                    <SaveProgressButton
-                      onClick={onSaveQuote}
-                      className="flex-1"
-                    />
-                  )}
-                </div>
-                <Button
-                  onClick={onNext}
-                  size="md"
-                  className="w-full py-4 sm:py-2"
-                >
-                  Continue to {nextStepTitle}
-                </Button>
-              </div>
 
-              {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
-              <div className="hidden sm:flex gap-4">
-                {showBackButton && (
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={onPrev}
-                    className="w-auto"
-                  >
-                    Back
-                  </Button>
-                )}
-                {onSaveQuote && (
-                  <SaveProgressButton
-                    onClick={onSaveQuote}
-                    className="w-auto"
-                  />
-                )}
-                <Button
-                  onClick={onNext}
-                  size="md"
-                  className="flex-1"
-                >
-                  Continue to {nextStepTitle}
-                </Button>
-              </div>
-            </>
-          );
-        })()}
-      </div>
     </div>
   );
 }

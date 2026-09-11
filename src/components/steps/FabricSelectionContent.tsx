@@ -437,85 +437,16 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
         </div>
       )}
 
-      <div className="flex flex-col gap-3 pt-4 border-t border-border-card">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {showBackButton && onPrev && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrev}
-              className="sm:w-auto"
-            >
-              Back
-            </Button>
-          )}
-          <div className="flex-1 flex flex-col gap-2">
-            {(() => {
-              const incomplete = !config.fabricType || !config.fabricColor;
-              const missingItems = [];
-
-              if (!config.fabricType) missingItems.push('fabric type');
-              if (!config.fabricColor) missingItems.push('color');
-
-              return (
-                <>
-                  {incomplete && (
-                    <div className="text-xs text-text-muted bg-surface-soft px-3 py-2 rounded-lg border border-border-card">
-                      <span className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-text-muted" />
-                        <span>Please select {missingItems.join(' and ')} to continue</span>
-                      </span>
-                    </div>
-                  )}
-                  {mobileGuidance?.currentHighlightTarget === 'continue-button-fabric' && !incomplete ? (
-                    <div className="energy-border-chase-btn" id="continue-button-fabric" data-guidance-id="continue-button-fabric">
-                      <Button
-                        onClick={() => {
-                          const timeSpent = (Date.now() - stepStartTime.current) / 1000;
-                          analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
-                            fabric_type: config.fabricType,
-                            fabric_color: config.fabricColor,
-                          });
-                          mobileGuidance?.clearHighlight();
-                          onNext();
-                        }}
-                        size="md"
-                        className="py-4 sm:py-2 w-full"
-                      >
-                        <span className="flex flex-col items-center leading-tight">
-                          <span>Continue</span>
-                          {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                        </span>
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={() => {
-                        const timeSpent = (Date.now() - stepStartTime.current) / 1000;
-                        analytics.stepCompleted(1, 'fabric_and_color', timeSpent, {
-                          fabric_type: config.fabricType,
-                          fabric_color: config.fabricColor,
-                        });
-                        mobileGuidance?.clearHighlight();
-                        onNext();
-                      }}
-                      size="md"
-                      id="continue-button-fabric"
-                      data-guidance-id="continue-button-fabric"
-                      className={`py-4 sm:py-2 ${incomplete ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      <span className="flex flex-col items-center leading-tight">
-                        <span>Continue</span>
-                        {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                      </span>
-                    </Button>
-                  )}
-                </>
-              );
-            })()}
+      {!config.fabricType || !config.fabricColor ? (
+        <div className="pt-4 border-t border-border-card">
+          <div className="text-xs text-text-muted bg-surface-soft px-3 py-2 rounded-lg border border-border-card">
+            <span className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-text-muted" />
+              <span>Please select {[!config.fabricType && 'fabric type', !config.fabricColor && 'color'].filter(Boolean).join(' and ')} to continue</span>
+            </span>
           </div>
         </div>
-      </div>
+      ) : null}
 
       <FabricComparison
         fabrics={FABRICS}

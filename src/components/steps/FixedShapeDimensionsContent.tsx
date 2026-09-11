@@ -435,36 +435,7 @@ export function FixedShapeDimensionsContent({
         />
       )}
 
-      {/* Live price preview - sail only (hardware shown on next step) */}
-      {isComplete && sailPrice > 0 && (
-        <div className="flex items-center justify-between px-4 py-3 bg-surface-soft border border-brand-mid/30 rounded-xl mt-6 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
-          <span className="text-sm font-medium text-brand-green">Sail price estimate</span>
-          <span className="text-lg font-bold text-brand-green">{formatCurrency(sailPrice, config.currency)}</span>
-        </div>
-      )}
 
-      {/* Navigation */}
-      <div className="flex flex-col gap-3 pt-5 mt-6 border-t border-border-card">
-        {(showBackButton || onSaveQuote) && (
-          <div className="grid grid-cols-2 gap-2">
-            {showBackButton && (
-              <Button variant="outline" onClick={onPrev} className="text-sm w-full">
-                Back
-              </Button>
-            )}
-            {onSaveQuote && (
-              <SaveProgressButton onClick={onSaveQuote} className="w-full" />
-            )}
-          </div>
-        )}
-        <Button
-          onClick={onNext}
-          disabled={!isComplete}
-          className="text-sm w-full"
-        >
-          Continue{nextStepTitle ? ` → ${nextStepTitle}` : ''}
-        </Button>
-      </div>
     </div>
   );
 }

@@ -2943,6 +2943,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             disabledHint={footerDisabledHint}
             priceDisplay={footerPriceDisplay}
             isReview={isReviewStep}
+            isMobile={isMobile}
           />
 
           <LoadingOverlay

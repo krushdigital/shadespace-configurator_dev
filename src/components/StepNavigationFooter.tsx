@@ -9,6 +9,7 @@ interface StepNavigationFooterProps {
   disabledHint?: string;
   priceDisplay?: string;
   isReview?: boolean;
+  isMobile?: boolean;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export function StepNavigationFooter({
   disabledHint,
   priceDisplay,
   isReview = false,
+  isMobile = false,
   className = '',
 }: StepNavigationFooterProps) {
   return (
@@ -38,7 +40,7 @@ export function StepNavigationFooter({
           </button>
         ) : null}
 
-        {priceDisplay ? (
+        {priceDisplay && isMobile ? (
           <div className="flex-shrink-0">
             <div className="text-[12px] font-bold text-text-muted leading-tight">Estimated</div>
             <div className="text-[22px] font-extrabold text-brand-green leading-tight" style={{ letterSpacing: '-0.02em' }}>{priceDisplay}</div>

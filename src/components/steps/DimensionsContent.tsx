@@ -1342,17 +1342,8 @@ export function DimensionsContent({
           const missingCount = config.corners - edgeCount;
           const shouldDisable = edgeCount !== config.corners || hasUnacknowledgedTypos;
 
-          const sailPrice = calculations.hardwareBreakdown?.sailOnlyLivePrice ?? calculations.totalPrice;
-          const hasQuote = sailPrice > 0 && edgeCount === config.corners;
-
           return (
             <>
-              {hasQuote && (
-                <div className="flex items-center justify-between px-4 py-3 bg-surface-soft border border-[#307C31]/30 rounded-xl mb-3 transition-all duration-300 animate-[fadeIn_0.3s_ease-out]">
-                  <span className="text-sm font-medium text-brand-green">Sail price estimate</span>
-                  <span className="text-lg font-bold text-brand-green">{formatCurrency(sailPrice, config.currency)}</span>
-                </div>
-              )}
               {shouldDisable && (
                 <div className="text-xs text-text-muted bg-surface-soft px-3 py-2 rounded-lg border border-border-card">
                   {hasUnacknowledgedTypos ? (
@@ -1368,71 +1359,6 @@ export function DimensionsContent({
                   ) : null}
                 </div>
               )}
-
-              {/* Removed premature quote ready message - users haven't completed all steps yet */}
-
-              {/* Navigation Buttons */}
-              {/* Mobile Layout: Back and Save Progress on same row, Continue below */}
-              <div className="flex sm:hidden flex-col gap-3">
-                <div className="flex gap-3">
-                  {showBackButton && (
-                    <Button
-                      variant="outline"
-                      size="md"
-                      onClick={onPrev}
-                      className="flex-1"
-                    >
-                      Back
-                    </Button>
-                  )}
-                  {onSaveQuote && (
-                    <SaveProgressButton
-                      onClick={onSaveQuote}
-                      className="flex-1"
-                    />
-                  )}
-                </div>
-                <Button
-                  onClick={onNext}
-                  size="md"
-                  className={`w-full py-4 sm:py-2 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <span className="flex flex-col items-center leading-tight">
-                    <span>Continue</span>
-                    {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                  </span>
-                </Button>
-              </div>
-
-              {/* Desktop Layout: Back, Save Progress, and Continue on same row */}
-              <div className="hidden sm:flex items-center gap-4">
-                {showBackButton && (
-                  <Button
-                    variant="outline"
-                    size="md"
-                    onClick={onPrev}
-                    className="w-auto"
-                  >
-                    Back
-                  </Button>
-                )}
-                {onSaveQuote && (
-                  <SaveProgressButton
-                    onClick={onSaveQuote}
-                    className="w-auto"
-                  />
-                )}
-                <Button
-                  onClick={onNext}
-                  size="md"
-                  className={`flex-1 ${shouldDisable ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <span className="flex flex-col items-center leading-tight">
-                    <span>Continue</span>
-                    {nextStepTitle && <span className="text-[10px] opacity-80 font-normal">to {nextStepTitle}</span>}
-                  </span>
-                </Button>
-              </div>
             </>
           );
         })()}
