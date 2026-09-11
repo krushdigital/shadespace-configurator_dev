@@ -2801,7 +2801,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         {/* Main content area */}
         <div className="flex-1 min-w-0 flex flex-col bg-surface-panel">
           <div className="flex-1 overflow-y-auto">
-          <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8 pb-[140px] w-full">
+          <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8 pb-24 w-full">
             {/* Quote Reference */}
             {quoteReference && (
               <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 bg-brand-lime/15 border border-brand-lime/30 rounded-full">

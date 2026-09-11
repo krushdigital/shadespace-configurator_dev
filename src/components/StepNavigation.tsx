@@ -18,7 +18,7 @@ interface StepRailProps {
 
 export function StepRail({ steps, onStepClick, onSave }: StepRailProps) {
   return (
-    <nav className="hidden tablet:flex flex-col w-rail min-h-screen bg-brand-green text-white flex-shrink-0 sticky top-0 self-start max-h-screen">
+    <nav className="hidden tablet:flex flex-col w-rail h-screen bg-brand-green text-white flex-shrink-0 sticky top-0 self-start max-h-screen">
       <div className="px-6 pt-6 pb-8">
         <img src={logoWhite} alt="ShadeSpace" className="h-8 w-auto" />
       </div>
