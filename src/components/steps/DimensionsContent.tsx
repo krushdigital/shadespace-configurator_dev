@@ -10,13 +10,14 @@ import { Tooltip } from '../ui/Tooltip';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence, detectMatchingFixedShape } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { PricingSummaryBox } from '../PricingSummaryBox';
-import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle, Upload } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle, Upload, Ruler } from 'lucide-react';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { SketchUploadModal } from '../SketchUploadModal';
 import { ParsedSketchData } from '../../utils/sketchParser';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
 import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
 import { MiniSpaceDiagram } from './SailMeasurementVisuals';
+import { HowToMeasureGuide, HowToMeasureModal } from '../HowToMeasureGuide';
 import { toast } from 'react-toastify';
 
 const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
@@ -123,6 +124,11 @@ export function DimensionsContent({
   const activeEditFieldRef = React.useRef<string | null>(null);
   const pendingGeometryErrorRef = React.useRef<string | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [showMeasureGuide, setShowMeasureGuide] = useState(() => {
+    const key = `htmDismissed_custom_${config.corners}`;
+    return !sessionStorage.getItem(key);
+  });
+  const [showMeasureModal, setShowMeasureModal] = useState(false);
   const matchingFixedShape = React.useMemo(
     () => config.shapeMode === 'custom' ? detectMatchingFixedShape(config.measurements, config.corners) : null,
     [config.measurements, config.corners, config.shapeMode]
@@ -471,8 +477,41 @@ export function DimensionsContent({
     }
   }, [config.measurements, config.corners, updateConfig]);
 
+  if (showMeasureGuide) {
+    return (
+      <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
+        <HowToMeasureGuide
+          measurementOption={config.measurementOption}
+          shapeMode={config.shapeMode}
+          corners={config.corners}
+          onDismiss={() => {
+            sessionStorage.setItem(`htmDismissed_custom_${config.corners}`, '1');
+            setShowMeasureGuide(false);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
+      {/* How to measure link */}
+      <button
+        type="button"
+        onClick={() => setShowMeasureModal(true)}
+        className="mb-4 flex items-center gap-1.5 text-[13px] font-semibold text-brand-mid hover:text-brand-green transition-colors underline decoration-dotted underline-offset-2"
+      >
+        <Ruler className="w-3.5 h-3.5" />
+        How to measure
+      </button>
+      <HowToMeasureModal
+        isOpen={showMeasureModal}
+        onClose={() => setShowMeasureModal(false)}
+        measurementOption={config.measurementOption}
+        shapeMode={config.shapeMode}
+        corners={config.corners}
+      />
+
       {/* Unit Selection Toggle */}
       <div className="mb-4 sm:mb-6">
         <div className="bg-surface-soft border border-border-card rounded-lg p-3">

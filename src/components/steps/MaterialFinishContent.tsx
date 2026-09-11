@@ -111,8 +111,8 @@ export function MaterialFinishContent({
           <p className="text-[15px] text-text-muted mb-4">Select the fabric that best suits your project.</p>
         )}
 
-        {/* Tab row - always visible */}
-        <div className="flex gap-2 flex-wrap mb-4">
+        {/* Tab row - responsive: 4 cols desktop, 2 cols tablet/mobile */}
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-2 mb-4">
           {FABRICS.map((fabric) => {
             const isSelected = config.fabricType === fabric.id;
             return (
@@ -125,7 +125,7 @@ export function MaterialFinishContent({
                     updateConfig({ fabricType: fabric.id, fabricColor: '' });
                   }
                 }}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-[14px] font-bold transition-all duration-200 min-h-[44px] border-2 ${
+                className={`relative flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[13px] xl:text-[14px] font-bold transition-all duration-200 min-h-[44px] border-2 whitespace-nowrap ${
                   isSelected
                     ? 'bg-brand-green text-white border-brand-green shadow-md'
                     : 'bg-white text-brand-green border-border-card hover:border-brand-green/50 hover:shadow-sm'

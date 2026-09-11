@@ -5,9 +5,10 @@ import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
 import { SaveProgressButton } from '../SaveProgressButton';
-import { ArrowRight, Info, RefreshCw } from 'lucide-react';
+import { ArrowRight, Info, RefreshCw, Ruler } from 'lucide-react';
 import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
 import { MiniSailDiagram } from './SailMeasurementVisuals';
+import { HowToMeasureGuide, HowToMeasureModal } from '../HowToMeasureGuide';
 import {
   getAlternativeUnit,
   getAlternativeUnitName,
@@ -245,8 +246,49 @@ export function FixedShapeDimensionsContent({
     }
   }, [highlightedMeasurement, shape]);
 
+  const [showMeasureGuide, setShowMeasureGuide] = React.useState(() => {
+    const key = `htmDismissed_fixed_${shape}`;
+    return !sessionStorage.getItem(key);
+  });
+  const [showMeasureModal, setShowMeasureModal] = React.useState(false);
+
+  if (showMeasureGuide) {
+    return (
+      <div className="p-4 sm:p-6">
+        <HowToMeasureGuide
+          measurementOption="exact"
+          shapeMode="fixed"
+          fixedShapeType={shape}
+          corners={shape === 'triangle' || shape === 'right-angle-triangle' ? 3 : 4}
+          onDismiss={() => {
+            sessionStorage.setItem(`htmDismissed_fixed_${shape}`, '1');
+            setShowMeasureGuide(false);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 sm:p-6">
+      {/* How to measure link */}
+      <button
+        type="button"
+        onClick={() => setShowMeasureModal(true)}
+        className="mb-4 flex items-center gap-1.5 text-[13px] font-semibold text-brand-mid hover:text-brand-green transition-colors underline decoration-dotted underline-offset-2"
+      >
+        <Ruler className="w-3.5 h-3.5" />
+        How to measure
+      </button>
+      <HowToMeasureModal
+        isOpen={showMeasureModal}
+        onClose={() => setShowMeasureModal(false)}
+        measurementOption="exact"
+        shapeMode="fixed"
+        fixedShapeType={shape}
+        corners={shape === 'triangle' || shape === 'right-angle-triangle' ? 3 : 4}
+      />
+
       {/* Unit indicator bar - matching custom dimensions step */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
