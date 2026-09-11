@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Ruler, ArrowRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, Ruler } from 'lucide-react';
 import { MiniSailDiagram, MiniSpaceDiagram } from './steps/SailMeasurementVisuals';
+import HowToMeasureAnimation from './HowToMeasureAnimation';
+import type { FixedVariant } from './HowToMeasureAnimation';
 
 type ShapeKey = 'triangle' | 'right-angle-triangle' | 'square' | 'rectangle';
 
@@ -9,7 +11,7 @@ interface HowToMeasureGuideProps {
   shapeMode?: 'custom' | 'fixed';
   fixedShapeType?: ShapeKey | null;
   corners: number;
-  onDismiss: () => void;
+  onDismiss?: () => void;
 }
 
 function shapeKeyFromCorners(corners: number): ShapeKey | undefined {
@@ -23,23 +25,13 @@ export function HowToMeasureGuide({
   shapeMode,
   fixedShapeType,
   corners,
-  onDismiss,
 }: HowToMeasureGuideProps) {
-  const [exiting, setExiting] = useState(false);
-
-  const handleDismiss = () => {
-    setExiting(true);
-    setTimeout(onDismiss, 300);
-  };
-
   const isSpaceMode = measurementOption === 'adjust';
   const shape: ShapeKey | undefined =
     shapeMode === 'fixed' && fixedShapeType ? fixedShapeType : shapeKeyFromCorners(corners);
 
   return (
-    <div
-      className={`transition-all duration-300 ${exiting ? 'opacity-0 translate-y-2' : 'opacity-100 translate-y-0'}`}
-    >
+    <div>
       <div className="bg-white border-2 border-border-card rounded-card overflow-hidden animate-[fadeUp_0.35s_ease-out]">
         {/* Header */}
         <div className="bg-brand-green px-5 py-4 flex items-center gap-3">
@@ -58,17 +50,7 @@ export function HowToMeasureGuide({
 
         {/* Body */}
         <div className="p-5">
-          <MeasureGuideBody isSpaceMode={isSpaceMode} shape={shape} />
-
-          {/* Dismiss button */}
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="w-full mt-5 flex items-center justify-center gap-2 bg-brand-green hover:bg-brand-green/90 text-white font-bold text-[15px] py-3.5 px-6 rounded-xl transition-all duration-200 min-h-[48px] shadow-md hover:shadow-lg"
-          >
-            <span>Got it, let's measure</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
+          <MeasureGuideBody isSpaceMode={isSpaceMode} shape={shape} shapeMode={shapeMode} corners={corners} />
         </div>
       </div>
     </div>
@@ -147,19 +129,48 @@ export function HowToMeasureModal({
 
         {/* Body */}
         <div className="p-5">
-          <MeasureGuideBody isSpaceMode={isSpaceMode} shape={shape} />
+          <MeasureGuideBody isSpaceMode={isSpaceMode} shape={shape} shapeMode={shapeMode} corners={corners} />
         </div>
       </div>
     </div>
   );
 }
 
-function MeasureGuideBody({ isSpaceMode, shape }: { isSpaceMode: boolean; shape?: ShapeKey }) {
+function resolveAnimationVariant(
+  shapeMode?: 'custom' | 'fixed',
+  fixedShape?: ShapeKey,
+  corners?: number
+): { variant: FixedVariant | 'custom'; corners: number } {
+  if (shapeMode === 'fixed' && fixedShape) {
+    const mapped = fixedShape === 'right-angle-triangle' ? 'right' : fixedShape;
+    return { variant: mapped as FixedVariant, corners: 0 };
+  }
+  return { variant: 'custom', corners: corners ?? 4 };
+}
+
+function MeasureGuideBody({
+  isSpaceMode,
+  shape,
+  shapeMode,
+  corners,
+}: {
+  isSpaceMode: boolean;
+  shape?: ShapeKey;
+  shapeMode?: 'custom' | 'fixed';
+  corners?: number;
+}) {
+  const anim = resolveAnimationVariant(shapeMode, shape, corners);
+
   return (
     <>
-      {/* Diagram */}
+      {/* Diagram -- animated on desktop, static on mobile */}
       <div className="flex justify-center mb-5">
-        <div className="bg-[#F4F3EF] rounded-xl p-6 border border-slate-200">
+        {/* Desktop: animated tape-measure */}
+        <div className="hidden md:block bg-[#F4F3EF] rounded-xl p-6 border border-slate-200 w-full max-w-sm">
+          <HowToMeasureAnimation variant={anim.variant} corners={anim.corners} />
+        </div>
+        {/* Mobile: small static diagram */}
+        <div className="md:hidden bg-[#F4F3EF] rounded-xl p-6 border border-slate-200">
           <div className="flex items-center justify-center" style={{ transform: 'scale(1.6)', transformOrigin: 'center' }}>
             {isSpaceMode ? (
               <MiniSpaceDiagram shape={shape} />
