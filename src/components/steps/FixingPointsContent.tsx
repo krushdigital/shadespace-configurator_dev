@@ -195,7 +195,7 @@ export function FixingPointsContent({
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
+                    <span className="w-[18px] h-[18px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
                       ?
                     </span>
                   </Tooltip>
@@ -290,7 +290,7 @@ export function FixingPointsContent({
                       </div>
                     }
                   >
-                    <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
+                    <span className="w-[18px] h-[18px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
                       ?
                     </span>
                   </Tooltip>

@@ -302,7 +302,7 @@ export function MaterialFinishContent({
                         </div>
                       }
                     >
-                      <span className="w-4.5 h-4.5 inline-flex items-center justify-center text-[10px] bg-brand-mid text-white rounded-full cursor-help hover:bg-brand-green transition-colors">?</span>
+                      <span className="w-[18px] h-[18px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">?</span>
                     </Tooltip>
                   </div>
                   <p className={`leading-[1.45] ${!config.fabricType ? 'text-[15px] line-clamp-3' : 'text-[14px] line-clamp-2'} ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>{fabric.description}</p>

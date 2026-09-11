@@ -98,11 +98,11 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="inline-flex items-center justify-center w-[30px] h-[30px] rounded-full border-2 border-border-card text-text-muted hover:text-brand-green hover:border-brand-green transition-colors duration-150 ml-2 flex-shrink-0"
+        className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-brand-green/15 text-brand-green hover:bg-brand-green hover:text-white transition-colors duration-150 ml-2 flex-shrink-0"
         aria-label="Help"
         type="button"
       >
-        {children || <span className="text-[14px] font-bold leading-none">?</span>}
+        {children || <span className="text-[11px] font-bold leading-none">?</span>}
       </button>
 
       {isOpen && createPortal(

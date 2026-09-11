@@ -940,7 +940,7 @@ export function DimensionsContent({
                         </div>
                       }
                     >
-                      <span className="w-4 h-4 inline-flex items-center justify-center text-xs bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
+                      <span className="w-[18px] h-[18px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
                         ?
                       </span>
                     </Tooltip>
@@ -1156,7 +1156,7 @@ export function DimensionsContent({
                             </div>
                           }
                         >
-                          <span className="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-blue-600 rounded-full cursor-help hover:bg-blue-700">
+                          <span className="w-[18px] h-[18px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
                             i
                           </span>
                         </Tooltip>
@@ -1222,7 +1222,7 @@ export function DimensionsContent({
                                         </div>
                                       }
                                     >
-                                      <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
+                                      <span className="w-[16px] h-[16px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
                                         ?
                                       </span>
                                     </Tooltip>
@@ -1251,7 +1251,7 @@ export function DimensionsContent({
                                     </div>
                                   }
                                 >
-                                  <span className="w-3.5 h-3.5 inline-flex items-center justify-center text-[10px] bg-brand-green text-white rounded-full cursor-help hover:bg-brand-mid">
+                                  <span className="w-[16px] h-[16px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
                                     ?
                                   </span>
                                 </Tooltip>
