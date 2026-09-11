@@ -214,6 +214,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   // Canvas ref for PDF generation
   const canvasRef = useRef<any>(null);
+  const measureGuideDismissRef = useRef<(() => void) | null>(null);
   // 3D viewer ref for screenshot capture
   const viewer3DRef = useRef<{ capture3DScreenshot: () => Promise<string | null> }>(null);
   const [is3DExpanded, setIs3DExpanded] = useState(false);
@@ -2882,6 +2883,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     highlightedCorner={highlightedCorner}
                     setHighlightedCorner={setHighlightedCorner}
                     canvasRef={canvasRef}
+                    measureGuideDismissRef={measureGuideDismissRef}
                     ref={openStep === 7 ? reviewContentRef : undefined}
                     fabrics={FABRICS}
                     loading={loading}
@@ -2936,7 +2938,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
           {/* Global sticky bottom bar */}
           <StepNavigationFooter
-            onNext={isReviewStep ? handleAddToCartFromConfigurator : nextStep}
+            onNext={isReviewStep ? handleAddToCartFromConfigurator : () => {
+              if (measureGuideDismissRef.current) {
+                measureGuideDismissRef.current();
+                return;
+              }
+              nextStep();
+            }}
             onPrev={prevStep}
             showBack={shouldShowBackButton(openStep)}
             nextLabel={footerNextLabel}
@@ -2964,7 +2972,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               <div className="w-[2px] h-8 rounded-full bg-border-card group-hover:bg-brand-green/30 group-active:bg-brand-green/50 transition-colors" />
             </div>
             <aside
-              className="hidden desktop:block flex-shrink-0 bg-white border-l border-border-card sticky top-0 h-screen overflow-y-auto"
+              className="hidden desktop:block flex-shrink-0 bg-white sticky top-0 h-screen overflow-y-auto"
               style={{ width: summaryWidth }}
             >
             <div className="p-[28px_24px] flex flex-col gap-4">

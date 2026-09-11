@@ -35,6 +35,7 @@ interface FixedShapeDimensionsContentProps {
   device3DTier?: 'high' | 'low' | 'none';
   setHighlightedMeasurement?: (measurement: string | null) => void;
   highlightedMeasurement?: string | null;
+  measureGuideDismissRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 export function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: string]: number }): { x: number; y: number }[] {
@@ -124,6 +125,7 @@ export function FixedShapeDimensionsContent({
   device3DTier,
   setHighlightedMeasurement,
   highlightedMeasurement,
+  measureGuideDismissRef: props_measureGuideDismissRef,
 }: FixedShapeDimensionsContentProps) {
   const shape = config.fixedShapeType;
   if (!shape) return null;
@@ -252,6 +254,17 @@ export function FixedShapeDimensionsContent({
   });
   const [showMeasureModal, setShowMeasureModal] = React.useState(false);
 
+  const dismissMeasureGuide = React.useCallback(() => {
+    sessionStorage.setItem(`htmDismissed_fixed_${shape}`, '1');
+    setShowMeasureGuide(false);
+  }, [shape]);
+
+  React.useEffect(() => {
+    if (!props_measureGuideDismissRef) return;
+    props_measureGuideDismissRef.current = showMeasureGuide ? dismissMeasureGuide : null;
+    return () => { props_measureGuideDismissRef.current = null; };
+  }, [showMeasureGuide, dismissMeasureGuide, props_measureGuideDismissRef]);
+
   if (showMeasureGuide) {
     return (
       <div className="p-4 sm:p-6">
@@ -260,10 +273,6 @@ export function FixedShapeDimensionsContent({
           shapeMode="fixed"
           fixedShapeType={shape}
           corners={shape === 'triangle' || shape === 'right-angle-triangle' ? 3 : 4}
-          onDismiss={() => {
-            sessionStorage.setItem(`htmDismissed_fixed_${shape}`, '1');
-            setShowMeasureGuide(false);
-          }}
         />
       </div>
     );

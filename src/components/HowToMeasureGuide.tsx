@@ -11,7 +11,6 @@ interface HowToMeasureGuideProps {
   shapeMode?: 'custom' | 'fixed';
   fixedShapeType?: ShapeKey | null;
   corners: number;
-  onDismiss?: () => void;
 }
 
 function shapeKeyFromCorners(corners: number): ShapeKey | undefined {

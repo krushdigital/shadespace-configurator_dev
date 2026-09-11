@@ -68,6 +68,7 @@ interface DimensionsContentProps {
   onMobileViewModeChange?: (mode: 'plan' | '3d') => void;
   onSketchApply?: (data: ParsedSketchData) => void;
   onSwitchToFixed?: (shape: import('../../types').FixedShapeType, keepMeasurements: boolean) => void;
+  measureGuideDismissRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 export function DimensionsContent({
@@ -107,6 +108,7 @@ export function DimensionsContent({
   onMobileViewModeChange,
   onSketchApply,
   onSwitchToFixed,
+  measureGuideDismissRef: props_measureGuideDismissRef,
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
@@ -477,6 +479,17 @@ export function DimensionsContent({
     }
   }, [config.measurements, config.corners, updateConfig]);
 
+  const dismissMeasureGuide = useCallback(() => {
+    sessionStorage.setItem(`htmDismissed_custom_${config.corners}`, '1');
+    setShowMeasureGuide(false);
+  }, [config.corners]);
+
+  useEffect(() => {
+    if (!props_measureGuideDismissRef) return;
+    props_measureGuideDismissRef.current = showMeasureGuide ? dismissMeasureGuide : null;
+    return () => { props_measureGuideDismissRef.current = null; };
+  }, [showMeasureGuide, dismissMeasureGuide, props_measureGuideDismissRef]);
+
   if (showMeasureGuide) {
     return (
       <div className="px-4 pt-4 pb-4 sm:px-6 sm:pt-6 sm:pb-6">
@@ -484,10 +497,6 @@ export function DimensionsContent({
           measurementOption={config.measurementOption}
           shapeMode={config.shapeMode}
           corners={config.corners}
-          onDismiss={() => {
-            sessionStorage.setItem(`htmDismissed_custom_${config.corners}`, '1');
-            setShowMeasureGuide(false);
-          }}
         />
       </div>
     );
