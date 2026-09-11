@@ -79,7 +79,7 @@ const App = () => {
       {configuratorRoot && route === 'setup-password' && createPortal(<SetupPassword />, configuratorRoot)}
       {configuratorRoot && route === 'admin' && createPortal(<Admin />, configuratorRoot)}
       {configuratorRoot && route === 'configurator' && createPortal(
-        <div className="min-h-screen bg-surface-panel">
+        <div className="min-h-screen bg-surface-panel" style={{ margin: 0 }}>
           <ShadeConfigurator />
         </div>,
         configuratorRoot

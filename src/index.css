@@ -60,6 +60,12 @@ html {
   scroll-padding-top: 100px;
 }
 
+/* Prevent white border flash around configurator from body/root backgrounds */
+#CONFIGURATOR_ROOT,
+#SHADESAIL_ROOT {
+  background-color: #f5f7f5;
+}
+
 /* Hide number input spinner arrows */
 .no-spin-arrows::-webkit-outer-spin-button,
 .no-spin-arrows::-webkit-inner-spin-button {

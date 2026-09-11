@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { getPortalRoot } from '../utils/appScope';
 
 interface HelpPopoverProps {
   content: React.ReactNode;
@@ -146,7 +147,7 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
             />
           )}
         </div>,
-        document.body
+        getPortalRoot()
       )}
     </>
   );
