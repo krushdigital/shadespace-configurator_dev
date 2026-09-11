@@ -259,20 +259,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     };
   }, [loading]);
 
-  // Default fabric selection for desktop only, mobile has no preselection
-  useEffect(() => {
-    const hasNoFabricSelected = !config.fabricType;
-    const isInitialLoad = config.step === 0 && !quoteReference;
 
-    // Only preselect on initial load, when no quote is being loaded, and no fabric is selected
-    if (hasNoFabricSelected && isInitialLoad && !isLoadingQuote) {
-      if (!isMobile && FABRICS.length > 0) {
-        const preferred = FABRICS.find(f => f.id === 'monotec370') ?? FABRICS[0];
-        updateConfig({ fabricType: preferred.id });
-      }
-      // Mobile: explicitly ensure no fabric is preselected (already empty, but being explicit)
-    }
-  }, [isMobile, quoteReference, isLoadingQuote, FABRICS]);
 
   const applyPricingSnapshot = (
     quote: QuoteData
