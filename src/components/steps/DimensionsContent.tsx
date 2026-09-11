@@ -544,17 +544,17 @@ export function DimensionsContent({
 
       {/* Measurement Context Banner */}
       {config.measurementOption === 'adjust' && (
-        <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg">
+        <div className="mb-4 p-3 sm:mb-6 sm:p-4 bg-emerald-50 border-l-4 border-emerald-600 rounded-lg">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex items-start gap-3 flex-1 min-w-0">
-              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-6 h-6 text-emerald-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <div>
-                <h5 className="text-base font-bold text-blue-900 mb-1">
+                <h5 className="text-base font-bold text-emerald-900 mb-1">
                   Measure Between Your Fixing Points
                 </h5>
-                <p className="text-sm text-blue-800 leading-relaxed">
+                <p className="text-sm text-emerald-800 leading-relaxed">
                   Enter the distance <strong>from fixing point to fixing point</strong> (where the shade will attach). We'll calculate the perfect sail size to fit your space, accounting for tensioning hardware.
                 </p>
               </div>
@@ -946,7 +946,7 @@ export function DimensionsContent({
                       <h5 className={`text-xs sm:text-sm md:text-base font-medium ${isApproximate ? 'text-amber-900' : 'text-brand-green'}`}>
                         Diagonal Measurements {isApproximate && '- Recommended for Accurate Preview'}
                       </h5>
-                      <span className="text-[10px] sm:text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
+                      <span className="text-[10px] sm:text-xs bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-medium self-start mt-1">
                         Optional Now - Required at Checkout
                       </span>
                     </div>
@@ -1120,7 +1120,7 @@ export function DimensionsContent({
           if (confidence.status === 'pending') return null;
           const colorMap = {
             excellent: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', icon: 'text-emerald-600', bar: 'bg-emerald-500' },
-            good: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', icon: 'text-blue-600', bar: 'bg-blue-500' },
+            good: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-800', icon: 'text-emerald-600', bar: 'bg-emerald-500' },
             warning: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-800', icon: 'text-amber-600', bar: 'bg-amber-500' },
             error: { bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', icon: 'text-red-600', bar: 'bg-red-500' },
             pending: { bg: 'bg-surface-soft', border: 'border-border-card', text: 'text-text-muted', icon: 'text-slate-400', bar: 'bg-slate-300' }
@@ -1305,7 +1305,7 @@ export function DimensionsContent({
                                 </Tooltip>
                               </div>
                               <div
-                                className="flex flex-col gap-1.5"
+                                className="flex flex-row gap-1.5"
                                 {...(validationErrors[`attachmentType_${index}`] ? { 'data-error': `attachmentType_${index}` } : {})}
                               >
                                 <button

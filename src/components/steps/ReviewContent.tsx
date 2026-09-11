@@ -571,7 +571,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           if (confidence.status === 'pending') return null;
           const statusColors: Record<string, string> = {
             excellent: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-            good: 'bg-blue-50 border-blue-200 text-blue-800',
+            good: 'bg-emerald-50 border-emerald-200 text-emerald-800',
             warning: 'bg-amber-50 border-amber-200 text-amber-800',
             error: 'bg-red-50 border-red-200 text-red-800',
             pending: 'bg-surface-soft border-border-card text-text-muted'

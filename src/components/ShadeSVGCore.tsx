@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useMemo, useCallback, useId, forwar
 import { ConfiguratorState, Point } from '../types';
 import { formatMeasurement, getShapeAccuracy, ShapeAccuracy, getDiagonalKeysForCorners } from '../utils/geometry';
 import { getLiveFabrics } from '../hooks/useFabricCatalog';
+import { getFabricHexColor } from '../utils/fabricColorMap';
 
 interface ShadeSVGCoreProps {
   config: ConfiguratorState;
@@ -47,6 +48,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
   highlightedEdgeKeys
 }, ref) => {
   const [fabricImageBase64, setFabricImageBase64] = useState<string | null>(null);
+  const fabricHexColor = useMemo(() => getFabricHexColor(config.fabricColor), [config.fabricColor]);
 
   const rawUid = useId();
   const uid = rawUid.replace(/:/g, '');
@@ -383,11 +385,9 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
       {sailAttachmentPoints.length > 2 && (
         <path
           d={generateSailPath(sailAttachmentPoints)}
-          fill={fabricImageBase64
-            ? `url(#${fabricTextureId})`
-            : forPdfCapture
-              ? getSelectedColor()
-              : `${getSelectedColor()}20`
+          fill={forPdfCapture
+            ? fabricHexColor
+            : `${fabricHexColor}40`
           }
           stroke={getSelectedColor()}
           strokeWidth="2"

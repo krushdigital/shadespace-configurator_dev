@@ -2745,7 +2745,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   // Compute footer state per step
   const footerNextLabel = isReviewStep
     ? `Add to cart${calculations.totalPrice > 0 ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
-    : `Continue \u2192 ${getNextStepTitle(openStep)}`;
+    : `Continue > ${getNextStepTitle(openStep)}`;
 
   const footerDisableNext = (() => {
     switch (openStep) {

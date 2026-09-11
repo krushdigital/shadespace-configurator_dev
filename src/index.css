@@ -60,10 +60,14 @@ html {
   scroll-padding-top: 100px;
 }
 
-/* Prevent white border flash around configurator from body/root backgrounds */
+/* Prevent white border around configurator from body/root backgrounds */
+body,
 #CONFIGURATOR_ROOT,
-#SHADESAIL_ROOT {
+#SHADESAIL_ROOT,
+#SHADE_SPACE {
   background-color: #f5f7f5;
+  margin: 0;
+  padding: 0;
 }
 
 /* Hide number input spinner arrows */
