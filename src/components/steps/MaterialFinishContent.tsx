@@ -111,48 +111,50 @@ export function MaterialFinishContent({
           <p className="text-[15px] text-text-muted mb-4">Select the fabric that best suits your project.</p>
         )}
 
-        {/* Fabric type tabs - always 2x2 grid (panel max-width is 760px) */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {FABRICS.map((fabric) => {
-            const isSelected = config.fabricType === fabric.id;
-            return (
-              <button
-                key={fabric.id}
-                type="button"
-                onClick={() => {
-                  if (!isSelected) {
-                    analytics.fabricTypeSelected(fabric.id, fabric.label);
-                    updateConfig({ fabricType: fabric.id, fabricColor: '' });
-                  }
-                }}
-                className={`relative flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-200 min-h-[56px] border-2 ${
-                  isSelected
-                    ? 'bg-brand-green text-white border-brand-green shadow-md'
-                    : 'bg-white text-brand-green border-border-card hover:border-brand-green/50 hover:shadow-sm'
-                }`}
-              >
-                <span className="flex items-center gap-1.5">
-                  {isSelected && (
-                    <span className="w-4 h-4 rounded-full bg-brand-lime text-brand-green text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">
-                      &#10003;
+        {/* Fabric type tabs - only shown after a fabric has been selected */}
+        {selectedFabric && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {FABRICS.map((fabric) => {
+              const isSelected = config.fabricType === fabric.id;
+              return (
+                <button
+                  key={fabric.id}
+                  type="button"
+                  onClick={() => {
+                    if (!isSelected) {
+                      analytics.fabricTypeSelected(fabric.id, fabric.label);
+                      updateConfig({ fabricType: fabric.id, fabricColor: '' });
+                    }
+                  }}
+                  className={`relative flex flex-col items-center justify-center gap-1 px-2 py-2.5 rounded-xl text-[13px] font-bold transition-all duration-200 min-h-[56px] border-2 ${
+                    isSelected
+                      ? 'bg-brand-green text-white border-brand-green shadow-md'
+                      : 'bg-white text-brand-green border-border-card hover:border-brand-green/50 hover:shadow-sm'
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    {isSelected && (
+                      <span className="w-4 h-4 rounded-full bg-brand-lime text-brand-green text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">
+                        &#10003;
+                      </span>
+                    )}
+                    <span>{fabric.label}</span>
+                  </span>
+                  {(fabric.isFireRetardant || fabric.badgeText) && (
+                    <span className="flex items-center gap-1 flex-wrap justify-center">
+                      {fabric.isFireRetardant && (
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-orange-400 text-white' : 'bg-orange-500 text-white'}`}>FR</span>
+                      )}
+                      {fabric.badgeText && (
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-brand-lime/30 text-brand-lime' : 'bg-brand-lime text-brand-green'}`}>{fabric.badgeText}</span>
+                      )}
                     </span>
                   )}
-                  <span>{fabric.label}</span>
-                </span>
-                {(fabric.isFireRetardant || fabric.badgeText) && (
-                  <span className="flex items-center gap-1 flex-wrap justify-center">
-                    {fabric.isFireRetardant && (
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${isSelected ? 'bg-orange-400 text-white' : 'bg-orange-500 text-white'}`}>FR</span>
-                    )}
-                    {fabric.badgeText && (
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-brand-lime/30 text-brand-lime' : 'bg-brand-lime text-brand-green'}`}>{fabric.badgeText}</span>
-                    )}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Detail card for the selected fabric */}
         {selectedFabric && (

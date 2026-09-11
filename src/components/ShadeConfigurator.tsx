@@ -48,6 +48,7 @@ import { supabase } from '../lib/supabase';
 import { uploadToQuoteAssets } from '../utils/storageUpload';
 import { renderSailPngBlob } from '../utils/renderSvgOffscreen';
 import { Maximize2 } from 'lucide-react';
+import SailBuildPlaceholder from './SailBuildPlaceholder';
 import { canRender3D, Device3DTier, supports3DForCorners } from '../utils/canRender3D';
 import { ParsedSketchData } from '../utils/sketchParser';
 import type { AdminProfile } from '../hooks/useAdminProfile';
@@ -3106,12 +3107,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                               </div>
                             );
                           })() : (
-                            <div className="bg-surface-panel rounded-card p-6 text-center">
-                              <div className="text-[40px] mb-2 opacity-30">&#9651;</div>
-                              <p className="text-[14px] text-text-muted leading-relaxed">
-                                Your sail will build visually as you make selections throughout each step.
-                              </p>
-                            </div>
+                            <SailBuildPlaceholder />
                           )}
                         </div>
 
