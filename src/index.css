@@ -64,9 +64,9 @@ body {
   border: 0 !important;
   outline: 0 !important;
   box-sizing: border-box !important;
-  overflow-x: hidden !important;
+  overflow: hidden !important;
   width: 100% !important;
-  min-height: 100% !important;
+  height: 100% !important;
 }
 
 #CONFIGURATOR_ROOT,
@@ -79,6 +79,8 @@ body {
   border: 0 !important;
   outline: 0 !important;
   box-sizing: border-box !important;
+  height: 100% !important;
+  overflow: hidden !important;
 }
 
 html {
@@ -104,9 +106,10 @@ html {
 .main-content:has(#SHADE_SPACE),
 .page-width:has(#CONFIGURATOR_ROOT),
 .shopify-section:has(#CONFIGURATOR_ROOT) {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
   max-width: 100% !important;
+  height: 100% !important;
 }
 
 /* Hide number input spinner arrows */
