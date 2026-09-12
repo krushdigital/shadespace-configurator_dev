@@ -69,9 +69,23 @@ body,
   box-sizing: border-box !important;
 }
 
+html,
+body {
+  overflow-x: hidden !important;
+}
+
 html {
   scroll-padding-top: 100px;
-  overflow-x: hidden;
+}
+
+/* React mounts into #SHADESAIL_ROOT but portals all content out to
+   #CONFIGURATOR_ROOT, so this div is visually empty. Collapse it so
+   it cannot create a gap above the configurator. */
+#SHADESAIL_ROOT {
+  height: 0 !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+  font-size: 0 !important;
 }
 
 /* Override Shopify theme parent containers that add padding around the embed */
