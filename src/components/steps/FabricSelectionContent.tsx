@@ -129,17 +129,8 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     &#10003;
                   </span>
                 )}
-                <div className="text-center flex flex-col h-full">
-                  <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2 min-w-0">
-                    <h5 className="font-semibold text-brand-green text-sm md:text-[15px] lg:text-sm leading-tight break-words">
-                      {fabric.label}
-                    </h5>
-                    {fabric.isFireRetardant && (
-                      <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-md">
-                        FR
-                      </span>
-                    )}
-                    <Tooltip
+                <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
+                  <Tooltip
                       onOpen={() => analytics.fabricDetailsViewed(fabric.id)}
                       content={
                         <div className="max-w-lg">
@@ -253,6 +244,17 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         ?
                       </span>
                     </Tooltip>
+                </div>
+                <div className="text-center flex flex-col h-full">
+                  <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2 min-w-0">
+                    <h5 className="font-semibold text-brand-green text-sm md:text-[15px] lg:text-sm leading-tight break-words">
+                      {fabric.label}
+                    </h5>
+                    {fabric.isFireRetardant && (
+                      <span className="bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-md">
+                        FR
+                      </span>
+                    )}
                   </div>
                   <div className="mb-2">
                     {fabric.badgeText && (
