@@ -70,6 +70,7 @@ interface DimensionsContentProps {
   onSwitchToFixed?: (shape: import('../../types').FixedShapeType, keepMeasurements: boolean) => void;
   measureGuideDismissRef?: React.MutableRefObject<(() => void) | null>;
   onMeasureGuideVisibilityChange?: (visible: boolean) => void;
+  skipMeasureGuide?: React.MutableRefObject<boolean>;
 }
 
 export function DimensionsContent({
@@ -111,6 +112,7 @@ export function DimensionsContent({
   onSwitchToFixed,
   measureGuideDismissRef: props_measureGuideDismissRef,
   onMeasureGuideVisibilityChange,
+  skipMeasureGuide: skipMeasureGuideRef,
 }: DimensionsContentProps) {
   const heightRequirement = getHeightRequirement(config.corners, config.measurementOption);
   const heightsAreProvided = areHeightsProvided(config.fixingHeights, config.corners);
@@ -128,7 +130,13 @@ export function DimensionsContent({
   const activeEditFieldRef = React.useRef<string | null>(null);
   const pendingGeometryErrorRef = React.useRef<string | null>(null);
   const [showSwitchModal, setShowSwitchModal] = useState(false);
-  const [showMeasureGuide, setShowMeasureGuide] = useState(true);
+  const [showMeasureGuide, setShowMeasureGuide] = useState(() => {
+    if (skipMeasureGuideRef?.current) {
+      skipMeasureGuideRef.current = false;
+      return false;
+    }
+    return true;
+  });
   const [showMeasureModal, setShowMeasureModal] = useState(false);
   const matchingFixedShape = React.useMemo(
     () => config.shapeMode === 'custom' ? detectMatchingFixedShape(config.measurements, config.corners) : null,

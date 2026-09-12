@@ -98,7 +98,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
   const [dismissedTypoSuggestions, setDismissedTypoSuggestions] = useState<Set<string>>(new Set());
   const [isMobile, setIsMobile] = useState<boolean>(typeof window !== 'undefined' && window.innerWidth < 900);
-  const [summaryWidth, setSummaryWidth] = useState(390);
+  const [summaryWidth, setSummaryWidth] = useState(() => Math.round(window.innerWidth / 3));
   const isDraggingRef = useRef(false);
   const dragStartXRef = useRef(0);
   const dragStartWidthRef = useRef(390);
@@ -216,6 +216,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const canvasRef = useRef<any>(null);
   const measureGuideDismissRef = useRef<(() => void) | null>(null);
   const [isMeasureGuideVisible, setIsMeasureGuideVisible] = useState(false);
+  const skipMeasureGuideRef = useRef(false);
   // 3D viewer ref for screenshot capture
   const viewer3DRef = useRef<{ capture3DScreenshot: () => Promise<string | null> }>(null);
   const [is3DExpanded, setIs3DExpanded] = useState(false);
@@ -2737,6 +2738,9 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     if (step && step.originalIndex <= config.step && step.originalIndex !== openStep) {
       const centeredPoints = centerShape(config.points);
       updateConfig({ points: centeredPoints });
+      if (step.originalIndex === 2 || step.originalIndex === 3) {
+        skipMeasureGuideRef.current = true;
+      }
       setOpenStep(step.originalIndex);
       setTimeout(() => {
         smoothScrollToStep(step.originalIndex);
@@ -2893,6 +2897,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     canvasRef={canvasRef}
                     measureGuideDismissRef={measureGuideDismissRef}
                     onMeasureGuideVisibilityChange={setIsMeasureGuideVisible}
+                    skipMeasureGuide={skipMeasureGuideRef}
                     ref={openStep === 7 ? reviewContentRef : undefined}
                     fabrics={FABRICS}
                     loading={loading}

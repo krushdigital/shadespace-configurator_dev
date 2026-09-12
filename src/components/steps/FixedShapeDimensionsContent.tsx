@@ -37,6 +37,7 @@ interface FixedShapeDimensionsContentProps {
   highlightedMeasurement?: string | null;
   measureGuideDismissRef?: React.MutableRefObject<(() => void) | null>;
   onMeasureGuideVisibilityChange?: (visible: boolean) => void;
+  skipMeasureGuide?: React.MutableRefObject<boolean>;
 }
 
 export function generateFixedShapePoints(shape: FixedShapeType, measurements: { [key: string]: number }): { x: number; y: number }[] {
@@ -128,6 +129,7 @@ export function FixedShapeDimensionsContent({
   highlightedMeasurement,
   measureGuideDismissRef: props_measureGuideDismissRef,
   onMeasureGuideVisibilityChange,
+  skipMeasureGuide: skipMeasureGuideRef,
 }: FixedShapeDimensionsContentProps) {
   const shape = config.fixedShapeType;
   if (!shape) return null;
@@ -256,7 +258,13 @@ export function FixedShapeDimensionsContent({
     }
   }, [highlightedMeasurement, shape]);
 
-  const [showMeasureGuide, setShowMeasureGuide] = React.useState(true);
+  const [showMeasureGuide, setShowMeasureGuide] = React.useState(() => {
+    if (skipMeasureGuideRef?.current) {
+      skipMeasureGuideRef.current = false;
+      return false;
+    }
+    return true;
+  });
   const [showMeasureModal, setShowMeasureModal] = React.useState(false);
 
   const dismissMeasureGuide = React.useCallback(() => {

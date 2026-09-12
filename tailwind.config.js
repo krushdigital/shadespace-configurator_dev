@@ -37,7 +37,7 @@ export default {
         btn: '14px',
       },
       spacing: {
-        rail: '250px',
+        rail: '16.667vw',
         summary: '390px',
       },
       screens: {
