@@ -55,9 +55,10 @@ export function MobilePricingBar({
 
   return (
     <div
-      className={`desktop:hidden fixed bottom-0 left-0 right-0 z-30 transition-transform duration-300 ${
+      className={`desktop:hidden fixed bottom-0 left-0 z-30 transition-transform duration-300 ${
         isHidden ? 'translate-y-full' : 'translate-y-0'
       } ${isNewQuote ? 'animate-slideUpBounce' : ''}`}
+      style={{ width: '100vw' }}
     >
       <div className="bg-brand-green shadow-2xl">
         <div className="px-4 py-3">

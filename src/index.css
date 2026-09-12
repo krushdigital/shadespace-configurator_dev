@@ -109,6 +109,16 @@ html {
   max-width: 100% !important;
 }
 
+/* Full-bleed: break out of any Shopify parent container to span 100vw */
+.configurator-fullbleed {
+  width: 100vw !important;
+  position: relative !important;
+  left: 50% !important;
+  right: 50% !important;
+  margin-left: -50vw !important;
+  margin-right: -50vw !important;
+}
+
 /* Hide number input spinner arrows */
 .no-spin-arrows::-webkit-outer-spin-button,
 .no-spin-arrows::-webkit-inner-spin-button {
