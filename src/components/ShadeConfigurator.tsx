@@ -2989,7 +2989,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               className="hidden desktop:block flex-shrink-0 bg-white sticky top-0 h-screen overflow-y-auto"
               style={{ width: summaryWidth }}
             >
-            <div className="p-[28px_24px] flex flex-col gap-4">
+            <div className="p-[28px_24px] flex flex-col gap-4 min-h-full">
                     {/* Sail diagram viewer - always shown */}
                     {isReviewStep ? (
                       <PriceSummaryDisplay
