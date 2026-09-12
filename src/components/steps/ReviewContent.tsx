@@ -9,7 +9,7 @@ import { DeliveryEstimate } from '../DeliveryEstimate';
 import { InteractiveMeasurementCanvas, InteractiveMeasurementCanvasRef } from '../InteractiveMeasurementCanvas';
 import { AccordionItem } from '../ui/AccordionItem';
 import { useFabricCatalog } from '../../hooks/useFabricCatalog';
-import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, formatDualMeasurement, getDualMeasurementValues, getDiagonalKeysForCorners, isHeightRequiredForCheckout, areHeightsProvided, computeShapeConfidence } from '../../utils/geometry';
+import { convertMmToUnit, formatMeasurement, formatArea, validatePolygonGeometry, getDiagonalKeysForCorners, computeShapeConfidence } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { supports3DForCorners } from '../../utils/canRender3D';
 import { ConfigurationChecklist, ConfigurationChecklistRef } from '../ConfigurationChecklist';
@@ -17,7 +17,6 @@ import { useHardwareCatalog, getDefaultPack, getLiveHardwarePrice } from '../../
 import { StandardPackPreview } from '../StandardPackPreview';
 import { getPricingForCurrency, PricingSetting } from '../../hooks/usePricingSettings';
 import { Box, Layers, Check } from 'lucide-react';
-import { renderSailPngBlob } from '../../utils/renderSvgOffscreen';
 
 const ShadeSail3DViewer = lazy(() => import('../ShadeSail3DViewer'));
 
@@ -55,12 +54,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   config,
   updateConfig,
   calculations,
-  nextStepTitle = '',
-  showBackButton = false,
   onPrev,
   agreedToAcknowledgments,
   onToggleAgreement,
-  handleAddToCart,
   allDiagonalsEntered,
   allAcknowledgmentsChecked,
   canAddToCart,
@@ -68,8 +64,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   isMobile = false,
   canvasRef,
   loading,
-  setLoading,
-  setShowLoadingOverlay,
   onSaveQuote,
   pricingSettingsMap,
   viewMode: externalViewMode,
@@ -84,10 +78,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const reviewViewMode = review3DAvailable ? rawReviewViewMode : 'plan';
   const setReviewViewMode = onViewModeChange ?? setInternalViewMode;
   const [showValidationFeedback, setShowValidationFeedback] = useState(false);
-  const [buttonShake, setButtonShake] = useState(false);
   const checklistRef = useRef<ConfigurationChecklistRef>(null);
   const acknowledgementsCardRef = useRef<HTMLDivElement>(null);
-  const addToCartButtonRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
 
   const isFixedShape = config.shapeMode === 'fixed';
@@ -240,296 +232,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
     width?: number;
     height?: number;
   }
-
-   const uploadImageToShopify = async (blob: Blob, filename: string): Promise<string | null> => {
-    try {
-      const formData = new FormData();
-      formData.append('file', blob, filename);
-
-      const response = await fetch('/apps/shade_space/api/v1/public/file/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image to Shopify');
-      }
-
-      const result = await response.json();
-
-      if (result.success && result.url) {
-        return result.url;
-      } else {
-        console.error('Shopify upload failed:', result.error);
-        return null;
-      }
-    } catch (error) {
-      console.error('Error uploading image to Shopify:', error);
-      return null;
-    }
-  };
-
-  const handleAttemptAddToCart = async () => {
-    if (!canAddToCart) {
-      // Immediately trigger validation feedback
-      setShowValidationFeedback(true);
-
-      // Shake the button to provide immediate feedback
-      setButtonShake(true);
-      setTimeout(() => setButtonShake(false), 500);
-
-      // Use setTimeout to ensure state updates are processed and shake animation starts
-      setTimeout(() => {
-        let targetElement: HTMLElement | null = null;
-
-        // Identify which section needs attention - prioritize in order of workflow
-        // 1. Check edge measurements first (these are in a previous step, so redirect there)
-        if (!hasAllEdgeMeasurements) {
-          // For edge measurements, we should redirect to the dimensions step
-          // But since we're on review, we'll scroll to the checklist which shows the issue
-          targetElement = checklistRef.current?.getDiagonalSectionElement()?.parentElement || null;
-        }
-        // 2. Check diagonal measurements
-        else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-          // On desktop: Expand the diagonal section programmatically
-          // On mobile: Just highlight it (no expansion available)
-          checklistRef.current?.expandDiagonals();
-          targetElement = checklistRef.current?.getDiagonalSectionElement() || null;
-        }
-        // 3. Check height measurements (for 5+ corner sails)
-        else if (isHeightRequiredForCheckout(config.corners, config.measurementOption) &&
-                 !areHeightsProvided(config.fixingHeights, config.corners)) {
-          // Navigate back to dimensions step to enter heights
-          onPrev({ navigateToHeights: true });
-          return;
-        }
-        // 3b. Check attachment types (required at checkout for 5+ corners, or 4 corners with heights provided)
-        else if (
-          (config.corners >= 5 || (config.corners === 4 && config.heightsProvidedByUser)) &&
-          config.fixingTypes &&
-          Array.from({ length: config.corners }, (_, i) => config.fixingTypes?.[i]).some(t => t !== 'post' && t !== 'building')
-        ) {
-          onPrev({ navigateToHeights: true });
-          return;
-        }
-        // 4. Check acknowledgments
-        else if (!allAcknowledgmentsChecked) {
-          targetElement = acknowledgementsCardRef.current;
-        }
-
-        if (targetElement) {
-          // Calculate scroll position with proper offsets for mobile and desktop
-          const isMobileView = window.innerWidth < 1024;
-          const headerOffset = isMobileView ? 100 : 120;
-          const viewportOffset = window.innerHeight * 0.15;
-          const elementPosition = targetElement.getBoundingClientRect().top;
-          const offsetPosition = elementPosition + window.scrollY - headerOffset - viewportOffset;
-
-          // Scroll to the incomplete section
-          window.scrollTo({
-            top: Math.max(0, offsetPosition),
-            behavior: 'smooth'
-          });
-
-          // Apply pulse animation after scroll completes
-          setTimeout(() => {
-            // For edge measurements (redirect case) or diagonals, the checklist handles highlighting
-            if (!hasAllEdgeMeasurements) {
-              // Highlight the entire checklist card
-              const checklistCard = targetElement;
-              if (checklistCard) {
-                checklistCard.classList.add('pulse-error');
-                setTimeout(() => {
-                  checklistCard.classList.remove('pulse-error');
-                }, 2400);
-              }
-            } else if (!allDiagonalsEntered && shouldShowDiagonalInputSection) {
-              // Diagonal section handles its own highlighting via the ref
-              // Additional pulse for emphasis on mobile
-              if (isMobile && targetElement) {
-                targetElement.classList.add('pulse-error');
-                setTimeout(() => {
-                  targetElement.classList.remove('pulse-error');
-                }, 2400);
-              }
-            } else if (isHeightRequiredForCheckout(config.corners, config.measurementOption) &&
-                       !areHeightsProvided(config.fixingHeights, config.corners)) {
-              // Heights section handles its own highlighting via the ref
-              // Additional pulse for emphasis on mobile
-              if (isMobile && targetElement) {
-                targetElement.classList.add('pulse-error');
-                setTimeout(() => {
-                  targetElement.classList.remove('pulse-error');
-                }, 2400);
-              }
-            } else if (!allAcknowledgmentsChecked) {
-              // Highlight acknowledgments section
-              targetElement?.classList.add('pulse-error');
-              setTimeout(() => {
-                targetElement?.classList.remove('pulse-error');
-              }, 2400);
-            }
-          }, 600);
-        }
-      }, 100);
-
-      // Do not proceed with cart addition
-      return;
-    } else {
-      setShowValidationFeedback(false);
-
-      // Render the rich configurator diagram (ShadeSVGCore) so the order's
-      // technical drawing matches the in-app quote PDF.
-      let canvasImageUrl = null;
-
-      try {
-        const canvasImageBlob = await renderSailPngBlob(config, 800, 800);
-        if (canvasImageBlob) {
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const filename = `shade-sail-${config.corners}corner-${timestamp}.png`;
-
-          canvasImageUrl = await uploadImageToShopify(canvasImageBlob, filename);
-
-          if (!canvasImageUrl) {
-            console.warn('Failed to upload canvas image to Shopify, proceeding without image');
-          }
-        }
-      } catch (error) {
-        console.error('Error processing canvas image:', error);
-      }
-
-      // FIXED: Properly calculate edge measurements
-      const edgeMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-      for (let i = 0; i < config.corners; i++) {
-        const nextIndex = (i + 1) % config.corners;
-        const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-        const measurement = config.measurements[edgeKey];
-
-        if (measurement && measurement > 0) {
-          edgeMeasurements[edgeKey] = {
-            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-            formatted: formatMeasurement(measurement, config.unit)
-          };
-        }
-      }
-
-      const diagonalMeasurementsObj: { [key: string]: { unit: string; formatted: string } } = {};
-
-      // Use the same diagonal keys that are displayed in the UI
-      const diagonalKeys = getDiagonalKeysForCorners(config.corners);
-
-      diagonalKeys.forEach((diagonalKey) => {
-        const measurement = config.measurements[diagonalKey];
-        if (measurement && measurement > 0) {
-          diagonalMeasurementsObj[diagonalKey] = {
-            unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-            formatted: formatMeasurement(measurement, config.unit)
-          };
-        }
-      });
-
-
-      // Only include anchor point measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-      const anchorPointMeasurements: { [key: string]: { unit: string; formatted: string } } = {};
-      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-        config.fixingHeights.forEach((height, index) => {
-          if (height && height > 0) {
-            const corner = String.fromCharCode(65 + index);
-            anchorPointMeasurements[corner] = {
-              unit: config.unit === 'imperial' ? 'inches' : 'millimeters',
-              formatted: formatMeasurement(height, config.unit)
-            };
-          }
-        });
-      }
-
-      // Create backend-only dual measurement objects for Shopify admin
-      const backendEdgeMeasurements: Record<string, string> = {};
-      for (let i = 0; i < config.corners; i++) {
-        const nextIndex = (i + 1) % config.corners;
-        const edgeKey = `${String.fromCharCode(65 + i)}${String.fromCharCode(65 + nextIndex)}`;
-        const measurement = config.measurements[edgeKey];
-        if (measurement && measurement > 0) {
-          backendEdgeMeasurements[edgeKey] = formatDualMeasurement(measurement, config.unit);
-        }
-      }
-
-      const backendDiagonalMeasurements: Record<string, string> = {};
-      // Reuse diagonalKeys already declared above
-      diagonalKeys.forEach(key => {
-        const measurement = config.measurements[key];
-        if (measurement && measurement > 0) {
-          backendDiagonalMeasurements[key] = formatDualMeasurement(measurement, config.unit);
-        }
-      });
-
-      // Only include backend anchor measurements if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-      const backendAnchorMeasurements: Record<string, string> = {};
-      if (config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && config.fixingHeights && config.fixingHeights.length > 0) {
-        config.fixingHeights.forEach((height, index) => {
-          const corner = String.fromCharCode(65 + index);
-          if (height && height > 0) {
-            backendAnchorMeasurements[corner] = formatDualMeasurement(height, config.unit);
-          }
-        });
-      }
-
-      const hardwareIncluded = config.measurementOption === 'adjust';
-      const hardwareText = hardwareIncluded ? 'Included' : 'Not Included';
-
-      if (canvasImageUrl) {
-        const orderData = {
-          fabricType: config.fabricType,
-          fabricColor: config.fabricColor,
-          edgeType: config.edgeType,
-          corners: config.corners,
-          unit: config.unit,
-          currency: config.currency,
-          measurementOption: config.measurementOption,
-          hardware_included: hardwareText,
-          measurements: config.measurements,
-          area: calculations.area,
-          perimeter: calculations.perimeter,
-          totalPrice: calculations.totalPrice,
-          totalWeightGrams: calculations.totalWeightGrams,
-          selectedFabric: selectedFabric,
-          selectedColor: selectedColor,
-          canvasImageUrl: canvasImageUrl,
-          warranty: selectedFabric?.warrantyYears || "",
-          // Only include fixing heights data if user provided them AND NOT a 3-corner sail AND measurementOption is 'adjust'
-          ...(config.corners !== 3 && config.measurementOption === 'adjust' && config.heightsProvidedByUser && {
-            fixingHeights: config.fixingHeights,
-            fixingTypes: config.fixingTypes,
-          }),
-          // Add the properly calculated measurements
-          edgeMeasurements: edgeMeasurements,
-          diagonalMeasurementsObj: diagonalMeasurementsObj,
-          anchorPointMeasurements: anchorPointMeasurements,
-          // Additional metadata
-          Fabric_Type: selectedFabric?.isFireRetardant && selectedColor && !selectedColor.isFireRetardant ?
-            'Not FR Certified' : selectedFabric?.label,
-          Shade_Factor: selectedColor?.shadeFactor,
-          Edge_Type: config.edgeType === 'webbing' ? 'Webbing Reinforced' : 'Cabled Edge',
-          Thread: 'Sewn with SolarFix\u00AE PTFE thread',
-          Wire_Thickness: calculations?.wireThickness !== undefined
-            ? config.unit === 'imperial'
-              ? `${(calculations.wireThickness * 0.0393701).toFixed(2)}" (${calculations.wireThickness}mm)`
-              : `${calculations.wireThickness}mm`
-            : 'N/A',
-          Area: formatArea(calculations.area * 1000000, config.unit),
-          Perimeter: formatMeasurement(calculations.perimeter * 1000, config.unit),
-          createdAt: new Date().toISOString(),
-          // Add dual measurements for backend/fulfillment
-          backendEdgeMeasurements,
-          backendDiagonalMeasurements,
-          backendAnchorMeasurements,
-          originalUnit: config.unit
-        };
-
-        handleAddToCart(orderData);
-      }
-    }
-  };
 
   return (
     <div className="p-6">
@@ -1474,20 +1176,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
 
 
-        {/* Action Buttons - Full width on desktop */}
+        {/* Save & Email / Admin buttons only - Back and Add to Cart handled by sticky footer */}
+        {((!adminMode && isMobile && onSaveQuote) || (adminMode && onSaveQuote)) && (
         <div className="flex flex-col gap-3 pt-4 border-t border-border-card mt-6">
-          {/* Back button - Full width */}
-          {showBackButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPrev}
-              className="w-full"
-            >
-              Back
-            </Button>
-          )}
-
           {/* Save & Email Quote button - Full width (mobile - review step) */}
           {!adminMode && isMobile && onSaveQuote && (
             <Button
@@ -1506,41 +1197,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </Button>
           )}
 
-          {/* Add to Cart button - Full width (hidden in admin mode) */}
-          {!adminMode && (
-          <Button
-            ref={addToCartButtonRef}
-            size={isMobile ? "lg" : "md"}
-            className={`w-full transition-all duration-200 ${buttonShake ? 'shake' : ''} ${
-              allAcknowledgmentsChecked && canAddToCart && !loading ? 'pulsate-cta' : ''
-            } ${!canAddToCart && !loading
-              ? '!bg-brand-green/40 hover:!bg-brand-green/50 !text-white/80 !opacity-70 !shadow-md hover:!shadow-lg !cursor-pointer'
-              : loading
-                ? '!opacity-50 !cursor-not-allowed !bg-gray-400 hover:!bg-gray-400 !text-gray-600'
-                : ''
-              }`}
-            onClick={() => {
-              if (canAddToCart) {
-                setLoading(true);
-                setShowLoadingOverlay(true);
-              }
-              handleAttemptAddToCart();
-            }}
-            disabled={loading}
-          >
-            {loading ? (
-              'ADDING TO CART...'
-            ) : canAddToCart ? (
-              `ADD TO CART - ${formatCurrency(calculations.totalPrice, config.currency)}`
-            ) : (
-              <div className="flex flex-col items-center">
-                <span className="text-xs sm:text-sm">Complete above requirements to</span>
-                <span className="text-base font-semibold">ADD TO CART</span>
-              </div>
-            )}
-          </Button>
-          )}
-
           {/* Admin mode: Save Quote button */}
           {adminMode && onSaveQuote && (
             <Button
@@ -1552,6 +1208,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
             </Button>
           )}
         </div>
+        )}
       </div>
     </div>
   );

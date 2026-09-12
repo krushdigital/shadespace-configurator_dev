@@ -30,4 +30,24 @@ export function applyAppScope(): void {
     if (el) el.classList.add(SCOPE_CLASS);
   }
   getPortalRoot();
+  stripShopifyAncestorConstraints();
+}
+
+function stripShopifyAncestorConstraints(): void {
+  const root =
+    document.getElementById('CONFIGURATOR_ROOT') ||
+    document.getElementById('SHADESAIL_ROOT') ||
+    document.getElementById('SHADE_SPACE');
+  if (!root) return;
+
+  let el: HTMLElement | null = root.parentElement;
+  while (el && el !== document.body && el !== document.documentElement) {
+    el.style.setProperty('padding-left', '0', 'important');
+    el.style.setProperty('padding-right', '0', 'important');
+    el.style.setProperty('max-width', 'none', 'important');
+    el.style.setProperty('margin-left', '0', 'important');
+    el.style.setProperty('margin-right', '0', 'important');
+    el.style.setProperty('overflow-x', 'hidden', 'important');
+    el = el.parentElement;
+  }
 }
