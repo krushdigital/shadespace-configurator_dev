@@ -2739,10 +2739,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       const centeredPoints = centerShape(config.points);
       updateConfig({ points: centeredPoints });
       if (step.originalIndex === 2 || step.originalIndex === 3) {
-        const hasMeasurements = Object.values(config.measurements || {}).some(v => v > 0);
-        if (hasMeasurements) {
-          skipMeasureGuideRef.current = true;
-        }
+        skipMeasureGuideRef.current = true;
       }
       setOpenStep(step.originalIndex);
       setTimeout(() => {
@@ -2870,6 +2867,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               <div className="min-w-0">
                 {ActiveStepComponent && (
                   <ActiveStepComponent
+                    key={openStep}
                     config={config}
                     updateConfig={updateConfig}
                     calculations={calculations}
