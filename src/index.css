@@ -57,10 +57,22 @@
 
 /* Prevent white border around configurator from body/root backgrounds */
 html,
-body,
+body {
+  background-color: #f5f7f5 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  width: 100% !important;
+  min-height: 100% !important;
+}
+
 #CONFIGURATOR_ROOT,
 #SHADESAIL_ROOT,
-#SHADE_SPACE {
+#SHADE_SPACE,
+#SS_PORTAL_ROOT {
   background-color: #f5f7f5 !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -69,23 +81,12 @@ body,
   box-sizing: border-box !important;
 }
 
-html,
-body {
-  overflow-x: hidden !important;
-}
-
 html {
   scroll-padding-top: 100px;
 }
 
-/* React mounts into #SHADESAIL_ROOT but portals all content out to
-   #CONFIGURATOR_ROOT, so this div is visually empty. Collapse it so
-   it cannot create a gap above the configurator. */
 #SHADESAIL_ROOT {
-  height: 0 !important;
-  overflow: hidden !important;
-  line-height: 0 !important;
-  font-size: 0 !important;
+  display: contents !important;
 }
 
 /* Override Shopify theme parent containers that add padding around the embed */
