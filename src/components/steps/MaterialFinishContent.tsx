@@ -302,7 +302,7 @@ export function MaterialFinishContent({
           )}
 
           {/* Color swatch grid */}
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '14px 12px' }}>
+          <div className="grid pb-16" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '14px 12px' }}>
             {selectedFabric.colors.map((color) => {
               const isColorSelected = config.fabricColor === color.name;
               const isHovered = hoveredSwatch === color.name;
