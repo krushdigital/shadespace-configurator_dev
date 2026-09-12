@@ -2801,13 +2801,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         onStepClick={handleRailStepClick}
       />
 
-      <div className="flex bg-surface-panel min-h-screen">
+      <div className="flex bg-surface-panel h-screen overflow-hidden">
         {/* Left Rail Navigation - tablet+ */}
         <StepRail steps={railSteps} onStepClick={handleRailStepClick} onSave={openStep > 0 ? handleSaveQuote : undefined} />
 
         {/* Main content area */}
-        <div className="flex-1 min-w-0 flex flex-col bg-surface-panel">
-          <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-surface-panel">
+          <div className="flex-1 min-h-0 overflow-y-auto">
           <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8 pb-24 w-full">
             {/* Quote Reference */}
             {quoteReference && (
@@ -2981,12 +2981,12 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           <>
             <div
               onMouseDown={handleResizeStart}
-              className="hidden desktop:flex w-[6px] flex-shrink-0 cursor-col-resize items-center justify-center sticky top-0 h-screen bg-transparent hover:bg-border-card/50 active:bg-border-card transition-colors group z-10"
+              className="hidden desktop:flex w-[6px] flex-shrink-0 cursor-col-resize items-center justify-center h-full bg-transparent hover:bg-border-card/50 active:bg-border-card transition-colors group z-10"
             >
               <div className="w-[2px] h-8 rounded-full bg-border-card group-hover:bg-brand-green/30 group-active:bg-brand-green/50 transition-colors" />
             </div>
             <aside
-              className="hidden desktop:block flex-shrink-0 bg-white sticky top-0 h-screen overflow-y-auto"
+              className="hidden desktop:block flex-shrink-0 bg-white h-full overflow-y-auto"
               style={{ width: summaryWidth }}
             >
             <div className="p-[28px_24px] flex flex-col gap-4 min-h-full">
