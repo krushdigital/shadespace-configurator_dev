@@ -33,7 +33,18 @@ export function applyAppScope(): void {
   stripShopifyAncestorConstraints();
 }
 
-function stripShopifyAncestorConstraints(): void {
+function stripAncestor(el: HTMLElement): void {
+  el.style.setProperty('padding-left', '0', 'important');
+  el.style.setProperty('padding-right', '0', 'important');
+  el.style.setProperty('max-width', 'none', 'important');
+  el.style.setProperty('width', '100%', 'important');
+  el.style.setProperty('margin-left', '0', 'important');
+  el.style.setProperty('margin-right', '0', 'important');
+  el.style.setProperty('box-sizing', 'border-box', 'important');
+  el.style.setProperty('overflow-x', 'hidden', 'important');
+}
+
+function doStrip(): void {
   const root =
     document.getElementById('CONFIGURATOR_ROOT') ||
     document.getElementById('SHADESAIL_ROOT') ||
@@ -41,13 +52,14 @@ function stripShopifyAncestorConstraints(): void {
   if (!root) return;
 
   let el: HTMLElement | null = root.parentElement;
-  while (el && el !== document.body && el !== document.documentElement) {
-    el.style.setProperty('padding-left', '0', 'important');
-    el.style.setProperty('padding-right', '0', 'important');
-    el.style.setProperty('max-width', 'none', 'important');
-    el.style.setProperty('margin-left', '0', 'important');
-    el.style.setProperty('margin-right', '0', 'important');
-    el.style.setProperty('overflow-x', 'hidden', 'important');
+  while (el && el !== document.documentElement) {
+    stripAncestor(el);
     el = el.parentElement;
   }
+}
+
+function stripShopifyAncestorConstraints(): void {
+  doStrip();
+  setTimeout(doStrip, 200);
+  setTimeout(doStrip, 1000);
 }
