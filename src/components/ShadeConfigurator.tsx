@@ -2739,7 +2739,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       const centeredPoints = centerShape(config.points);
       updateConfig({ points: centeredPoints });
       if (step.originalIndex === 2 || step.originalIndex === 3) {
-        skipMeasureGuideRef.current = true;
+        const hasMeasurements = Object.values(config.measurements || {}).some(v => v > 0);
+        if (hasMeasurements) {
+          skipMeasureGuideRef.current = true;
+        }
       }
       setOpenStep(step.originalIndex);
       setTimeout(() => {
