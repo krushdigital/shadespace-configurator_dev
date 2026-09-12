@@ -64,7 +64,14 @@ body,
   background-color: #f5f7f5 !important;
   margin: 0 !important;
   padding: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
   box-sizing: border-box !important;
+}
+
+html, body {
+  min-height: 100vh !important;
+  width: 100% !important;
 }
 
 html {

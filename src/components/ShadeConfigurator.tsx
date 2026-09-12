@@ -2797,7 +2797,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         onStepClick={handleRailStepClick}
       />
 
-      <div className="flex bg-surface-panel">
+      <div className="flex bg-surface-panel min-h-screen">
         {/* Left Rail Navigation - tablet+ */}
         <StepRail steps={railSteps} onStepClick={handleRailStepClick} onSave={openStep > 0 ? handleSaveQuote : undefined} />
 
