@@ -1,5 +1,5 @@
 import React from 'react';
-import './switch-modal.css';
+import '../switch-modal.css';
 
 /** Identical sail + posts + turnbuckles per shape; only the green tape differs.
  *  mode "sail"  = tape along the fabric edge (fixed shape / sail dimensions)

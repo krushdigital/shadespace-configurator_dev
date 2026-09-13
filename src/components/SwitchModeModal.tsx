@@ -1,5 +1,5 @@
 import React from 'react';
-import MeasureComparison, { Shape } from './MeasureComparison';
+import MeasureComparison, { Shape } from './steps/MeasureComparison';
 
 /** Presentation-only replacement for the existing switch confirmation modal. Wire the callbacks to the existing handlers; no logic lives here.
  *  direction "toCustom": fixed → custom.  "toFixed": custom → fixed.

@@ -15,7 +15,15 @@ import { SaveProgressButton } from '../SaveProgressButton';
 import { SketchUploadModal } from '../SketchUploadModal';
 import { ParsedSketchData } from '../../utils/sketchParser';
 import { ShapeModeToggle } from '../ui/ShapeModeToggle';
-import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
+import SwitchModeModal from '../SwitchModeModal';
+import type { Shape as SwitchShape } from './MeasureComparison';
+
+const FIXED_SHAPE_TO_SWITCH: Record<string, SwitchShape> = {
+  triangle: 'triangle',
+  'right-angle-triangle': 'right',
+  square: 'square',
+  rectangle: 'rectangle',
+};
 import { MiniSpaceDiagram } from './SailMeasurementVisuals';
 import { HowToMeasureGuide, HowToMeasureModal } from '../HowToMeasureGuide';
 import { toast } from 'react-toastify';
@@ -1425,11 +1433,13 @@ export function DimensionsContent({
         })()}
       </div>
 
-      {showSwitchModal && matchingFixedShape && onSwitchToFixed && (
-        <ShapeModeSwitchModal
+      {matchingFixedShape && onSwitchToFixed && (
+        <SwitchModeModal
+          open={showSwitchModal}
           direction="toFixed"
-          targetShape={matchingFixedShape}
-          onKeepMeasurements={() => {
+          shape={FIXED_SHAPE_TO_SWITCH[matchingFixedShape] || 'square'}
+          hasMeasurements={!!(config.measurements && Object.values(config.measurements).some(v => v > 0))}
+          onKeep={() => {
             setShowSwitchModal(false);
             onSwitchToFixed(matchingFixedShape, true);
           }}

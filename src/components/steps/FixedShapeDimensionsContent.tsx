@@ -6,7 +6,11 @@ import { ShapeCanvas } from '../ShapeCanvas';
 import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ArrowRight, Info, RefreshCw, Ruler } from 'lucide-react';
-import { ShapeModeSwitchModal } from '../ShapeModeSwitchModal';
+import SwitchModeModal from '../SwitchModeModal';
+import type { Shape as SwitchShape } from './MeasureComparison';
+
+const toSwitchShape = (s: FixedShapeType): SwitchShape =>
+  s === 'right-angle-triangle' ? 'right' : s;
 import { MiniSailDiagram } from './SailMeasurementVisuals';
 import { HowToMeasureGuide, HowToMeasureModal } from '../HowToMeasureGuide';
 import {
@@ -489,11 +493,13 @@ export function FixedShapeDimensionsContent({
         {getCustomSwitchText()} <span className="font-semibold">Switch to Custom made-to-measure</span>
       </button>
 
-      {showSwitchModal && onSwitchToCustom && (
-        <ShapeModeSwitchModal
+      {onSwitchToCustom && (
+        <SwitchModeModal
+          open={showSwitchModal}
           direction="toCustom"
-          targetShape={shape}
-          onKeepMeasurements={() => {
+          shape={toSwitchShape(shape)}
+          hasMeasurements={edgeAMm > 0 || edgeBMm > 0}
+          onKeep={() => {
             setShowSwitchModal(false);
             onSwitchToCustom(true);
           }}
