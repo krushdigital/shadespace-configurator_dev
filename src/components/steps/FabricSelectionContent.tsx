@@ -129,123 +129,6 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     &#10003;
                   </span>
                 )}
-                <div className="absolute top-2 left-2 z-10" onClick={(e) => e.stopPropagation()}>
-                  <Tooltip
-                      onOpen={() => analytics.fabricDetailsViewed(fabric.id)}
-                      content={
-                        <div className="max-w-lg">
-                          <div className="mb-3">
-                            <a
-                              href="https://shadespace.com/pages/our-fabrics"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center px-3 py-1 bg-brand-lime text-brand-green text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
-                              onClick={() => analytics.fabricLinkClicked(fabric.id, 'https://shadespace.com/pages/our-fabrics')}
-                            >
-                              View All Fabrics
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                              </svg>
-                            </a>
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-brand-green mb-2">
-                              {fabric.label}
-                            </h4>
-                            <div className={`grid ${fabric.id === 'monotec370' ? 'grid-cols-3' : 'grid-cols-2'} gap-3 mb-3 p-3 bg-surface-soft rounded-lg`}>
-                              <div>
-                                <div className="text-xs text-brand-green/60 mb-1">Weight</div>
-                                <div className="font-semibold text-brand-green">{fabric.weightPerSqm} g/m²</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-brand-green/60 mb-1">Warranty</div>
-                                <div className="font-semibold text-brand-green">
-                                  <a
-                                    href="https://shadespace.com/pages/warranty"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="hover:underline"
-                                  >
-                                    {fabric.warrantyYears} Years
-                                  </a>
-                                </div>
-                              </div>
-                              {fabric.id === 'monotec370' && (
-                                <div>
-                                  <div className="text-xs text-brand-green/60 mb-1">Wind rating</div>
-                                  <div className="font-semibold text-brand-green">85 mph</div>
-                                </div>
-                              )}
-                            </div>
-                            <p className="text-sm text-brand-green/80 mb-3 leading-relaxed">
-                              {fabric.detailedDescription}
-                            </p>
-
-                            {fabric.isFireRetardant && (
-                              <div className="flex items-center justify-center mb-3">
-                                <img
-                                  src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Fire_Retardant.png?v=1755470964"
-                                  alt="Fire Retardant Certified"
-                                  className="w-12 h-12 mr-2"
-                                />
-                                <p className="text-xs text-brand-green font-semibold">
-                                  Fire Retardant Certified
-                                </p>
-                              </div>
-                            )}
-
-                            <AccordionItem trigger="Learn More" defaultOpen={false}>
-                              <div className="space-y-3 mt-2">
-                                <div>
-                                  <h5 className="font-semibold text-brand-green mb-1">Made In:</h5>
-                                  <p className="text-sm text-brand-green/80">{fabric.madeIn}</p>
-                                </div>
-
-                                <div>
-                                  <h5 className="font-semibold text-brand-green mb-1">Key Benefits:</h5>
-                                  <ul className="text-xs text-brand-green/70 space-y-1">
-                                    {fabric.benefits
-                                      .filter(benefit => !benefit.toLowerCase().includes('uv protection'))
-                                      .map((benefit, index) => (
-                                        <li key={index}>• {benefit}</li>
-                                    ))}
-                                    <li>• Sewn with SolarFix® PTFE thread</li>
-                                  </ul>
-                                </div>
-
-                                <div>
-                                  <h5 className="font-semibold text-brand-green mb-1">Best For:</h5>
-                                  <ul className="text-xs text-brand-green/70 space-y-1">
-                                    {fabric.bestFor.map((use, index) => (
-                                      <li key={index}>• {use}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            </AccordionItem>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openComparison(fabric.id);
-                              }}
-                              className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-brand-mid hover:bg-brand-green px-3 py-2 rounded-full transition-colors"
-                            >
-                              <GitCompare className="w-3.5 h-3.5" />
-                              Compare all fabrics
-                            </button>
-                          </div>
-
-                        </div>
-                      }
-                    >
-                      <span className="inline-flex items-center justify-center w-7 h-7 sm:w-auto sm:h-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 text-[11px] font-bold bg-brand-green text-white rounded-full cursor-help shadow-md hover:bg-brand-mid transition-colors">
-                        <Info className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                        <span className="hidden sm:inline">Details</span>
-                      </span>
-                    </Tooltip>
-                </div>
                 <div className="text-center flex flex-col h-full">
                   <div className="flex items-center justify-center gap-1.5 flex-wrap mb-2 min-w-0">
                     <h5 className="font-semibold text-brand-green text-sm md:text-[15px] lg:text-sm leading-tight break-words">
@@ -256,6 +139,121 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         FR
                       </span>
                     )}
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <Tooltip
+                        onOpen={() => analytics.fabricDetailsViewed(fabric.id)}
+                        content={
+                          <div className="max-w-lg">
+                            <div className="mb-3">
+                              <a
+                                href="https://shadespace.com/pages/our-fabrics"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center px-3 py-1 bg-brand-lime text-brand-green text-xs font-bold rounded-full shadow-sm hover:bg-[#caee41] transition-colors"
+                                onClick={() => analytics.fabricLinkClicked(fabric.id, 'https://shadespace.com/pages/our-fabrics')}
+                              >
+                                View All Fabrics
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 ml-1">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                                </svg>
+                              </a>
+                            </div>
+                            <div>
+                              <h4 className="font-bold text-brand-green mb-2">
+                                {fabric.label}
+                              </h4>
+                              <div className={`grid ${fabric.id === 'monotec370' ? 'grid-cols-3' : 'grid-cols-2'} gap-3 mb-3 p-3 bg-surface-soft rounded-lg`}>
+                                <div>
+                                  <div className="text-xs text-brand-green/60 mb-1">Weight</div>
+                                  <div className="font-semibold text-brand-green">{fabric.weightPerSqm} g/m²</div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-brand-green/60 mb-1">Warranty</div>
+                                  <div className="font-semibold text-brand-green">
+                                    <a
+                                      href="https://shadespace.com/pages/warranty"
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="hover:underline"
+                                    >
+                                      {fabric.warrantyYears} Years
+                                    </a>
+                                  </div>
+                                </div>
+                                {fabric.id === 'monotec370' && (
+                                  <div>
+                                    <div className="text-xs text-brand-green/60 mb-1">Wind rating</div>
+                                    <div className="font-semibold text-brand-green">85 mph</div>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-sm text-brand-green/80 mb-3 leading-relaxed">
+                                {fabric.detailedDescription}
+                              </p>
+
+                              {fabric.isFireRetardant && (
+                                <div className="flex items-center justify-center mb-3">
+                                  <img
+                                    src="https://cdn.shopify.com/s/files/1/0778/8730/7969/files/Fire_Retardant.png?v=1755470964"
+                                    alt="Fire Retardant Certified"
+                                    className="w-12 h-12 mr-2"
+                                  />
+                                  <p className="text-xs text-brand-green font-semibold">
+                                    Fire Retardant Certified
+                                  </p>
+                                </div>
+                              )}
+
+                              <AccordionItem trigger="Learn More" defaultOpen={false}>
+                                <div className="space-y-3 mt-2">
+                                  <div>
+                                    <h5 className="font-semibold text-brand-green mb-1">Made In:</h5>
+                                    <p className="text-sm text-brand-green/80">{fabric.madeIn}</p>
+                                  </div>
+
+                                  <div>
+                                    <h5 className="font-semibold text-brand-green mb-1">Key Benefits:</h5>
+                                    <ul className="text-xs text-brand-green/70 space-y-1">
+                                      {fabric.benefits
+                                        .filter(benefit => !benefit.toLowerCase().includes('uv protection'))
+                                        .map((benefit, index) => (
+                                          <li key={index}>• {benefit}</li>
+                                      ))}
+                                      <li>• Sewn with SolarFix® PTFE thread</li>
+                                    </ul>
+                                  </div>
+
+                                  <div>
+                                    <h5 className="font-semibold text-brand-green mb-1">Best For:</h5>
+                                    <ul className="text-xs text-brand-green/70 space-y-1">
+                                      {fabric.bestFor.map((use, index) => (
+                                        <li key={index}>• {use}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </AccordionItem>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openComparison(fabric.id);
+                                }}
+                                className="mt-3 inline-flex items-center justify-center gap-1.5 w-full text-xs font-semibold text-white bg-brand-mid hover:bg-brand-green px-3 py-2 rounded-full transition-colors"
+                              >
+                                <GitCompare className="w-3.5 h-3.5" />
+                                Compare all fabrics
+                              </button>
+                            </div>
+                          </div>
+                        }
+                      >
+                        <span className="w-[18px] h-[18px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
+                          ?
+                        </span>
+                      </Tooltip>
+                    </span>
                   </div>
                   <div className="mb-2">
                     {fabric.badgeText && (
