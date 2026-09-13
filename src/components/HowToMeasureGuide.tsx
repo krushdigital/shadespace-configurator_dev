@@ -82,7 +82,7 @@ export function HowToMeasureModal({
     >
       <div className="absolute inset-0 bg-black/50" />
       <div
-        className={`relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transition-all duration-200 ${visible ? 'scale-100' : 'scale-95'}`}
+        className={`mg-modal-wrap relative bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto transition-all duration-200 ${visible ? 'scale-100' : 'scale-95'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button

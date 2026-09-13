@@ -28,6 +28,10 @@
 .mg-card {
   display: flex;
   flex-direction: column;
+}
+
+/* Only constrain height when inside the modal overlay */
+.mg-modal-wrap .mg-card {
   max-height: calc(100dvh - 32px);
   overflow: hidden;
 }

@@ -93,6 +93,12 @@ const INITIAL_STATE: ConfiguratorState = {
 export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSaveComplete, initialQuoteId, initialQuoteToken }: ShadeConfiguratorProps = {}) {
   const [config, setConfig] = useState<ConfiguratorState>(INITIAL_STATE);
   const [openStep, setOpenStep] = useState<number>(0);
+
+  useEffect(() => {
+    const el = document.getElementById('main-scroll-container');
+    if (el) el.scrollTop = 0;
+  }, [openStep]);
+
   const [desktopViewMode, setDesktopViewMode] = useState<'plan' | '3d'>('plan');
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [typoSuggestions, setTypoSuggestions] = useState<{ [key: string]: number }>({});
