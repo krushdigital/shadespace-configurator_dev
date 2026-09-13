@@ -1,0 +1,6 @@
+@keyframes sw-tape1 { 0% { stroke-dashoffset: var(--len); opacity: 1; } 45% { stroke-dashoffset: 0; opacity: 1; } 90% { opacity: 1; } 100%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes sw-head1 { 0% { offset-distance: 0%; opacity: 1; } 45% { offset-distance: 100%; opacity: 1; } 90% { offset-distance: 100%; opacity: 1; } 100%, 100% { offset-distance: 100%; opacity: 0; } }
+@keyframes sw-tape2 { 0% { stroke-dashoffset: var(--len); opacity: 1; } 22.5% { stroke-dashoffset: 0; opacity: 1; } 45% { opacity: 1; } 50%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes sw-head2 { 0% { offset-distance: 0%; opacity: 1; } 22.5% { offset-distance: 100%; opacity: 1; } 45% { offset-distance: 100%; opacity: 1; } 50%, 100% { offset-distance: 100%; opacity: 0; } }
+@keyframes sw-pulse { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.5); opacity: 0.25; } }
+.sw-svg { width: 100%; display: block; }
