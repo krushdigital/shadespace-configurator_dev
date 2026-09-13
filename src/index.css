@@ -70,7 +70,8 @@ body {
   box-sizing: border-box !important;
   overflow: hidden !important;
   width: 100% !important;
-  height: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
 }
 
 #CONFIGURATOR_ROOT,
@@ -83,7 +84,8 @@ body {
   border: 0 !important;
   outline: 0 !important;
   box-sizing: border-box !important;
-  height: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
   overflow: hidden !important;
 }
 

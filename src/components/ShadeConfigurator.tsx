@@ -2781,7 +2781,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     : undefined;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Mobile Header with progress */}
       <MobileHeader
         currentStep={currentDisplayStep + 1}
