@@ -26,8 +26,8 @@ const KEYFRAMES = `
 @keyframes sbp-chipColor { 0%, 62% { background: rgba(255,255,255,0.1); color: #9fc4ad; } 65%, 86% { background: #b5e853; color: #01312d; } 90%, 100% { background: rgba(255,255,255,0.1); color: #9fc4ad; } }
 `;
 
-const SAIL_PATH = 'M14.8,29.4 Q49.6,35.5 83.4,37.4 Q78.8,42.4 89.6,47.2 Q53.4,50.1 18.3,57.2 Q24.2,43.2 14.8,29.4 Z';
-const post = (n: number): React.CSSProperties => ({ transformBox: 'fill-box', transformOrigin: '50% 100%', animation: `sbp-post${n} 9s cubic-bezier(.2,.8,.2,1) infinite` });
+const SAIL_PATH = 'M11.9,29.1 Q48.6,36.1 85.3,37.1 Q85.1,42.4 92.9,47.6 Q54.5,49.6 16,57.5 Q18,43.3 11.9,29.1 Z';
+const post = (n: number, origin: string): React.CSSProperties => ({ transformBox: 'fill-box', transformOrigin: origin, animation: `sbp-post${n} 9s cubic-bezier(.2,.8,.2,1) infinite` });
 const pt = (n: number): React.CSSProperties => ({ transformBox: 'fill-box', transformOrigin: '50% 50%', animation: `sbp-pt${n} 9s ease-out infinite` });
 const chip = (name: string): React.CSSProperties => ({ fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '5px 11px', background: 'rgba(255,255,255,0.1)', color: '#9fc4ad', animation: `sbp-chip${name} 9s ease-in-out infinite` });
 
@@ -39,16 +39,16 @@ export default function SailBuildPlaceholder() {
         <svg viewBox="0 0 100 100" style={{ width: '100%', display: 'block' }} aria-hidden="true">
           <g style={{ animation: 'sbp-scene 9s ease-in-out infinite' }}>
             <polygon points="14.8,63.4 83.4,61.4 89.6,87.2 18.3,85.2" fill="none" stroke="#5f8f74" strokeWidth={1.2} strokeLinejoin="round" style={{ strokeDasharray: 190, animation: 'sbp-ground 9s ease-in-out infinite' }} />
-            <rect x={13.55} y={29.4} width={2.5} height={34} rx={1.2} fill="#b5e853" style={post(1)} />
-            <rect x={82.15} y={37.4} width={2.5} height={24} rx={1.2} fill="#b5e853" style={post(2)} />
-            <rect x={88.35} y={47.2} width={2.5} height={40} rx={1.2} fill="#b5e853" style={post(3)} />
-            <rect x={17.05} y={57.2} width={2.5} height={28} rx={1.2} fill="#b5e853" style={post(4)} />
+            <line x1={14.8} y1={63.4} x2={11.9} y2={29.1} stroke="#b5e853" strokeWidth={2.5} strokeLinecap="round" style={post(1, '100% 100%')} />
+            <line x1={83.4} y1={61.4} x2={85.3} y2={37.1} stroke="#b5e853" strokeWidth={2.5} strokeLinecap="round" style={post(2, '0% 100%')} />
+            <line x1={89.6} y1={87.2} x2={92.9} y2={47.6} stroke="#b5e853" strokeWidth={2.5} strokeLinecap="round" style={post(3, '0% 100%')} />
+            <line x1={18.3} y1={85.2} x2={16} y2={57.5} stroke="#b5e853" strokeWidth={2.5} strokeLinecap="round" style={post(4, '100% 100%')} />
             <path d={SAIL_PATH} stroke="none" style={{ animation: 'sbp-sail 9s ease-in-out infinite' }} />
             <path d={SAIL_PATH} fill="none" stroke="#fff" strokeWidth={2.2} strokeLinejoin="round" style={{ strokeDasharray: 190, animation: 'sbp-edges 9s ease-in-out infinite' }} />
-            <circle cx={14.8} cy={29.4} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(1)} />
-            <circle cx={83.4} cy={37.4} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(2)} />
-            <circle cx={89.6} cy={47.2} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(3)} />
-            <circle cx={18.3} cy={57.2} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(4)} />
+            <circle cx={11.9} cy={29.1} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(1)} />
+            <circle cx={85.3} cy={37.1} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(2)} />
+            <circle cx={92.9} cy={47.6} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(3)} />
+            <circle cx={16} cy={57.5} r={3.6} fill="#01312d" stroke="#fff" strokeWidth={2} style={pt(4)} />
           </g>
         </svg>
       </div>
