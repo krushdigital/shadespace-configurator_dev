@@ -135,6 +135,9 @@ export function DimensionsContent({
       skipMeasureGuideRef.current = false;
       return false;
     }
+    const hasExistingMeasurements = config.measurements &&
+      Object.values(config.measurements).some(v => v > 0);
+    if (hasExistingMeasurements) return false;
     return true;
   });
   const [showMeasureModal, setShowMeasureModal] = useState(false);
