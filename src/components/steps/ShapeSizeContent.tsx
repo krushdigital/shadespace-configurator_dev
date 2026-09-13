@@ -213,14 +213,14 @@ export function ShapeSizeContent({
               role="radio"
               className={`relative cursor-pointer rounded-card p-[18px_10px_14px] flex flex-col items-center gap-2.5 text-center min-h-[44px] transition-all duration-300 ${
                 isSelected
-                  ? 'bg-brand-green border-2 border-brand-green shadow-lg'
+                  ? 'bg-[#e8f5ec] border-2 border-brand-green shadow-lg ring-1 ring-brand-green/30'
                   : tileError
                   ? 'bg-white border-2 border-red-400 hover:border-red-500'
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f] hover:shadow-md'
               }`}
             >
               {isSelected && (
-                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
+                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-green text-white text-[13px] font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
                   &#10003;
                 </span>
               )}
@@ -228,12 +228,12 @@ export function ShapeSizeContent({
                 src={SHAPE_ICONS[tile.id]}
                 alt={`${tile.label} sail`}
                 className={`w-[76px] h-[76px] transition-all duration-300 ${
-                  isSelected ? 'brightness-0 invert scale-105' : ''
+                  isSelected ? 'scale-105' : ''
                 }`}
               />
               <div>
-                <div className={`font-extrabold text-[16px] transition-colors duration-300 ${isSelected ? 'text-white' : 'text-brand-green'}`}>{tile.label}</div>
-                <div className={`text-[13px] mt-0.5 transition-colors duration-300 ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>{tile.hint}</div>
+                <div className={`font-extrabold text-[16px] transition-colors duration-300 ${isSelected ? 'text-brand-green' : 'text-brand-green'}`}>{tile.label}</div>
+                <div className={`text-[13px] mt-0.5 transition-colors duration-300 ${isSelected ? 'text-text-muted' : 'text-text-muted'}`}>{tile.hint}</div>
               </div>
             </button>
           );
@@ -248,31 +248,31 @@ export function ShapeSizeContent({
         role="radio"
         className={`relative w-full cursor-pointer rounded-card p-4 flex items-center gap-4 text-left min-h-[44px] transition-all duration-300 ${
           isCustomSelected
-            ? 'bg-brand-green text-white border-2 border-dashed border-brand-lime shadow-lg'
+            ? 'bg-[#e8f5ec] border-2 border-dashed border-brand-green shadow-lg ring-1 ring-brand-green/30'
             : tileError
             ? 'bg-white border-2 border-dashed border-red-400 hover:border-red-500'
             : 'bg-white border-2 border-dashed border-[#7bb08f] hover:border-brand-mid hover:shadow-md'
         }`}
       >
         {isCustomSelected && (
-          <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
+          <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-brand-green text-white text-sm font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
             &#10003;
           </span>
         )}
         <div className={`w-[68px] h-[68px] rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
-          isCustomSelected ? 'bg-white/15' : 'bg-white'
+          isCustomSelected ? 'bg-white' : 'bg-white'
         }`}>
           <img
             src={SHAPE_ICONS.custom}
             alt="Custom sail"
             className={`w-[60px] h-[60px] transition-all duration-300 ${
-              isCustomSelected ? 'brightness-0 invert scale-105' : ''
+              isCustomSelected ? 'scale-105' : ''
             }`}
           />
         </div>
         <div className="pr-8">
-          <div className={`font-extrabold text-[17px] transition-colors duration-300 ${isCustomSelected ? 'text-white' : 'text-brand-green'}`}>Custom shape</div>
-          <div className={`text-[14px] mt-0.5 transition-colors duration-300 ${isCustomSelected ? 'text-white/85' : 'text-text-muted'}`}>
+          <div className={`font-extrabold text-[17px] transition-colors duration-300 ${isCustomSelected ? 'text-brand-green' : 'text-brand-green'}`}>Custom shape</div>
+          <div className={`text-[14px] mt-0.5 transition-colors duration-300 ${isCustomSelected ? 'text-text-muted' : 'text-text-muted'}`}>
             3&ndash;8 fixing points &middot; Made to measure &middot; Fit Guarantee
           </div>
         </div>
@@ -308,14 +308,14 @@ export function ShapeSizeContent({
                   onClick={() => handleCornerChange(shape.corners)}
                   className={`relative rounded-card p-[16px_10px_14px] flex flex-col items-center gap-2 text-center cursor-pointer min-h-[44px] transition-all duration-300 ${
                     isSelected
-                      ? 'bg-brand-green border-2 border-brand-green shadow-lg'
+                      ? 'bg-[#e8f5ec] border-2 border-brand-green shadow-lg ring-1 ring-brand-green/30'
                       : hasError
                       ? 'bg-white border-2 border-red-400'
                       : 'bg-white border-2 border-border-card hover:border-[#7bb08f] hover:shadow-md'
                   }`}
                 >
                   {isSelected && (
-                    <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
+                    <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-green text-white text-[13px] font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
                       &#10003;
                     </span>
                   )}
@@ -323,12 +323,12 @@ export function ShapeSizeContent({
                     src={shape.icon}
                     alt={`${shape.label} sail`}
                     className={`w-[84px] h-[84px] transition-all duration-300 ${
-                      isSelected ? 'brightness-0 invert scale-105' : ''
+                      isSelected ? 'scale-105' : ''
                     }`}
                   />
                   <div>
-                    <div className={`font-extrabold text-[16px] transition-colors duration-300 ${isSelected ? 'text-white' : 'text-brand-green'}`}>{shape.label}</div>
-                    <div className={`text-[13px] mt-0.5 transition-colors duration-300 ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>
+                    <div className={`font-extrabold text-[16px] transition-colors duration-300 ${isSelected ? 'text-brand-green' : 'text-brand-green'}`}>{shape.label}</div>
+                    <div className={`text-[13px] mt-0.5 transition-colors duration-300 ${isSelected ? 'text-text-muted' : 'text-text-muted'}`}>
                       {shape.description}
                       {shape.corners === 4 && (
                         <span className="ml-1.5 inline-flex px-1.5 py-0.5 bg-brand-lime text-brand-green text-[9px] font-bold rounded-full align-middle">Popular</span>
