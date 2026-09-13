@@ -48,6 +48,7 @@ interface ReviewContentProps {
   onViewModeChange?: (mode: 'plan' | '3d') => void;
   device3DTier?: 'high' | 'low' | 'none';
   adminMode?: boolean;
+  validationTriggered?: number;
 }
 
 export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
@@ -70,6 +71,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   onViewModeChange,
   device3DTier = 'none',
   adminMode = false,
+  validationTriggered = 0,
 }, ref) => {
   const [highlightedMeasurement, setHighlightedMeasurement] = useState<string | null>(null);
   const [internalViewMode, setInternalViewMode] = useState<'plan' | '3d'>('plan');
@@ -81,6 +83,13 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
   const checklistRef = useRef<ConfigurationChecklistRef>(null);
   const acknowledgementsCardRef = useRef<HTMLDivElement>(null);
   const [detectedCurrency, setDetectedCurrency] = useState("")
+
+  useEffect(() => {
+    if (validationTriggered && !allAcknowledgmentsChecked) {
+      setShowValidationFeedback(true);
+      acknowledgementsCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [validationTriggered]);
 
   const isFixedShape = config.shapeMode === 'fixed';
 

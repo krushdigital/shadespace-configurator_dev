@@ -110,7 +110,7 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
   const scrollToElement = useCallback((
     elementId: string,
     delay: number = 300,
-    offset: number = 120,
+    offset: number = 70,
     alignToTop: boolean = false,
     bias?: ScrollBias
   ) => {

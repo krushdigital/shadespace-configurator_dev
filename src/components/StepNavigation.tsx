@@ -112,42 +112,22 @@ export function MobileHeader({ currentStep, totalSteps, stepLabels, onSave, onSt
         )}
       </div>
 
-      <div className="flex gap-1 px-4 pb-1">
+      <div className="flex gap-1 px-4 pb-3">
         {Array.from({ length: totalSteps }, (_, i) => (
-          <div
+          <button
             key={i}
-            className="flex-1 h-1 rounded-full overflow-hidden bg-white/20"
+            onClick={() => i < currentStep - 1 && onStepClick?.(i)}
+            disabled={i >= currentStep}
+            className="flex-1 h-1.5 rounded-full overflow-hidden bg-white/20 cursor-pointer disabled:cursor-default"
           >
             <div
               className={`h-full rounded-full transition-all duration-500 ease-out ${
                 i < currentStep ? 'w-full bg-brand-lime' : 'w-0 bg-brand-lime'
               }`}
             />
-          </div>
+          </button>
         ))}
       </div>
-
-      {/* Tappable step labels below progress segments */}
-      {stepLabels && stepLabels.length > 0 && (
-        <div className="flex gap-1 px-4 pb-3 pt-1">
-          {stepLabels.map((label, i) => (
-            <button
-              key={i}
-              onClick={() => i < currentStep && onStepClick?.(i)}
-              className={`flex-1 text-center text-[10px] font-bold leading-tight truncate min-h-[28px] flex items-center justify-center ${
-                i === currentStep - 1
-                  ? 'text-brand-lime'
-                  : i < currentStep
-                    ? 'text-white/70 hover:text-white'
-                    : 'text-white/30 cursor-default'
-              }`}
-              disabled={i >= currentStep}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

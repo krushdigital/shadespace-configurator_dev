@@ -205,6 +205,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   // Auto-add-to-cart when arriving from My Designs page with action param
   const [pendingAutoAddToCart, setPendingAutoAddToCart] = useState(false);
+  const [reviewValidationTrigger, setReviewValidationTrigger] = useState(0);
 
   // State to track if user wants to navigate to diagonals section specifically
   const [navigateToDiagonals, setNavigateToDiagonals] = useState(false);
@@ -1721,6 +1722,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 };
 
   const handleAddToCartFromConfigurator = async (): Promise<void> => {
+    if (!canAddToCart) {
+      setReviewValidationTrigger(prev => prev + 1);
+      return;
+    }
     // Prevent multiple simultaneous calls
     if (loading) {
       console.log('Already processing, skipping...');
@@ -2029,7 +2034,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     if (!stepElement) return;
 
     const isMobileView = window.innerWidth < 900;
-    const headerOffset = isMobileView ? 120 : 140;
+    const headerOffset = isMobileView ? 70 : 140;
 
     const elementPosition = stepElement.getBoundingClientRect().top;
     const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
@@ -2055,7 +2060,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
       if (targetElement) {
         const isMobileView = window.innerWidth < 900;
-        const headerOffset = isMobileView ? 100 : 120;
+        const headerOffset = isMobileView ? 70 : 120;
         const viewportOffset = window.innerHeight * 0.2;
 
         const elementPosition = targetElement.getBoundingClientRect().top;
@@ -2759,13 +2764,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     ? `Add to cart${calculations.totalPrice > 0 && hasAllEdgeMeasurements ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
     : ((openStep === 2 || openStep === 3) && isMeasureGuideVisible)
       ? `Continue > Dimensions`
-      : `Continue > ${getNextStepTitle(openStep)}`;
+      : isMobile ? `Next: ${getNextStepTitle(openStep)}` : `Continue > ${getNextStepTitle(openStep)}`;
 
   const footerDisableNext = (() => {
     switch (openStep) {
       case 0: return !config.shapeMode || (config.shapeMode === 'custom' && (config.corners < 3 || config.corners > 8)) || (config.shapeMode === 'fixed' && !config.fixedShapeType);
       case 1: return !config.fabricType || !config.fabricColor;
-      case 7: return !canAddToCart;
+      case 7: return false;
       default: return false;
     }
   })();
@@ -2779,10 +2784,6 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       case 1:
         if (!config.fabricType) return 'Choose a fabric to continue';
         if (!config.fabricColor) return 'Choose a color to continue';
-        return '';
-      case 7:
-        if (!allDiagonalsEntered) return 'Enter diagonals to continue';
-        if (!allAcknowledgmentsChecked && config.shapeMode !== 'fixed') return 'Accept all acknowledgements';
         return '';
       default: return '';
     }
@@ -2888,6 +2889,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                     allDiagonalsEntered={allDiagonalsEntered}
                     allAcknowledgmentsChecked={allAcknowledgmentsChecked}
                     canAddToCart={canAddToCart}
+                    validationTriggered={reviewValidationTrigger}
                     hasAllEdgeMeasurements={hasAllEdgeMeasurements}
                     nextStepTitle={getNextStepTitle(openStep)}
                     showBackButton={shouldShowBackButton(openStep)}

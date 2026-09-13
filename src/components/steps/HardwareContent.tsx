@@ -145,7 +145,7 @@ export function HardwareContent({
       )}
 
       {/* Mode cards – edge-style vertical layout */}
-      <div data-error="hardwareMode" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div data-error="hardwareMode" className="grid grid-cols-2 gap-2">
         {/* Hardware Tensioning Kit card */}
         {(() => {
           const sel = mode === 'standard';
@@ -168,13 +168,13 @@ export function HardwareContent({
                   <img
                     src={packImage}
                     alt="Hardware Tensioning Kit"
-                    className="w-full h-[150px] object-cover block bg-border-card"
+                    className="w-full h-[100px] sm:h-[150px] object-cover block bg-border-card"
                   />
                 </div>
               )}
               <div className="px-4 py-4">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <div className="font-extrabold text-[19px]">Hardware Tensioning Kit</div>
+                  <div className="font-extrabold text-[15px] sm:text-[19px]">Hardware Tensioning Kit</div>
                   <span className={`text-xs font-bold rounded-full px-2.5 py-0.5 ${
                     sel ? 'bg-white/20 text-white' : 'bg-surface-soft text-brand-mid'
                   }`}>
@@ -214,13 +214,13 @@ export function HardwareContent({
                   &#10003;
                 </div>
               )}
-              <div className={`w-full h-[150px] flex items-center justify-center ${sel ? 'bg-white/10' : 'bg-surface-soft'}`}>
+              <div className={`w-full h-[100px] sm:h-[150px] flex items-center justify-center ${sel ? 'bg-white/10' : 'bg-surface-soft'}`}>
                 <svg className={`w-16 h-16 ${sel ? 'text-white/60' : 'text-brand-green/30'}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
                 </svg>
               </div>
               <div className="px-4 py-4">
-                <div className="font-extrabold text-[19px]">Manual per corner</div>
+                <div className="font-extrabold text-[15px] sm:text-[19px]">Manual per corner</div>
                 <div className={`text-[15px] mt-1.5 leading-[1.45] ${sel ? 'opacity-90' : 'text-text-muted'}`}>
                   Pick specific hardware items for each corner individually.
                 </div>
