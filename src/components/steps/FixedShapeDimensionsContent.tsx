@@ -11,7 +11,6 @@ import type { Shape as SwitchShape } from './MeasureComparison';
 
 const toSwitchShape = (s: FixedShapeType): SwitchShape =>
   s === 'right-angle-triangle' ? 'right' : s;
-import { MiniSailDiagram } from './SailMeasurementVisuals';
 import { HowToMeasureGuide, HowToMeasureModal } from '../HowToMeasureGuide';
 import {
   getAlternativeUnit,
@@ -338,28 +337,7 @@ export function FixedShapeDimensionsContent({
         </button>
       </div>
 
-      {/* Info box */}
-      <div className="flex flex-col sm:flex-row gap-3 p-3 sm:p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-4 sm:mb-6">
-        <div className="flex gap-3 flex-1 min-w-0">
-          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <div>
-            <h5 className="text-sm sm:text-base font-bold text-emerald-900 sm:mb-1">
-              Enter Your Desired Sail Dimensions
-            </h5>
-            <p className="hidden sm:block text-sm text-emerald-800 leading-relaxed">
-              Enter the <strong>finished sail measurements</strong>. These are the actual dimensions of the shade sail itself, not the distance between your fixing points.
-            </p>
-            <p className="sm:hidden text-xs text-emerald-800">
-              The finished sail size, not fixing point distance.
-            </p>
-          </div>
-        </div>
-        <div className="flex justify-center sm:items-center">
-          <MiniSailDiagram shape={shape} />
-        </div>
-      </div>
+
 
       {/* Measurement inputs */}
       <div className="space-y-4">
