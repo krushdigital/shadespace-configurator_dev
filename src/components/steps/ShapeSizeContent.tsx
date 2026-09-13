@@ -200,8 +200,13 @@ export function ShapeSizeContent({
 
   return (
     <div className="space-y-5">
+      {/* Validation error for fixed shape type */}
+      {validationErrors.fixedShapeType && (
+        <p data-error="fixedShapeType" className="text-sm text-red-600 font-medium">{validationErrors.fixedShapeType}</p>
+      )}
+
       {/* Fixed shape tiles - 2x2 on mobile, 4-col on desktop */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
+      <div data-error="shapeMode" className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))' }}>
         {FIXED_SHAPES.map((tile) => {
           const isSelected = selectedTileId === tile.id;
           return (
@@ -215,6 +220,8 @@ export function ShapeSizeContent({
                 isSelected
                   ? 'bg-[#e8f5ec] border-2 border-brand-green shadow-lg ring-1 ring-brand-green/30'
                   : tileError
+                  ? 'bg-white border-2 border-red-400 hover:border-red-500'
+                  : validationErrors.shapeMode
                   ? 'bg-white border-2 border-red-400 hover:border-red-500'
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f] hover:shadow-md'
               }`}
@@ -249,7 +256,7 @@ export function ShapeSizeContent({
         className={`relative w-full cursor-pointer rounded-card p-4 flex items-center gap-4 text-left min-h-[44px] transition-all duration-300 ${
           isCustomSelected
             ? 'bg-[#e8f5ec] border-2 border-dashed border-brand-green shadow-lg ring-1 ring-brand-green/30'
-            : tileError
+            : tileError || validationErrors.shapeMode
             ? 'bg-white border-2 border-dashed border-red-400 hover:border-red-500'
             : 'bg-white border-2 border-dashed border-[#7bb08f] hover:border-brand-mid hover:shadow-md'
         }`}
@@ -279,8 +286,8 @@ export function ShapeSizeContent({
       </button>
 
       {/* Validation error */}
-      {tileError && !selectedTileId && (
-        <p className="text-sm text-red-600 font-medium">Please select a shape to continue</p>
+      {(tileError || validationErrors.shapeMode) && !selectedTileId && (
+        <p className="text-sm text-red-600 font-medium">{validationErrors.shapeMode || 'Please select a shape to continue'}</p>
       )}
 
       {/* Flow hint bar */}
@@ -293,7 +300,7 @@ export function ShapeSizeContent({
 
       {/* Custom Shape: corner picker */}
       {isCustomSelected && (
-        <div id="fixing-points-section">
+        <div id="fixing-points-section" data-error="corners">
           <h4 className="text-lg font-bold mb-4 text-brand-green">
             How many fixing points will your shade sail have?
           </h4>

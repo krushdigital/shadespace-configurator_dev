@@ -89,6 +89,13 @@ export function MaterialFinishContent({
 
   return (
     <div className="space-y-6">
+      {/* Validation errors */}
+      {(validationErrors.fabricType || validationErrors.fabricColor) && (
+        <div data-error="fabricType" className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {validationErrors.fabricType || validationErrors.fabricColor}
+        </div>
+      )}
+
       {/* Fabric type section */}
       <div>
         <div className="flex items-center justify-between gap-3 mb-1 flex-wrap">
@@ -249,7 +256,11 @@ export function MaterialFinishContent({
                   analytics.fabricTypeSelected(fabric.id, fabric.label);
                   updateConfig({ fabricType: fabric.id, fabricColor: '' });
                 }}
-                className="relative text-left rounded-card transition-all duration-200 cursor-pointer min-h-[44px] p-5 bg-white border-2 border-border-card hover:border-[#7bb08f] hover:shadow-sm"
+                className={`relative text-left rounded-card transition-all duration-200 cursor-pointer min-h-[44px] p-5 bg-white border-2 ${
+                  validationErrors.fabricType
+                    ? 'border-red-400 hover:border-red-500'
+                    : 'border-border-card hover:border-[#7bb08f] hover:shadow-sm'
+                }`}
               >
                 <div className="flex items-center gap-2 flex-wrap mb-1.5">
                   <span className="font-extrabold leading-tight text-[19px]">{fabric.label}</span>
@@ -285,6 +296,7 @@ export function MaterialFinishContent({
         <div
           id="color-selection"
           data-guidance-id="color-selection"
+          data-error="fabricColor"
           className="animate-[fadeUp_0.4s_ease-out]"
         >
           <h4 className="text-[19px] font-extrabold text-brand-green mb-2">Choose Color</h4>

@@ -2773,28 +2773,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       ? `Continue > Dimensions`
       : isMobile ? `Next: ${getNextStepTitle(openStep)}` : `Continue > ${getNextStepTitle(openStep)}`;
 
-  const footerDisableNext = (() => {
-    switch (openStep) {
-      case 0: return !config.shapeMode || (config.shapeMode === 'custom' && (config.corners < 3 || config.corners > 8)) || (config.shapeMode === 'fixed' && !config.fixedShapeType);
-      case 1: return !config.fabricType || !config.fabricColor;
-      case 7: return false;
-      default: return false;
-    }
-  })();
-
-  const footerDisabledHint = (() => {
-    switch (openStep) {
-      case 0:
-        if (!config.shapeMode) return 'Choose a shape to continue';
-        if (config.shapeMode === 'custom' && config.corners < 3) return 'Select fixing points';
-        return 'Select a shape';
-      case 1:
-        if (!config.fabricType) return 'Choose a fabric to continue';
-        if (!config.fabricColor) return 'Choose a color to continue';
-        return '';
-      default: return '';
-    }
-  })();
+  const footerDisableNext = false;
+  const footerDisabledHint = '';
 
   const footerPriceDisplay = calculations.totalPrice > 0 && hasAllEdgeMeasurements
     ? formatCurrency(calculations.totalPrice, config.currency)

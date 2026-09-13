@@ -155,6 +155,8 @@ export function HardwareContent({
               className={`relative rounded-card overflow-hidden cursor-pointer transition-all duration-200 ${
                 sel
                   ? 'bg-brand-green text-white border-2 border-brand-green'
+                  : validationErrors.hardwareMode
+                  ? 'bg-white border-2 border-red-400 hover:border-red-500'
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
               }`}
             >
@@ -206,6 +208,8 @@ export function HardwareContent({
               className={`relative rounded-card overflow-hidden cursor-pointer transition-all duration-200 ${
                 sel
                   ? 'bg-brand-green text-white border-2 border-brand-green'
+                  : validationErrors.hardwareMode
+                  ? 'bg-white border-2 border-red-400 hover:border-red-500'
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
               }`}
             >

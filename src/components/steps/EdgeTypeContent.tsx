@@ -138,8 +138,15 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
         </div>
       )}
 
+      {/* Validation error */}
+      {validationErrors.edgeType && (
+        <div className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {validationErrors.edgeType}
+        </div>
+      )}
+
       {/* Edge cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div data-error="edgeType" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {EDGE_OPTIONS.map((edge) => {
           const isSelected = config.edgeType === edge.id;
 
@@ -150,6 +157,8 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
               className={`relative rounded-card overflow-hidden cursor-pointer transition-all duration-200 ${
                 isSelected
                   ? 'bg-brand-green text-white border-2 border-brand-green'
+                  : validationErrors.edgeType
+                  ? 'bg-white border-2 border-red-400 hover:border-red-500'
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
               }`}
             >
