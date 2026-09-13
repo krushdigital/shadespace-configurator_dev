@@ -2167,8 +2167,10 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           errors.edgeType = 'Please select an edge reinforcement type';
         }
         break;
-      case 5: // Hardware Selection (custom)
-        if (config.hardwareSelectionMode === 'manual') {
+      case 5: // Hardware Selection (custom) - REQUIRED
+        if (!config.hardwareSelectionMode || config.hardwareSelectionMode === 'none') {
+          errors.hardwareMode = 'Please select a hardware option to continue.';
+        } else if (config.hardwareSelectionMode === 'manual') {
           const ch = config.cornerHardware || {};
           for (let i = 0; i < config.corners; i++) {
             if (!ch[i] || ch[i].length === 0) {

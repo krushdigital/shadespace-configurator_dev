@@ -3,14 +3,16 @@ import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
-import { useHardwareCatalog, getDefaultPack, HardwareItem, isGreaseItem, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
+import { useHardwareCatalog, getDefaultPack, getLivePackPrice, HardwareItem, isGreaseItem, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
 import { formatCurrency } from '../../utils/currencyFormatter';
+import { EXCHANGE_RATES } from '../../data/pricing';
 import { PricingSetting, getPricingForCurrency } from '../../hooks/usePricingSettings';
 
 interface HardwareContentProps {
   config: ConfiguratorState;
   updateConfig: (updates: Partial<ConfiguratorState>) => void;
   calculations: ShadeCalculations;
+  validationErrors?: { [key: string]: string };
   onNext?: () => void;
   onPrev?: () => void;
   nextStepTitle?: string;
@@ -32,6 +34,7 @@ export function HardwareContent({
   config,
   updateConfig,
   calculations,
+  validationErrors = {},
   onNext,
   onPrev,
   nextStepTitle,
@@ -134,8 +137,15 @@ export function HardwareContent({
 
   return (
     <div className="space-y-4">
+      {/* Validation error message */}
+      {(validationErrors.hardwareMode || validationErrors.cornerHardware) && (
+        <div className="rounded-xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {validationErrors.hardwareMode || validationErrors.cornerHardware}
+        </div>
+      )}
+
       {/* Mode cards – edge-style vertical layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div data-error="hardwareMode" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {/* Hardware Tensioning Kit card */}
         {(() => {
           const sel = mode === 'standard';
@@ -174,11 +184,14 @@ export function HardwareContent({
                 <div className={`text-[15px] mt-1.5 leading-[1.45] ${sel ? 'opacity-90' : 'text-text-muted'}`}>
                   Curated set of hardware for your sail. Easiest option.
                 </div>
-                {pack && (
-                  <div className={`text-sm mt-2 font-bold ${sel ? 'text-brand-lime' : 'text-[#b8600b]'}`}>
-                    {formatCurrency(calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0, config.currency)}
-                  </div>
-                )}
+                {pack && (() => {
+                  const kitPrice = getLivePackPrice(pack, config.currency, EXCHANGE_RATES[config.currency] || 1);
+                  return kitPrice ? (
+                    <div className={`text-sm mt-2 font-bold ${sel ? 'text-brand-lime' : 'text-[#b8600b]'}`}>
+                      {formatCurrency(kitPrice, config.currency)}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
           );
@@ -248,7 +261,7 @@ export function HardwareContent({
           </div>
 
           {/* Corner cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div data-error="cornerHardware" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {Array.from({ length: config.corners }, (_, idx) => {
               const letter = String.fromCharCode(65 + idx);
               const preview = cornerPreview(idx);
