@@ -295,7 +295,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           );
         })()}
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-start">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
           <div className="lg:col-span-2 space-y-6">
             {/* Configuration Summary */}
@@ -548,7 +548,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
           <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-6">
             {/* Shade Sail Preview */}
-            <Card className="p-3 sm:p-4 bg-surface-soft/80 lg:max-h-[520px] lg:min-h-[400px] flex flex-col overflow-hidden">
+            <Card className="p-3 sm:p-4 bg-surface-soft/80 lg:min-h-[400px] flex flex-col overflow-hidden">
               <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <h4 className="text-sm font-semibold text-brand-green uppercase tracking-wide">
