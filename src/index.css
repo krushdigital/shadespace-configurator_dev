@@ -59,25 +59,9 @@
   border-style: solid !important;
 }
 
-/* Prevent white border around configurator from body/root backgrounds */
-html,
-body {
-  background-color: #f5f7f5 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  outline: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
-  width: 100% !important;
-  height: 100vh !important;
-  height: 100dvh !important;
-}
-
 #CONFIGURATOR_ROOT,
 #SHADESAIL_ROOT,
-#SHADE_SPACE,
-#SS_PORTAL_ROOT {
+#SHADE_SPACE {
   background-color: #f5f7f5 !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -86,10 +70,6 @@ body {
   box-sizing: border-box !important;
   height: 100% !important;
   overflow: hidden !important;
-}
-
-html {
-  scroll-padding-top: 100px;
 }
 
 #SHADESAIL_ROOT {
