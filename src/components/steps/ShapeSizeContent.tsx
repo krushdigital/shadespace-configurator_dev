@@ -10,6 +10,12 @@ import points6 from '../../assets/icons/points-6.svg';
 import points7 from '../../assets/icons/points-7.svg';
 import points8 from '../../assets/icons/points-8.svg';
 
+import squareIcon from '../../assets/icons/square.svg';
+import rectangleIcon from '../../assets/icons/rectangle.svg';
+import triangleIcon from '../../assets/icons/triangle.svg';
+import rightTriangleIcon from '../../assets/icons/right-triangle.svg';
+import customCombinedIcon from '../../assets/icons/custom-combined.svg';
+
 interface ShapeSizeContentProps {
   config: ConfiguratorState;
   updateConfig: (updates: Partial<ConfiguratorState>) => void;
@@ -28,6 +34,14 @@ interface ShapeSizeContentProps {
     clearHighlight: () => void;
   };
 }
+
+const SHAPE_ICONS: Record<string, string> = {
+  square: squareIcon,
+  rectangle: rectangleIcon,
+  triangle: triangleIcon,
+  'right-angle-triangle': rightTriangleIcon,
+  custom: customCombinedIcon,
+};
 
 const CORNER_OPTIONS = [
   { corners: 3, label: '3 points', description: 'Any triangle', icon: points3 },
@@ -51,71 +65,6 @@ const FIXED_SHAPES: ShapeTile[] = [
   { id: 'triangle', label: 'Triangle', hint: '1 measurement', corners: 3 },
   { id: 'right-angle-triangle', label: 'Right Angle Triangle', hint: '2 measurements', corners: 3 },
 ];
-
-function ShapeTileIcon({ shapeId, selected, className }: { shapeId: string; selected?: boolean; className?: string }) {
-  const cls = className || 'w-[72px] h-[72px]';
-  const stroke = selected ? '#ffffff' : '#01312d';
-  const fill = selected ? 'rgba(255,255,255,0.15)' : '#E7F2EA';
-  const dotFill = selected ? 'rgba(255,255,255,0.3)' : '#fff';
-
-  switch (shapeId) {
-    case 'square':
-      return (
-        <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12,12 Q50,22 88,12 Q78,50 88,88 Q50,78 12,88 Q22,50 12,12 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
-          <circle cx="12" cy="12" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="88" cy="12" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="88" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="12" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-        </svg>
-      );
-    case 'rectangle':
-      return (
-        <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6,28 Q50,37 94,28 Q88,50 94,72 Q50,63 6,72 Q12,50 6,28 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
-          <circle cx="6" cy="28" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="94" cy="28" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="94" cy="72" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="6" cy="72" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-        </svg>
-      );
-    case 'triangle':
-      return (
-        <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50,10 Q63.8,52 93,85 Q50,76 7,85 Q36.2,52 50,10 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
-          <circle cx="50" cy="10" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="93" cy="85" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="7" cy="85" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-        </svg>
-      );
-    case 'right-angle-triangle':
-      return (
-        <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18,12 Q46.9,56.6 88,88 Q49.6,80.7 18,88 Q25,53.8 18,12 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" />
-          <path d="M28,88 V79 H18" fill="none" stroke={stroke} strokeWidth="2.5" />
-          <circle cx="18" cy="12" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="18" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="88" cy="88" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-        </svg>
-      );
-    case 'custom':
-      return (
-        <svg className={cls} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line x1="14" y1="40" x2="14" y2="92" stroke={stroke} strokeWidth="3" />
-          <line x1="44" y1="16" x2="44" y2="88" stroke={stroke} strokeWidth="3" />
-          <line x1="88" y1="30" x2="88" y2="90" stroke={stroke} strokeWidth="3" />
-          <line x1="64" y1="58" x2="64" y2="94" stroke={stroke} strokeWidth="3" />
-          <path d="M14,40 Q30,32 44,16 Q68,28 88,30 Q74,42 64,58 Q38,54 14,40 Z" fill={fill} stroke={stroke} strokeWidth="3.5" strokeLinejoin="round" strokeDasharray="7 5" />
-          <circle cx="14" cy="40" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="44" cy="16" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="88" cy="30" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-          <circle cx="64" cy="58" r="5" fill={dotFill} stroke={stroke} strokeWidth="3" />
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
 
 function generateRegularPoints(corners: number) {
   const centerX = 300;
@@ -262,23 +211,29 @@ export function ShapeSizeContent({
               onClick={() => handleSelectFixed(tile)}
               aria-checked={isSelected}
               role="radio"
-              className={`relative cursor-pointer rounded-card p-[18px_10px_14px] flex flex-col items-center gap-2.5 text-center transition-all duration-200 min-h-[44px] ${
+              className={`relative cursor-pointer rounded-card p-[18px_10px_14px] flex flex-col items-center gap-2.5 text-center min-h-[44px] transition-all duration-300 ${
                 isSelected
-                  ? 'bg-white border-2 border-brand-green'
+                  ? 'bg-brand-green border-2 border-brand-green shadow-lg'
                   : tileError
                   ? 'bg-white border-2 border-red-400 hover:border-red-500'
-                  : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
+                  : 'bg-white border-2 border-border-card hover:border-[#7bb08f] hover:shadow-md'
               }`}
             >
               {isSelected && (
-                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-green text-brand-lime text-[13px] font-extrabold flex items-center justify-center">
+                <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
                   &#10003;
                 </span>
               )}
-              <ShapeTileIcon shapeId={tile.id} selected={false} className="w-[76px] h-[76px]" />
+              <img
+                src={SHAPE_ICONS[tile.id]}
+                alt={`${tile.label} sail`}
+                className={`w-[76px] h-[76px] transition-all duration-300 ${
+                  isSelected ? 'brightness-0 invert scale-105' : ''
+                }`}
+              />
               <div>
-                <div className="font-extrabold text-[16px] text-brand-green">{tile.label}</div>
-                <div className="text-[13px] mt-0.5 text-text-muted">{tile.hint}</div>
+                <div className={`font-extrabold text-[16px] transition-colors duration-300 ${isSelected ? 'text-white' : 'text-brand-green'}`}>{tile.label}</div>
+                <div className={`text-[13px] mt-0.5 transition-colors duration-300 ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>{tile.hint}</div>
               </div>
             </button>
           );
@@ -291,25 +246,33 @@ export function ShapeSizeContent({
         onClick={handleSelectCustom}
         aria-checked={isCustomSelected}
         role="radio"
-        className={`relative w-full cursor-pointer rounded-card p-4 flex items-center gap-4 text-left transition-all duration-200 min-h-[44px] ${
+        className={`relative w-full cursor-pointer rounded-card p-4 flex items-center gap-4 text-left min-h-[44px] transition-all duration-300 ${
           isCustomSelected
-            ? 'bg-brand-green text-white border-2 border-dashed border-brand-green'
+            ? 'bg-brand-green text-white border-2 border-dashed border-brand-lime shadow-lg'
             : tileError
             ? 'bg-white border-2 border-dashed border-red-400 hover:border-red-500'
-            : 'bg-white border-2 border-dashed border-[#7bb08f] hover:border-brand-mid'
+            : 'bg-white border-2 border-dashed border-[#7bb08f] hover:border-brand-mid hover:shadow-md'
         }`}
       >
         {isCustomSelected && (
-          <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center">
+          <span className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
             &#10003;
           </span>
         )}
-        <div className="w-[68px] h-[68px] rounded-xl bg-white flex items-center justify-center flex-shrink-0">
-          <ShapeTileIcon shapeId="custom" selected={false} className="w-[60px] h-[60px]" />
+        <div className={`w-[68px] h-[68px] rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
+          isCustomSelected ? 'bg-white/15' : 'bg-white'
+        }`}>
+          <img
+            src={SHAPE_ICONS.custom}
+            alt="Custom sail"
+            className={`w-[60px] h-[60px] transition-all duration-300 ${
+              isCustomSelected ? 'brightness-0 invert scale-105' : ''
+            }`}
+          />
         </div>
         <div className="pr-8">
-          <div className={`font-extrabold text-[17px] ${isCustomSelected ? 'text-white' : 'text-brand-green'}`}>Custom shape</div>
-          <div className={`text-[14px] mt-0.5 ${isCustomSelected ? 'text-white/85' : 'text-text-muted'}`}>
+          <div className={`font-extrabold text-[17px] transition-colors duration-300 ${isCustomSelected ? 'text-white' : 'text-brand-green'}`}>Custom shape</div>
+          <div className={`text-[14px] mt-0.5 transition-colors duration-300 ${isCustomSelected ? 'text-white/85' : 'text-text-muted'}`}>
             3&ndash;8 fixing points &middot; Made to measure &middot; Fit Guarantee
           </div>
         </div>
@@ -343,27 +306,29 @@ export function ShapeSizeContent({
                   key={shape.corners}
                   type="button"
                   onClick={() => handleCornerChange(shape.corners)}
-                  className={`relative rounded-card p-[16px_10px_14px] flex flex-col items-center gap-2 text-center transition-all duration-200 cursor-pointer min-h-[44px] ${
+                  className={`relative rounded-card p-[16px_10px_14px] flex flex-col items-center gap-2 text-center cursor-pointer min-h-[44px] transition-all duration-300 ${
                     isSelected
-                      ? 'bg-white border-2 border-brand-green'
+                      ? 'bg-brand-green border-2 border-brand-green shadow-lg'
                       : hasError
                       ? 'bg-white border-2 border-red-400'
-                      : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
+                      : 'bg-white border-2 border-border-card hover:border-[#7bb08f] hover:shadow-md'
                   }`}
                 >
                   {isSelected && (
-                    <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-green text-brand-lime text-[13px] font-extrabold flex items-center justify-center">
+                    <span className="absolute top-2 right-2 w-[22px] h-[22px] rounded-full bg-brand-lime text-brand-green text-[13px] font-extrabold flex items-center justify-center animate-[scaleIn_0.25s_ease-out]">
                       &#10003;
                     </span>
                   )}
                   <img
                     src={shape.icon}
                     alt={`${shape.label} sail`}
-                    className="w-[84px] h-[84px]"
+                    className={`w-[84px] h-[84px] transition-all duration-300 ${
+                      isSelected ? 'brightness-0 invert scale-105' : ''
+                    }`}
                   />
                   <div>
-                    <div className="font-extrabold text-[16px] text-brand-green">{shape.label}</div>
-                    <div className="text-[13px] mt-0.5 text-text-muted">
+                    <div className={`font-extrabold text-[16px] transition-colors duration-300 ${isSelected ? 'text-white' : 'text-brand-green'}`}>{shape.label}</div>
+                    <div className={`text-[13px] mt-0.5 transition-colors duration-300 ${isSelected ? 'text-white/80' : 'text-text-muted'}`}>
                       {shape.description}
                       {shape.corners === 4 && (
                         <span className="ml-1.5 inline-flex px-1.5 py-0.5 bg-brand-lime text-brand-green text-[9px] font-bold rounded-full align-middle">Popular</span>
