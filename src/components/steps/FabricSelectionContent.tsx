@@ -240,8 +240,9 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         </div>
                       }
                     >
-                      <span className="w-[18px] h-[18px] inline-flex items-center justify-center text-[10px] font-bold bg-brand-green/15 text-brand-green rounded-full cursor-help hover:bg-brand-green hover:text-white transition-colors">
-                        ?
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold bg-white/90 text-brand-green rounded-full cursor-help shadow-sm hover:bg-brand-green hover:text-white transition-colors backdrop-blur-sm">
+                        <Info className="w-3 h-3" />
+                        <span className="hidden sm:inline">Details</span>
                       </span>
                     </Tooltip>
                 </div>
@@ -374,8 +375,35 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
               const hasError = validationErrors.fabricColor && !config.fabricColor;
               
               return (
-                <div
+                <Tooltip
                   key={color.name}
+                  content={
+                    <div>
+                      <h4 className="font-bold text-brand-green mb-1.5">{color.name}</h4>
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-brand-green/60">Fabric</span>
+                          <span className="font-semibold text-brand-green">{selectedFabric.label}</span>
+                        </div>
+                        {color.shadeFactor && (
+                          <div className="flex justify-between">
+                            <span className="text-brand-green/60">Shade Factor</span>
+                            <span className="font-semibold text-brand-green">{color.shadeFactor}%</span>
+                          </div>
+                        )}
+                        {selectedFabric.isFireRetardant && (
+                          <div className="flex justify-between">
+                            <span className="text-brand-green/60">Fire Retardant</span>
+                            <span className={`font-semibold ${color.isFireRetardant ? 'text-orange-600' : 'text-brand-green/70'}`}>
+                              {color.isFireRetardant ? 'Yes -- FR Certified' : 'No -- Standard'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  }
+                >
+                <div
                   className="relative group"
                 >
                   <button
@@ -433,6 +461,7 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                     </div>
                   </button>
                 </div>
+                </Tooltip>
               );
             })}
           </div>
