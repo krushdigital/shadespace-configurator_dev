@@ -1,14 +1,13 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
-import { Button } from '../ui/Button';
-import { SaveProgressButton } from '../SaveProgressButton';
+
 import { useHardwareCatalog, getDefaultPack, getLivePackPrice, HardwareItem, isGreaseItem, getLiveHardwarePrice } from '../../hooks/useHardwareCatalog';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
 import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPreview';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { EXCHANGE_RATES } from '../../data/pricing';
-import { Package, SlidersHorizontal, CheckCircle2, Info, Droplets } from 'lucide-react';
+import { Info } from 'lucide-react';
 import { PricingSetting, getPricingForCurrency } from '../../hooks/usePricingSettings';
 
 interface FixedShapeHardwareContentProps {
@@ -145,101 +144,127 @@ export function FixedShapeHardwareContent({
     );
   }
 
+  const packImage = HARDWARE_PACK_IMAGES[config.corners];
+
   return (
-    <div className="p-5 sm:p-6 space-y-5">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h2 className="text-lg sm:text-xl font-bold text-brand-green">Hardware (Recommended)</h2>
-          <p className="mt-1 text-sm text-text-muted">
-            Add mounting hardware to your order, or continue without to get the sail only.
-          </p>
-        </div>
-        {mode === 'manual' && (
-          <span className={`flex-shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-            allManualConfigured ? 'bg-surface-soft text-brand-mid' : 'bg-[#fff7ed] text-[#8b5c1a]'
-          }`}>
-            {configuredCount}/{config.corners} configured
-          </span>
-        )}
-      </div>
-
+    <div className="space-y-4">
+      {/* Mode cards – tall visual layout matching custom shape */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Standard Pack Card */}
-        {pack && (
-          <StandardPackPreview
-            pack={pack}
-            itemsById={itemsById}
-            corners={config.corners}
-            onTriggerClick={() => setMode('standard')}
-            triggerClassName={`relative w-full rounded-xl border-2 p-4 text-left transition cursor-pointer ${
-              mode === 'standard' ? 'border-brand-mid bg-brand-mid/5' : 'border-border-card bg-white hover:border-[#7bb08f]'
-            }`}
-          >
-            {({ openInfo }) => (
-              <div className="flex items-start gap-3 w-full">
-                {HARDWARE_PACK_IMAGES[config.corners] ? (
-                  <img
-                    src={HARDWARE_PACK_IMAGES[config.corners]}
-                    alt={`${config.corners} corner hardware kit`}
-                    className="h-14 w-14 flex-shrink-0 rounded-lg border border-border-card bg-white object-contain"
-                  />
-                ) : (
-                  <div className="h-14 w-14 flex-shrink-0 rounded-lg border border-border-card bg-white flex items-center justify-center">
-                    <Package className="h-6 w-6 text-brand-mid" />
+        {/* Hardware Tensioning Kit card */}
+        {pack && (() => {
+          const sel = mode === 'standard';
+          return (
+            <StandardPackPreview
+              pack={pack}
+              itemsById={itemsById}
+              corners={config.corners}
+              onTriggerClick={() => setMode('standard')}
+              triggerClassName={`relative w-full rounded-card overflow-hidden text-left transition-all duration-200 cursor-pointer ${
+                sel
+                  ? 'bg-brand-green text-white border-2 border-brand-green'
+                  : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
+              }`}
+            >
+              {({ openInfo }) => (
+                <>
+                  {sel && (
+                    <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center z-10">
+                      &#10003;
+                    </div>
+                  )}
+                  {packImage && (
+                    <div className="relative">
+                      <img
+                        src={packImage}
+                        alt="Hardware Tensioning Kit"
+                        className="w-full h-[150px] object-cover block bg-border-card"
+                      />
+                    </div>
+                  )}
+                  <div className="px-4 py-4">
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="font-extrabold text-[19px]">Hardware Tensioning Kit</div>
+                      <span className={`text-xs font-bold rounded-full px-2.5 py-0.5 ${
+                        sel ? 'bg-white/20 text-white' : 'bg-surface-soft text-brand-mid'
+                      }`}>
+                        Recommended
+                      </span>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        aria-label="View hardware kit contents"
+                        onClick={(e) => { e.stopPropagation(); openInfo(e); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openInfo(e); } }}
+                        className={`inline-flex items-center justify-center -m-1 p-1 rounded-full cursor-pointer ${
+                          sel ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-text-muted hover:text-brand-mid hover:bg-surface-soft'
+                        }`}
+                      >
+                        <Info className="h-4 w-4" />
+                      </span>
+                    </div>
+                    <div className={`text-[15px] mt-1.5 leading-[1.45] ${sel ? 'opacity-90' : 'text-text-muted'}`}>
+                      Curated set of hardware for your sail. Easiest option.
+                    </div>
+                    {(() => {
+                      const kitPrice = getLivePackPrice(pack, currency, EXCHANGE_RATES[currency] || 1);
+                      return kitPrice ? (
+                        <div className={`text-sm mt-2 font-bold ${sel ? 'text-brand-lime' : 'text-[#b8600b]'}`}>
+                          {formatCurrency(kitPrice, currency)}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-brand-green">Hardware Tensioning Kit</span>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label="View hardware kit contents"
-                      onClick={(e) => openInfo(e)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') openInfo(e);
-                      }}
-                      className="inline-flex items-center justify-center -m-1 p-1 rounded-full text-text-muted hover:text-brand-mid hover:bg-surface-soft cursor-pointer"
-                    >
-                      <Info className="h-4 w-4" />
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-xs text-text-muted">Curated set for your sail.</div>
-                  {(() => {
-                    const packPrice = getLivePackPrice(pack, currency, EXCHANGE_RATES[currency] || 1);
-                    return packPrice ? (
-                      <p className="text-sm font-bold text-brand-green mt-1">{formatCurrency(packPrice, currency)}</p>
-                    ) : null;
-                  })()}
-                </div>
-                {mode === 'standard' && <CheckCircle2 className="h-5 w-5 text-brand-mid flex-shrink-0" />}
-              </div>
-            )}
-          </StandardPackPreview>
-        )}
+                </>
+              )}
+            </StandardPackPreview>
+          );
+        })()}
 
-        {/* Manual per corner Card */}
-        <button
-          type="button"
-          onClick={() => setMode('manual')}
-          className={`rounded-xl border-2 p-4 text-left transition ${
-            mode === 'manual' ? 'border-brand-mid bg-brand-mid/5' : 'border-border-card bg-white hover:border-[#7bb08f]'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <SlidersHorizontal className="h-6 w-6 text-brand-mid" />
-            {mode === 'manual' && <CheckCircle2 className="h-5 w-5 text-brand-mid" />}
-          </div>
-          <div className="mt-2 text-sm font-bold text-brand-green">Manual per corner</div>
-          <div className="mt-0.5 text-xs text-text-muted">Pick specific hardware per corner.</div>
-        </button>
+        {/* Manual per corner card */}
+        {(() => {
+          const sel = mode === 'manual';
+          return (
+            <div
+              onClick={() => setMode('manual')}
+              className={`relative rounded-card overflow-hidden cursor-pointer transition-all duration-200 ${
+                sel
+                  ? 'bg-brand-green text-white border-2 border-brand-green'
+                  : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
+              }`}
+            >
+              {sel && (
+                <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center z-10">
+                  &#10003;
+                </div>
+              )}
+              <div className={`w-full h-[150px] flex items-center justify-center ${sel ? 'bg-white/10' : 'bg-surface-soft'}`}>
+                <svg className={`w-16 h-16 ${sel ? 'text-white/60' : 'text-brand-green/30'}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                </svg>
+              </div>
+              <div className="px-4 py-4">
+                <div className="font-extrabold text-[19px]">Manual per corner</div>
+                <div className={`text-[15px] mt-1.5 leading-[1.45] ${sel ? 'opacity-90' : 'text-text-muted'}`}>
+                  Pick specific hardware items for each corner individually.
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
-      {/* Per-corner manual selection panel */}
+      {/* Manual per-corner configuration */}
       {mode === 'manual' && (
-        <div ref={manualPanelRef} className="scroll-mt-4 rounded-xl border border-border-card bg-[#fbfdfb] p-4 space-y-3">
-          <div className="lg:hidden mb-3">
-            <p className="mb-2 text-xs text-text-muted">Tap a corner on the diagram or the list below to configure.</p>
+        <div ref={manualPanelRef} className="scroll-mt-4 space-y-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[17px] font-extrabold text-brand-green">Choose for each corner</span>
+            <span className="text-[13px] font-bold text-brand-mid bg-surface-soft rounded-full px-2.5 py-0.5">
+              {configuredCount}/{config.corners}
+            </span>
+          </div>
+
+          {/* Mobile shape canvas */}
+          <div className="lg:hidden">
             <div className="mx-auto max-w-[280px]">
               <ShapeCanvas
                 config={config}
@@ -257,8 +282,9 @@ export function FixedShapeHardwareContent({
               />
             </div>
           </div>
-          <p className="text-sm text-text-muted hidden lg:block">Hover over a corner row to highlight it on the diagram. Click to select hardware.</p>
-          <div className="space-y-2">
+
+          {/* Corner cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {Array.from({ length: config.corners }, (_, idx) => {
               const letter = String.fromCharCode(65 + idx);
               const preview = cornerPreview(idx);
@@ -270,81 +296,71 @@ export function FixedShapeHardwareContent({
                   onClick={() => openCornerModal(idx)}
                   onMouseEnter={() => handleHoverCorner(idx)}
                   onMouseLeave={() => handleHoverCorner(null)}
-                  onFocus={() => handleHoverCorner(idx)}
-                  onBlur={() => handleHoverCorner(null)}
-                  onTouchStart={() => handleHoverCorner(idx)}
-                  className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition ${
-                    isConfigured ? 'border-emerald-200 bg-emerald-50/40' : 'border-amber-200 bg-amber-50/60'
-                  }`}
+                  className={`flex w-full items-center gap-3.5 rounded-card border-2 px-4 py-3 text-left transition-all duration-200 cursor-pointer ${
+                    isConfigured ? 'border-border-card bg-white' : 'border-[#e4a11a]/40 bg-[#fffbf5]'
+                  } hover:border-[#7bb08f]`}
                 >
-                  <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full font-bold text-white ${
-                    isConfigured ? 'bg-emerald-600' : 'bg-amber-500'
-                  }`}>
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-green text-brand-lime font-extrabold text-sm">
                     {letter}
                   </div>
                   <div className="flex-1 min-w-0">
-                    {isConfigured ? (
-                      <>
-                        <div className="text-sm font-semibold text-brand-green line-clamp-1">{preview}</div>
-                        <div className="text-xs text-[#D97706] font-semibold mt-0.5">{cornerSubtotalDisplay(idx)}</div>
-                      </>
-                    ) : (
-                      <div className="text-sm font-semibold text-amber-700">Not configured - click to select</div>
+                    <div className={`text-[15px] font-bold truncate ${isConfigured ? 'text-brand-green' : 'text-[#b8600b]'}`}>
+                      {isConfigured ? preview : 'Not configured'}
+                    </div>
+                    {isConfigured && (
+                      <div className="text-[13px] font-bold text-[#b8600b] mt-0.5">{cornerSubtotalDisplay(idx)}</div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {isConfigured && (
                       <span
                         role="button"
                         aria-label={`Clear hardware for corner ${letter}`}
                         onClick={(e) => { e.stopPropagation(); clearCorner(idx); }}
-                        className="text-xs text-slate-400 hover:text-text-muted px-1.5 py-1"
+                        className="text-xs text-text-muted hover:text-brand-green px-1 py-1"
                       >
                         Clear
                       </span>
                     )}
-                    <SlidersHorizontal className="h-4 w-4 text-slate-400" />
+                    <span className="text-[13px] font-bold text-brand-mid whitespace-nowrap">
+                      {isConfigured ? 'Edit' : 'Select'}
+                    </span>
                   </div>
                 </button>
               );
             })}
           </div>
 
+          {/* Grease add-on */}
           {greaseItem && (
-            <div className={`mt-3 flex items-center gap-3 rounded-xl border-2 p-3 transition cursor-pointer ${
-              includeGrease ? 'border-emerald-300 bg-emerald-50/50' : 'border-border-card bg-white'
-            }`} onClick={() => updateConfig({ includeGrease: !includeGrease })}>
-              {greaseItem.image_url ? (
-                <img src={greaseItem.image_url} alt={greaseItem.name} className="h-12 w-12 flex-shrink-0 rounded-lg border border-border-card bg-white object-contain" />
-              ) : (
-                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-border-card bg-white">
-                  <Droplets className="h-5 w-5 text-amber-600" />
-                </div>
-              )}
+            <div
+              onClick={() => updateConfig({ includeGrease: !includeGrease })}
+              className={`flex items-center gap-3.5 rounded-card border-2 px-4 py-3.5 cursor-pointer transition-all duration-200 ${
+                includeGrease ? 'border-border-card bg-white' : 'border-border-card bg-white'
+              }`}
+            >
+              <div className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg border-2 transition ${
+                includeGrease ? 'border-brand-green bg-brand-green' : 'border-border-card bg-white'
+              }`}>
+                {includeGrease && <span className="text-white text-sm font-extrabold">&#10003;</span>}
+              </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-brand-green">{greaseItem.name}</div>
-                <div className="text-xs text-text-muted mt-0.5">Prevents seizing &amp; ensures correct installation. One per sail.</div>
+                <div className="font-bold text-base text-brand-green">{greaseItem.name}</div>
+                <div className="text-sm text-text-muted">Prevents seizing and ensures correct installation. One per sail.</div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-sm font-bold text-brand-green">{formatCurrency(greaseLivePrice, currency)}</span>
-                <div className={`flex h-5 w-5 items-center justify-center rounded border-2 transition ${
-                  includeGrease ? 'border-emerald-500 bg-emerald-500' : 'border-border-card bg-white'
-                }`}>
-                  {includeGrease && <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                </div>
-              </div>
+              <div className="font-extrabold text-[15px] text-brand-green">{formatCurrency(greaseLivePrice, currency)}</div>
             </div>
           )}
 
+          {/* Hardware cost summary */}
           {config.corners > 0 && (
-            <div className="mt-3 rounded-xl bg-surface-panel p-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-brand-green">Hardware Cost (added to total):</span>
-              <span className="text-lg font-bold text-[#D97706]">{formatCurrency((calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0), config.currency)}</span>
+            <div className="bg-surface-soft rounded-xl px-4 py-3 flex items-center justify-between text-[15px]">
+              <span className="font-semibold text-[#23503f]">Hardware cost (added to total)</span>
+              <span className="font-extrabold text-[#b8600b]">{formatCurrency((calculations.hardwareBreakdown?.hardwareOnlyLivePrice || 0), config.currency)}</span>
             </div>
           )}
         </div>
       )}
-
 
       {/* Hardware Selection Modal - per corner */}
       {!loading && modalCorner !== null && (
