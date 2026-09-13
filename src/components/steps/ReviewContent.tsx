@@ -554,8 +554,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
           </div>
 
-          {/* Right Sticky Sidebar - Diagram and Diagonal Inputs */}
-          <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-6">
+          {/* Right Column - Diagram Preview */}
+          <div className="lg:col-span-2 space-y-6">
             {/* Shade Sail Preview */}
             <Card className="p-3 sm:p-4 bg-surface-soft/80 lg:min-h-[400px] flex flex-col overflow-hidden">
               <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
