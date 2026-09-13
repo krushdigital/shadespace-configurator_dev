@@ -240,8 +240,8 @@ export function FabricSelectionContent({ config, updateConfig, onNext, onPrev, n
                         </div>
                       }
                     >
-                      <span className="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold bg-white/90 text-brand-green rounded-full cursor-help shadow-sm hover:bg-brand-green hover:text-white transition-colors backdrop-blur-sm">
-                        <Info className="w-3 h-3" />
+                      <span className="inline-flex items-center justify-center w-7 h-7 sm:w-auto sm:h-auto sm:gap-1.5 sm:px-2.5 sm:py-1.5 text-[11px] font-bold bg-brand-green text-white rounded-full cursor-help shadow-md hover:bg-brand-mid transition-colors">
+                        <Info className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                         <span className="hidden sm:inline">Details</span>
                       </span>
                     </Tooltip>
