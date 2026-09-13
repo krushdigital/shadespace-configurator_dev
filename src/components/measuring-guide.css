@@ -71,7 +71,7 @@
 }
 
 .mg-svg-wrap .mg-svg {
-  max-height: 28vh;
+  max-height: 32vh;
 }
 
 .mg-legend {
@@ -89,7 +89,7 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  flex-shrink: 0;
+  flex-shrink: 1;
 }
 
 .mg-callout-icon {
@@ -136,8 +136,8 @@
   .mg-card-subtitle { font-size: 12px; }
   .mg-card-body { padding: 14px 16px 16px; gap: 12px; }
   .mg-svg-wrap { padding: 10px; border-radius: 12px; }
-  .mg-svg-wrap .mg-svg { max-height: 22vh; }
-  .mg-callout { padding: 10px 12px; gap: 10px; border-radius: 12px; }
+  .mg-svg-wrap .mg-svg { max-height: 26vh; }
+  .mg-callout { padding: 10px 12px; gap: 10px; border-radius: 12px; flex-shrink: 1; }
   .mg-callout-icon { width: 28px; height: 28px; border-radius: 8px; }
   .mg-callout-title { font-size: 14px; }
   .mg-callout-body { font-size: 13px; margin-top: 2px; }
@@ -155,7 +155,7 @@
   .mg-card-subtitle { font-size: 11px; }
   .mg-card-body { padding: 10px 14px 12px; gap: 8px; }
   .mg-svg-wrap { padding: 8px; }
-  .mg-svg-wrap .mg-svg { max-height: 16vh; }
+  .mg-svg-wrap .mg-svg { max-height: 20vh; }
   .mg-callout { padding: 8px 10px; }
   .mg-callout-title { font-size: 13px; }
   .mg-callout-body { font-size: 12px; }
