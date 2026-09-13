@@ -2830,20 +2830,22 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
               </div>
             )}
 
-            {/* Step heading */}
-            <div className="mb-6">
-              <div className="flex items-center gap-0">
-                <h1 className="text-heading font-extrabold text-brand-green leading-tight">
-                  {steps[openStep]?.title}
-                </h1>
-                {STEP_HELP_CONTENT[openStep] && (
-                  <HelpPopover content={STEP_HELP_CONTENT[openStep]} />
-                )}
+            {/* Step heading — hidden while measuring guide is shown on dimensions steps */}
+            {!(isMeasureGuideVisible && (openStep === 2 || openStep === 3)) && (
+              <div className="mb-6">
+                <div className="flex items-center gap-0">
+                  <h1 className="text-heading font-extrabold text-brand-green leading-tight">
+                    {steps[openStep]?.title}
+                  </h1>
+                  {STEP_HELP_CONTENT[openStep] && (
+                    <HelpPopover content={STEP_HELP_CONTENT[openStep]} />
+                  )}
+                </div>
+                <p className="mt-1 text-text-muted text-base">
+                  {steps[openStep]?.subtitle}
+                </p>
               </div>
-              <p className="mt-1 text-text-muted text-base">
-                {steps[openStep]?.subtitle}
-              </p>
-            </div>
+            )}
 
             {/* Sketch applied banner */}
             {openStep === 2 && sketchAppliedBanner && (
