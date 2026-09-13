@@ -2801,7 +2801,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     : undefined;
 
   return (
-    <>
+    <div className="flex flex-col h-screen overflow-hidden">
       {/* Mobile Header with progress */}
       <MobileHeader
         currentStep={currentDisplayStep + 1}
@@ -2811,7 +2811,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
         onStepClick={handleRailStepClick}
       />
 
-      <div className="flex bg-surface-panel h-screen overflow-hidden">
+      <div className="flex bg-surface-panel flex-1 min-h-0 overflow-hidden">
         {/* Left Rail Navigation - tablet+ */}
         <StepRail steps={railSteps} onStepClick={handleRailStepClick} onSave={openStep > 0 ? handleSaveQuote : undefined} />
 
@@ -3306,6 +3306,6 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
           />
         </Suspense>
       )}
-    </>
+    </div>
   );
 }
