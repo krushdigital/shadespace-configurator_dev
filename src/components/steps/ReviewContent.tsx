@@ -304,9 +304,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           );
         })()}
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-stretch">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 flex flex-col">
             {/* Configuration Summary */}
             {!isMobile && (
               <h4 className="text-sm font-semibold text-brand-green uppercase tracking-wide mb-3">
@@ -386,8 +386,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 </Card>
               </AccordionItem>
             ) : (
-              <Card className="p-4 mb-4">
-              <div className="space-y-3 text-sm">
+              <Card className="p-4 mb-4 flex-1 flex flex-col">
+              <div className="space-y-3 text-sm flex-1">
                 {/* Material cluster */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between">
@@ -555,9 +555,9 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           </div>
 
           {/* Right Column - Diagram Preview */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 flex flex-col">
             {/* Shade Sail Preview */}
-            <Card className="p-3 sm:p-4 bg-surface-soft/80 lg:min-h-[400px] flex flex-col overflow-hidden">
+            <Card className="p-3 sm:p-4 bg-surface-soft/80 flex-1 flex flex-col overflow-hidden">
               <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <h4 className="text-sm font-semibold text-brand-green uppercase tracking-wide">
