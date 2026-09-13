@@ -1,14 +1,16 @@
 # Agent Rules
 
-## Attachments and Screenshots
+## Attachments and Screenshots — ABSOLUTE RULE
 
-Never save, copy, or download images or files attached in chat into the project directory. Attachments and screenshots are strictly for analysis and feedback purposes only. When a user shares an image or file:
+**NEVER add, save, copy, download, or generate images into the project unless the user specifically and explicitly asks for an image to be added.** This is non-negotiable. No exceptions. No "it would look nice." No "the design needs it." If the user did not ask for an image, do not add one.
 
-1. Read and analyze the content visually.
-2. Provide feedback, observations, or act on what is shown.
-3. Do NOT add the file to the project's file system under any circumstances.
+When a user shares an image or file in chat:
 
-This applies to all file types: images (PNG, JPEG, WebP, etc.), documents, and any other attachments shared in conversation.
+1. **Analyze it** — read and understand the content visually.
+2. **Respond to the user's question or comment** — give an opinion, answer a question, or provide feedback, especially in relation to whatever comment the user wrote alongside the image.
+3. **Do NOT add the file to the project** under any circumstances.
+
+This applies to all file types: images (PNG, JPEG, WebP, etc.), documents, and any other attachments shared in conversation. It also applies to AI-generated images — do not use image generation tools unless the user explicitly requests it.
 
 ## Attention to Detail and Verification
 

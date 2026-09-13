@@ -12,6 +12,10 @@ interface UseMobileGuidanceOptions {
 
 export type ScrollBias = 'center' | 'below-center' | 'top';
 
+function getScrollContainer(): HTMLElement | null {
+  return document.getElementById('main-scroll-container');
+}
+
 export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOptions) {
   const [guidanceState, setGuidanceState] = useState<GuidanceState>({
     currentHighlightTarget: null,
@@ -22,14 +26,11 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
   const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const getViewportHeight = useCallback((): number => {
+    const sc = getScrollContainer();
+    if (sc) return sc.clientHeight;
     const vv = typeof window !== 'undefined' ? window.visualViewport : null;
     if (vv && vv.height) return vv.height;
     return window.innerHeight || document.documentElement.clientHeight;
-  }, []);
-
-  const getViewportOffsetTop = useCallback((): number => {
-    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-    return vv?.offsetTop ?? 0;
   }, []);
 
   const classifyBrowser = useCallback((): string => {
@@ -71,7 +72,7 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
             inner_height: Math.round(innerHeight),
             visual_viewport_height: Math.round(vvHeight),
             target_scroll_y: Math.round(payload.targetScrollY),
-            final_scroll_y: Math.round(window.scrollY || 0),
+            final_scroll_y: Math.round(getScrollContainer()?.scrollTop ?? window.scrollY ?? 0),
             align_mode: payload.alignMode,
           }),
           keepalive: true,
@@ -83,21 +84,41 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
   }, [classifyBrowser]);
 
   const isElementVisible = useCallback((element: HTMLElement, threshold: number = 0.7): boolean => {
+    const sc = getScrollContainer();
     const rect = element.getBoundingClientRect();
-    const viewportHeight = getViewportHeight();
-    const viewportOffsetTop = getViewportOffsetTop();
 
+    if (sc) {
+      const containerRect = sc.getBoundingClientRect();
+      const viewportHeight = sc.clientHeight;
+      const elementHeight = rect.height;
+      const visibleTop = Math.max(containerRect.top, rect.top);
+      const visibleBottom = Math.min(containerRect.bottom, rect.bottom);
+      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+      const visibilityRatio = elementHeight > 0 ? visibleHeight / elementHeight : 0;
+
+      const fullyInViewport =
+        rect.top >= containerRect.top &&
+        rect.bottom <= containerRect.bottom;
+
+      const topQuarterCutoff = containerRect.top + viewportHeight * 0.25;
+      const sittingNearTop = rect.top < topQuarterCutoff;
+
+      if (sittingNearTop && elementHeight < viewportHeight * 0.6) {
+        return false;
+      }
+
+      return fullyInViewport || visibilityRatio >= threshold;
+    }
+
+    const viewportHeight = getViewportHeight();
     const elementHeight = rect.height;
-    const visibleTop = Math.max(viewportOffsetTop, rect.top);
-    const visibleBottom = Math.min(viewportOffsetTop + viewportHeight, rect.bottom);
+    const visibleTop = Math.max(0, rect.top);
+    const visibleBottom = Math.min(viewportHeight, rect.bottom);
     const visibleHeight = Math.max(0, visibleBottom - visibleTop);
     const visibilityRatio = elementHeight > 0 ? visibleHeight / elementHeight : 0;
 
-    const fullyInViewport =
-      rect.top >= viewportOffsetTop &&
-      rect.bottom <= viewportOffsetTop + viewportHeight;
-
-    const topQuarterCutoff = viewportOffsetTop + viewportHeight * 0.25;
+    const fullyInViewport = rect.top >= 0 && rect.bottom <= viewportHeight;
+    const topQuarterCutoff = viewportHeight * 0.25;
     const sittingNearTop = rect.top < topQuarterCutoff;
 
     if (sittingNearTop && elementHeight < viewportHeight * 0.6) {
@@ -105,7 +126,7 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
     }
 
     return fullyInViewport || visibilityRatio >= threshold;
-  }, [getViewportHeight, getViewportOffsetTop]);
+  }, [getViewportHeight]);
 
   const scrollToElement = useCallback((
     elementId: string,
@@ -136,47 +157,54 @@ export function useMobileGuidance({ isMobile, currentStep }: UseMobileGuidanceOp
         return;
       }
 
+      const sc = getScrollContainer();
       const resolvedBias: ScrollBias = alignToTop
         ? 'top'
         : bias || (elementId.startsWith('continue-button') ? 'below-center' : 'center');
 
-      if (resolvedBias === 'top') {
+      if (sc) {
+        const containerRect = sc.getBoundingClientRect();
         const rect = element.getBoundingClientRect();
-        const elementTop = rect.top + window.pageYOffset;
-        const targetPosition = Math.max(0, elementTop - offset);
+        const elementTopInContainer = rect.top - containerRect.top + sc.scrollTop;
 
-        window.scrollTo({
-          top: targetPosition,
-          behavior: 'smooth',
-        });
+        if (resolvedBias === 'top') {
+          const targetPosition = Math.max(0, elementTopInContainer - offset);
+          sc.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          logScrollDiagnostic({ elementId, targetScrollY: targetPosition, alignMode: 'top' });
+        } else {
+          const viewportHeight = sc.clientHeight;
+          const centerOffset = viewportHeight / 2 - rect.height / 2;
+          let targetPosition = Math.max(0, elementTopInContainer - centerOffset);
 
-        logScrollDiagnostic({
-          elementId,
-          targetScrollY: targetPosition,
-          alignMode: 'top',
-        });
+          if (resolvedBias === 'below-center') {
+            const shift = Math.min(110, Math.max(70, viewportHeight * 0.12));
+            targetPosition += shift;
+          }
+
+          sc.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          logScrollDiagnostic({ elementId, targetScrollY: targetPosition, alignMode: resolvedBias });
+        }
       } else {
         const rect = element.getBoundingClientRect();
-        const elementTop = rect.top + window.pageYOffset;
-        const viewportHeight = getViewportHeight();
-        const centerOffset = viewportHeight / 2 - rect.height / 2;
-        let targetPosition = Math.max(0, elementTop - centerOffset);
+        if (resolvedBias === 'top') {
+          const elementTop = rect.top + window.pageYOffset;
+          const targetPosition = Math.max(0, elementTop - offset);
+          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          logScrollDiagnostic({ elementId, targetScrollY: targetPosition, alignMode: 'top' });
+        } else {
+          const elementTop = rect.top + window.pageYOffset;
+          const viewportHeight = getViewportHeight();
+          const centerOffset = viewportHeight / 2 - rect.height / 2;
+          let targetPosition = Math.max(0, elementTop - centerOffset);
 
-        if (resolvedBias === 'below-center') {
-          const shift = Math.min(110, Math.max(70, viewportHeight * 0.12));
-          targetPosition += shift;
+          if (resolvedBias === 'below-center') {
+            const shift = Math.min(110, Math.max(70, viewportHeight * 0.12));
+            targetPosition += shift;
+          }
+
+          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+          logScrollDiagnostic({ elementId, targetScrollY: targetPosition, alignMode: resolvedBias });
         }
-
-        window.scrollTo({
-          top: targetPosition,
-          behavior: 'smooth',
-        });
-
-        logScrollDiagnostic({
-          elementId,
-          targetScrollY: targetPosition,
-          alignMode: resolvedBias,
-        });
       }
 
       setGuidanceState(prev => ({

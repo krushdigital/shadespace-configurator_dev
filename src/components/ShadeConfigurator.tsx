@@ -2028,21 +2028,24 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   };
 
   const smoothScrollToStep = (stepNumber: number) => {
-    // stepNumber here is the step index (0-6), we need to get its displayed number
     const displayedNumber = getDisplayedStepNumber(stepNumber);
     const stepElement = document.getElementById(`step-${displayedNumber}`);
     if (!stepElement) return;
 
+    const scrollContainer = document.getElementById('main-scroll-container');
     const isMobileView = window.innerWidth < 900;
     const headerOffset = isMobileView ? 70 : 140;
 
-    const elementPosition = stepElement.getBoundingClientRect().top;
-    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-    window.scrollTo({
-      top: offsetPosition,
-      behavior: 'smooth'
-    });
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const elementRect = stepElement.getBoundingClientRect();
+      const offsetPosition = elementRect.top - containerRect.top + scrollContainer.scrollTop - headerOffset;
+      scrollContainer.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
+    } else {
+      const elementPosition = stepElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+    }
   };
 
   const scrollToErrorField = (errorKey: string, isTypoSuggestion: boolean = false) => {
@@ -2059,17 +2062,21 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       }
 
       if (targetElement) {
+        const scrollContainer = document.getElementById('main-scroll-container');
         const isMobileView = window.innerWidth < 900;
         const headerOffset = isMobileView ? 70 : 120;
-        const viewportOffset = window.innerHeight * 0.2;
+        const viewportOffset = (scrollContainer?.clientHeight || window.innerHeight) * 0.2;
 
-        const elementPosition = targetElement.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset - viewportOffset;
-
-        window.scrollTo({
-          top: Math.max(0, offsetPosition),
-          behavior: 'smooth'
-        });
+        if (scrollContainer) {
+          const containerRect = scrollContainer.getBoundingClientRect();
+          const elementRect = targetElement.getBoundingClientRect();
+          const offsetPosition = elementRect.top - containerRect.top + scrollContainer.scrollTop - headerOffset - viewportOffset;
+          scrollContainer.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
+        } else {
+          const elementPosition = targetElement.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset - viewportOffset;
+          window.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
+        }
 
         setTimeout(() => {
           targetElement?.classList.add('pulse-error');
@@ -2810,7 +2817,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
         {/* Main content area */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col bg-surface-panel">
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <div id="main-scroll-container" className="flex-1 min-h-0 overflow-y-auto">
           <div className="max-w-content mx-auto px-4 tablet:px-6 desktop:px-8 py-6 tablet:py-8 pb-24 w-full">
             {/* Quote Reference */}
             {quoteReference && (
