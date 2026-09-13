@@ -40,24 +40,24 @@ export default function MeasuringGuide({ shape, corners = 4 }: { shape: Shape | 
   const calloutTitle = custom ? 'You’re measuring your space' : 'You’re giving us the sail’s own size';
   const calloutBody = custom ? 'Measure between the points the sail will attach to. We work out the sail size, allowing for your hardware and fabric stretch, so it pulls up snug and tight. Fit guaranteed.' : 'Enter the exact finished size you want for the sail itself. We make it to those dimensions; you arrange your fixing points to suit.';
   return (
-    <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', border: `1px solid ${C.border}`, width: '100%', maxWidth: 520, boxSizing: 'border-box', color: C.green, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div style={{ background: C.green, color: '#fff', padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(181,232,83,0.18)', color: C.lime, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Ruler /></div>
-        <div><div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>Before you start measuring</div><div style={{ fontSize: 14, color: '#cfe3d4', marginTop: 2 }}>Quick guide to getting accurate dimensions</div></div>
+    <div className="mg-card" style={{ background: '#fff', borderRadius: 20, border: `1px solid ${C.border}`, width: '100%', maxWidth: 520, boxSizing: 'border-box', color: C.green, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="mg-card-header" style={{ background: C.green, color: '#fff' }}>
+        <div className="mg-card-header-icon" style={{ background: 'rgba(181,232,83,0.18)', color: C.lime }}><Ruler /></div>
+        <div><div className="mg-card-title">Before you start measuring</div><div className="mg-card-subtitle" style={{ color: '#cfe3d4' }}>Quick guide to getting accurate dimensions</div></div>
       </div>
-      <div style={{ padding: '20px 22px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div style={{ background: '#f5f7f5', border: `1px solid ${C.border}`, borderRadius: 16, padding: 14 }}>
+      <div className="mg-card-body">
+        <div className="mg-svg-wrap" style={{ background: '#f5f7f5', border: `1px solid ${C.border}` }}>
           <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 13, color: C.text, marginTop: 6 }}><span style={{ display: 'inline-block', width: 18, height: 4, borderRadius: 2, background: C.lime, flexShrink: 0 }} />{legend}</div>
+          <div className="mg-legend" style={{ color: C.text }}><span style={{ display: 'inline-block', width: 18, height: 4, borderRadius: 2, background: C.lime, flexShrink: 0 }} />{legend}</div>
         </div>
-        <div style={{ background: C.soft, border: '2px solid #9fc4ad', borderRadius: 14, padding: '14px 16px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: '#dcebe0', color: C.mid, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Ruler /></div>
-          <div><div style={{ fontWeight: 800, fontSize: 16 }}>{calloutTitle}</div><div style={{ fontSize: 15, color: C.body, lineHeight: 1.45, marginTop: 3 }}>{calloutBody}</div></div>
+        <div className="mg-callout" style={{ background: C.soft, border: '2px solid #9fc4ad' }}>
+          <div className="mg-callout-icon" style={{ background: '#dcebe0', color: C.mid }}><Ruler /></div>
+          <div><div className="mg-callout-title">{calloutTitle}</div><div className="mg-callout-body" style={{ color: C.body }}>{calloutBody}</div></div>
         </div>
         <div>
-          <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 10 }}>Measurement tips</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {tips.map((t, i) => <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}><div style={{ width: 30, height: 30, borderRadius: '50%', background: C.green, color: C.lime, fontWeight: 800, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div><div style={{ fontSize: 15, lineHeight: 1.45, paddingTop: 4 }}>{t}</div></div>)}
+          <div className="mg-tips-title">Measurement tips</div>
+          <div className="mg-tips-list">
+            {tips.map((t, i) => <div key={i} className="mg-tip"><div className="mg-tip-num" style={{ background: C.green, color: C.lime }}>{i + 1}</div><div className="mg-tip-text">{t}</div></div>)}
           </div>
         </div>
       </div>
