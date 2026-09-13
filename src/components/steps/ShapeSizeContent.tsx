@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FitGuaranteeBadge } from '../FitGuaranteeModal';
 import { ConfiguratorState, FixedShapeType } from '../../types';
 
 import { generateFixedShapePoints } from './FixedShapeDimensionsContent';
@@ -280,7 +281,7 @@ export function ShapeSizeContent({
         <div className="pr-8">
           <div className={`font-extrabold text-[17px] transition-colors duration-300 ${isCustomSelected ? 'text-brand-green' : 'text-brand-green'}`}>Custom shape</div>
           <div className={`text-[14px] mt-0.5 transition-colors duration-300 ${isCustomSelected ? 'text-text-muted' : 'text-text-muted'}`}>
-            3&ndash;8 fixing points &middot; Made to measure &middot; Fit Guarantee
+            3&ndash;8 fixing points &middot; Made to measure &middot; <FitGuaranteeBadge />
           </div>
         </div>
       </button>

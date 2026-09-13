@@ -34,7 +34,7 @@ export function WeDoTheMaths({ dark = false, title = 'You measure the space. We 
         <Row>We allow for the stretch of <strong style={{ color: fg }}>your chosen fabric</strong></Row>
         <Row>Your sail arrives sized to pull up <strong style={{ color: fg }}>snug and tight</strong></Row>
       </div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: dark ? C.lime : C.mid, marginTop: 2 }}>{guarantee}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: dark ? C.lime : C.mid, marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>{guarantee}</div>
     </div>
   );
 }

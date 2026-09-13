@@ -1,4 +1,5 @@
 import React, { useState, useEffect, forwardRef, useRef, useMemo, lazy, Suspense } from 'react';
+import { FitGuaranteeBadge } from '../FitGuaranteeModal';
 import { ConfiguratorState, ShadeCalculations } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -1103,7 +1104,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   Not sure? Talk to us
                 </a>
               </li>
-              <li>{isMobile ? "Made for me, can't be returned — backed by Fit Guarantee." : "This is made for me and can't be returned — backed by our Fit Guarantee."}</li>
+              <li>{isMobile ? <>Made for me, can't be returned — backed by <FitGuaranteeBadge />.</> : <>This is made for me and can't be returned — backed by our <FitGuaranteeBadge />.</>}</li>
               <li>{isMobile ? "I'm arranging installation (guide included)." : "I'm arranging my own installation (step-by-step guide included)."}</li>
             </ul>
             <div className={`rounded-lg border border-emerald-200 bg-emerald-50 ${isMobile ? 'p-2' : 'p-3'}`}>

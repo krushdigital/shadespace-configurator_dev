@@ -35,6 +35,7 @@ import { useToast } from "../components/ui/ToastProvider";
 import { LoadingOverlay } from './ui/loader';
 import { UnifiedSaveModal } from './UnifiedSaveModal';
 import { AdminSaveQuoteModal } from './admin/AdminSaveQuoteModal';
+import { FitGuaranteeBadge } from './FitGuaranteeModal';
 import { ShapeModeToggle } from './ui/ShapeModeToggle';
 import { getQuoteFromUrl, getQuoteById, updateQuote, updateQuoteStatus, markQuoteConverted, saveQuoteForCheckout, clearQuoteStash, QuoteData } from '../utils/quoteManager';
 import { generateDefaultQuoteName } from '../utils/quoteNaming';
@@ -3174,8 +3175,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
                         {/* Fit Guarantee note */}
                         {config.shapeMode === 'custom' && (
-                          <div className="text-[13px] text-[#23503f] bg-surface-soft rounded-xl p-[12px_14px] leading-relaxed">
-                            <strong>Fit Guarantee.</strong> Doesn&rsquo;t fit the space you measured? We remake it free.
+                          <div className="text-[13px] text-[#23503f] bg-surface-soft rounded-xl p-[12px_14px] leading-relaxed flex items-start gap-2">
+                            <FitGuaranteeBadge className="text-[13px]" /> Doesn&rsquo;t fit the space you measured? We remake it free.
                           </div>
                         )}
                       </>
