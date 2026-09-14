@@ -162,16 +162,14 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
               }`}
             >
-              {/* Lime check */}
-              {isSelected && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-10 shadow-md">
-                  &#10003;
-                </div>
-              )}
-
               {/* Image */}
               <div className="relative">
                 {isSelected && <div className="absolute inset-0 bg-brand-green/40 z-[1]" />}
+                {isSelected && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-[2] shadow-md">
+                    &#10003;
+                  </div>
+                )}
                 <img
                   src={edge.imageUrl}
                   alt={`${edge.label} example`}

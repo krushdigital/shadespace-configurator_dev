@@ -7,7 +7,9 @@ import { StandardPackPreview, HARDWARE_PACK_IMAGES } from '../StandardPackPrevie
 import { ShapeCanvas } from '../ShapeCanvas';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { EXCHANGE_RATES } from '../../data/pricing';
-import { Info } from 'lucide-react';
+import { Eye, Info } from 'lucide-react';
+
+const MANUAL_PER_CORNER_IMAGE = 'https://cdn.shopify.com/s/files/1/0778/8730/7969/files/shade-sail-hardware.webp?v=1742360021';
 import { PricingSetting, getPricingForCurrency } from '../../hooks/usePricingSettings';
 
 interface FixedShapeHardwareContentProps {
@@ -165,21 +167,24 @@ export function FixedShapeHardwareContent({
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
               }`}
             >
-              {({ openInfo }) => (
+              {() => (
                 <>
-                  {sel && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-10 shadow-md">
-                      &#10003;
-                    </div>
-                  )}
                   {packImage && (
                     <div className="relative">
                       {sel && <div className="absolute inset-0 bg-brand-green/40 z-[1]" />}
+                      {sel && (
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-[2] shadow-md">
+                          &#10003;
+                        </div>
+                      )}
                       <img
                         src={packImage}
                         alt="Hardware Tensioning Kit"
                         className="w-full h-[100px] sm:h-[150px] object-cover block bg-border-card"
                       />
+                      <StandardPackPreview pack={pack} itemsById={itemsById} corners={config.corners} triggerClassName="absolute top-2.5 right-2.5 z-[3] w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/90 text-brand-green shadow-sm hover:bg-white transition-colors min-h-[44px] min-w-[44px]">
+                        <Eye className="w-4 h-4" strokeWidth={2.25} />
+                      </StandardPackPreview>
                     </div>
                   )}
                   <div className="px-4 py-4">
@@ -189,18 +194,6 @@ export function FixedShapeHardwareContent({
                         sel ? 'bg-white/20 text-white' : 'bg-surface-soft text-brand-mid'
                       }`}>
                         Recommended
-                      </span>
-                      <span
-                        role="button"
-                        tabIndex={0}
-                        aria-label="View hardware kit contents"
-                        onClick={(e) => { e.stopPropagation(); openInfo(e); }}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openInfo(e); } }}
-                        className={`inline-flex items-center justify-center -m-1 p-1 rounded-full cursor-pointer ${
-                          sel ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-text-muted hover:text-brand-mid hover:bg-surface-soft'
-                        }`}
-                      >
-                        <Info className="h-4 w-4" />
                       </span>
                     </div>
                     <div className={`text-[15px] mt-1.5 leading-[1.45] ${sel ? 'opacity-90' : 'text-text-muted'}`}>
@@ -233,15 +226,18 @@ export function FixedShapeHardwareContent({
                   : 'bg-white border-2 border-border-card hover:border-[#7bb08f]'
               }`}
             >
-              {sel && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-10 shadow-md">
-                  &#10003;
-                </div>
-              )}
-              <div className={`w-full h-[100px] sm:h-[150px] flex items-center justify-center ${sel ? 'bg-white/10' : 'bg-surface-soft'}`}>
-                <svg className={`w-16 h-16 ${sel ? 'text-white/60' : 'text-brand-green/30'}`} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-                </svg>
+              <div className="relative">
+                {sel && <div className="absolute inset-0 bg-brand-green/40 z-[1]" />}
+                {sel && (
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-[2] shadow-md">
+                    &#10003;
+                  </div>
+                )}
+                <img
+                  src={MANUAL_PER_CORNER_IMAGE}
+                  alt="Manual per corner hardware"
+                  className="w-full h-[100px] sm:h-[150px] object-cover block bg-border-card"
+                />
               </div>
               <div className="px-4 py-4">
                 <div className="font-extrabold text-[15px] sm:text-[19px]">Manual per corner</div>

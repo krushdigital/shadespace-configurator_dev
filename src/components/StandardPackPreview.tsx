@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { getPortalRoot } from '../utils/appScope';
-import { Package, X } from 'lucide-react';
-import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
+import { Package } from 'lucide-react';
 import type { HardwareItem, HardwarePack } from '../hooks/useHardwareCatalog';
 
 function stripHardwareSize(name: string): string {
@@ -36,6 +35,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [coords, setCoords] = useState({ x: 0, y: 0, placement: 'right' as 'right' | 'left' | 'bottom' });
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+  const isRenderProp = typeof children === 'function';
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -64,8 +64,6 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
     updatePosition();
     setOpen(true);
   };
-
-  useBodyScrollLock(open && isMobile);
   const handleClose = () => setOpen(false);
 
   const packLines = pack
@@ -76,7 +74,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
 
   const image = HARDWARE_PACK_IMAGES[corners];
 
-  const content = pack ? (
+  const popoverContent = pack ? (
     <div className="w-full max-w-[340px] rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
@@ -86,11 +84,6 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
           </div>
           <div className="text-xs text-slate-500 mt-0.5">{corners}-corner sail • Included in sail price</div>
         </div>
-        {isMobile && (
-          <button onClick={handleClose} className="rounded-full p-1 text-slate-500 hover:bg-slate-100" aria-label="Close">
-            <X className="h-4 w-4" />
-          </button>
-        )}
       </div>
       {image && (
         <div className="mb-3 overflow-hidden rounded-lg bg-slate-50">
@@ -118,52 +111,71 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
     </div>
   ) : null;
 
+  const openInfoApi = (e?: React.SyntheticEvent) => {
+    if (e) { e.stopPropagation(); e.preventDefault(); }
+    if (!isMobile) {
+      if (open) handleClose(); else handleOpen();
+    }
+  };
+
+  const renderedChildren = isRenderProp ? children({ openInfo: openInfoApi }) : children;
+
+  // Plain children mode (eye icon trigger): hover-only on desktop, hidden on mobile
+  if (!isRenderProp) {
+    if (isMobile) {
+      return null;
+    }
+    return (
+      <>
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onMouseEnter={handleOpen}
+          onMouseLeave={handleClose}
+          className={triggerClassName ?? "inline-flex items-center gap-1 rounded text-left"}
+          aria-expanded={open}
+          aria-label="View hardware kit contents"
+        >
+          {renderedChildren}
+        </button>
+        {open && popoverContent && createPortal(
+          <div
+            data-lenis-prevent
+            style={{ position: 'fixed', left: coords.x, top: coords.y, zIndex: 10001 }}
+            onMouseEnter={handleOpen}
+            onMouseLeave={handleClose}
+          >
+            {popoverContent}
+          </div>,
+          getPortalRoot(),
+        )}
+      </>
+    );
+  }
+
+  // Render-prop mode (legacy): button wraps whole card, hover on desktop only
   return (
     <>
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => {
-          if (onTriggerClick) onTriggerClick();
-        }}
+        onClick={() => { if (onTriggerClick) onTriggerClick(); }}
         onMouseEnter={!isMobile ? handleOpen : undefined}
         onMouseLeave={!isMobile ? handleClose : undefined}
-        onFocus={!isMobile ? handleOpen : undefined}
-        onBlur={!isMobile ? handleClose : undefined}
         className={triggerClassName ?? "inline-flex items-center gap-1 rounded text-left underline underline-offset-2 decoration-slate-400 hover:text-[#01312D] hover:decoration-[#01312D] focus:outline-none focus:ring-2 focus:ring-[#307C31] focus:ring-offset-1"}
         aria-expanded={open}
       >
-        {typeof children === 'function'
-          ? children({
-              openInfo: (e?: React.SyntheticEvent) => {
-                if (e) {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }
-                if (open) handleClose();
-                else handleOpen();
-              },
-            })
-          : children}
+        {renderedChildren}
       </button>
-      {open && content && !isMobile && createPortal(
+      {open && popoverContent && !isMobile && createPortal(
         <div
           data-lenis-prevent
           style={{ position: 'fixed', left: coords.x, top: coords.y, zIndex: 10001 }}
           onMouseEnter={handleOpen}
           onMouseLeave={handleClose}
         >
-          {content}
-        </div>,
-        getPortalRoot(),
-      )}
-      {open && content && isMobile && createPortal(
-        <div data-lenis-prevent className="fixed inset-0 z-[10000] flex items-end justify-center bg-slate-900/50 p-0" onClick={handleClose}>
-          <div className="w-full" onClick={e => e.stopPropagation()}>
-            <div className="rounded-t-2xl bg-white p-4 shadow-2xl max-h-[85vh] overflow-y-auto overscroll-contain">
-              {content}
-            </div>
-          </div>
+          {popoverContent}
         </div>,
         getPortalRoot(),
       )}
