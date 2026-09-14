@@ -167,6 +167,7 @@ export function HardwareContent({
               )}
               {packImage && (
                 <div className="relative">
+                  {sel && <div className="absolute inset-0 bg-brand-green/40 z-[1]" />}
                   <img
                     src={packImage}
                     alt="Hardware Tensioning Kit"
