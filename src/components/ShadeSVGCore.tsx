@@ -387,7 +387,7 @@ export const ShadeSVGCore = forwardRef<SVGSVGElement, ShadeSVGCoreProps>(({
           d={generateSailPath(sailAttachmentPoints)}
           fill={forPdfCapture
             ? fabricHexColor
-            : `${fabricHexColor}40`
+            : `${fabricHexColor}B3`
           }
           stroke={getSelectedColor()}
           strokeWidth="2"
