@@ -1,3 +1,4 @@
+/* ── SVG tape-measure animation keyframes (unchanged) ── */
 @keyframes mg-tape3 { 0% { stroke-dashoffset: var(--len); opacity: 1; } 15% { stroke-dashoffset: 0; opacity: 1; } 30% { opacity: 1; } 33.3%, 100% { stroke-dashoffset: 0; opacity: 0; } }
 @keyframes mg-head3 { 0% { offset-distance: 0%; opacity: 1; } 15% { offset-distance: 100%; opacity: 1; } 30% { offset-distance: 100%; opacity: 1; } 33.3%, 100% { offset-distance: 100%; opacity: 0; } }
 @keyframes mg-lbl3 { 0%, 13.3% { opacity: 0; transform: translateY(3px); } 17.3%, 30% { opacity: 1; transform: none; } 33.3%, 100% { opacity: 0; } }
@@ -22,60 +23,72 @@
 @keyframes sw-head2 { 0% { offset-distance: 0%; opacity: 1; } 22.5% { offset-distance: 100%; opacity: 1; } 45% { offset-distance: 100%; opacity: 1; } 50%, 100% { offset-distance: 100%; opacity: 0; } }
 @keyframes sw-lbl1 { 0%, 40% { opacity: 0; transform: translateY(3px); } 52%, 90% { opacity: 1; transform: none; } 100%, 100% { opacity: 0; } }
 @keyframes sw-lbl2 { 0%, 20% { opacity: 0; transform: translateY(3px); } 26%, 45% { opacity: 1; transform: none; } 50%, 100% { opacity: 0; } }
+
 .mg-svg { width: 100%; display: block; max-width: 420px; margin: 0 auto; }
 
-/* ── Viewport-responsive measuring guide card ── */
-.mg-card {
+/* ══════════════════════════════════════════════════════
+   Native inline layout (no card border, no internal scroll)
+   ══════════════════════════════════════════════════════ */
+.mg-guide {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  color: #01312d;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* Only constrain height when inside the modal overlay */
-.mg-modal-wrap .mg-card {
-  max-height: calc(100dvh - 32px);
-  overflow: hidden;
-}
-
-.mg-card-header {
-  padding: 18px 22px;
+/* ── Header row ── */
+.mg-header {
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #01312d;
+  color: #fff;
+  border-radius: 14px;
+  margin-bottom: 16px;
 }
 
-.mg-card-header-icon {
-  width: 44px;
-  height: 44px;
+.mg-header-icon {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: rgba(181,232,83,0.18);
+  color: #b5e853;
 }
 
-.mg-card-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
-.mg-card-subtitle { font-size: 14px; margin-top: 2px; }
+.mg-header-title { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.mg-header-sub   { font-size: 13px; color: #cfe3d4; margin-top: 1px; }
 
-.mg-card-body {
-  padding: 20px 22px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
+/* ── Two-column layout on wider viewports ── */
+.mg-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
+@media (min-width: 520px) {
+  .mg-layout {
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    align-items: start;
+  }
+  .mg-col-diagram {
+    position: sticky;
+    top: 0;
+  }
+}
+
+/* ── Diagram column ── */
 .mg-svg-wrap {
-  padding: 14px;
-  border-radius: 16px;
-  flex-shrink: 1;
-  min-height: 0;
-}
-
-.mg-svg-wrap .mg-svg {
-  max-height: 32vh;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f5f7f5;
+  border: 1px solid #dfe7e1;
 }
 
 .mg-legend {
@@ -83,87 +96,125 @@
   align-items: center;
   gap: 8px;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
+  color: #4c6b60;
   margin-top: 6px;
 }
 
-.mg-callout {
-  border-radius: 14px;
-  padding: 14px 16px;
+/* ── Text column: callout + tips ── */
+.mg-col-text {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mg-callout {
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 10px;
   align-items: flex-start;
-  flex-shrink: 1;
+  background: #eef5ef;
+  border: 2px solid #9fc4ad;
 }
 
 .mg-callout-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: #dcebe0;
+  color: #2e7d4f;
 }
 
-.mg-callout-title { font-weight: 800; font-size: 16px; }
-.mg-callout-body { font-size: 15px; line-height: 1.45; margin-top: 3px; }
+.mg-callout-title { font-weight: 800; font-size: 14px; line-height: 1.2; }
+.mg-callout-body  { font-size: 13px; line-height: 1.45; margin-top: 2px; color: #23503f; }
 
-.mg-tips-title { font-weight: 800; font-size: 17px; margin-bottom: 10px; }
-.mg-tips-list { display: flex; flex-direction: column; gap: 10px; }
+.mg-tips-title { font-weight: 800; font-size: 15px; margin-bottom: 8px; }
+.mg-tips-list  { display: flex; flex-direction: column; gap: 8px; }
 
 .mg-tip {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-start;
 }
 
 .mg-tip-num {
-  width: 30px;
-  height: 30px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: #01312d;
+  color: #b5e853;
 }
 
-.mg-tip-text { font-size: 15px; line-height: 1.45; padding-top: 4px; }
+.mg-tip-text { font-size: 13px; line-height: 1.4; padding-top: 3px; }
 
-/* ── Short viewport overrides (phones, embedded Shopify) ── */
-@media (max-height: 700px) {
-  .mg-card-header { padding: 12px 16px; gap: 10px; }
-  .mg-card-header-icon { width: 36px; height: 36px; }
-  .mg-card-title { font-size: 17px; }
-  .mg-card-subtitle { font-size: 12px; }
-  .mg-card-body { padding: 14px 16px 16px; gap: 12px; }
+/* ══════════════════════════════════════════════════════
+   Modal override: restore card look when inside modal
+   ══════════════════════════════════════════════════════ */
+.mg-modal-wrap .mg-guide {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 20px;
+}
+
+.mg-modal-wrap .mg-header {
+  border-radius: 20px 20px 0 0;
+  margin-bottom: 0;
+}
+
+.mg-modal-wrap .mg-layout {
+  padding: 18px;
+  grid-template-columns: 1fr;
+}
+
+/* ── Compact mobile ── */
+@media (max-width: 519px) {
+  .mg-header { padding: 12px 14px; gap: 10px; border-radius: 12px; margin-bottom: 12px; }
+  .mg-header-icon { width: 34px; height: 34px; }
+  .mg-header-title { font-size: 16px; }
+  .mg-header-sub { font-size: 12px; }
   .mg-svg-wrap { padding: 10px; border-radius: 12px; }
-  .mg-svg-wrap .mg-svg { max-height: 26vh; }
-  .mg-callout { padding: 10px 12px; gap: 10px; border-radius: 12px; flex-shrink: 1; }
-  .mg-callout-icon { width: 28px; height: 28px; border-radius: 8px; }
-  .mg-callout-title { font-size: 14px; }
-  .mg-callout-body { font-size: 13px; margin-top: 2px; }
-  .mg-tips-title { font-size: 15px; margin-bottom: 8px; }
-  .mg-tips-list { gap: 6px; }
-  .mg-tip { gap: 8px; }
-  .mg-tip-num { width: 24px; height: 24px; font-size: 12px; }
-  .mg-tip-text { font-size: 13px; padding-top: 2px; }
-}
-
-@media (max-height: 550px) {
-  .mg-card-header { padding: 8px 14px; gap: 8px; }
-  .mg-card-header-icon { width: 30px; height: 30px; }
-  .mg-card-title { font-size: 15px; }
-  .mg-card-subtitle { font-size: 11px; }
-  .mg-card-body { padding: 10px 14px 12px; gap: 8px; }
-  .mg-svg-wrap { padding: 8px; }
-  .mg-svg-wrap .mg-svg { max-height: 20vh; }
-  .mg-callout { padding: 8px 10px; }
+  .mg-callout { padding: 10px 12px; border-radius: 10px; }
+  .mg-callout-icon { width: 28px; height: 28px; border-radius: 7px; }
   .mg-callout-title { font-size: 13px; }
   .mg-callout-body { font-size: 12px; }
   .mg-tips-title { font-size: 14px; margin-bottom: 6px; }
+  .mg-tip { gap: 8px; }
   .mg-tip-num { width: 22px; height: 22px; font-size: 11px; }
-  .mg-tip-text { font-size: 12px; }
+  .mg-tip-text { font-size: 12px; padding-top: 2px; }
 }
+
+/* ── Very short viewports (Shopify embed) ── */
+@media (max-height: 550px) {
+  .mg-header { padding: 8px 12px; gap: 8px; }
+  .mg-header-icon { width: 30px; height: 30px; }
+  .mg-header-title { font-size: 14px; }
+  .mg-header-sub { font-size: 11px; }
+  .mg-layout { gap: 8px; }
+  .mg-svg-wrap { padding: 8px; }
+  .mg-callout { padding: 8px 10px; }
+  .mg-callout-title { font-size: 12px; }
+  .mg-callout-body { font-size: 11px; }
+  .mg-tips-title { font-size: 13px; margin-bottom: 4px; }
+  .mg-tip-num { width: 20px; height: 20px; font-size: 10px; }
+  .mg-tip-text { font-size: 11px; }
+}
+
+/* ── Legacy card class compat (unused but safe) ── */
+.mg-card { display: flex; flex-direction: column; }
+.mg-card-header { padding: 18px 22px; display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.mg-card-header-icon { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.mg-card-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.mg-card-subtitle { font-size: 14px; margin-top: 2px; }
+.mg-card-body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 18px; flex: 1 1 auto; min-height: 0; }

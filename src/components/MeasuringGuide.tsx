@@ -26,7 +26,6 @@ const TIP1: Record<Shape, string> = {
   triangle: 'Measure one edge of the sail shape you want, corner to corner. All three sides are the same.',
   right: 'Measure the two straight edges that meet at the right angle (A → B and B → C). We work out the long side.',
 };
-const C = { green: '#01312d', lime: '#b5e853', mid: '#2e7d4f', soft: '#eef5ef', border: '#dfe7e1', text: '#4c6b60', body: '#23503f' };
 const Ruler = () => <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 17 17 3l4 4L7 21z" /><path d="m7 13 2 2M10 10l2 2M13 7l2 2" /></svg>;
 
 export default function MeasuringGuide({ shape, corners = 4 }: { shape: Shape | 'custom'; corners?: number }) {
@@ -37,27 +36,45 @@ export default function MeasuringGuide({ shape, corners = 4 }: { shape: Shape | 
     ? [customTip1(n), 'Use a tape measure, held tight and straight. A second pair of hands helps.', 'Double-check each number. Your sail is made to fit the space you give us.']
     : [TIP1[shape], 'Use a tape measure. Avoid estimating from plans or drawings where you can.', 'Double-check each number. The sail is made exactly to the sizes you give.'];
   const legend = custom ? 'The green tape runs fixing point to fixing point' : 'The green tape runs along the sail edge';
-  const calloutTitle = custom ? 'You’re measuring your space' : 'You’re giving us the sail’s own size';
+  const calloutTitle = custom ? 'You\u2019re measuring your space' : 'You\u2019re giving us the sail\u2019s own size';
   const calloutBody = custom ? 'Measure between the points the sail will attach to. We work out the sail size, allowing for your hardware and fabric stretch, so it pulls up snug and tight. Fit guaranteed.' : 'Enter the exact finished size you want for the sail itself. We make it to those dimensions; you arrange your fixing points to suit.';
   return (
-    <div className="mg-card" style={{ background: '#fff', borderRadius: 20, border: `1px solid ${C.border}`, width: '100%', maxWidth: 520, boxSizing: 'border-box', color: C.green, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div className="mg-card-header" style={{ background: C.green, color: '#fff' }}>
-        <div className="mg-card-header-icon" style={{ background: 'rgba(181,232,83,0.18)', color: C.lime }}><Ruler /></div>
-        <div><div className="mg-card-title">Before you start measuring</div><div className="mg-card-subtitle" style={{ color: '#cfe3d4' }}>Quick guide to getting accurate dimensions</div></div>
-      </div>
-      <div className="mg-card-body">
-        <div className="mg-svg-wrap" style={{ background: '#f5f7f5', border: `1px solid ${C.border}` }}>
-          <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} />
-          <div className="mg-legend" style={{ color: C.text }}><span style={{ display: 'inline-block', width: 18, height: 4, borderRadius: 2, background: C.lime, flexShrink: 0 }} />{legend}</div>
-        </div>
-        <div className="mg-callout" style={{ background: C.soft, border: '2px solid #9fc4ad' }}>
-          <div className="mg-callout-icon" style={{ background: '#dcebe0', color: C.mid }}><Ruler /></div>
-          <div><div className="mg-callout-title">{calloutTitle}</div><div className="mg-callout-body" style={{ color: C.body }}>{calloutBody}</div></div>
-        </div>
+    <div className="mg-guide">
+      <div className="mg-header">
+        <div className="mg-header-icon"><Ruler /></div>
         <div>
-          <div className="mg-tips-title">Measurement tips</div>
-          <div className="mg-tips-list">
-            {tips.map((t, i) => <div key={i} className="mg-tip"><div className="mg-tip-num" style={{ background: C.green, color: C.lime }}>{i + 1}</div><div className="mg-tip-text">{t}</div></div>)}
+          <div className="mg-header-title">Before you start measuring</div>
+          <div className="mg-header-sub">Quick guide to getting accurate dimensions</div>
+        </div>
+      </div>
+      <div className="mg-layout">
+        <div className="mg-col-diagram">
+          <div className="mg-svg-wrap">
+            <div aria-hidden="true" dangerouslySetInnerHTML={{ __html: svg }} />
+            <div className="mg-legend">
+              <span style={{ display: 'inline-block', width: 18, height: 4, borderRadius: 2, background: '#b5e853', flexShrink: 0 }} />
+              {legend}
+            </div>
+          </div>
+        </div>
+        <div className="mg-col-text">
+          <div className="mg-callout">
+            <div className="mg-callout-icon"><Ruler /></div>
+            <div>
+              <div className="mg-callout-title">{calloutTitle}</div>
+              <div className="mg-callout-body">{calloutBody}</div>
+            </div>
+          </div>
+          <div>
+            <div className="mg-tips-title">Measurement tips</div>
+            <div className="mg-tips-list">
+              {tips.map((t, i) => (
+                <div key={i} className="mg-tip">
+                  <div className="mg-tip-num">{i + 1}</div>
+                  <div className="mg-tip-text">{t}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
