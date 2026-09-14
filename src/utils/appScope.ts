@@ -19,9 +19,13 @@ export function getPortalRoot(): HTMLElement {
   el.id = PORTAL_ROOT_ID;
   el.classList.add(SCOPE_CLASS);
   el.style.setProperty('position', 'fixed');
+  el.style.setProperty('top', '0');
+  el.style.setProperty('left', '0');
+  el.style.setProperty('width', '0');
   el.style.setProperty('height', '0');
-  el.style.setProperty('overflow', 'hidden');
+  el.style.setProperty('overflow', 'visible');
   el.style.setProperty('pointer-events', 'none');
+  el.style.setProperty('z-index', '99999');
   document.body.appendChild(el);
   portalRoot = el;
   return el;

@@ -111,7 +111,7 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
           ref={popoverRef}
           onMouseEnter={() => clearTimeout(hoverTimeoutRef.current)}
           onMouseLeave={handleMouseLeave}
-          className="fixed z-[10000]"
+          className="fixed z-[10000] pointer-events-auto"
           style={{
             top: position.showAbove ? undefined : position.top,
             bottom: position.showAbove ? `${window.innerHeight - position.top}px` : undefined,
