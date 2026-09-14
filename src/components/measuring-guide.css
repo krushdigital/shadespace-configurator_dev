@@ -158,6 +158,25 @@
 
 .mg-tip-text { font-size: 13px; line-height: 1.4; padding-top: 3px; }
 
+.mg-learn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a6d46;
+  text-decoration: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #eef5ef;
+  border: 1.5px solid #c4ddc9;
+  transition: background 0.15s, border-color 0.15s;
+}
+.mg-learn-link:hover {
+  background: #ddeee0;
+  border-color: #9fc4ad;
+}
+
 /* ══════════════════════════════════════════════════════
    Modal override: restore card look when inside modal
    ══════════════════════════════════════════════════════ */
@@ -193,6 +212,7 @@
   .mg-tip { gap: 8px; }
   .mg-tip-num { width: 22px; height: 22px; font-size: 11px; }
   .mg-tip-text { font-size: 12px; padding-top: 2px; }
+  .mg-learn-link { font-size: 12px; padding: 8px 12px; border-radius: 8px; }
 }
 
 /* ── Very short viewports (Shopify embed) ── */
@@ -209,6 +229,7 @@
   .mg-tips-title { font-size: 13px; margin-bottom: 4px; }
   .mg-tip-num { width: 20px; height: 20px; font-size: 10px; }
   .mg-tip-text { font-size: 11px; }
+  .mg-learn-link { font-size: 11px; padding: 6px 10px; }
 }
 
 /* ── Legacy card class compat (unused but safe) ── */
