@@ -19,6 +19,7 @@ import { useHardwareCatalog } from '../hooks/useHardwareCatalog';
 import { usePricingSettings } from '../hooks/usePricingSettings';
 import { useBasePricing } from '../hooks/useBasePricing';
 import { useMobileGuidance } from '../hooks/useMobileGuidance';
+import { forceReleaseLock } from '../hooks/useBodyScrollLock';
 import { ConfiguratorState, EdgeType } from '../types';
 import { useFabricCatalog } from '../hooks/useFabricCatalog';
 import { Point } from '../types';
@@ -2259,6 +2260,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     // Auto-center shape when moving to next step
     const centeredPoints = centerShape(config.points);
 
+    forceReleaseLock();
     setConfig(prev => ({ ...prev, step: nextStepIndex }));
     updateConfig({ points: centeredPoints });
     setOpenStep(nextStepIndex);
@@ -2275,6 +2277,8 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   const prevStep = (options?: { navigateToHeights?: boolean; navigateToDiagonals?: boolean }) => {
     const wantsDimensions = options?.navigateToHeights || options?.navigateToDiagonals;
     const prevStepIndex = wantsDimensions ? 2 : getActualPrevStep(openStep);
+
+    forceReleaseLock();
 
     // Auto-center shape when moving to previous step
     const centeredPoints = centerShape(config.points);
@@ -2304,6 +2308,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
       const centeredPoints = centerShape(config.points);
       updateConfig({ points: centeredPoints });
 
+      forceReleaseLock();
       const newOpenStep = openStep === stepIndex ? -1 : stepIndex;
       setOpenStep(newOpenStep);
 

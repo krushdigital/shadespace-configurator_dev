@@ -277,33 +277,6 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           />
         )}
 
-        {/* Shape Confidence Score */}
-        {!isFixedShape && config.corners >= 4 && allDiagonalsEntered && (() => {
-          const confidence = computeShapeConfidence(config.measurements, config.corners, config.fixingHeights);
-          if (confidence.status === 'pending') return null;
-          const statusColors: Record<string, string> = {
-            excellent: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-            good: 'bg-emerald-50 border-emerald-200 text-emerald-800',
-            warning: 'bg-amber-50 border-amber-200 text-amber-800',
-            error: 'bg-red-50 border-red-200 text-red-800',
-            pending: 'bg-surface-soft border-border-card text-text-muted'
-          };
-          return (
-            <div className={`p-3 sm:p-4 rounded-xl border ${statusColors[confidence.status]}`}>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">
-                  Shape Accuracy: {Math.round(confidence.percentage)}%
-                </span>
-                {confidence.measuredBD > 0 && (
-                  <span className="text-xs opacity-70">
-                    BD deviation: {confidence.bdDeviation.toFixed(1)}%
-                  </span>
-                )}
-              </div>
-              <p className="text-xs mt-1 opacity-80">{confidence.message}</p>
-            </div>
-          );
-        })()}
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-stretch">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
@@ -734,6 +707,32 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     defaultOpen={false}
                   >
                     <Card className="p-3 mt-2">
+                      {config.corners >= 4 && allDiagonalsEntered && (() => {
+                        const confidence = computeShapeConfidence(config.measurements, config.corners, config.fixingHeights);
+                        if (confidence.status === 'pending') return null;
+                        const statusColors: Record<string, string> = {
+                          excellent: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+                          good: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+                          warning: 'bg-amber-50 border-amber-200 text-amber-800',
+                          error: 'bg-red-50 border-red-200 text-red-800',
+                          pending: 'bg-surface-soft border-border-card text-text-muted'
+                        };
+                        return (
+                          <div className={`p-2 rounded-lg border mb-3 ${statusColors[confidence.status]}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-semibold">
+                                Shape Accuracy: {Math.round(confidence.percentage)}%
+                              </span>
+                              {confidence.measuredBD > 0 && (
+                                <span className="text-[10px] opacity-70">
+                                  BD deviation: {confidence.bdDeviation.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] mt-0.5 opacity-80">{confidence.message}</p>
+                          </div>
+                        );
+                      })()}
                       <div className="space-y-3">
                         <div>
                           <h6 className="text-xs font-semibold text-brand-green mb-2">Edges</h6>
@@ -779,6 +778,32 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                     }
                   >
                     <Card className="p-4 mt-2">
+                      {config.corners >= 4 && allDiagonalsEntered && (() => {
+                        const confidence = computeShapeConfidence(config.measurements, config.corners, config.fixingHeights);
+                        if (confidence.status === 'pending') return null;
+                        const statusColors: Record<string, string> = {
+                          excellent: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+                          good: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+                          warning: 'bg-amber-50 border-amber-200 text-amber-800',
+                          error: 'bg-red-50 border-red-200 text-red-800',
+                          pending: 'bg-surface-soft border-border-card text-text-muted'
+                        };
+                        return (
+                          <div className={`p-3 sm:p-4 rounded-xl border mb-4 ${statusColors[confidence.status]}`}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold">
+                                Shape Accuracy: {Math.round(confidence.percentage)}%
+                              </span>
+                              {confidence.measuredBD > 0 && (
+                                <span className="text-xs opacity-70">
+                                  BD deviation: {confidence.bdDeviation.toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs mt-1 opacity-80">{confidence.message}</p>
+                          </div>
+                        );
+                      })()}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
                         <div>
                           <h6 className="text-sm font-medium text-brand-green mb-2">Edge Lengths</h6>
