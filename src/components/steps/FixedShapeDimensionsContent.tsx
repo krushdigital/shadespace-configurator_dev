@@ -140,11 +140,12 @@ export function FixedShapeDimensionsContent({
   const [viewMode, setViewMode] = useState<'plan' | '3d'>('plan');
 
   const currencyInfo = getUserCurrencyInfo();
-  const alternativeUnitName = getAlternativeUnitName(unit);
+  const effectiveUnit = unit || 'metric';
+  const alternativeUnitName = getAlternativeUnitName(effectiveUnit);
 
   const handleUnitChange = () => {
-    const newUnit = getAlternativeUnit(unit);
-    analytics.unitManuallyChanged(unit, newUnit, currencyInfo.currency, false);
+    const newUnit = getAlternativeUnit(effectiveUnit);
+    analytics.unitManuallyChanged(effectiveUnit, newUnit, currencyInfo.currency, false);
     setStoredUnitPreference(newUnit, currencyInfo.currency, true);
     updateConfig({ unit: newUnit });
   };

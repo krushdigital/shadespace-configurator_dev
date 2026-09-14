@@ -161,11 +161,11 @@ export function DimensionsContent({
   }, [activeEditField]);
 
   const currencyInfo = getUserCurrencyInfo();
-  const alternativeUnitName = config.unit ? getAlternativeUnitName(config.unit) : '';
+  const effectiveUnit = config.unit || 'metric';
+  const alternativeUnitName = getAlternativeUnitName(effectiveUnit);
 
   const handleUnitChange = () => {
-    if (!config.unit) return;
-    const currentUnit = config.unit;
+    const currentUnit = config.unit || 'metric';
     const newUnit = getAlternativeUnit(currentUnit);
     analytics.unitManuallyChanged(currentUnit, newUnit, currencyInfo.currency, false);
     setStoredUnitPreference(newUnit, currencyInfo.currency, true);
