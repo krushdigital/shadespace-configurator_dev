@@ -60,7 +60,7 @@ export function FitGuaranteeModal({ isOpen, onClose }: FitGuaranteeModalProps) {
           {/* Hero promise */}
           <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
             <p className="text-[15px] text-emerald-900 leading-relaxed font-medium">
-              If your custom sail doesn't fit the space you measured, we'll make you a new one <strong>free of charge</strong> — and you keep the original.
+              If your custom-shape sail doesn't fit the space you measured, we'll make you a new one <strong>free of charge</strong> — and you keep the original.
             </p>
           </div>
 
@@ -68,10 +68,10 @@ export function FitGuaranteeModal({ isOpen, onClose }: FitGuaranteeModalProps) {
           <section>
             <h3 className="text-[15px] font-bold text-brand-green mb-2 flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              When it applies
+              Custom-shape orders
             </h3>
             <p className="text-[14px] text-text-muted leading-relaxed">
-              The Fit Guarantee covers custom shade sails where you choose <strong className="text-brand-green">"Manufactured to Fit my Space"</strong> at the measurement step. You give us the distances between your fixing points and we calculate the finished sail size. Because we make that calculation, we stand behind the result.
+              When you order a custom-shape shade sail, you give us the distances between your fixing points and we calculate the finished sail size. Because we make that calculation, we stand behind the result. If the sail doesn't fit your measured space, we replace it free of charge.
             </p>
           </section>
 
@@ -79,18 +79,11 @@ export function FitGuaranteeModal({ isOpen, onClose }: FitGuaranteeModalProps) {
           <section>
             <h3 className="text-[15px] font-bold text-brand-green mb-2 flex items-center gap-2">
               <ArrowRight className="w-4 h-4 text-amber-500" />
-              When it does not apply
+              Fixed-shape orders
             </h3>
-            <ul className="text-[14px] text-text-muted leading-relaxed space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500 font-bold mt-0.5 flex-shrink-0">&bull;</span>
-                <span><strong className="text-brand-green">"Manufactured to the Dimensions I Provide"</strong> — you specify the exact finished size and we manufacture precisely to those dimensions.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-amber-500 font-bold mt-0.5 flex-shrink-0">&bull;</span>
-                <span><strong className="text-brand-green">Standard-size sails</strong> — these are made to published dimensions and covered by our standard 30-day returns policy.</span>
-              </li>
-            </ul>
+            <p className="text-[14px] text-text-muted leading-relaxed">
+              Fixed-shape sails (square, rectangle, triangle) are manufactured to the exact dimensions you specify. Because you choose the finished size, these orders are covered by our standard 30-day returns policy rather than the Fit Guarantee.
+            </p>
           </section>
 
           {/* How to claim */}
@@ -102,9 +95,8 @@ export function FitGuaranteeModal({ isOpen, onClose }: FitGuaranteeModalProps) {
           </section>
 
           {/* Fine print */}
-          <div className="bg-surface-soft rounded-xl p-3 text-[12px] text-text-muted leading-relaxed space-y-1.5">
+          <div className="bg-surface-soft rounded-xl p-3 text-[12px] text-text-muted leading-relaxed">
             <p>The Fit Guarantee applies once per order and only where fixing points are in the positions measured at the time of ordering. It does not apply if the site or structure has been altered after ordering.</p>
-            <p>The Fit Guarantee sits alongside our workmanship warranty and is not limited by any measurement exclusion.</p>
           </div>
         </div>
 
