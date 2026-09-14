@@ -161,7 +161,7 @@ export function HardwareContent({
               }`}
             >
               {sel && (
-                <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center z-10">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-10 shadow-md">
                   &#10003;
                 </div>
               )}
@@ -214,7 +214,7 @@ export function HardwareContent({
               }`}
             >
               {sel && (
-                <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-brand-lime text-brand-green text-sm font-extrabold flex items-center justify-center z-10">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-brand-lime text-brand-green text-lg font-extrabold flex items-center justify-center z-10 shadow-md">
                   &#10003;
                 </div>
               )}
