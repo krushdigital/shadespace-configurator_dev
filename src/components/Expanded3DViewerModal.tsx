@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Canvas, useThree } from '@react-three/fiber';
 import { X, RotateCcw, ZoomIn, ZoomOut, Tag, Grid3x3 as Grid3X3, EyeOff, Maximize2 } from 'lucide-react';
+import { getPortalRoot } from '../utils/appScope';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 import type { ConfiguratorState } from '../types';
 
@@ -145,7 +147,7 @@ export default function Expanded3DViewerModal({
     },
   ];
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -259,7 +261,8 @@ export default function Expanded3DViewerModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    getPortalRoot()
   );
 }
 
