@@ -1214,18 +1214,7 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
       capture3DScreenshot: async () => {
         const canvas = containerRef.current?.querySelector('canvas');
         if (!canvas) return null;
-        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-        if (!gl) return null;
-        // Re-render to backbuffer then read before it's cleared
-        return new Promise<string | null>((resolve) => {
-          requestAnimationFrame(() => {
-            try {
-              resolve(canvas.toDataURL('image/png'));
-            } catch {
-              resolve(null);
-            }
-          });
-        });
+        return canvas.toDataURL('image/png');
       },
     }));
 
@@ -1240,9 +1229,6 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
           camera={{ fov: 45, near: 0.1, far: 100 }}
           shadows="soft"
           gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
-          onCreated={({ gl: renderer }) => {
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-          }}
         >
           <Scene
             config={config}

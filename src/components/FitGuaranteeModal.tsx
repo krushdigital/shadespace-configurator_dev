@@ -120,16 +120,14 @@ export function FitGuaranteeBadge({ className = '' }: { className?: string }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <span
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); e.preventDefault(); setOpen(true); } }}
         className={`inline-flex items-center gap-1 text-brand-mid hover:text-brand-green font-bold underline decoration-dotted underline-offset-2 transition-colors cursor-pointer ${className}`}
       >
         <Shield className="w-3.5 h-3.5" />
         Fit Guarantee
-      </span>
+      </button>
       <FitGuaranteeModal isOpen={open} onClose={() => setOpen(false)} />
     </>
   );

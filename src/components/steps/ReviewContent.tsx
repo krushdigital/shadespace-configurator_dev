@@ -1191,15 +1191,20 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
         <div className="flex flex-col gap-3 pt-4 border-t border-border-card mt-6">
           {/* Save & Email Quote button - Full width (mobile - review step) */}
           {!adminMode && isMobile && onSaveQuote && (
-            <button
+            <Button
+              variant="outline"
+              size="lg"
               onClick={onSaveQuote}
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-slate-300 bg-white text-slate-600 text-sm font-medium hover:bg-slate-50 hover:border-slate-400 transition-colors"
+              className="w-full !border-2 !border-[#307C31] !bg-gradient-to-r !from-[#BFF102]/10 !to-white hover:!from-[#307C31] hover:!to-[#307C31] !text-brand-green hover:!text-white transition-all duration-300 flex flex-col items-center justify-center py-4 font-semibold"
             >
-              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Save & Email Quote
-            </button>
+              <div className="flex items-center justify-center gap-2">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <span className="text-base">Save & Email Quote</span>
+              </div>
+              <span className="text-xs font-medium mt-1 opacity-90">Receive a detailed PDF quote via email</span>
+            </Button>
           )}
 
           {/* Admin mode: Save Quote button */}

@@ -76,14 +76,6 @@ export default function MeasuringGuide({ shape, corners = 4 }: { shape: Shape | 
               ))}
             </div>
           </div>
-          <a
-            href="https://shadespace.com/pages/learn-measure"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mg-learn-link"
-          >
-            Need more help? Visit our Measurement Guide →
-          </a>
         </div>
       </div>
     </div>

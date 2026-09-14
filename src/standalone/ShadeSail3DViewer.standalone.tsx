@@ -289,31 +289,16 @@ function reconstructPolygonFromMeasurements(
 
 export type Device3DTier = 'high' | 'low' | 'none';
 
-let _cachedTier: Device3DTier | null = null;
-
 export function canRender3D(): Device3DTier {
-  if (_cachedTier !== null) return _cachedTier;
-  if (typeof window === 'undefined') { _cachedTier = 'none'; return _cachedTier; }
-
+  if (typeof window === 'undefined') return 'none';
   const testCanvas = document.createElement('canvas');
   const gl = testCanvas.getContext('webgl2');
-  if (!gl) { _cachedTier = 'none'; return _cachedTier; }
-
-  const ext = gl.getExtension('WEBGL_lose_context');
-  if (ext) ext.loseContext();
-
+  if (!gl) return 'none';
   const cores = navigator.hardwareConcurrency || 2;
   const memory = (navigator as any).deviceMemory as number | undefined;
-
-  if (cores >= 4 && (memory === undefined || memory >= 4)) {
-    _cachedTier = 'high';
-  } else if (cores >= 2) {
-    _cachedTier = 'low';
-  } else {
-    _cachedTier = 'none';
-  }
-
-  return _cachedTier;
+  if (cores >= 4 && (memory === undefined || memory >= 4)) return 'high';
+  if (cores >= 2) return 'low';
+  return 'none';
 }
 
 // ─── 3D CONSTANTS ───────────────────────────────────────────────────────────
@@ -1255,9 +1240,6 @@ const ShadeSail3DViewer = forwardRef<ShadeSail3DViewerRef, ShadeSail3DViewerProp
           camera={{ fov: 45, near: 0.1, far: 100 }}
           shadows
           gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
-          onCreated={({ gl: renderer }) => {
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-          }}
         >
           <Scene config={config} highlightedMeasurement={highlightedMeasurement} highlightedCorner={highlightedCorner} activeSection={activeSection} />
           {onPerformanceWarning && <FpsMonitor onPerformanceWarning={onPerformanceWarning} />}
