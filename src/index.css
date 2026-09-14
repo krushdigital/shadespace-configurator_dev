@@ -59,42 +59,9 @@
   border-style: solid !important;
 }
 
-#CONFIGURATOR_ROOT,
-#SHADESAIL_ROOT,
-#SHADE_SPACE {
-  background-color: #f5f7f5 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  outline: 0 !important;
-  box-sizing: border-box !important;
-  height: 100% !important;
-  overflow: hidden !important;
-}
-
-#SHADESAIL_ROOT {
-  display: contents !important;
-}
-
-/* Override Shopify theme parent containers that add padding around the embed */
-#CONFIGURATOR_ROOT,
-#SHADESAIL_ROOT,
-#SHADE_SPACE {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-/* Common Shopify theme wrappers – negate their padding when they contain the configurator */
-.page-width:has(#SHADE_SPACE),
-.shopify-section:has(#SHADE_SPACE),
-.template-page:has(#SHADE_SPACE),
-.main-content:has(#SHADE_SPACE),
-.page-width:has(#CONFIGURATOR_ROOT),
-.shopify-section:has(#CONFIGURATOR_ROOT) {
-  padding: 0 !important;
-  margin: 0 !important;
-  max-width: 100% !important;
-  height: 100% !important;
+/* Account for fixed website header when scrolling */
+html {
+  scroll-padding-top: 100px;
 }
 
 /* Hide number input spinner arrows */

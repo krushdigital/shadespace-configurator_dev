@@ -155,7 +155,7 @@ export function Tooltip({ content, children, className = '', onOpen, fullWidth =
   const hideTooltip = () => {
     timeoutRef.current = setTimeout(() => {
       setIsVisible(false);
-    }, 300);
+    }, 150);
   };
 
   useEffect(() => {
@@ -200,13 +200,18 @@ export function Tooltip({ content, children, className = '', onOpen, fullWidth =
 
   const tooltipElement = isVisible ? createPortal(
     <div
-      className="fixed pointer-events-auto"
+      data-lenis-prevent
+      className={`fixed bg-white border border-slate-300 rounded-lg shadow-2xl ${className}`}
       style={{
-        left: `${position.x - 12}px`,
-        top: `${position.y - 12}px`,
+        left: `${position.x}px`,
+        top: `${position.y}px`,
         zIndex: 99999,
-        padding: '12px',
+        width: window.innerWidth < 768 ? '280px' : '340px',
+        maxHeight: window.innerWidth < 768 ? `${Math.min(400, window.innerHeight * 0.7)}px` : '600px',
+        overflowY: 'auto',
       }}
+      ref={tooltipContentRef}
+      onScroll={handleScroll}
       onMouseEnter={() => {
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
@@ -214,42 +219,30 @@ export function Tooltip({ content, children, className = '', onOpen, fullWidth =
       }}
       onMouseLeave={hideTooltip}
     >
-      <div
-        data-lenis-prevent
-        className={`bg-white border border-slate-300 rounded-lg shadow-2xl ${className}`}
-        style={{
-          width: window.innerWidth < 768 ? '280px' : '340px',
-          maxHeight: window.innerWidth < 768 ? `${Math.min(400, window.innerHeight * 0.7)}px` : '600px',
-          overflowY: 'auto',
-        }}
-        ref={tooltipContentRef}
-        onScroll={handleScroll}
-      >
-        <div className={`leading-relaxed p-3 sm:p-4 ${
-          window.innerWidth < 768 ? 'text-xs' : 'text-sm'
-        }`}>
-          {content}
-        </div>
-        {(showScrollIndicator || accordionJustOpened) && (
-          <div
-            className="sticky bottom-0 left-0 right-0 h-12 pointer-events-none"
-            style={{
-              background: 'linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.95) 70%, rgba(255, 255, 255, 1) 100%)',
-              marginTop: '-3rem'
-            }}
-          >
-            <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 ${
-              accordionJustOpened ? 'animate-bounce' : 'animate-bounce'
-            }`}>
-              <svg className={`w-5 h-5 ${
-                accordionJustOpened ? 'text-[#BFF102]' : 'text-slate-400'
-              }`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={accordionJustOpened ? 3 : 2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-        )}
+      <div className={`leading-relaxed p-3 sm:p-4 ${
+        window.innerWidth < 768 ? 'text-xs' : 'text-sm'
+      }`}>
+        {content}
       </div>
+      {(showScrollIndicator || accordionJustOpened) && (
+        <div
+          className="sticky bottom-0 left-0 right-0 h-12 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.95) 70%, rgba(255, 255, 255, 1) 100%)',
+            marginTop: '-3rem'
+          }}
+        >
+          <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 ${
+            accordionJustOpened ? 'animate-bounce' : 'animate-bounce'
+          }`}>
+            <svg className={`w-5 h-5 ${
+              accordionJustOpened ? 'text-[#BFF102]' : 'text-slate-400'
+            }`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={accordionJustOpened ? 3 : 2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      )}
     </div>,
     getPortalRoot()
   ) : null;
