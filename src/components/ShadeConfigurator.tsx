@@ -2965,7 +2965,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
             nextLabel={footerNextLabel}
             disableNext={footerDisableNext}
             disabledHint={footerDisabledHint}
-            priceDisplay={footerPriceDisplay}
+            priceDisplay={isReviewStep ? undefined : footerPriceDisplay}
             isReview={isReviewStep}
             isMobile={isMobile}
           />
