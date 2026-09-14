@@ -305,7 +305,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           );
         })()}
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-start">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
           <div className="lg:col-span-2 flex flex-col">
             {/* Configuration Summary */}
@@ -557,9 +557,8 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
           {/* Right Column - Diagram Preview */}
           <div className="lg:col-span-2 flex flex-col min-h-0 overflow-hidden">
-            {/* Shade Sail Preview */}
-            <Card className="p-3 sm:p-4 bg-surface-soft/80 flex-1 flex flex-col overflow-hidden">
-              <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
+            {/* Preview heading outside card to align with Configuration Summary heading */}
+            {!isMobile && (
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <h4 className="text-sm font-semibold text-brand-green uppercase tracking-wide">
                   Preview
@@ -591,6 +590,43 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                   </div>
                 )}
               </div>
+            )}
+            {/* Shade Sail Preview */}
+            <Card className="p-3 sm:p-4 bg-surface-soft/80 flex-1 flex flex-col overflow-hidden">
+              <div ref={ref} className="shade-canvas-container flex-1 flex flex-col min-h-0">
+              {isMobile && (
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h4 className="text-sm font-semibold text-brand-green uppercase tracking-wide">
+                  Preview
+                </h4>
+                {review3DAvailable && device3DTier !== 'none' && (
+                  <div className="flex items-center gap-1 bg-surface-panel rounded-lg p-0.5 sm:p-1">
+                    <button
+                      onClick={() => setReviewViewMode('plan')}
+                      className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-medium transition-all ${
+                        reviewViewMode === 'plan'
+                          ? 'bg-white shadow-sm text-brand-green'
+                          : 'text-text-muted hover:text-brand-green'
+                      }`}
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      Plan
+                    </button>
+                    <button
+                      onClick={() => setReviewViewMode('3d')}
+                      className={`flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md text-xs font-medium transition-all ${
+                        reviewViewMode === '3d'
+                          ? 'bg-white shadow-sm text-brand-green'
+                          : 'text-text-muted hover:text-brand-green'
+                      }`}
+                    >
+                      <Box className="w-3.5 h-3.5" />
+                      3D
+                    </button>
+                  </div>
+                )}
+              </div>
+              )}
 
               {reviewViewMode === 'plan' ? (
                 <>
