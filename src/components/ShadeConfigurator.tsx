@@ -2775,7 +2775,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
 
   // Compute footer state per step
   const footerNextLabel = isReviewStep
-    ? `Add to cart${calculations.totalPrice > 0 && hasAllEdgeMeasurements ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
+    ? `ADD TO CART${calculations.totalPrice > 0 && hasAllEdgeMeasurements ? ' \u00b7 ' + formatCurrency(calculations.totalPrice, config.currency) : ''}`
     : ((openStep === 2 || openStep === 3) && isMeasureGuideVisible)
       ? `Continue > Dimensions`
       : isMobile ? `Next: ${getNextStepTitle(openStep)}` : `Continue > ${getNextStepTitle(openStep)}`;

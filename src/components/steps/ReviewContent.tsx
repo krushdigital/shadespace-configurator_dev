@@ -245,7 +245,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
 
   return (
     <div className="p-6">
-      {hasAllEdgeMeasurements && calculations.totalPrice > 0 && (
+      {!isMobile && hasAllEdgeMeasurements && calculations.totalPrice > 0 && (
         <div className="flex items-center gap-2 bg-brand-lime/10 border border-[#BFF102]/40 rounded-lg px-4 py-3 mb-6">
           <svg className="w-5 h-5 text-brand-mid flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
