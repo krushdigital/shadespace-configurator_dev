@@ -33,7 +33,7 @@ export function StepNavigationFooter({
       <div className="flex flex-col gap-2 max-w-content mx-auto">
         {priceDisplay && isMobile && (
           <div className="flex items-baseline gap-2">
-            <span className="text-[12px] font-bold text-text-muted">Estimated</span>
+            <span className="text-[12px] font-bold text-text-muted">{isReview ? 'Total' : 'Estimated'}</span>
             <span className="text-[20px] font-extrabold text-brand-green leading-tight" style={{ letterSpacing: '-0.02em' }}>{priceDisplay}</span>
           </div>
         )}
@@ -50,7 +50,7 @@ export function StepNavigationFooter({
 
           {priceDisplay && !isMobile ? (
             <div className="flex-shrink-0">
-              <div className="text-[12px] font-bold text-text-muted leading-tight">Estimated</div>
+              <div className="text-[12px] font-bold text-text-muted leading-tight">{isReview ? 'Total' : 'Estimated'}</div>
               <div className="text-[22px] font-extrabold text-brand-green leading-tight" style={{ letterSpacing: '-0.02em' }}>{priceDisplay}</div>
             </div>
           ) : null}

@@ -134,6 +134,7 @@ export function StandardPackPreview({ pack, itemsById, corners, children, trigge
           onMouseEnter={handleOpen}
           onMouseLeave={handleClose}
           className={triggerClassName ?? "inline-flex items-center gap-1 rounded text-left"}
+          style={{ minHeight: undefined, minWidth: undefined }}
           aria-expanded={open}
           aria-label="View hardware kit contents"
         >

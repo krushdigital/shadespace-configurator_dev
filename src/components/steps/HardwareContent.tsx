@@ -176,7 +176,7 @@ export function HardwareContent({
                     alt="Hardware Tensioning Kit"
                     className="w-full h-[100px] sm:h-[150px] object-cover block bg-border-card"
                   />
-                  <StandardPackPreview pack={pack} itemsById={itemsById} corners={config.corners} triggerClassName="absolute top-2.5 right-2.5 z-[3] w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/90 text-brand-green shadow-sm hover:bg-white transition-colors min-h-[44px] min-w-[44px]">
+                  <StandardPackPreview pack={pack} itemsById={itemsById} corners={config.corners} triggerClassName="absolute top-2.5 right-2.5 z-[3] w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/90 text-brand-green shadow-sm hover:bg-white transition-colors">
                     <Eye className="w-4 h-4" strokeWidth={2.25} />
                   </StandardPackPreview>
                 </div>

@@ -3143,11 +3143,11 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                         <div className="bg-brand-green rounded-card p-[18px_20px]">
                           {calculations.totalPrice > 0 ? (
                             <>
-                              <div className="text-[12px] font-bold text-[#9fc4ad] uppercase tracking-wide">Estimated total</div>
+                              <div className="text-[12px] font-bold text-[#9fc4ad] uppercase tracking-wide">{isReviewStep ? 'Total' : 'Estimated total'}</div>
                               <div className="text-[32px] font-extrabold text-brand-lime leading-none mt-0.5" style={{ letterSpacing: '-0.03em' }}>
                                 {formatCurrency(calculations.totalPrice, config.currency)}
                               </div>
-                              <div className="mt-1 text-[13px] text-[#cfe3d4]">All-inclusive to your door. Updates as you go.</div>
+                              <div className="mt-1 text-[13px] text-[#cfe3d4]">{isReviewStep ? 'All-inclusive to your door.' : 'All-inclusive to your door. Updates as you go.'}</div>
                               {calculations.hardwareBreakdown?.hardwareOnlyLivePrice > 0 && (
                                 <div className="mt-2 text-[13px] text-[#cfe3d4]">
                                   Includes {formatCurrency(calculations.hardwareBreakdown.hardwareOnlyLivePrice, config.currency)} hardware
@@ -3156,7 +3156,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                             </>
                           ) : (
                             <>
-                              <div className="text-[12px] font-bold text-[#9fc4ad] uppercase tracking-wide">Estimated total</div>
+                              <div className="text-[12px] font-bold text-[#9fc4ad] uppercase tracking-wide">{isReviewStep ? 'Total' : 'Estimated total'}</div>
                               <div className="text-[14px] text-[#cfe3d4] mt-1">
                                 Price appears after sizing
                               </div>
