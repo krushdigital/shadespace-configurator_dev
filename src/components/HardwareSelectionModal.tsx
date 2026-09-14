@@ -164,7 +164,7 @@ export function HardwareSelectionModal({
   return createPortal(
     <div
       data-lenis-prevent
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
       onClick={onClose}
     >
       <div
@@ -307,7 +307,7 @@ export function HardwareSelectionModal({
             data-lenis-prevent
             ref={tooltipRef}
             role="tooltip"
-            className="pointer-events-none fixed z-[90] hidden w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl lg:block"
+            className="pointer-events-none fixed z-[10001] hidden w-72 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl lg:block"
             style={{ top: tooltipPos.top, left: tooltipPos.left }}
           >
             <div className="mb-3 flex h-40 w-full items-center justify-center overflow-hidden rounded-xl bg-slate-50">
@@ -336,7 +336,7 @@ export function HardwareSelectionModal({
         {detailItem && typeof document !== 'undefined' && createPortal(
           <div
             data-lenis-prevent
-            className="fixed inset-0 z-[85] flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 overscroll-contain"
+            className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4 overscroll-contain"
             onClick={() => setDetailItem(null)}
             onWheel={e => e.stopPropagation()}
             onTouchMove={e => e.stopPropagation()}
