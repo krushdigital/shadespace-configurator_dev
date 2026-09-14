@@ -71,7 +71,7 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
 
   const handleMouseLeave = useCallback(() => {
     if (!isPinned) {
-      hoverTimeoutRef.current = setTimeout(hide, 200);
+      hoverTimeoutRef.current = setTimeout(hide, 300);
     }
   }, [isPinned, hide]);
 
@@ -115,18 +115,24 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
 
       {isOpen && !isMobile && createPortal(
         <div
-          ref={popoverRef}
-          onMouseEnter={() => clearTimeout(hoverTimeoutRef.current)}
-          onMouseLeave={handleMouseLeave}
           className="fixed z-[10000] pointer-events-auto"
           style={{
-            top: position.showAbove ? undefined : position.top,
-            bottom: position.showAbove ? `${window.innerHeight - position.top}px` : undefined,
-            left: position.left,
-            maxWidth: Math.min(360, window.innerWidth - 32),
-            animation: 'fade-in-popover 0.15s ease-out',
+            top: position.showAbove ? undefined : position.top - 12,
+            bottom: position.showAbove ? `${window.innerHeight - position.top - 12}px` : undefined,
+            left: position.left - 12,
+            padding: '12px',
           }}
+          onMouseEnter={() => clearTimeout(hoverTimeoutRef.current)}
+          onMouseLeave={handleMouseLeave}
         >
+          <div
+            ref={popoverRef}
+            className="relative"
+            style={{
+              maxWidth: Math.min(360, window.innerWidth - 32),
+              animation: 'fade-in-popover 0.15s ease-out',
+            }}
+          >
           {!position.showAbove && (
             <div
               className="w-3 h-3 bg-brand-green rotate-45 absolute -top-1.5"
@@ -151,6 +157,7 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
               style={{ left: triggerRef.current ? triggerRef.current.getBoundingClientRect().left + 15 - position.left : 24 }}
             />
           )}
+          </div>
         </div>,
         getPortalRoot()
       )}
