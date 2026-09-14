@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Eye } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { ConfiguratorState, ShadeCalculations, CornerHardwareLine } from '../../types';
 import { HardwareSelectionModal } from '../HardwareSelectionModal';
 import { ShapeCanvas } from '../ShapeCanvas';
@@ -176,18 +176,18 @@ export function HardwareContent({
                     alt="Hardware Tensioning Kit"
                     className="w-full h-[100px] sm:h-[150px] object-cover block bg-border-card"
                   />
-                  <StandardPackPreview pack={pack} itemsById={itemsById} corners={config.corners} triggerClassName="absolute top-2.5 right-2.5 z-[3] w-8 h-8 inline-flex items-center justify-center rounded-lg bg-white/90 text-brand-green shadow-sm hover:bg-white transition-colors">
-                    <Eye className="w-4 h-4" strokeWidth={2.25} />
-                  </StandardPackPreview>
                 </div>
               )}
               <div className="px-4 py-4">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <div className="font-extrabold text-[15px] sm:text-[19px]">Hardware Tensioning Kit</div>
-                  <span className={`text-xs font-bold rounded-full px-2.5 py-0.5 ${
+                  <span className={`inline-flex items-center gap-1 text-xs font-bold rounded-full px-2.5 py-0.5 ${
                     sel ? 'bg-white/20 text-white' : 'bg-surface-soft text-brand-mid'
                   }`}>
                     Recommended
+                    <StandardPackPreview pack={pack} itemsById={itemsById} corners={config.corners} triggerClassName={`inline-flex items-center justify-center rounded-full w-4 h-4 ${sel ? 'text-white/80 hover:text-white' : 'text-brand-mid/70 hover:text-brand-mid'} transition-colors`}>
+                      <HelpCircle className="w-3.5 h-3.5" strokeWidth={2.25} />
+                    </StandardPackPreview>
                   </span>
                 </div>
                 <div className={`text-[15px] mt-1.5 leading-[1.45] ${sel ? 'opacity-90' : 'text-text-muted'}`}>
