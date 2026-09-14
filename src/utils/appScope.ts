@@ -23,6 +23,36 @@ export function getPortalRoot(): HTMLElement {
   return el;
 }
 
+function resetDocumentChrome(): void {
+  const s = (el: HTMLElement) => {
+    el.style.setProperty('margin', '0', 'important');
+    el.style.setProperty('padding', '0', 'important');
+    el.style.setProperty('overflow', 'hidden', 'important');
+    el.style.setProperty('height', '100dvh', 'important');
+    el.style.setProperty('background-color', '#f5f7f5', 'important');
+  };
+  s(document.documentElement);
+  s(document.body);
+}
+
+function sizeRootContainers(): void {
+  const mount = document.getElementById('SHADESAIL_ROOT');
+  if (mount) {
+    mount.style.setProperty('height', '0', 'important');
+    mount.style.setProperty('overflow', 'hidden', 'important');
+  }
+
+  for (const id of ['CONFIGURATOR_ROOT', 'SHADE_SPACE']) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.style.setProperty('width', '100%', 'important');
+    el.style.setProperty('height', '100dvh', 'important');
+    el.style.setProperty('overflow', 'hidden', 'important');
+    el.style.setProperty('margin', '0', 'important');
+    el.style.setProperty('padding', '0', 'important');
+  }
+}
+
 export function applyAppScope(): void {
   if (typeof document === 'undefined') return;
   for (const id of ROOT_IDS) {
@@ -30,4 +60,6 @@ export function applyAppScope(): void {
     if (el) el.classList.add(SCOPE_CLASS);
   }
   getPortalRoot();
+  resetDocumentChrome();
+  sizeRootContainers();
 }
