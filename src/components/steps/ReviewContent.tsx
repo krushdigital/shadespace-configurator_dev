@@ -305,7 +305,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
           );
         })()}
         {/* Main Layout - Left Content + Right Sticky Sidebar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-stretch">
           {/* Left Content Column - Configuration Summary, Measurements, Heights, etc. */}
           <div className="lg:col-span-2 flex flex-col">
             {/* Configuration Summary */}
@@ -387,7 +387,7 @@ export const ReviewContent = forwardRef<HTMLDivElement, ReviewContentProps>(({
                 </Card>
               </AccordionItem>
             ) : (
-              <Card className="p-4 mb-4 flex-1 flex flex-col">
+              <Card className="p-4 flex-1 flex flex-col">
               <div className="space-y-3 text-sm flex-1">
                 {/* Material cluster */}
                 <div className="space-y-1.5">
