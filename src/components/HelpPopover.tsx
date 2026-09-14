@@ -15,11 +15,17 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const [position, setPosition] = useState({ top: 0, left: 0, showAbove: false });
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const isMobile = window.innerWidth < 900;
     const popoverWidth = Math.min(360, window.innerWidth - 32);
 
     let top = rect.bottom + 10;
@@ -32,10 +38,6 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
     if (top + 200 > window.innerHeight && rect.top > 220) {
       top = rect.top - 10;
       showAbove = true;
-    }
-
-    if (isMobile) {
-      left = (window.innerWidth - popoverWidth) / 2;
     }
 
     setPosition({ top, left, showAbove });
@@ -69,12 +71,12 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
 
   const handleMouseLeave = useCallback(() => {
     if (!isPinned) {
-      hoverTimeoutRef.current = setTimeout(hide, 200);
+      hoverTimeoutRef.current = setTimeout(hide, 300);
     }
   }, [isPinned, hide]);
 
   useEffect(() => {
-    if (!isPinned) return;
+    if (!isPinned || isMobile) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (
         popoverRef.current && !popoverRef.current.contains(e.target as Node) &&
@@ -86,10 +88,15 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isPinned]);
+  }, [isPinned, isMobile]);
 
   useEffect(() => {
     return () => clearTimeout(hoverTimeoutRef.current);
+  }, []);
+
+  const closeAll = useCallback(() => {
+    setIsPinned(false);
+    setIsOpen(false);
   }, []);
 
   return (
@@ -97,8 +104,8 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
       <button
         ref={triggerRef}
         onClick={handleClick}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onMouseEnter={!isMobile ? handleMouseEnter : undefined}
+        onMouseLeave={!isMobile ? handleMouseLeave : undefined}
         className="inline-flex items-center justify-center w-[22px] h-[22px] rounded-full bg-brand-green/15 text-brand-green hover:bg-brand-green hover:text-white transition-colors duration-150 ml-2 flex-shrink-0"
         aria-label="Help"
         type="button"
@@ -106,21 +113,26 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
         {children || <span className="text-[11px] font-bold leading-none">?</span>}
       </button>
 
-      {isOpen && createPortal(
+      {isOpen && !isMobile && createPortal(
         <div
-          ref={popoverRef}
+          className="fixed z-[10000] pointer-events-auto"
+          style={{
+            top: position.showAbove ? undefined : position.top - 12,
+            bottom: position.showAbove ? `${window.innerHeight - position.top - 12}px` : undefined,
+            left: position.left - 12,
+            padding: '12px',
+          }}
           onMouseEnter={() => clearTimeout(hoverTimeoutRef.current)}
           onMouseLeave={handleMouseLeave}
-          className="fixed z-[10000]"
-          style={{
-            top: position.showAbove ? undefined : position.top,
-            bottom: position.showAbove ? `${window.innerHeight - position.top}px` : undefined,
-            left: position.left,
-            maxWidth: Math.min(360, window.innerWidth - 32),
-            animation: 'fade-in-popover 0.15s ease-out',
-          }}
         >
-          {/* Arrow pointer */}
+          <div
+            ref={popoverRef}
+            className="relative"
+            style={{
+              maxWidth: Math.min(360, window.innerWidth - 32),
+              animation: 'fade-in-popover 0.15s ease-out',
+            }}
+          >
           {!position.showAbove && (
             <div
               className="w-3 h-3 bg-brand-green rotate-45 absolute -top-1.5"
@@ -130,7 +142,7 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
           <div className="bg-brand-green text-white rounded-2xl shadow-2xl p-4 text-[14px] leading-relaxed relative">
             {isPinned && (
               <button
-                onClick={() => { setIsPinned(false); setIsOpen(false); }}
+                onClick={closeAll}
                 className="absolute top-3 right-3 text-white/60 hover:text-white transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center -mt-2 -mr-2"
                 type="button"
               >
@@ -139,13 +151,37 @@ export function HelpPopover({ content, children }: HelpPopoverProps) {
             )}
             {content}
           </div>
-          {/* Arrow pointer below */}
           {position.showAbove && (
             <div
               className="w-3 h-3 bg-brand-green rotate-45 absolute -bottom-1.5"
               style={{ left: triggerRef.current ? triggerRef.current.getBoundingClientRect().left + 15 - position.left : 24 }}
             />
           )}
+          </div>
+        </div>,
+        getPortalRoot()
+      )}
+
+      {isOpen && isMobile && createPortal(
+        <div
+          data-lenis-prevent
+          className="fixed inset-0 z-[10000] flex items-end justify-center bg-slate-900/50 pointer-events-auto"
+          onClick={closeAll}
+        >
+          <div className="w-full" onClick={e => e.stopPropagation()}>
+            <div className="rounded-t-2xl bg-brand-green text-white p-5 shadow-2xl max-h-[70vh] overflow-y-auto overscroll-contain">
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <div className="flex-1 text-[14px] leading-relaxed">{content}</div>
+                <button
+                  onClick={closeAll}
+                  className="rounded-full p-1.5 text-white/60 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0 -mt-1 -mr-1"
+                  type="button"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>,
         getPortalRoot()
       )}

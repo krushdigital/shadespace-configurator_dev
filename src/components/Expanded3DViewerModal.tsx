@@ -44,6 +44,26 @@ function ZoomController({ direction, onDone }: { direction: 'in' | 'out'; onDone
   return null;
 }
 
+function WebGLCleanup() {
+  const { gl, scene } = useThree();
+  useEffect(() => {
+    return () => {
+      scene.traverse((obj: any) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+          materials.forEach((m: any) => {
+            Object.values(m).forEach((v: any) => { if (v?.dispose) v.dispose(); });
+            m.dispose();
+          });
+        }
+      });
+      gl.dispose();
+    };
+  }, [gl, scene]);
+  return null;
+}
+
 export default function Expanded3DViewerModal({
   isOpen,
   onClose,
@@ -180,7 +200,10 @@ export default function Expanded3DViewerModal({
           <Canvas
             camera={{ fov: 45, near: 0.1, far: 100 }}
             shadows="soft"
-            gl={{ antialias: true, alpha: false, preserveDrawingBuffer: true }}
+            gl={{ antialias: true, alpha: false, preserveDrawingBuffer: false }}
+            onCreated={({ gl: renderer }) => {
+              renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            }}
           >
             <React.Suspense fallback={null}>
               <SceneWrapper
@@ -201,6 +224,7 @@ export default function Expanded3DViewerModal({
                 onDone={handleZoomDone}
               />
             )}
+            <WebGLCleanup />
           </Canvas>
 
           {/* Floating Tools - Top Right */}

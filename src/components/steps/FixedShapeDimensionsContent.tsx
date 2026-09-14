@@ -340,9 +340,9 @@ export function FixedShapeDimensionsContent({
 
 
       {/* Measurement inputs */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-brand-green mb-2">{getEdgeALabel()}</label>
+      <div className={isMobile ? 'space-y-6' : 'space-y-4'}>
+        <div className={isMobile ? 'rounded-2xl border-2 border-brand-green/20 bg-white p-5 shadow-sm' : ''}>
+          <label className={`block font-semibold text-brand-green ${isMobile ? 'text-base mb-3' : 'text-sm mb-2'}`}>{getEdgeALabel()}</label>
           {unit === 'imperial' ? (
             <DualImperialInput
               key={`edgeA-${shape}-${unit}`}
@@ -353,6 +353,7 @@ export function FixedShapeDimensionsContent({
               onFocus={() => setHighlightedMeasurement?.('AB')}
               onBlur={() => setHighlightedMeasurement?.(null)}
               unit={unit}
+              className={isMobile ? '!py-4 !text-xl' : ''}
             />
           ) : (
             <div className="relative">
@@ -363,21 +364,21 @@ export function FixedShapeDimensionsContent({
                 onFocus={() => setHighlightedMeasurement?.('AB')}
                 onBlur={() => setHighlightedMeasurement?.(null)}
                 placeholder="Enter length in mm"
-                className={`w-full px-4 py-3 rounded-xl border-2 ${validationErrors['AB'] ? 'border-red-400 bg-red-50' : 'border-border-card focus:border-brand-mid'} focus:ring-2 focus:ring-brand-mid/20 focus:outline-none text-base transition-colors`}
+                className={`w-full rounded-xl border-2 ${validationErrors['AB'] ? 'border-red-400 bg-red-50' : 'border-border-card focus:border-brand-mid'} focus:ring-2 focus:ring-brand-mid/20 focus:outline-none transition-colors ${isMobile ? 'px-5 py-4 text-xl' : 'px-4 py-3 text-base'}`}
               />
               {edgeAMm > 0 && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                <span className={`absolute top-1/2 -translate-y-1/2 text-slate-400 ${isMobile ? 'right-4 text-sm' : 'right-3 text-xs'}`}>
                   {formatSecondaryUnit(edgeAMm, unit)}
                 </span>
               )}
             </div>
           )}
-          {validationErrors['AB'] && <p className="mt-1.5 text-xs text-red-600 font-medium">{validationErrors['AB']}</p>}
+          {validationErrors['AB'] && <p className={`font-medium text-red-600 ${isMobile ? 'mt-2 text-sm' : 'mt-1.5 text-xs'}`}>{validationErrors['AB']}</p>}
         </div>
 
         {needsTwoInputs && (
-          <div>
-            <label className="block text-sm font-semibold text-brand-green mb-2">{getEdgeBLabel()}</label>
+          <div className={isMobile ? 'rounded-2xl border-2 border-brand-green/20 bg-white p-5 shadow-sm' : ''}>
+            <label className={`block font-semibold text-brand-green ${isMobile ? 'text-base mb-3' : 'text-sm mb-2'}`}>{getEdgeBLabel()}</label>
             {unit === 'imperial' ? (
               <DualImperialInput
                 key={`edgeB-${shape}-${unit}`}
@@ -388,6 +389,7 @@ export function FixedShapeDimensionsContent({
                 error={!!(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC'])}
                 onFocus={() => setHighlightedMeasurement?.(shape === 'right-angle-triangle' ? 'CA' : 'BC')}
                 onBlur={() => setHighlightedMeasurement?.(null)}
+                className={isMobile ? '!py-4 !text-xl' : ''}
               />
             ) : (
               <div className="relative">
@@ -398,17 +400,17 @@ export function FixedShapeDimensionsContent({
                   onFocus={() => setHighlightedMeasurement?.(shape === 'right-angle-triangle' ? 'CA' : 'BC')}
                   onBlur={() => setHighlightedMeasurement?.(null)}
                   placeholder="Enter length in mm"
-                  className={`w-full px-4 py-3 rounded-xl border-2 ${(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']) ? 'border-red-400 bg-red-50' : 'border-border-card focus:border-brand-mid'} focus:ring-2 focus:ring-brand-mid/20 focus:outline-none text-base transition-colors`}
+                  className={`w-full rounded-xl border-2 ${(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']) ? 'border-red-400 bg-red-50' : 'border-border-card focus:border-brand-mid'} focus:ring-2 focus:ring-brand-mid/20 focus:outline-none transition-colors ${isMobile ? 'px-5 py-4 text-xl' : 'px-4 py-3 text-base'}`}
                 />
                 {edgeBMm > 0 && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                  <span className={`absolute top-1/2 -translate-y-1/2 text-slate-400 ${isMobile ? 'right-4 text-sm' : 'right-3 text-xs'}`}>
                     {formatSecondaryUnit(edgeBMm, unit)}
                   </span>
                 )}
               </div>
             )}
             {(shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']) && (
-              <p className="mt-1.5 text-xs text-red-600 font-medium">
+              <p className={`font-medium text-red-600 ${isMobile ? 'mt-2 text-sm' : 'mt-1.5 text-xs'}`}>
                 {shape === 'right-angle-triangle' ? validationErrors['CA'] : validationErrors['BC']}
               </p>
             )}
@@ -417,9 +419,9 @@ export function FixedShapeDimensionsContent({
 
         {/* Auto-calculated edge */}
         {getCalculatedLabel() && (
-          <div className="flex items-center gap-2 px-4 py-3 bg-emerald-50 rounded-xl border border-emerald-100">
-            <Info className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span className="text-sm font-medium text-emerald-800">{getCalculatedLabel()}</span>
+          <div className={`flex items-center gap-2 bg-emerald-50 rounded-xl border border-emerald-100 ${isMobile ? 'px-5 py-4' : 'px-4 py-3'}`}>
+            <Info className={`text-emerald-600 flex-shrink-0 ${isMobile ? 'w-5 h-5' : 'w-4 h-4'}`} />
+            <span className={`font-medium text-emerald-800 ${isMobile ? 'text-base' : 'text-sm'}`}>{getCalculatedLabel()}</span>
           </div>
         )}
       </div>

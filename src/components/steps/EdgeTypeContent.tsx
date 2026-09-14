@@ -171,6 +171,7 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
 
               {/* Image */}
               <div className="relative">
+                {isSelected && <div className="absolute inset-0 bg-brand-green/40 z-[1]" />}
                 <img
                   src={edge.imageUrl}
                   alt={`${edge.label} example`}

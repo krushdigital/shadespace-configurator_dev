@@ -1,27 +1,30 @@
 export type Device3DTier = 'high' | 'low' | 'none';
 
-export function canRender3D(): Device3DTier {
-  if (typeof window === 'undefined') return 'none';
+let cachedTier: Device3DTier | null = null;
 
-  // WebGL2 is required
+export function canRender3D(): Device3DTier {
+  if (cachedTier !== null) return cachedTier;
+  if (typeof window === 'undefined') { cachedTier = 'none'; return cachedTier; }
+
   const testCanvas = document.createElement('canvas');
   const gl = testCanvas.getContext('webgl2');
-  if (!gl) return 'none';
+  if (!gl) { cachedTier = 'none'; return cachedTier; }
+
+  const ext = gl.getExtension('WEBGL_lose_context');
+  if (ext) ext.loseContext();
 
   const cores = navigator.hardwareConcurrency || 2;
   const memory = (navigator as any).deviceMemory as number | undefined;
 
-  // High tier: 4+ cores, 4+ GB RAM (covers modern phones and tablets)
   if (cores >= 4 && (memory === undefined || memory >= 4)) {
-    return 'high';
+    cachedTier = 'high';
+  } else if (cores >= 2) {
+    cachedTier = 'low';
+  } else {
+    cachedTier = 'none';
   }
 
-  // Low tier: WebGL2 exists but weaker hardware
-  if (cores >= 2) {
-    return 'low';
-  }
-
-  return 'none';
+  return cachedTier;
 }
 
 // The physics-based membrane solver renders all corner counts (3–8) correctly.
