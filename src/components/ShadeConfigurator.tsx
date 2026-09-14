@@ -3100,8 +3100,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
                                       unit={config.unit}
                                     />
                                   )
-                                ) : (
-                                  <div className="h-[400px] relative group/viewer3d">
+                                ) : null}
+
+                                {/* Keep 3D viewer mounted but hidden when in plan view to avoid WebGL context churn */}
+                                {desktop3DAvailable && (
+                                  <div
+                                    className={`h-[400px] relative group/viewer3d ${effectiveDesktopView !== '3d' || is3DExpanded ? 'hidden' : ''}`}
+                                  >
                                     <Suspense fallback={
                                       <div className="flex items-center justify-center h-full bg-surface-panel rounded-lg border border-border-card">
                                         <div className="text-center">
