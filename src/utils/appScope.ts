@@ -31,7 +31,11 @@ export function applyAppScope(): void {
   if (typeof document === 'undefined') return;
   for (const id of ROOT_IDS) {
     const el = document.getElementById(id);
-    if (el) el.classList.add(SCOPE_CLASS);
+    if (!el) continue;
+    el.classList.add(SCOPE_CLASS);
+    el.style.setProperty('height', '100dvh', 'important');
+    el.style.setProperty('width', '100%', 'important');
+    el.style.setProperty('overflow', 'hidden', 'important');
   }
   getPortalRoot();
   applyBodyStyles();
