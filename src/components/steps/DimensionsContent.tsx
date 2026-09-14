@@ -7,7 +7,7 @@ import { Input } from '../ui/Input';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
 import { Tooltip } from '../ui/Tooltip';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence, detectMatchingFixedShape } from '../../utils/geometry';
+import { convertMmToUnit, formatMeasurement, getDiagonalKeysForCorners, formatSecondaryUnit, reconstructPolygonFromMeasurements, canReconstructShape, validatePolygonGeometry, calculateTriangleSideRange, getShapeAccuracy, getHeightRequirement, areHeightsProvided, getNextRequiredDiagonals, computeShapeConfidence, detectMatchingFixedShape } from '../../utils/geometry';
 import { formatCurrency } from '../../utils/currencyFormatter';
 import { PricingSummaryBox } from '../PricingSummaryBox';
 import { AlertCircle, ChevronDown, ChevronUp, RefreshCw, Box, Layers, CheckCircle, AlertTriangle, Upload, Ruler } from 'lucide-react';
@@ -192,8 +192,7 @@ export function DimensionsContent({
   const updateMeasurement = (edgeKey: string, value: string) => {
     const numericValue = parseFloat(value);
     if (!isNaN(numericValue)) {
-      const mmValue = convertUnitToMm(numericValue, config.unit);
-      const newMeasurements = { ...config.measurements, [edgeKey]: mmValue };
+      const newMeasurements = { ...config.measurements, [edgeKey]: numericValue };
       updateConfig({ measurements: newMeasurements });
 
       // Clear geometry warnings immediately when user updates measurements
@@ -280,12 +279,11 @@ export function DimensionsContent({
   };
 
   const updateFixingHeight = (index: number, height: number) => {
-    const mmHeight = convertUnitToMm(height, config.unit);
     const newHeights = [...config.fixingHeights];
     while (newHeights.length < config.corners) {
       newHeights.push(0);
     }
-    newHeights[index] = mmHeight;
+    newHeights[index] = height;
     updateConfig({ fixingHeights: newHeights, heightsProvidedByUser: true });
   };
 
@@ -816,9 +814,7 @@ export function DimensionsContent({
                 return (
                   <div key={edgeKey}>
                      <DualImperialInput
-                      value={config.measurements[edgeKey]
-                        ? convertMmToUnit(config.measurements[edgeKey], config.unit)
-                        : 0}
+                      value={config.measurements[edgeKey] || 0}
                        onChange={(value) => {
                          if (value === 0) {
                            const newMeasurements = { ...config.measurements };
@@ -1029,9 +1025,7 @@ export function DimensionsContent({
                               return (
                                 <div key={key}>
                                   <DualImperialInput
-                                    value={config.measurements[key]
-                                      ? convertMmToUnit(config.measurements[key], config.unit)
-                                      : 0}
+                                    value={config.measurements[key] || 0}
                                     onChange={(value) => {
                                       if (value === 0) {
                                         const newMeasurements = { ...config.measurements };
@@ -1234,9 +1228,7 @@ export function DimensionsContent({
                             {/* Height Input */}
                             <div>
                               <DualImperialInput
-                                value={config.fixingHeights[index]
-                                  ? convertMmToUnit(config.fixingHeights[index], config.unit)
-                                  : 0}
+                                value={config.fixingHeights[index] || 0}
                                 onChange={(value) => {
                                   if (value === 0) {
                                     const newHeights = [...config.fixingHeights];

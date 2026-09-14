@@ -3,7 +3,7 @@ import { ConfiguratorState, ShadeCalculations, FixedShapeType } from '../../type
 import { Button } from '../ui/Button';
 import { DualImperialInput } from '../ui/DualImperialInput';
 import { ShapeCanvas } from '../ShapeCanvas';
-import { convertMmToUnit, convertUnitToMm, formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
+import { formatMeasurement, formatSecondaryUnit } from '../../utils/geometry';
 import { SaveProgressButton } from '../SaveProgressButton';
 import { ArrowRight, Info, RefreshCw, Ruler } from 'lucide-react';
 import SwitchModeModal from '../SwitchModeModal';
@@ -154,11 +154,11 @@ export function FixedShapeDimensionsContent({
   const edgeAMm = config.measurements['AB'] || 0;
   const edgeBMm = shape === 'right-angle-triangle' ? (config.measurements['CA'] || 0) : (config.measurements['BC'] || 0);
 
-  const edgeADisplay = edgeAMm > 0 ? convertMmToUnit(edgeAMm, unit) : 0;
-  const edgeBDisplay = edgeBMm > 0 ? convertMmToUnit(edgeBMm, unit) : 0;
+  const edgeADisplay = edgeAMm;
+  const edgeBDisplay = edgeBMm;
 
   const handleEdgeAChange = useCallback((value: number) => {
-    const mm = Math.round(convertUnitToMm(value, unit) * 10) / 10;
+    const mm = Math.round(value * 10) / 10;
     if (mm <= 0) {
       updateConfig({ measurements: needsTwoInputs ? { ...(edgeBMm > 0 ? { [shape === 'right-angle-triangle' ? 'CA' : 'BC']: edgeBMm } : {}) } : {} });
       return;
@@ -174,10 +174,10 @@ export function FixedShapeDimensionsContent({
       const savedMeasurements = needsTwoInputs ? { AB: mm } : fullMeasurements;
       updateConfig({ measurements: savedMeasurements, points });
     }
-  }, [shape, unit, edgeBMm, needsTwoInputs, updateConfig]);
+  }, [shape, edgeBMm, needsTwoInputs, updateConfig]);
 
   const handleEdgeBChange = useCallback((value: number) => {
-    const mm = Math.round(convertUnitToMm(value, unit) * 10) / 10;
+    const mm = Math.round(value * 10) / 10;
     if (mm <= 0) {
       updateConfig({ measurements: edgeAMm > 0 ? { AB: edgeAMm } : {} });
       return;
@@ -186,7 +186,7 @@ export function FixedShapeDimensionsContent({
     const newMeasurements = computeFixedShapeMeasurements(shape, width, mm);
     const points = generateFixedShapePoints(shape, newMeasurements);
     updateConfig({ measurements: newMeasurements, points });
-  }, [shape, unit, edgeAMm, updateConfig]);
+  }, [shape, edgeAMm, updateConfig]);
 
   useEffect(() => {
     if (edgeAMm > 0 && edgeBMm > 0) {

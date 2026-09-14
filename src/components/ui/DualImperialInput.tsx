@@ -3,12 +3,8 @@ import { Input } from './Input';
 import { ArrowRightLeft } from 'lucide-react';
 import { parseImperialMeasurement, inchesToFeetInches } from '../../utils/imperialParser';
 
-interface ImperialValue {
-  feet?: number;
-  inches?: number;
-  totalInches?: number;
-  format: 'feet-inches' | 'inches-only';
-}
+const INCHES_TO_MM = 25.4;
+const MM_TO_INCHES = 1 / 25.4;
 
 interface DualImperialInputProps {
   value: number;
@@ -56,41 +52,45 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     }
   }, []);
 
-  // Initialize from prop value
+  // Initialize from prop value (value is always in mm)
   useEffect(() => {
     if (isUserTyping) {
       return;
     }
 
-    // Calculate what the current inputs would produce
+    // Calculate what the current inputs would produce (in mm)
     const currentFeet = parseFloat(feetInput) || 0;
     const currentInches = parseFloat(inchesInput) || 0;
-    const currentTotal = (currentFeet * 12) + currentInches;
-    const currentTotalInches = parseFloat(totalInchesInput) || 0;
+    const currentTotalInches = (currentFeet * 12) + currentInches;
+    const currentMmFromFeetInches = currentTotalInches * INCHES_TO_MM;
+    const currentTotalInchesOnly = parseFloat(totalInchesInput) || 0;
+    const currentMmFromInchesOnly = currentTotalInchesOnly * INCHES_TO_MM;
 
-    // Check if the current displayed value already matches the incoming value
-    // Use different source depending on display mode to avoid stale comparisons
-    const displayedTotal = unit === 'imperial' && displayMode === 'feet-inches'
-      ? currentTotal
-      : currentTotalInches;
+    // Check if the current displayed value already matches the incoming mm value
+    const displayedMm = unit === 'imperial' && displayMode === 'feet-inches'
+      ? currentMmFromFeetInches
+      : unit === 'imperial'
+        ? currentMmFromInchesOnly
+        : parseFloat(totalInchesInput) || 0;
 
-    if (Math.abs(displayedTotal - value) < 0.01 && value > 0) {
+    if (Math.abs(displayedMm - value) < 0.3 && value > 0) {
       return;
     }
 
     if (value > 0) {
       if (unit === 'imperial') {
-        const conversion = inchesToFeetInches(value);
+        const totalInches = value * MM_TO_INCHES;
+        const conversion = inchesToFeetInches(totalInches);
         if (displayMode === 'feet-inches') {
           setFeetInput(conversion.feet > 0 ? String(conversion.feet) : '');
           setInchesInput(conversion.inches > 0 ? String(Math.round(conversion.inches * 100) / 100) : '');
         } else {
-          setTotalInchesInput(String(Math.round(value * 100) / 100));
+          setTotalInchesInput(String(Math.round(totalInches * 100) / 100));
         }
       } else {
         setTotalInchesInput(Math.round(value).toString());
       }
-    } else if (value === 0 && displayedTotal === 0) {
+    } else if (value === 0 && displayedMm === 0) {
       setFeetInput('');
       setInchesInput('');
       setTotalInchesInput('');
@@ -117,7 +117,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     }
 
     const totalInches = (feet * 12) + inches;
-    onChange(totalInches);
+    onChange(totalInches * INCHES_TO_MM);
     setTimeout(() => setIsUserTyping(false), 100);
   };
 
@@ -151,7 +151,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     }
 
     const totalInches = (feet * 12) + (inches || 0);
-    onChange(totalInches);
+    onChange(totalInches * INCHES_TO_MM);
     setTimeout(() => setIsUserTyping(false), 100);
   };
 
@@ -169,7 +169,7 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
     if (unit === 'imperial') {
       const result = parseImperialMeasurement(newValue);
       if (result.isValid) {
-        onChange(result.totalInches);
+        onChange(result.totalInches * INCHES_TO_MM);
 
         // Only auto-populate feet+inches fields if mixed units were explicitly entered
         // (e.g., "4 feet 5 inches" or "7'10"", but NOT "200 inches" or "200")
@@ -195,10 +195,11 @@ export const DualImperialInput: React.FC<DualImperialInputProps> = ({
 
     // Convert current value to new format
     if (value > 0) {
+      const totalInches = value * MM_TO_INCHES;
       if (newMode === 'inches-only') {
-        setTotalInchesInput(String(Math.round(value * 100) / 100));
+        setTotalInchesInput(String(Math.round(totalInches * 100) / 100));
       } else {
-        const conversion = inchesToFeetInches(value);
+        const conversion = inchesToFeetInches(totalInches);
         setFeetInput(conversion.feet > 0 ? String(conversion.feet) : '');
         setInchesInput(conversion.inches > 0 ? String(Math.round(conversion.inches * 100) / 100) : '');
       }

@@ -5,7 +5,7 @@ import { Tooltip } from './ui/Tooltip';
 import { Input } from './ui/Input';
 import { DualImperialInput } from './ui/DualImperialInput';
 import { ConfiguratorState } from '../types';
-import { convertMmToUnit, formatMeasurement, isHeightRequiredForCheckout, areHeightsProvided } from '../utils/geometry';
+import { formatMeasurement, isHeightRequiredForCheckout, areHeightsProvided } from '../utils/geometry';
 
 interface ConfigurationChecklistProps {
   config: ConfiguratorState;
@@ -424,9 +424,7 @@ export const ConfigurationChecklist = forwardRef<ConfigurationChecklistRef, Conf
                       <div key={diagonal.key}>
                           <DualImperialInput
                             ref={isFirstEmpty ? firstEmptyInputRef : undefined}
-                            value={config.measurements[diagonal.key]
-                              ? convertMmToUnit(config.measurements[diagonal.key], config.unit)
-                              : 0}
+                            value={config.measurements[diagonal.key] || 0}
                             onChange={(value) => updateMeasurement(diagonal.key, String(value))}
                             onFocus={() => {
                               setHighlightedMeasurement(diagonal.key);
