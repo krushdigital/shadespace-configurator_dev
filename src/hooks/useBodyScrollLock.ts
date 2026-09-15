@@ -27,7 +27,8 @@ export function useBodyScrollLock(isOpen: boolean) {
 }
 
 export function forceReleaseLock() {
+  if (lockCount === 0) return;
   lockCount = 0;
-  document.body.style.overflow = originalBodyOverflow;
-  document.documentElement.style.overflow = originalHtmlOverflow;
+  document.body.style.removeProperty('overflow');
+  document.documentElement.style.removeProperty('overflow');
 }
