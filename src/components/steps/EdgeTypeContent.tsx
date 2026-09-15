@@ -109,6 +109,9 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
   }, [recommendation, config.edgeType, isStepOpen]);
 
   const perimeterM = perimeterMm / 1000;
+  const perimeterDisplay = config.unit === 'imperial'
+    ? `${(perimeterMm * 0.00328084).toFixed(1)}ft`
+    : `${perimeterM.toFixed(1)}m`;
 
   const handleContinue = () => {
     if (!config.edgeType) return;
@@ -124,10 +127,10 @@ export function EdgeTypeContent({ config, updateConfig, onNext, onPrev, nextStep
     ? 'Webbing reinforced is a great choice.'
     : 'Either option works well for your sail.';
   const adviceBody = recommendation === 'cabled'
-    ? `Your sail has a ${perimeterM.toFixed(1)}m perimeter. At this size, a cabled edge provides the structural strength needed.`
+    ? `Your sail has a ${perimeterDisplay} perimeter. At this size, a cabled edge provides the structural strength needed.`
     : recommendation === 'webbing'
-    ? `At ${perimeterM.toFixed(1)}m perimeter, webbing reinforcement is well-suited and the easiest to install.`
-    : `At ${perimeterM.toFixed(1)}m perimeter, both edge types are suitable. Choose based on your preference.`;
+    ? `At ${perimeterDisplay} perimeter, webbing reinforcement is well-suited and the easiest to install.`
+    : `At ${perimeterDisplay} perimeter, both edge types are suitable. Choose based on your preference.`;
 
   return (
     <div className="space-y-4">
