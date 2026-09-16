@@ -87,7 +87,7 @@ export const AdminQuoteBuilder: React.FC<AdminQuoteBuilderProps> = ({ profile })
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0 gap-3">
       {lastSaved && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between gap-4">
           <div>
@@ -114,8 +114,8 @@ export const AdminQuoteBuilder: React.FC<AdminQuoteBuilderProps> = ({ profile })
         </div>
       )}
 
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
-        <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm flex-1 min-h-0 flex flex-col">
+        <div className="px-5 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Shade Sail Configurator</h3>
             <p className="text-xs text-gray-500">
@@ -137,7 +137,7 @@ export const AdminQuoteBuilder: React.FC<AdminQuoteBuilderProps> = ({ profile })
             )}
           </div>
         </div>
-        <div className="p-0 h-[calc(100vh-12rem)] overflow-y-auto" id="admin-configurator-scroll">
+        <div className="flex-1 min-h-0" id="admin-configurator-scroll">
           <ShadeConfigurator
             key={configuratorKey}
             adminMode={true}

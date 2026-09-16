@@ -88,8 +88,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
   const tabs = allTabs.filter(t => isTabAllowed(t.id, profile.role));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className={`bg-gray-50 ${activeTab === 'quote-builder' ? 'h-screen flex flex-col overflow-hidden' : 'min-h-screen'}`}>
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
@@ -114,7 +114,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
         </div>
       </div>
 
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 flex-shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex gap-8 overflow-x-auto">
             {tabs.map((tab) => (
@@ -134,8 +134,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <Card className="mb-6 border border-gray-200 shadow-sm">
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${activeTab === 'quote-builder' ? 'py-3 flex-1 min-h-0 flex flex-col' : 'py-6'}`}>
+        {activeTab !== 'quote-builder' && <Card className="mb-6 border border-gray-200 shadow-sm">
           <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
             <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">Date Range:</label>
             <input
@@ -183,7 +183,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
               })}>Last 30 Days</Button>
             </div>
           </div>
-        </Card>
+        </Card>}
 
         {keep('overview', (
           <div className="space-y-6">
@@ -195,7 +195,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
 
         {keep('quotes', <SavedQuotesTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />)}
 
-        {keep('quote-builder', <AdminQuoteBuilder profile={profile} />)}
+        {activeTab === 'quote-builder' && visitedTabs.has('quote-builder') ? (
+          <div className="flex-1 min-h-0 flex flex-col">
+            <AdminQuoteBuilder profile={profile} />
+          </div>
+        ) : keep('quote-builder', <AdminQuoteBuilder profile={profile} />)}
 
         {keep('events', <EventsTable dateRange={dateRange} excludeInternal={excludeInternal} timezone={timezone} />)}
 
