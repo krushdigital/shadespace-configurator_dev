@@ -137,7 +137,7 @@ export const AdminQuoteBuilder: React.FC<AdminQuoteBuilderProps> = ({ profile })
             )}
           </div>
         </div>
-        <div className="flex-1 min-h-0" id="admin-configurator-scroll">
+        <div className="flex-1 min-h-0 overflow-hidden" id="admin-configurator-scroll">
           <ShadeConfigurator
             key={configuratorKey}
             adminMode={true}

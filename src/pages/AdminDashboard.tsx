@@ -134,7 +134,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, profil
         </div>
       </div>
 
-      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${activeTab === 'quote-builder' ? 'py-3 flex-1 min-h-0 flex flex-col' : 'py-6'}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${activeTab === 'quote-builder' ? 'py-3 flex-1 min-h-0 flex flex-col overflow-hidden' : 'py-6'}`}>
         {activeTab !== 'quote-builder' && <Card className="mb-6 border border-gray-200 shadow-sm">
           <div className="flex flex-wrap items-center gap-3 p-4 sm:p-5">
             <label className="text-sm font-semibold text-gray-700 whitespace-nowrap">Date Range:</label>
