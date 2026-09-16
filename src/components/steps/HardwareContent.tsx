@@ -89,7 +89,12 @@ export function HardwareContent({
     if (next === 'manual' && !wasManual && typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
       requestAnimationFrame(() => {
         setTimeout(() => {
-          manualPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const container = document.getElementById('main-scroll-container');
+          const el = manualPanelRef.current;
+          if (container && el) {
+            const elTop = el.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop;
+            container.scrollTo({ top: elTop, behavior: 'smooth' });
+          }
         }, 60);
       });
     }

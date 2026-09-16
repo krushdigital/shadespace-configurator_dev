@@ -99,6 +99,7 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   useEffect(() => {
     const el = document.getElementById('main-scroll-container');
     if (el) el.scrollTop = 0;
+    window.scrollTo(0, 0);
   }, [openStep]);
 
   const [desktopViewMode, setDesktopViewMode] = useState<'plan' | '3d'>('plan');
