@@ -165,6 +165,9 @@ Deno.serve(async (req: Request) => {
         // Skip non-primary quotes (only email the representative quote per thread)
         if (quote.is_thread_primary === false) continue;
 
+        // Skip already-purchased quotes unconditionally
+        if (quote.status === "purchased") continue;
+
         // Check purchase suppression with thread-aware logic
         if (automation.suppress_if_purchased) {
           const windowHours =

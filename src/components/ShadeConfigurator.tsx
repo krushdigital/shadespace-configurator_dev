@@ -99,8 +99,13 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
   useEffect(() => {
     const el = document.getElementById('main-scroll-container');
     if (el) el.scrollTop = 0;
-    window.scrollTo(0, 0);
-  }, [openStep]);
+    if (adminMode) {
+      const adminScroll = document.getElementById('admin-configurator-scroll');
+      if (adminScroll) adminScroll.scrollTop = 0;
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [openStep, adminMode]);
 
   const [desktopViewMode, setDesktopViewMode] = useState<'plan' | '3d'>('plan');
   const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
@@ -1257,28 +1262,32 @@ export function ShadeConfigurator({ adminMode = false, adminProfile, onAdminSave
     } catch (autoSaveErr) {
       console.error('Auto-save for checkout failed (non-blocking):', autoSaveErr);
     }
-  } else if (quoteParams) {
-    try {
-      setLoadingStep({ text: 'Preparing order details...', progress: 15 });
-      const checkoutSnapshot = {
-        config_data: config,
-        calculations_data: calculations,
-        locked_total: lockedQuote?.total ?? calculations.totalPrice ?? null,
-        locked_currency: lockedQuote?.currency ?? config.currency ?? null,
-        snapshotted_at: new Date().toISOString(),
-      };
-      await updateQuote(quoteParams.id, quoteParams.token, config, calculations, {
-        status: 'checkout_pending',
-        checkoutSnapshot,
-      });
-      setCheckoutSnapshotSaved(true);
-      console.log('Updated existing quote config for checkout:', autoSavedRef);
-    } catch (updateErr) {
-      console.error('Checkout snapshot save failed — blocking cart:', updateErr);
-      setLoading(false);
-      setShowLoadingOverlay(false);
-      showToast('Failed to prepare your order. Please try again.', 'error');
-      return;
+  } else {
+    const effectiveId = quoteParams?.id ?? savedQuoteId;
+    const effectiveToken = quoteParams?.token ?? savedAccessToken;
+    if (effectiveId && effectiveToken) {
+      try {
+        setLoadingStep({ text: 'Preparing order details...', progress: 15 });
+        const checkoutSnapshot = {
+          config_data: config,
+          calculations_data: calculations,
+          locked_total: lockedQuote?.total ?? calculations.totalPrice ?? null,
+          locked_currency: lockedQuote?.currency ?? config.currency ?? null,
+          snapshotted_at: new Date().toISOString(),
+        };
+        await updateQuote(effectiveId, effectiveToken, config, calculations, {
+          status: 'checkout_pending',
+          checkoutSnapshot,
+        });
+        setCheckoutSnapshotSaved(true);
+        console.log('Updated existing quote config for checkout:', autoSavedRef);
+      } catch (updateErr) {
+        console.error('Checkout snapshot save failed — blocking cart:', updateErr);
+        setLoading(false);
+        setShowLoadingOverlay(false);
+        showToast('Failed to prepare your order. Please try again.', 'error');
+        return;
+      }
     }
   }
 

@@ -420,3 +420,9 @@ verify_jwt = false
 
 [functions.shopify-order-webhook]
 verify_jwt = false
+
+[functions.sync-shopify-orders]
+verify_jwt = false
+
+[functions.evaluate-email-automations]
+verify_jwt = false
